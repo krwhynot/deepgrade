@@ -1,5 +1,5 @@
 #!/bin/bash
-# Three Pillars: SubagentStop hook. Pure bash.
+# DeepGrade: SubagentStop hook. Pure bash.
 
 PLANS_DIR="docs/plans"
 [ ! -d "$PLANS_DIR" ] && [ -d "plans" ] && PLANS_DIR="plans"

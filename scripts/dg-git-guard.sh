@@ -1,5 +1,5 @@
 #!/bin/bash
-# Three Pillars: Git Guard (PreToolUse: Bash)
+# DeepGrade: Git Guard (PreToolUse: Bash)
 # Layer 1: Block force push, warn hard reset
 # Layer 2: Staging count sanity check
 # Layer 3: Build verification before commit
@@ -31,7 +31,7 @@ echo "$COMMAND" | grep -qE 'git\s+(commit|push)' || exit 0
 
 if echo "$COMMAND" | grep -qE 'git\s+commit'; then
   STAGED_COUNT=$(git diff --cached --name-only 2>/dev/null | wc -l | tr -d ' ')
-  TRACKER="/tmp/tp-baseline-${SESSION_ID}"
+  TRACKER="/tmp/dg-baseline-${SESSION_ID}"
 
   if [ -f "$TRACKER" ] && [ "$STAGED_COUNT" -gt 0 ]; then
     SESSION_EDITS=$(grep -o '"session_changes":[0-9]*' "$TRACKER" 2>/dev/null | head -1 | sed 's/"session_changes"://')
@@ -48,7 +48,7 @@ fi
 
 # ---- LAYER 3: Build verification ----
 
-BUILD_MARKER="/tmp/tp-build-${SESSION_ID}"
+BUILD_MARKER="/tmp/dg-build-${SESSION_ID}"
 if [ -f "$BUILD_MARKER" ]; then
   if [ "$(find "$BUILD_MARKER" -mmin -120 2>/dev/null)" ]; then
     exit 0

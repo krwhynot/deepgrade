@@ -1,5 +1,5 @@
 #!/bin/bash
-# Three Pillars: Migration Guard (PreToolUse: Write|Edit)
+# DeepGrade: Migration Guard (PreToolUse: Write|Edit)
 # Warns when editing EXISTING migration files. Pure bash, no dependencies.
 
 INPUT=$(cat)

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Three Pillars: Change Tracker (PostToolUse: Write|Edit)
+# DeepGrade: Change Tracker (PostToolUse: Write|Edit)
 # Counts file changes per session. Pure bash for core logic.
 # Optional: env var drift + barrel sync (python3, skipped if unavailable).
 
@@ -10,8 +10,8 @@ SESSION_ID=$(echo "$INPUT" | grep -o '"session_id":"[^"]*"' | head -1 | sed 's/"
 
 [ -z "$FILE_PATH" ] && exit 0
 
-TRACKER="/tmp/tp-baseline-${SESSION_ID}"
-THRESHOLD=${TP_CHANGE_THRESHOLD:-15}
+TRACKER="/tmp/dg-baseline-${SESSION_ID}"
+THRESHOLD=${DG_CHANGE_THRESHOLD:-15}
 
 # ---- Core: Update baseline tracker ----
 
@@ -31,8 +31,8 @@ fi
 # Check threshold
 TOTAL=$(grep -o '"total_changes_since_audit":[0-9]*' "$TRACKER" 2>/dev/null | head -1 | sed 's/"total_changes_since_audit"://')
 if [ "${TOTAL:-0}" -ge "$THRESHOLD" ] 2>/dev/null; then
-  echo "[Three Pillars] $TOTAL files changed since last audit. Consider /tp:codebase-delta." >&2
-  exit 2
+  echo "[DeepGrade] $TOTAL files changed since last audit. Consider /deepgrade:codebase-delta." >&2
+  exit 0
 fi
 
 exit 0

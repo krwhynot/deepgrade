@@ -1,5 +1,5 @@
 #!/bin/bash
-# Three Pillars: SessionStart hook
+# DeepGrade: SessionStart hook
 # Checks for active plans and staleness. Pure bash.
 
 PLANS_DIR="docs/plans"
@@ -17,13 +17,13 @@ STATUS=$(grep -o '"status":"[^"]*"' "$LATEST_PLAN/status.json" 2>/dev/null | hea
 OUTPUT="Active plan: $PLAN_NAME (phase: ${PHASE:-unknown}, status: ${STATUS:-unknown})"
 
 # Check audit staleness
-if [ -f "docs/audit/three-pillars-report.md" ]; then
-  AUDIT_MTIME=$(stat -c %Y "docs/audit/three-pillars-report.md" 2>/dev/null || stat -f %m "docs/audit/three-pillars-report.md" 2>/dev/null)
+if [ -f "docs/audit/deepgrade-report.md" ]; then
+  AUDIT_MTIME=$(stat -c %Y "docs/audit/deepgrade-report.md" 2>/dev/null || stat -f %m "docs/audit/deepgrade-report.md" 2>/dev/null)
   if [ -n "$AUDIT_MTIME" ]; then
     AUDIT_AGE=$(( ($(date +%s) - AUDIT_MTIME) / 86400 ))
     [ "$AUDIT_AGE" -gt 7 ] && OUTPUT="$OUTPUT. Audit report is $AUDIT_AGE days old."
   fi
 fi
 
-echo "[Three Pillars] $OUTPUT"
+echo "[DeepGrade] $OUTPUT"
 exit 0
