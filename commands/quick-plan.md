@@ -1,5 +1,5 @@
 ---
-description: Create a structured technical plan from a vague objective. Analyzes the codebase, identifies risks, generates phased approach with timeline estimates, testing strategy, and rollback plan. The output is a plan that scores well on the plan auditor's 8 dimensions. Pass an objective or requirement description.
+description: (deepgrade) Create a structured technical plan from a vague objective. Analyzes the codebase, identifies risks, generates phased approach with timeline estimates, testing strategy, and rollback plan. The output is a plan that scores well on the plan auditor's 8 dimensions. Pass an objective or requirement description.
 argument-hint: "[objective description] [--plan plan-name]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---

@@ -1,5 +1,5 @@
 ---
-description: Run an AI Readiness scan on this codebase. Scores how well an AI agent can read and navigate the project across 52 checks in 9 categories. Produces a composite grade (A+ to F) and identifies what to fix first. Category 9 (Database) is conditional and only runs if the codebase uses a database. Use this BEFORE running deeper code quality audits.
+description: (deepgrade) Run an AI Readiness scan on this codebase. Scores how well an AI agent can read and navigate the project across 52 checks in 9 categories. Produces a composite grade (A+ to F) and identifies what to fix first. Category 9 (Database) is conditional and only runs if the codebase uses a database. Use this BEFORE running deeper code quality audits.
 allowed-tools: Read, Write, Glob, Grep, Bash, Task
 ---
 

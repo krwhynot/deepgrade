@@ -1,5 +1,5 @@
 ---
-description: Show status of all active plans or detailed status of a specific plan. Checks for staleness, shows progress, and recommends next action. Pass a plan name for details or no argument for overview.
+description: (deepgrade) Show status of all active plans or detailed status of a specific plan. Checks for staleness, shows progress, and recommends next action. Pass a plan name for details or no argument for overview.
 argument-hint: "[plan-name]"
 allowed-tools: Read, Grep, Glob, Bash
 ---

@@ -1,5 +1,5 @@
 ---
-description: Re-measure the codebase against previous audit baselines. Shows what improved, what regressed, tracks KPIs over time, and flags stale findings. Quick check (2-3 min) without running a full scan. Use after making changes to see if scores improved.
+description: (deepgrade) Re-measure the codebase against previous audit baselines. Shows what improved, what regressed, tracks KPIs over time, and flags stale findings. Quick check (2-3 min) without running a full scan. Use after making changes to see if scores improved.
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 

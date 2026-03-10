@@ -1,5 +1,5 @@
 ---
-description: Generate any project document (ADR, BRD, PRD, README, release notes, spec). Routes to the appropriate template based on document type. If unsure which format, describe what you need and it will recommend. Pass subcommand and topic.
+description: (deepgrade) Generate any project document (ADR, BRD, PRD, README, release notes, spec). Routes to the appropriate template based on document type. If unsure which format, describe what you need and it will recommend. Pass subcommand and topic.
 argument-hint: "[adr|brd|prd|readme|release-notes|spec] [topic] [--plan plan-name]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---

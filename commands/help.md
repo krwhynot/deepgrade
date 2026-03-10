@@ -1,5 +1,5 @@
 ---
-description: Show all DeepGrade Developer Toolkit commands, agents, and capabilities. Use when you need to see what's available or explain the toolkit to someone new.
+description: (deepgrade) Show all DeepGrade Developer Toolkit commands, agents, and capabilities. Use when you need to see what's available or explain the toolkit to someone new.
 ---
 
 # DeepGrade Developer Toolkit (/tp)

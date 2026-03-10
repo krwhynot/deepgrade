@@ -1,5 +1,5 @@
 ---
-description: Run a full DeepGrade codebase audit using a team of specialized agents working in parallel. Produces a standardized report with severity-classified findings that any engineer can act on. Works on any stack (React/TypeScript, C#/.NET, Python, Rust, Go).
+description: (deepgrade) Run a full DeepGrade codebase audit using a team of specialized agents working in parallel. Produces a standardized report with severity-classified findings that any engineer can act on. Works on any stack (React/TypeScript, C#/.NET, Python, Rust, Go).
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 

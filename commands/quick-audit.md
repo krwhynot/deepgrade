@@ -1,5 +1,5 @@
 ---
-description: Audit any technical plan, spec, or proposal for gaps, risks, and leadership readiness. Scores the plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team). Produces a go/no-go assessment and leadership presentation outline. Pass a file path or describe the plan.
+description: (deepgrade) Audit any technical plan, spec, or proposal for gaps, risks, and leadership readiness. Scores the plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team). Produces a go/no-go assessment and leadership presentation outline. Pass a file path or describe the plan.
 argument-hint: "[plan-file-path or description] [--plan plan-name]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---

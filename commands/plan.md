@@ -1,5 +1,5 @@
 ---
-description: Start or resume a guided plan. Walks you through 8 phases from idea to handoff, with AI assistance at every step. Produces documents by default; codebase writes require your approval. Pass a plan name to start new or resume existing. Optionally pass source material with 'from'.
+description: (deepgrade) Start or resume a guided plan. Walks you through 8 phases from idea to handoff, with AI assistance at every step. Produces documents by default; codebase writes require your approval. Pass a plan name to start new or resume existing. Optionally pass source material with 'from'.
 argument-hint: "[plan-name] [from docs/path or 'idea: description']"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---

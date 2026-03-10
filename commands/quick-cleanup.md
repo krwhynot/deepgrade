@@ -1,5 +1,5 @@
 ---
-description: Clean up a folder of messy documents (PDFs, images, text files, vendor manuals, meeting notes, legacy docs) into standardized markdown and JSON reference files. Guides you through understanding the data first, then cleans it into structured reference material. Automatically creates a plan homebase folder if one doesn't exist. This may be the only step in a plan, or the first step of a larger plan.
+description: (deepgrade) Clean up a folder of messy documents (PDFs, images, text files, vendor manuals, meeting notes, legacy docs) into standardized markdown and JSON reference files. Guides you through understanding the data first, then cleans it into structured reference material. Automatically creates a plan homebase folder if one doesn't exist. This may be the only step in a plan, or the first step of a larger plan.
 argument-hint: "[folder-path] [topic-name] [--plan plan-name]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---

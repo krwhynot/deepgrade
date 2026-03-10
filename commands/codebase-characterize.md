@@ -1,5 +1,5 @@
 ---
-description: Generate golden master / characterization tests that capture current behavior of a module BEFORE refactoring. These tests verify that refactored code produces identical outputs. Critical for monolith decomposition. Pass a module name, file path, function name, or domain as the argument.
+description: (deepgrade) Generate golden master / characterization tests that capture current behavior of a module BEFORE refactoring. These tests verify that refactored code produces identical outputs. Critical for monolith decomposition. Pass a module name, file path, function name, or domain as the argument.
 argument-hint: "[module|file|function|domain]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---

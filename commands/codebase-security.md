@@ -1,5 +1,5 @@
 ---
-description: Run a security-focused scan on the codebase. Checks dependency vulnerabilities, hardcoded secrets, SSL configuration, injection risks, and permission patterns. Security is a separate control loop from the general audit. Pass an optional focus area to narrow the scan.
+description: (deepgrade) Run a security-focused scan on the codebase. Checks dependency vulnerabilities, hardcoded secrets, SSL configuration, injection risks, and permission patterns. Security is a separate control loop from the general audit. Pass an optional focus area to narrow the scan.
 argument-hint: "[focus-area]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---

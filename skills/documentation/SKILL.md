@@ -1,6 +1,6 @@
 ---
 name: documentation
-description: Generate project documentation (ADR, BRD, PRD, README, release notes, changelog, technical spec). Dispatches to the appropriate template based on document type. Also suggests which document to create based on context. Triggers on - create adr, create brd, create prd, create readme, generate documentation, architecture decision, business requirements, product requirements, release notes, changelog, version notes, release summary, prepare release, generate changelog, version history, release documentation, deployment notes, create spec, technical specification, write spec, engineering plan, design doc, RFC, migration plan.
+description: (deepgrade) Generate project documentation (ADR, BRD, PRD, README, release notes, changelog, technical spec). Dispatches to the appropriate template based on document type. Also suggests which document to create based on context. Triggers on - create adr, create brd, create prd, create readme, generate documentation, architecture decision, business requirements, product requirements, release notes, changelog, version notes, release summary, prepare release, generate changelog, version history, release documentation, deployment notes, create spec, technical specification, write spec, engineering plan, design doc, RFC, migration plan.
 ---
 
 # Documentation Generator

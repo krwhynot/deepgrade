@@ -1,5 +1,5 @@
 ---
-description: Generate CI quality gates, Claude Code hooks, and baseline maintenance nudges from DeepGrade audit findings. Creates automated checks that warn when HIGH-risk modules are modified, track file change counts, and nudge you when audit baselines go stale. Requires a Phase 2 audit to have been run first.
+description: (deepgrade) Generate CI quality gates, Claude Code hooks, and baseline maintenance nudges from DeepGrade audit findings. Creates automated checks that warn when HIGH-risk modules are modified, track file change counts, and nudge you when audit baselines go stale. Requires a Phase 2 audit to have been run first.
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 

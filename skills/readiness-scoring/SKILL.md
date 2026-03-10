@@ -1,6 +1,6 @@
 ---
 name: readiness-scoring
-description: Knowledge about AI readiness scoring methodology, gate thresholds, confidence levels, and grading criteria. Auto-invoked when running readiness scans or interpreting readiness scores.
+description: (deepgrade) Knowledge about AI readiness scoring methodology, gate thresholds, confidence levels, and grading criteria. Auto-invoked when running readiness scans or interpreting readiness scores.
 ---
 
 # AI Readiness Scoring Methodology

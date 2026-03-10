@@ -1,5 +1,5 @@
 ---
-description: AI-guided troubleshooting using the 4-phase systematic debugging framework. Enforces root cause investigation before suggesting fixes. Logs every step, builds a project knowledge base. Auto-links to active plan. Pass an error message, issue description, or just say what broke.
+description: (deepgrade) AI-guided troubleshooting using the 4-phase systematic debugging framework. Enforces root cause investigation before suggesting fixes. Logs every step, builds a project knowledge base. Auto-links to active plan. Pass an error message, issue description, or just say what broke.
 argument-hint: "[error message or issue description] [--plan plan-name]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
