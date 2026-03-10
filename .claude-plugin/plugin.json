@@ -1,0 +1,104 @@
+{
+  "name": "deepgrade",
+  "version": "4.27.1",
+  "description": "DeepGrade: AI-powered codebase grading, planning, auditing, and operational readiness. Gives your codebase a letter grade and a plan to level up. Stack-agnostic.",
+  "author": {
+    "name": "Kyle Whynot",
+    "url": "https://github.com/krwhynot"
+  },
+  "license": "MIT",
+  "keywords": [
+    "audit",
+    "codebase",
+    "documentation",
+    "planning",
+    "troubleshooting",
+    "operational-readiness",
+    "code-quality",
+    "developer-toolkit"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'export PATH=\"$PATH:$LOCALAPPDATA/Microsoft/WinGet/Links:/usr/local/bin\";command -v jq >/dev/null 2>&1||echo \"[DeepGrade] WARNING: jq not installed. Safety hooks (force-push guard, migration guard, db deploy guard) will use fallback parsing. Install jq for best reliability: winget install jqlang.jq\">&2;D=docs/plans;[ ! -d \"$D\" ]&&[ -d plans ]&&D=plans;[ ! -d \"$D\" ]&&exit 0;P=$(ls -td \"$D\"/*/ 2>/dev/null|head -1);[ -z \"$P\" ]&&exit 0;echo \"[DeepGrade] Active plan: $(basename $P)\"'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'export PATH=\"$PATH:$LOCALAPPDATA/Microsoft/WinGet/Links:/usr/local/bin\";I=$(cat);F=$(echo \"$I\"|jq -r \".tool_input.file_path // empty\" 2>/dev/null);[ -z \"$F\" ]&&F=$(echo \"$I\"|grep -o '\"'\"'\"file_path\":\"[^\"]*\"'\"'\"'|head -1|sed '\"'\"'s/\"file_path\":\"//;s/\"$//'\"'\"');[ -z \"$F\" ]&&exit 0;F=$(echo \"$F\"|tr \"\\\\\\\\\" \"/\");case \"$F\" in */migrations/*|*/Migrations/*) ;; *) exit 0;; esac;echo \"$F\"|grep -qiE \"\\.sql$\"||exit 0;[ ! -f \"$F\" ]&&exit 0;echo \"[DeepGrade] MIGRATION GUARD: Editing existing migration $F. Create a NEW migration instead.\">&2;exit 2'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'export PATH=\"$PATH:$LOCALAPPDATA/Microsoft/WinGet/Links:/usr/local/bin\";I=$(cat);C=$(echo \"$I\"|jq -r \".tool_input.command // empty\" 2>/dev/null);[ -z \"$C\" ]&&C=$(echo \"$I\"|grep -o '\"'\"'\"command\":\"[^\"]*\"'\"'\"'|head -1|sed '\"'\"'s/\"command\":\"//;s/\"$//'\"'\"');[ -z \"$C\" ]&&exit 0;echo \"$C\"|grep -qE \"git\\s+push.*--force\"&&echo \"[DeepGrade] BLOCKED: Force push not allowed.\">&2&&exit 2;echo \"$C\"|grep -qE \"git\\s+reset\\s+--hard\"&&echo \"[DeepGrade] WARNING: git reset --hard discards changes.\">&2&&exit 2;echo \"$C\"|grep -qE \"(supabase\\s+db\\s+push|prisma\\s+migrate\\s+deploy|dotnet\\s+ef\\s+database\\s+update|flyway\\s+migrate|rails\\s+db:migrate)\"&&! echo \"$C\"|grep -qE \"(--local|--dry-run|--dry|RAILS_ENV=test|RAILS_ENV=development)\"&&echo \"[DeepGrade] BLOCKED: Direct database deploy to remote. Use --dry-run to validate, or deploy via CI/CD.\">&2&&exit 2;exit 0'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'export PATH=\"$PATH:$LOCALAPPDATA/Microsoft/WinGet/Links:/usr/local/bin\";I=$(cat);S=$(echo \"$I\"|jq -r \".session_id // empty\" 2>/dev/null);[ -z \"$S\" ]&&S=$(echo \"$I\"|grep -o '\"'\"'\"session_id\":\"[^\"]*\"'\"'\"'|head -1|sed '\"'\"'s/\"session_id\":\"//;s/\"$//'\"'\"');[ -z \"$S\" ]&&S=default;T=/tmp/dg-baseline-$S;if [ ! -f \"$T\" ];then echo \"{\\\"session_changes\\\":1,\\\"total\\\":1}\">\"$T\";else C=$(jq -r \".session_changes // 0\" \"$T\" 2>/dev/null);[ -z \"$C\" ]&&C=$(grep -o '\"'\"'\"session_changes\":[0-9]*'\"'\"' \"$T\"|head -1|sed '\"'\"'s/\"session_changes\"://'\"'\"');O=$(jq -r \".total // 0\" \"$T\" 2>/dev/null);[ -z \"$O\" ]&&O=$(grep -o '\"'\"'\"total\":[0-9]*'\"'\"' \"$T\"|head -1|sed '\"'\"'s/\"total\"://'\"'\"');echo \"{\\\"session_changes\\\":$((${C:-0}+1)),\\\"total\\\":$((${O:-0}+1))}\">\"$T\";fi;exit 0'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'export PATH=\"$PATH:$LOCALAPPDATA/Microsoft/WinGet/Links:/usr/local/bin\";I=$(cat);C=$(echo \"$I\"|jq -r \".tool_input.command // empty\" 2>/dev/null);[ -z \"$C\" ]&&C=$(echo \"$I\"|grep -o '\"'\"'\"command\":\"[^\"]*\"'\"'\"'|head -1|sed '\"'\"'s/\"command\":\"//;s/\"$//'\"'\"');S=$(echo \"$I\"|jq -r \".session_id // empty\" 2>/dev/null);[ -z \"$S\" ]&&S=$(echo \"$I\"|grep -o '\"'\"'\"session_id\":\"[^\"]*\"'\"'\"'|head -1|sed '\"'\"'s/\"session_id\":\"//;s/\"$//'\"'\"');[ -z \"$S\" ]&&S=default;[ -z \"$C\" ]&&exit 0;echo \"$C\"|grep -qE \"(vitest|jest|pytest|dotnet\\s+test|cargo\\s+test|npm\\s+test|npx\\s+(jest|vitest))\"&&date +%s>/tmp/dg-test-$S;echo \"$C\"|grep -qE \"(npm\\s+run\\s+build|npx\\s+tsc|dotnet\\s+build|cargo\\s+(build|check))\"&&date +%s>/tmp/dg-build-$S;exit 0'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'export PATH=\"$PATH:$LOCALAPPDATA/Microsoft/WinGet/Links:/usr/local/bin\";I=$(cat);S=$(echo \"$I\"|jq -r \".session_id // empty\" 2>/dev/null);[ -z \"$S\" ]&&S=$(echo \"$I\"|grep -o '\"'\"'\"session_id\":\"[^\"]*\"'\"'\"'|head -1|sed '\"'\"'s/\"session_id\":\"//;s/\"$//'\"'\"');[ -z \"$S\" ]&&S=default;T=/tmp/dg-baseline-$S;[ ! -f \"$T\" ]&&exit 0;C=$(jq -r \".session_changes // 0\" \"$T\" 2>/dev/null);[ -z \"$C\" ]&&C=$(grep -o '\"'\"'\"session_changes\":[0-9]*'\"'\"' \"$T\"|head -1|sed '\"'\"'s/\"session_changes\"://'\"'\"');[ \"${C:-0}\" -eq 0 ]&&exit 0;echo \"[DeepGrade] Session: $C files changed.\";exit 0'",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'D=docs/plans;[ ! -d \"$D\" ]&&[ -d plans ]&&D=plans;P=$(ls -td \"$D\"/*/ 2>/dev/null|head -1);[ -z \"$P\" ]&&exit 0;echo \"[DeepGrade] Compacting. Plan: $(basename $P). Resume with /deepgrade:plan $(basename $P)\"'",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "repository": "https://github.com/krwhynot/deepgrade",
+  "homepage": "https://github.com/krwhynot/deepgrade#readme"
+}

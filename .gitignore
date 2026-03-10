@@ -1,0 +1,21 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Plugin runtime (never committed)
+/tmp/tp-*
+
+# Local overrides
+*.local.md
+*.local.json
+
+# VS Code (keep settings.json and extensions.json, ignore personal)
+.vscode/launch.json
+.vscode/*.code-workspace
