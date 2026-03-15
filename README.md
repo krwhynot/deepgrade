@@ -160,7 +160,7 @@ The plugin auto-detects your stack. Tested on:
 ## Architecture
 
 - **22 agents** - Specialized scanners and generators
-- **4 skills** - Docs, governance, readiness, knowledge
+- **5 skills** - Docs, governance, readiness, knowledge, self-audit
 - **6 doc templates** - ADR, BRD, PRD, README, release notes, spec
 - **8 reference scripts** - Hook logic reference (not runtime)
 
@@ -168,7 +168,7 @@ The plugin auto-detects your stack. Tested on:
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
-Current: v4.27.1
+Current: v4.28.0
 
 ## Contributing
 

@@ -56,6 +56,14 @@ Four deliverables:
 - Every finding must reference specific files with paths
 - The report should be useful to someone who has never seen the codebase
 
+### Self-Audit (Epistemic Transparency)
+- Every finding carries a verification tier: A (tool-verified), B (code-reading), C (pattern inference)
+- Evidence basis format: `{Tier}-{Confidence}: {method}`
+- Cascade risk is category-based (auth/payment/required-mod), not numeric fan-out
+- The self-audit-knowledge skill is the single source of truth for tier definitions,
+  failure mode flags, and cascade risk rules
+- HIGH confidence + Tier C = SUSPECT — always spot-check these combinations
+
 ## Stack Detection
 
 The Phase 2 orchestrator detects the codebase stack automatically:

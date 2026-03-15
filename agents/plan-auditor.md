@@ -47,6 +47,18 @@ Every finding MUST include:
 - If a finding cannot cite any evidence, it MUST be tagged [UNVERIFIED]
   and placed in a separate section. It does NOT count toward the score.
 
+Reference the self-audit-knowledge skill for claim tier definitions and failure
+mode taxonomy. Map each finding to Tier A/B/C alongside the confidence level:
+- Tier A: deterministic keyword check or file existence (HIGH [A])
+- Tier B: direct evidence from plan text or codebase file (HIGH [B] or MEDIUM [B])
+- Tier C: agent judgment, naming inference, absence-based detection (MEDIUM [C] or LOW [C])
+Format: `HIGH [A]: direct quote from plan section 3.2`
+
+Plan audit failure mode flags (append where applicable):
+- `[PLAN-GAP-INFERRED]` — gap detected by absence of keywords, not by understanding plan intent
+- `[SCOPE-ASSUMED]` — auditor assumed scope beyond what the plan explicitly states
+- `[CODEBASE-CLAIM-NOT-VERIFIED]` — plan references code that the auditor couldn't verify
+
 ## 1. Problem Definition (Is the WHY clear?)
 - Is the problem being solved clearly stated?
 - Is the business impact of NOT doing this quantified?
@@ -367,9 +379,10 @@ Auditor: DeepGrade Plan Auditor v1.0
 
 | Tier | Count | Meaning |
 |------|-------|---------|
-| HIGH (Verified) | X | Direct evidence from plan text or codebase |
-| MEDIUM (Inferred) | X | Indirect evidence, likely correct |
-| LOW (Speculated) | X | Agent judgment, verify with author |
+| HIGH [A] (Deterministic) | X | Binary keyword check or file existence |
+| HIGH [B] (Verified) | X | Direct evidence from plan text or codebase |
+| MEDIUM [B] (Inferred) | X | Indirect evidence, likely correct |
+| LOW [C] (Speculated) | X | Agent judgment, verify with author |
 | UNVERIFIED | X | No evidence found, excluded from scoring |
 
 ## Verification Statistics

@@ -1,11 +1,11 @@
 <div align="center">
 
-# DeepGrade Knowledge Guide v4.27.1
+# DeepGrade Knowledge Guide v4.28.0
 
-**16 Commands** &nbsp;&bull;&nbsp; **22 Agents** &nbsp;&bull;&nbsp; **4 Skills** &nbsp;&bull;&nbsp; **7 Safety Hooks** &nbsp;&bull;&nbsp; **Zero Dependencies**
+**16 Commands** &nbsp;&bull;&nbsp; **22 Agents** &nbsp;&bull;&nbsp; **5 Skills** &nbsp;&bull;&nbsp; **7 Safety Hooks** &nbsp;&bull;&nbsp; **Zero Dependencies**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDE4Yy00LjQxIDAtOC0zLjU5LTgtOHMzLjU5LTggOC04IDggMy41OSA4IDgtMy41OSA4LTggOHoiLz48L3N2Zz4=)](https://github.com/krwhynot/deepgrade)
-[![Version](https://img.shields.io/badge/v4.27.1-stable-2ECC71?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/v4.28.0-stable-2ECC71?style=for-the-badge)](#)
 [![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
 
 </div>
@@ -496,13 +496,15 @@ The parallel fan-out is why the scan is fast despite checking 52 things -- all 9
 
 Skills are persistent knowledge that loads automatically when relevant. They are not commands you type and not agents that scan files. Think of them as reference books that the plugin carries in its back pocket -- when a command or agent needs domain knowledge, the right skill silently loads into context.
 
-### The 4 Skills
+### The 5 Skills
 
 **readiness-scoring** -- Contains the grading rubric (A+ to F), the 9 scoring gates with max points, confidence thresholds, and the principle of deterministic scoring (all checks use bash commands with fixed thresholds, no AI judgment). Loads automatically during readiness scans and when interpreting scores.
 
 **deepgrade-knowledge** -- Contains the DeepGrade methodology: the three grade categories, enterprise best practices from 16-source research (risk assessment, discovery, documentation, report generation), and stack detection patterns. Loads automatically during codebase audits.
 
-**governance-knowledge** -- Contains enterprise governance patterns: DORA metrics, confidence decay rules (findings lose trust after 30/60/90 days), quality gate patterns (SCAN pipeline, advisory mode, escape hatches), characterization testing methodology, and delta tracking guidance. Loads during delta scans, gate setup, security scans, and characterization test generation.
+**governance-knowledge** -- Contains enterprise governance patterns: DORA metrics, confidence decay rules (findings lose trust after 30/60/90 days), quality gate patterns (SCAN pipeline, advisory mode, escape hatches), characterization testing methodology, and delta tracking guidance. Includes tier-aware confidence decay rates (Tier A/B/C findings decay at different speeds). Loads during delta scans, gate setup, security scans, and characterization test generation.
+
+**self-audit-knowledge** -- Contains the LLM epistemic transparency framework: claim verification tiers (A = tool-verified, B = code-reading, C = pattern inference), evidence basis formatting, failure mode flags (`[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`, `[DEAD-CODE-UNCERTAIN]`), category-based cascade risk classification (CASCADE/COVERAGE/CONTAINED), and report confidence thresholds. Loads during codebase audits, plan audits, and report generation.
 
 **documentation** -- The dispatch hub for document generation. Contains routing logic (first word = subcommand), 6 template references, smart suggestions when audit data exists, and document chain enforcement (a PRD triggers a check for a related BRD, etc.). Loads when you use `/deepgrade:doc`.
 
@@ -915,6 +917,6 @@ On Windows, `jq` installed via `winget` lands in `$LOCALAPPDATA/Microsoft/WinGet
 
 ---
 
-[![Generated](https://img.shields.io/badge/Generated_for-DeepGrade_v4.27.1-5A45FF?style=flat-square)](#) &nbsp; [![Date](https://img.shields.io/badge/2026--03--10-stable-2ECC71?style=flat-square)](#) &nbsp; [![License](https://img.shields.io/badge/MIT-License-F39C12?style=flat-square)](#)
+[![Generated](https://img.shields.io/badge/Generated_for-DeepGrade_v4.28.0-5A45FF?style=flat-square)](#) &nbsp; [![Date](https://img.shields.io/badge/2026--03--10-stable-2ECC71?style=flat-square)](#) &nbsp; [![License](https://img.shields.io/badge/MIT-License-F39C12?style=flat-square)](#)
 
 </div>

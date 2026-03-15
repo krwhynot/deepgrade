@@ -66,10 +66,21 @@ Audit Version: 2.0
 ## Executive Summary
 [2-3 paragraphs: overall codebase state, top 5 recommendations, risk profile]
 
+### Analysis Reliability
+This report contains N Tier A findings (tool-verified), N Tier B (code-reading),
+and N Tier C (pattern inference). N findings carry failure mode flags.
+N cross-agent contradictions were identified. See Self-Audit Summary for details.
+
 ## Severity-Classified Findings
 
 ### CRITICAL
-[Each finding: what, where (file paths), why it matters (business outcome), effort estimate]
+Each finding uses this format:
+#### CR-XX: [finding title]
+**Where:** [file paths]
+**Evidence:** {Tier}-{Confidence} ({verification method}) [failure mode flags if any]
+**Business impact:** [why it matters]
+**Effort:** [estimate]
+**Cascade risk:** CASCADE / COVERAGE (only shown when non-CONTAINED, with reason)
 
 ### HIGH
 [Same format]
@@ -169,14 +180,30 @@ YELLOW: 4-5 guardrails, some stale context, partial coverage
 ORANGE: 2-3 guardrails, stale context, low coverage
 RED: <2 guardrails, missing context, no coverage
 
-## Confidence Summary
+## Self-Audit Summary
 
-| Finding | Confidence | Basis |
-|---------|-----------|-------|
-| [finding] | HIGH/MEDIUM/LOW | [evidence source] |
+### Evidence Basis Distribution
+| Tier | Count | Confidence Spread | Description |
+|------|-------|-------------------|-------------|
+| A (Tool-Verified) | N | N HIGH, N MED | File counts, paths, versions from tool output |
+| B (Code-Reading) | N | N HIGH, N MED, N LOW | Control flow, business logic from source |
+| C (Pattern Inference) | N | N MED, N LOW | Naming conventions, directory structure inference |
 
-### Requires Human Review
-[Items tagged [REQUIRES REVIEW] across all agent outputs]
+### Failure Mode Flags
+| Flag | Count | Action |
+|------|-------|--------|
+| [ENUMERATION-MAY-BE-INCOMPLETE] | N | Verify counts manually |
+| [INFERRED-FROM-NAMING] | N | Spot-check 2-3 against actual code |
+| [SIDE-EFFECTS-NOT-TRACED] | N | Review call sites |
+| [DEAD-CODE-UNCERTAIN] | N | Check with dead code tools |
+
+### Cross-Validation Results
+| Module | Agent A Claim | Agent B Claim | Cascade Risk | Resolution |
+|--------|--------------|--------------|--------------|------------|
+
+### What to Verify
+[Items tagged [REQUIRES REVIEW], [INFERRED-FROM-NAMING], [DEAD-CODE-UNCERTAIN],
+or any unresolved contradiction]
 
 ## Recommended Next Steps
 [Prioritized action list with effort estimates and owners]

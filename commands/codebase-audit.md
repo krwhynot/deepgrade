@@ -138,11 +138,54 @@ Wait for both to complete before proceeding.
 
 ## Phase 3 - Synthesis (orchestrator does this directly)
 
+### Step 3.1: Read All Subagent Outputs
 Read all 5 subagent output files from docs/audit/.
-Cross-reference the dependency map against the risk assessment.
-Identify gaps: features found by one subagent but missed by another.
-Resolve contradictions between subagent findings.
-Draft the DeepGrade report structure with confidence ratings.
+
+### Step 3.2: Cross-Reference Matrix
+For every module mentioned by 2+ scanners:
+- Does feature-scanner's description align with risk-assessor's assessment?
+- Does dependency-mapper's fan-in/fan-out match risk-assessor's coupling data?
+- Does doc-auditor's quality rating correlate with detail level in other scanners?
+- **Side-effect verification:** For every Tier B finding involving a setter or state
+  mutation, verify at least one downstream consumer was also documented. This catches
+  the most common LLM failure mode: documenting the primary action while omitting
+  the cascade.
+
+### Step 3.3: Contradiction Detection
+When Scanner A says X but Scanner B says not-X:
+- Re-read relevant source file(s) to determine ground truth
+- Mark correct finding `[CROSS-VALIDATED]`
+- Mark incorrect finding `[CROSS-VALIDATION FAILED: contradicted by {scanner}]`
+- Record in audit-progress.md
+
+### Step 3.4: Spot-Check HIGH-Confidence Findings
+Select 3-5 HIGH-confidence findings at random:
+- Tier A: re-run grep/glob to confirm
+- Tier B: re-read referenced file at cited location
+- Tier C with HIGH confidence: downgrade to MEDIUM, flag `[TAG INFLATION DETECTED]`
+- Record results: "Spot-check: X/Y confirmed, Z downgraded"
+
+### Step 3.5: Cascade Risk Assessment
+Assess cascade risk per finding using **category-based rules** (not numeric thresholds):
+- Touches auth/security, payment, or required-mod flows → CASCADE
+- Another scanner consumed this finding as input → CASCADE
+- Scope/completeness claim about coverage → COVERAGE
+- Otherwise → CONTAINED
+- Apply `[SEVERITY-OVERRIDE]` to force CASCADE when domain warrants it
+- All CASCADE findings get auto-added to spot-check list
+
+### Step 3.6: Coverage Failure Check
+- Did any scanner report `[ENUMERATION-MAY-BE-INCOMPLETE]`?
+- Did any scanner hit context limits (truncated output)?
+- Are there top-level directories no scanner examined?
+
+### Step 3.7: Draft Synthesis
+Draft the synthesis with self-audit stats for the report generator, including:
+- Evidence basis distribution (Tier A/B/C counts and confidence spread)
+- Failure mode flag counts
+- Cross-validation results and contradiction resolutions
+- Spot-check results
+- Cascade risk assignments
 
 ## Phase 4 - Report Generation (sequential)
 
@@ -190,6 +233,13 @@ The report-generator groups findings by confidence in the Confidence Summary.
 
 If NO readiness report exists, default all findings to the standard confidence
 assessment (HIGH if direct evidence, MEDIUM if inferred, LOW if speculative).
+
+CLAIM VERIFICATION TIER (orthogonal to confidence):
+Every finding also carries a verification tier (A/B/C) from self-audit-knowledge.
+Confidence measures certainty; tier measures evidence type.
+
+Dangerous combination: HIGH confidence + Tier C = SUSPECT.
+The orchestrator MUST spot-check these in Phase 3.
 </confidence_tiers>
 
 <thinking_guidance>
@@ -199,6 +249,8 @@ After receiving subagent results, reflect on:
 - Should I spawn additional subagents for deeper investigation?
 - Is the evidence sufficient for HIGH confidence, or should I downgrade?
 - Did any subagent hit context limits and produce incomplete output?
+- Are there CASCADE findings that are Tier C? These are the most dangerous combination.
+- Did any scanner produce Tier B findings on setters/mutations without documenting downstream consumers?
 </thinking_guidance>
 
 <progress_tracking>

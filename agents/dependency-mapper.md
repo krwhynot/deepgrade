@@ -135,9 +135,9 @@ Stack: [from STACK PROFILE]
 
 ## Module-to-Module References
 
-| Source Module | References | Referenced By | Fan-Out | Fan-In |
-|--------------|------------|---------------|---------|--------|
-| ... | ... | ... | ... | ... |
+| Source Module | References | Referenced By | Fan-Out | Fan-In | Evidence Basis |
+|--------------|------------|---------------|---------|--------|----------------|
+| ... | ... | ... | ... | ... | A-HIGH: grep match |
 
 ## Dependency Graph (Text)
 ModuleA --> ModuleB --> ModuleC
@@ -174,3 +174,7 @@ ModuleA --> ModuleD
 - Parse files directly (do not rely on build tools being available).
 - Report exact file paths for every finding.
 - Do NOT create any files outside docs/audit/.
+- Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`. If you did not run a command or read the file, it is Tier C.
+- Most module references should be Tier A (project references are grep-able). Flag coupling assessments based on naming patterns as Tier C.
+- Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`.
+- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.

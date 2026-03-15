@@ -116,9 +116,9 @@ Stack: [from STACK PROFILE]
 
 ## Documentation Inventory
 
-| File | Type | Quality (1-5) | Last Modified | Notes |
-|------|------|--------------|---------------|-------|
-| README.md | Project README | [1-5] | [date] | [notes] |
+| File | Type | Quality (1-5) | Last Modified | Evidence Basis |
+|------|------|--------------|---------------|----------------|
+| README.md | Project README | [1-5] | [date] | A-HIGH: file exists |
 | ... | ... | ... | ... | ... |
 
 ## Doc Comment Coverage
@@ -155,3 +155,6 @@ Stack: [from STACK PROFILE]
 - Read files before rating quality. Do not guess.
 - Rate quality honestly. Boilerplate auto-generated docs = quality 1.
 - Do NOT create any files outside docs/audit/.
+- Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`. File existence = Tier A. Quality rating = Tier B. "Missing docs for business rules" = Tier C.
+- Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`.
+- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.

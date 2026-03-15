@@ -211,14 +211,18 @@ After writing the plan, verify your own work:
 ```markdown
 ## Plan Confidence
 
-| Section | Confidence | Basis |
-|---------|-----------|-------|
-| Problem Statement | HIGH | Read actual source files |
-| Architecture | HIGH | Based on existing SurchargeCalculator pattern |
-| Phase 1 scope | HIGH | Functions verified at stated line numbers |
-| Timeline estimates | MEDIUM | Based on test count proxy, not historical data |
-| Team capacity | LOW | No team data available [VERIFY WITH AUTHOR] |
+| Section | Evidence Basis | Basis |
+|---------|---------------|-------|
+| Problem Statement | A-HIGH | Read actual source files, verified paths exist |
+| Architecture | B-HIGH | Based on existing SurchargeCalculator pattern (read file) |
+| Phase 1 scope | A-HIGH | Functions verified at stated line numbers via grep |
+| Timeline estimates | C-MEDIUM | Based on test count proxy, not historical data |
+| Team capacity | C-LOW | No team data available [VERIFY WITH AUTHOR] |
 ```
+
+Reference the self-audit-knowledge skill. If any section is Tier C, append the
+appropriate failure mode flag. Plans with >40% Tier C sections should be flagged
+as `[REQUIRES ADDITIONAL EVIDENCE]`.
 </workflow>
 
 <constraints>

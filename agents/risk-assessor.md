@@ -141,9 +141,9 @@ Stack: [from STACK PROFILE]
 
 ## Risk Matrix
 
-| Module | LOC | Fan-In | Fan-Out | Tests | Change Freq | Risk | Debt Class |
-|--------|-----|--------|---------|-------|-------------|------|-----------|
-| ... | ... | ... | ... | ... | ... | HIGH/MED/LOW | CRITICAL/MANAGED/DEFERRED |
+| Module | LOC | Fan-In | Fan-Out | Tests | Change Freq | Risk | Debt Class | Evidence Basis |
+|--------|-----|--------|---------|-------|-------------|------|-----------|----------------|
+| ... | ... | ... | ... | ... | ... | HIGH/MED/LOW | CRITICAL/MANAGED/DEFERRED | A-HIGH: wc -l |
 
 ## High Risk Modules
 [Prose explaining WHY each is high risk, with file path evidence]
@@ -183,3 +183,7 @@ Exit criteria: [what must be true]
 - If git is not available, note that change frequency could not be assessed.
 - Base risk ratings on evidence, not assumptions. If evidence is insufficient, assign MEDIUM and tag [REQUIRES REVIEW].
 - Do NOT create any files outside docs/audit/.
+- Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`.
+- LOC/file counts → Tier A. Fan-in/fan-out from grep → Tier A. Risk classification combining metrics → Tier B. Phase boundary recommendations → Tier C (must be tagged accordingly).
+- Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`, `[DEAD-CODE-UNCERTAIN]`.
+- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.

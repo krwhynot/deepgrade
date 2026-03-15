@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.1.0 (2026-03-15)
+
+### Added
+- LLM Self-Audit Framework: epistemic transparency for audit findings
+- New skill: `self-audit-knowledge` — single source of truth for claim verification tiers (A/B/C), failure mode flags, and cascade risk classification
+- Evidence Basis column in all 5 Phase 2 scanner agents (feature-scanner, dependency-mapper, doc-auditor, risk-assessor, integration-scanner)
+- Structured Phase 3 synthesis with 7 steps: cross-reference matrix, contradiction detection, spot-checking, cascade risk assessment, coverage failure checks
+- Self-Audit Summary section in report generator (replaces Confidence Summary)
+- Analysis Reliability paragraph in Executive Summary
+- Evidence-based finding format with cascade risk line (exception-only for non-CONTAINED)
+- Tier A/B/C labels in plan-auditor Confidence Summary
+- Evidence basis format in plan-scaffolder Plan Confidence table
+- Plan audit failure mode flags: `[PLAN-GAP-INFERRED]`, `[SCOPE-ASSUMED]`, `[CODEBASE-CLAIM-NOT-VERIFIED]`
+- Tier-aware confidence decay in governance-knowledge (Tier A: 30/60/90d, Tier B: 20/45/75d, Tier C: 15/30/60d)
+- Claim verification tier guidance in codebase-audit confidence_tiers section
+- Thinking guidance for CASCADE + Tier C and setter/mutation side-effects
+
+### Changed
+- Confidence Summary in report generator replaced by richer Self-Audit Summary
+- Phase 3 synthesis expanded from 5 lines to 7 structured steps
+- Plan-auditor evidence requirement now maps to Tier A/B/C alongside HIGH/MEDIUM/LOW
+- Plan-scaffolder Confidence Summary uses evidence basis format
+- quick-plan Step 4 references evidence basis distribution and Tier C threshold
+
 ## 2.0.0 (2026-03-06)
 
 ### Breaking Changes

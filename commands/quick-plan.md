@@ -58,7 +58,7 @@ Spawn the plan-scaffolder agent with:
 
 After the scaffolder completes:
 1. Show the plan summary (problem, phases, timeline, key risks)
-2. Note the self-audit score (should be 32+/40)
+2. Note the self-audit score and evidence basis distribution (should be 32+/40, <40% Tier C)
 3. Suggest: "Run /deepgrade:quick-audit docs/specs/[plan-name].md for a formal audit"
 4. Note: "This plan is a starting point. Review with your team before presenting."
 </workflow>

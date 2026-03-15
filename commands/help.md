@@ -107,7 +107,9 @@ Scores how ready your codebase is for AI-assisted development.
 
 ## Phase 2: DeepGrade Audit (6 agents)
 
-Deep analysis producing actionable documentation.
+Deep analysis producing actionable documentation. All scanners produce evidence basis
+(Tier A/B/C) and failure mode flags. Phase 3 synthesis cross-validates findings and
+assigns cascade risk. See Self-Audit Summary in the final report.
 
 | Agent | Produces |
 |-------|---------|

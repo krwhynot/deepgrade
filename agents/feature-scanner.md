@@ -103,9 +103,9 @@ Stack: [from STACK PROFILE]
 
 ### [Domain Name] (e.g., Orders, Contacts, Payments)
 
-| Feature | Location | Entry Point | DB Tables | External Deps | Tests | Confidence |
-|---------|----------|-------------|-----------|---------------|-------|------------|
-| ... | ... | ... | ... | ... | ... | HIGH/MED/LOW |
+| Feature | Location | Entry Point | DB Tables | External Deps | Tests | Evidence Basis |
+|---------|----------|-------------|-----------|---------------|-------|----------------|
+| ... | ... | ... | ... | ... | ... | A-HIGH: grep match |
 
 ### [Next Domain]
 ...
@@ -126,3 +126,6 @@ Stack: [from STACK PROFILE]
 - Flag assumptions with [ASSUMPTION] tags.
 - If a feature's purpose is unclear, assign LOW confidence.
 - Do NOT create any files outside docs/audit/.
+- Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`. If you did not run a command or read the file, it is Tier C.
+- Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`, `[DEAD-CODE-UNCERTAIN]`.
+- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.

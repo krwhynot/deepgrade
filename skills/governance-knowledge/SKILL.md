@@ -37,6 +37,26 @@ Audit findings lose confidence over time if not re-verified:
 Rationale: Codebases change. A finding from 90 days ago may no longer
 be accurate. The decay forces periodic re-verification.
 
+### Tier-Aware Confidence Decay
+
+Findings decay at different rates depending on their verification tier.
+Inferred patterns become inaccurate soonest as code changes.
+
+**Tier A (Tool-Verified)** — normal decay rate:
+| Days | 0-30 | 31-60 | 61-90 | 91+ |
+|------|------|-------|-------|-----|
+| Status | FRESH | AGING | STALE | EXPIRED |
+
+**Tier B (Code-Reading)** — faster decay:
+| Days | 0-20 | 21-45 | 46-75 | 76+ |
+|------|------|-------|-------|-----|
+| Status | FRESH | AGING | STALE | EXPIRED |
+
+**Tier C (Pattern Inference)** — fastest decay:
+| Days | 0-15 | 16-30 | 31-60 | 61+ |
+|------|------|-------|-------|-----|
+| Status | FRESH | AGING | STALE | EXPIRED |
+
 ## Quality Gate Patterns
 
 ### SCAN Pipeline (from CodeIntelligently, 2026)

@@ -98,21 +98,21 @@ Stack: [from STACK PROFILE]
 
 ## Payment Integrations
 
-| Integration | Provider | Files | Protocol | Encryption? | Notes |
-|-------------|----------|-------|----------|-------------|-------|
-| ... | ... | ... | ... | ... | ... |
+| Integration | Provider | Files | Protocol | Encryption? | Evidence Basis |
+|-------------|----------|-------|----------|-------------|----------------|
+| ... | ... | ... | ... | ... | A-HIGH: grep match |
 
 ## Authentication Integrations
 
-| Provider | Method | Files | Notes |
-|----------|--------|-------|-------|
-| ... | ... | ... | ... |
+| Provider | Method | Files | Evidence Basis |
+|----------|--------|-------|----------------|
+| ... | ... | ... | A-HIGH: grep match |
 
 ## Third-Party APIs
 
-| Service | Purpose | Files | Auth Method | Notes |
-|---------|---------|-------|-------------|-------|
-| ... | ... | ... | ... | ... |
+| Service | Purpose | Files | Auth Method | Evidence Basis |
+|---------|---------|-------|-------------|----------------|
+| ... | ... | ... | ... | A-HIGH: grep match |
 
 ## Hardware Integrations (if applicable)
 
@@ -143,3 +143,6 @@ SEVERITY: CRITICAL / HIGH / MEDIUM / LOW for each finding.
 - Flag any security concerns prominently with severity level.
 - Tag uncertain integrations with [ASSUMPTION].
 - Do NOT create any files outside docs/audit/.
+- Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`. Grep matches for payment/auth patterns → Tier A. Assessment of encryption implementation → Tier B. Claims about integration completeness → Tier C.
+- Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`.
+- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.

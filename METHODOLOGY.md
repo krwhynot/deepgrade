@@ -2,7 +2,7 @@
 
 ## The Engineering Methods Behind the Grade
 
-Version 4.27.1 | Research-backed. Battle-tested. Stack-agnostic.
+Version 4.28.0 | Research-backed. Battle-tested. Stack-agnostic.
 
 ---
 
@@ -1201,7 +1201,143 @@ The verification pass also cross-references between specialists. If the Risk Rev
 
 ---
 
-## 8. Operational Readiness (Google SRE PRR)
+## 8. LLM Self-Audit (Epistemic Transparency)
+
+### Why AI Auditors Must Audit Themselves
+
+LLM-generated analysis has specific failure modes that human analysis does not. A human auditor who is unsure says "I think" or "I'm not sure." An LLM produces the same confident prose whether it grep-confirmed a file count or hallucinated a pattern from a directory name. The confidence signal is flat. This creates a dangerous asymmetry: the most dangerous findings (high-confidence hallucinations) are the hardest to distinguish from the most reliable findings (tool-verified facts).
+
+DeepGrade's self-audit framework addresses this by requiring every finding to carry an explicit evidence basis that communicates *how* the claim was derived, not just *what* the claim says. The framework is implemented in the [self-audit-knowledge skill](skills/self-audit-knowledge/SKILL.md) and integrated into all Phase 2 scanner agents, the Phase 3 synthesis, and the report generator.
+
+### The Three Verification Tiers
+
+Every finding in a DeepGrade audit carries a verification tier that classifies the evidence type behind the claim.
+
+```text
+  CLAIM VERIFICATION TIERS
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                                                                     │
+  │  TIER A (Tool-Verified)                                            │
+  │  ┌───────────────────────────────────────────────────────────────┐  │
+  │  │  Claims confirmed by deterministic tool output.              │  │
+  │  │  Glob matches, grep results, wc -l counts, manifest parsing. │  │
+  │  │  Near-zero hallucination risk.                               │  │
+  │  │  Always HIGH confidence unless truncated.                    │  │
+  │  └───────────────────────────────────────────────────────────────┘  │
+  │                                                                     │
+  │  TIER B (Code-Reading)                                             │
+  │  ┌───────────────────────────────────────────────────────────────┐  │
+  │  │  Claims about runtime behavior, control flow, side effects   │  │
+  │  │  derived from reading source files via the Read tool.        │  │
+  │  │  Moderate hallucination risk. Confidence depends on          │  │
+  │  │  full-file vs. partial read.                                 │  │
+  │  └───────────────────────────────────────────────────────────────┘  │
+  │                                                                     │
+  │  TIER C (Pattern Inference)                                        │
+  │  ┌───────────────────────────────────────────────────────────────┐  │
+  │  │  Claims assembled from naming conventions, directory          │  │
+  │  │  structure, file adjacency, or LLM reasoning.                │  │
+  │  │  Highest hallucination risk.                                 │  │
+  │  │  Always MEDIUM or LOW confidence.                            │  │
+  │  └───────────────────────────────────────────────────────────────┘  │
+  │                                                                     │
+  └─────────────────────────────────────────────────────────────────────┘
+```
+
+The tier is orthogonal to the confidence level. Confidence measures certainty. The tier measures evidence type. A finding can be HIGH confidence and Tier A (a grep confirmed 14 payment files exist) or HIGH confidence and Tier C (the agent inferred a pattern but is quite sure about it). The second combination — HIGH confidence + Tier C — is the most dangerous in the system, because it looks authoritative but is based on inference. DeepGrade flags these as SUSPECT and auto-adds them to the Phase 3 spot-check list.
+
+### Evidence Basis Format
+
+Findings use the format `{Tier}-{Confidence}: {one-line verification method}` in the Evidence Basis column of scanner output tables. Examples:
+
+- `A-HIGH: glob matched 14 files with payment patterns`
+- `B-MEDIUM: read primary handler, did not trace all call sites`
+- `C-LOW: inferred from directory name "payments/" without reading contents`
+
+This format communicates three things in one line: how the claim was derived, how certain the agent is, and what verification method was used. An engineer reading the report can immediately distinguish between findings they can trust and findings they should spot-check.
+
+### Failure Mode Flags
+
+Four inline tags mark known LLM failure patterns on individual findings:
+
+| Flag | What It Means | Action Required |
+| :--- | :------------ | :-------------- |
+| `[ENUMERATION-MAY-BE-INCOMPLETE]` | A list or count may have been truncated by tool output limits | Verify counts manually |
+| `[INFERRED-FROM-NAMING]` | Conclusion drawn from naming patterns, not from reading the code | Spot-check 2-3 items against actual code |
+| `[SIDE-EFFECTS-NOT-TRACED]` | Primary behavior documented, but downstream cascades may be missing | Review call sites for the affected module |
+| `[DEAD-CODE-UNCERTAIN]` | Cannot confirm whether a code path is actually reachable | Check with dead code analysis tools |
+
+The `[SIDE-EFFECTS-NOT-TRACED]` flag addresses the most common LLM failure mode in codebase analysis: documenting the primary action of a function while omitting its cascading effects. A setter that updates a price field may also trigger a recalculation in a downstream observer, invalidate a cache, and update a UI state. The LLM reads the setter and reports "updates price." The three downstream effects are invisible unless the agent traces every call site. This flag makes that gap explicit.
+
+### Category-Based Cascade Risk
+
+Cascade risk classifies what happens if a finding is wrong. The classification is **category-based, not count-based**. This is a deliberate design decision. Numeric fan-out thresholds (e.g., "more than 5 dependents = high cascade") are unreliable because a setter touching 3 files can break an entire payment flow, while a utility with 10 dependents may be purely cosmetic.
+
+```text
+  CASCADE RISK CLASSIFICATION
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │                                                             │
+  │  CASCADE (always, regardless of fan-out count)              │
+  │  ├── Touches auth/security paths                            │
+  │  ├── Touches payment flows                                  │
+  │  ├── Touches required-mod / state mutation flows            │
+  │  └── Another scanner consumed this finding as input         │
+  │                                                             │
+  │  COVERAGE                                                   │
+  │  └── Scope/completeness claim; if wrong, silent gaps        │
+  │                                                             │
+  │  CONTAINED                                                  │
+  │  └── Self-contained finding; if wrong, affects only itself  │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+```
+
+The cascade risk line only appears in the report for non-CONTAINED findings. This follows the "exception-only annotations" design principle: containment is the default, and only elevated risk gets called out. A `[SEVERITY-OVERRIDE]` flag may force CASCADE on any finding where the orchestrator determines the domain warrants it.
+
+### Phase 3 Cross-Validation
+
+The Phase 3 synthesis in the [codebase-audit command](commands/codebase-audit.md) uses the self-audit framework to systematically validate findings across agents. The process follows 7 steps:
+
+1. **Read all outputs** from the 5 Phase 1/2 agents
+2. **Cross-reference matrix** — for every module mentioned by 2+ scanners, check alignment and verify side-effect documentation
+3. **Contradiction detection** — when scanners disagree, re-read source files and mark findings `[CROSS-VALIDATED]` or `[CROSS-VALIDATION FAILED]`
+4. **Spot-check HIGH-confidence findings** — select 3-5 at random, re-run tools or re-read files to confirm, downgrade Tier C + HIGH to MEDIUM with `[TAG INFLATION DETECTED]`
+5. **Cascade risk assessment** — apply category-based rules to every finding
+6. **Coverage failure check** — look for truncated enumerations, context limit hits, and unexamined directories
+7. **Draft synthesis** — compile self-audit statistics for the report generator
+
+### Tier-Aware Confidence Decay
+
+Findings decay at different rates depending on their verification tier, because inferred patterns become inaccurate sooner than tool-verified facts as code changes. The [governance-knowledge skill](skills/governance-knowledge/SKILL.md) defines the tier-aware decay schedule:
+
+| Tier | FRESH | AGING | STALE | EXPIRED |
+| :--- | :---- | :---- | :---- | :------ |
+| A (Tool-Verified) | 0-30 days | 31-60 days | 61-90 days | 91+ days |
+| B (Code-Reading) | 0-20 days | 21-45 days | 46-75 days | 76+ days |
+| C (Pattern Inference) | 0-15 days | 16-30 days | 31-60 days | 61+ days |
+
+A Tier C finding from 20 days ago is already AGING, while a Tier A finding from the same date is still FRESH. This reflects the reality that a grep-verified file count stays accurate longer than an inference about code behavior.
+
+### The Self-Audit Summary
+
+The DeepGrade report replaces the traditional Confidence Summary with a Self-Audit Summary that includes four sections:
+
+1. **Evidence Basis Distribution** — counts of Tier A/B/C findings with their confidence spread
+2. **Failure Mode Flags** — counts of each flag type with required actions
+3. **Cross-Validation Results** — table of modules where scanners disagreed, with resolutions
+4. **What to Verify** — consolidated list of items requiring human review
+
+If more than 30% of findings are Tier C, the overall report confidence is downgraded one level. If any HIGH-confidence finding fails spot-checking, all findings from that scanner are reviewed. These thresholds are defined in the [self-audit-knowledge skill](skills/self-audit-knowledge/SKILL.md) as the single source of truth.
+
+### Self-Audit in Plan Auditing
+
+The self-audit framework extends to plan auditing via the [plan-auditor](agents/plan-auditor.md) and [plan-scaffolder](agents/plan-scaffolder.md). Plan audits use Tier A/B/C labels alongside confidence levels and add three plan-specific failure mode flags: `[PLAN-GAP-INFERRED]` (gap detected by keyword absence), `[SCOPE-ASSUMED]` (auditor assumed scope beyond explicit plan text), and `[CODEBASE-CLAIM-NOT-VERIFIED]` (plan references code the auditor could not verify).
+
+---
+
+## 9. Operational Readiness (Google SRE PRR)
 
 ### From Code Review to Production Readiness
 
@@ -1377,7 +1513,7 @@ The key finding from DORA research relevant to AI-assisted development: AI tools
 
 ---
 
-## 9. Multi-Agent Orchestration
+## 10. Multi-Agent Orchestration
 
 ### Why One Agent Is Not Enough
 
@@ -1550,7 +1686,7 @@ This conditional escalation avoids the overhead of multi-agent mode for simple b
 
 ---
 
-## 10. The Zero-Dependency Principle
+## 11. The Zero-Dependency Principle
 
 ### Why Dependencies Are the Enemy
 
@@ -1707,7 +1843,7 @@ The sweet spot is in the middle. That is where DeepGrade lives.
 
 ---
 
-## 11. Sources Index
+## 12. Sources Index
 
 Every source cited in this methodology, organized by topic. Each entry includes a one-sentence summary of the key insight that informed DeepGrade's design.
 
