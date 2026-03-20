@@ -15,32 +15,32 @@ DeepGrade asks three questions about your codebase:
 | 2. Phased Delivery Over Big-Bang Releases | What shape is it in? | Present |
 | 3. Operational Readiness | Can we safely change it? | Future |
 
-## Quick Start
+## Install DeepGrade Plugin
 
-### Install from GitHub
+**Prerequisite:** Claude Code installed ([claude.ai](https://claude.ai))
+
+**Step 1:** Open a terminal (not inside Claude Code) and run:
 
 ```bash
-# Clone the repo
-git clone https://github.com/krwhynot/deepgrade.git
-
-# In Claude Code, add as a local marketplace
-/plugin marketplace add /path/to/deepgrade
-
-# Install to user scope (available in all projects)
-/plugin install deepgrade --scope user
-
-# Verify
-/deepgrade:help
+claude plugin marketplace add krwhynot/deepgrade
 ```
 
-### Install from Local Directory
+**Step 2:** Then run:
 
 ```bash
-# Add the directory as a marketplace
-/plugin marketplace add C:\Users\YourName\claude-plugins
+claude plugin install deepgrade@deepgrade-marketplace --scope user
+```
 
-# Install
-/plugin install deepgrade --scope user
+**Step 3:** Start Claude Code in any project:
+
+```bash
+claude
+```
+
+**Step 4:** Verify:
+
+```
+/deepgrade:help
 ```
 
 ## Commands (16)
