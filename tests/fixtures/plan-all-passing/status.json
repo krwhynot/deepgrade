@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "plan_name": "test-green-plan",
+  "plan_dir": "docs/plans/2026-03-19-test-green-plan",
+  "created": "2026-03-19T10:00:00Z",
+  "current_phase": "build",
+  "phases": {
+    "brainstorm": {"status": "complete"},
+    "research": {"status": "complete"},
+    "pre_plan": {"status": "complete"},
+    "plan": {"status": "complete"},
+    "audit": {"status": "complete", "score": 36, "rating": "GREEN", "gap_checked": true},
+    "build": {"status": "in_progress"},
+    "impact_review": {"status": "not_started"},
+    "test": {"status": "not_started"},
+    "handoff": {"status": "not_started"}
+  },
+  "assumptions": [
+    {"id": "A-001", "statement": "API supports v2 endpoints", "impact": "HIGH", "status": "verified", "verified_date": "2026-03-15", "verified_by": "automated", "method_used": "API health check returned 200"},
+    {"id": "A-002", "statement": "Team has capacity for 2 sprints", "impact": "HIGH", "status": "verified", "verified_date": "2026-03-16", "verified_by": "J. Smith", "method_used": "Confirmed in sprint planning"},
+    {"id": "A-003", "statement": "Database supports partitioning", "impact": "MEDIUM", "status": "verified", "verified_date": "2026-03-14", "verified_by": "automated", "method_used": "Schema query confirmed"},
+    {"id": "A-004", "statement": "UI framework supports lazy loading", "impact": "LOW", "status": "unverified"}
+  ],
+  "lint_results": {
+    "LINT-01": "pass", "LINT-02": "pass", "LINT-03": "pass", "LINT-04": "pass",
+    "LINT-05": "pass", "LINT-06": "pass", "LINT-07": "pass", "LINT-08": "pass",
+    "LINT-09": "pass", "LINT-10": "pass"
+  }
+}

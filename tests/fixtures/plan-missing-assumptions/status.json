@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "plan_name": "test-assumption-gap",
+  "plan_dir": "docs/plans/2026-03-19-test-assumption-gap",
+  "created": "2026-03-19T10:00:00Z",
+  "current_phase": "audit",
+  "phases": {
+    "brainstorm": {"status": "complete"},
+    "research": {"status": "complete"},
+    "pre_plan": {"status": "complete"},
+    "plan": {"status": "complete"},
+    "audit": {"status": "complete", "score": 28, "rating": "YELLOW", "gap_checked": false},
+    "build": {"status": "not_started"},
+    "impact_review": {"status": "not_started"},
+    "test": {"status": "not_started"},
+    "handoff": {"status": "not_started"}
+  },
+  "assumptions": [
+    {"id": "A-001", "statement": "triPOS SDK supports Canadian payment processing", "impact": "HIGH", "status": "unverified"},
+    {"id": "A-002", "statement": "Supabase rate limit handles OTP volume at scale", "impact": "HIGH", "status": "unverified"},
+    {"id": "A-003", "statement": "Team lead available for full project duration", "impact": "HIGH", "status": "verified", "verified_date": "2026-03-10", "verified_by": "M. Johnson", "method_used": "Calendar confirmed"},
+    {"id": "A-004", "statement": "CSS framework supports RTL layouts", "impact": "LOW", "status": "unverified"}
+  ],
+  "lint_results": {
+    "LINT-01": "pass", "LINT-02": "pass", "LINT-03": "pass", "LINT-04": "pass",
+    "LINT-05": "pass", "LINT-06": "pass", "LINT-07": "pass", "LINT-08": "fail",
+    "LINT-09": "pass", "LINT-10": "pass"
+  }
+}
