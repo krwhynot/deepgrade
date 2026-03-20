@@ -1,0 +1,13 @@
+{
+  "plugins": [
+    {
+      "name": "deepgrade",
+      "description": "DeepGrade: AI-powered codebase grading, planning, auditing, and operational readiness. Gives your codebase a letter grade and a plan to level up. Stack-agnostic.",
+      "version": "4.27.1",
+      "source": {
+        "type": "local",
+        "path": "."
+      }
+    }
+  ]
+}
