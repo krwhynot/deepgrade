@@ -1,13 +1,15 @@
 {
+  "name": "deepgrade-marketplace",
+  "owner": {
+    "name": "Kyle Whynot",
+    "email": "krwhynot@github.com"
+  },
   "plugins": [
     {
       "name": "deepgrade",
-      "description": "DeepGrade: AI-powered codebase grading, planning, auditing, and operational readiness. Gives your codebase a letter grade and a plan to level up. Stack-agnostic.",
+      "description": "AI-powered codebase grading, planning, auditing, and operational readiness.",
       "version": "4.27.1",
-      "source": {
-        "type": "local",
-        "path": "."
-      }
+      "source": "."
     }
   ]
 }
