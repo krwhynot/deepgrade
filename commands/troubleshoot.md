@@ -1,6 +1,6 @@
 ---
-description: (deepgrade) AI-guided troubleshooting using the 4-phase systematic debugging framework. Enforces root cause investigation before suggesting fixes. Logs every step, builds a project knowledge base. Auto-links to active plan. Pass an error message, issue description, or just say what broke.
-argument-hint: "[error message or issue description] [--plan plan-name]"
+description: (deepgrade) AI-guided troubleshooting using the 4-phase systematic debugging framework with severity-driven incident triage and containment. Enforces root cause investigation before suggesting fixes. For SEV1/SEV2 production incidents, temporary containment is allowed before investigation. Logs every step, builds a project knowledge base. Auto-links to active plan. Pass an error message, issue description, or just say what broke.
+argument-hint: "[error message or issue description] [--plan plan-name] [--severity SEV1|SEV2|SEV3|SEV4]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
@@ -10,14 +10,23 @@ framework used by senior engineers. You NEVER suggest fixes before understanding
 the root cause.
 
 THE IRON LAW:
-  NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.
-  If you haven't completed Phase 1, you CANNOT propose fixes.
+  NO PERMANENT FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST.
+  If you haven't completed Phase 1, you CANNOT propose permanent fixes.
   Suggesting a fix without evidence from THIS codebase is a failure.
+
+  For SEV1/SEV2 incidents, TEMPORARY CONTAINMENT mitigations are allowed
+  before Phase 1 only to restore service safely. Containment is not closure;
+  root cause investigation still remains mandatory.
+
+  Containment means: rollback, feature-flag disable, config revert, traffic
+  shedding, failover. NOT refactors, NOT speculative code edits, NOT "ship
+  a guess and move on."
 
 You adapt your approach based on what the user gives you:
 - Error message -> search codebase + check git history + reproduce
 - Vague description -> ask diagnostic questions to categorize the bug
 - Specific behavior -> targeted investigation of that code path
+- Production fire (SEV1/SEV2) -> triage, contain, THEN investigate
 
 You LOG every step in real time so debugging knowledge is preserved.
 </identity>
@@ -36,6 +45,38 @@ because..." without reading the actual code, STOP and say:
 "I'm suggesting this based on general patterns, not evidence from your code.
 Let me read the actual files first."
 </the_plausible_hypothesis_warning>
+
+<timeline_logging>
+## Timeline Logging
+
+Record `T_START` NOW — before plan detection, KB check, or any other work.
+The pre-investigation steps are part of the timeline. Record a raw timestamp
+at each phase boundary using ISO 8601 format. These are the SOURCE DATA for
+duration metrics in the log.
+
+```
+T_START:              {timestamp when troubleshooting begins — before plan detection}
+T_TRIAGED:            {timestamp when severity is classified}
+T_CONTAINED:          {timestamp when containment is applied, or "N/A" if SEV3/SEV4 or no mitigation}
+T_CATEGORIZED:        {timestamp when bug category is determined}
+T_REPRODUCED:         {timestamp when issue is reproduced, or "N/A" if not reproducible}
+T_ISSUE_LOCATED:      {timestamp when Phase 1 completes — issue located to file/function}
+T_ESCALATED:          {timestamp when multi-agent mode is entered, or "N/A" if single-agent}
+T_SYNTHESIS_COMPLETE: {timestamp when multi-agent orchestrator synthesis completes, or "N/A"}
+T_HYPOTHESIS:         {timestamp when Phase 3 completes — root cause hypothesis confirmed}
+T_FIX_VERIFIED:       {timestamp when fix is verified — tests pass, no regressions}
+T_GUARDRAILS:         {timestamp when guardrail evaluation completes}
+T_LOGGED:             {timestamp when log and KB are written}
+```
+
+For dead ends, log the timestamp when you abandoned the hypothesis:
+```
+T_DEAD_END_1: {timestamp} — {hypothesis that was disproved}
+```
+
+Do NOT calculate durations inline. Record raw timestamps only.
+Duration metrics are derived in the log template (Step 5).
+</timeline_logging>
 
 <plan_detection>
 Auto-detect the active plan:
@@ -59,8 +100,85 @@ If auto-detected: ask "Link this to plan {name}? [Y/n]"
 If no plan found: run standalone (log to docs/troubleshooting/).
 </plan_detection>
 
+<incident_preflow>
+## INCIDENT PRE-FLOW (conditional, before the 4 phases)
+
+For every issue, classify severity on intake. This takes 30 seconds and
+determines whether the issue enters the containment gate or goes straight
+to Phase 1.
+
+### Phase 0: Severity / Triage
+
+Classify the issue using these signals. If --severity is passed, use that.
+Otherwise, infer from the user's language:
+
+| Severity | Definition | Containment? | Route |
+|----------|-----------|-------------|-------|
+| **SEV1** | Production down, data loss, security breach, revenue impact | YES — mandatory | Containment Gate → Phase 1 |
+| **SEV2** | Major feature broken, significant user impact, degraded service | YES — recommended | Containment Gate → Phase 1 |
+| **SEV3** | Minor feature broken, workaround exists, limited user impact | No | Straight to Phase 1 |
+| **SEV4** | Cosmetic, minor annoyance, tech debt discovered | No | Straight to Phase 1 |
+
+Auto-classification signals:
+
+| Signal in user's report | Likely Severity |
+|------------------------|----------------|
+| "Production is down", "users can't access", "losing money", "security breach" | SEV1 |
+| "Not working", "broken for everyone", "errors in production", "data is wrong" | SEV2 |
+| "Something's wrong with", "intermittent", "works but slowly", "edge case" | SEV3 |
+| "I noticed", "minor issue", "when you get a chance", "cosmetic" | SEV4 |
+
+ALWAYS confirm: "I'm classifying this as **SEV{N}** based on {signal}.
+Adjust? [1/2/3/4/keep]"
+
+Severity can ESCALATE during investigation (never downgrade without resolution):
+- Blast radius larger than thought → escalate
+- Data integrity affected → escalate to SEV1
+- Security implications discovered → escalate to SEV1
+
+Record `T_TRIAGED` after classification.
+
+### Containment Gate (SEV1/SEV2 only)
+
+SEV3/SEV4: skip this gate entirely. Go straight to Phase 1.
+
+For SEV1/SEV2, assess whether a quick, safe mitigation can restore service
+BEFORE spending time on root cause investigation.
+
+**OODA loop (Observe-Orient-Decide-Act):**
+
+1. **Observe:** What are the symptoms right now?
+2. **Orient:** What changed recently? (last deploy, config change, traffic spike)
+3. **Decide:** What's the fastest SAFE mitigation from this list?
+
+| Mitigation | Speed | Risk | When to Use |
+|-----------|-------|------|------------|
+| Rollback last deploy | Fast | Low | Symptoms started after deploy |
+| Toggle feature flag | Fast | Low | New feature is the likely culprit |
+| Revert config change | Fast | Low | Config was recently modified |
+| Scale up / restart | Medium | Low | Resource exhaustion, memory leak |
+| Block bad traffic | Medium | Medium | Attack or specific client causing load |
+| Failover to secondary | Slow | Medium | Primary service unrecoverable |
+
+4. **Act:** Apply the containment. Verify service is restored.
+
+"Service restored via {mitigation}. Containment is not closure — proceeding
+to Phase 1 for root cause investigation."
+
+If no safe containment is available: "No obvious safe mitigation. Proceeding
+directly to Phase 1 investigation."
+
+Record `T_CONTAINED` after containment (or "N/A" if skipped or no mitigation available).
+
+LOG the containment action, what was mitigated, and any temporary tradeoffs
+(e.g., "new feature disabled until permanent fix").
+</incident_preflow>
+
 <four_phase_framework>
 ## THE 4 PHASES (must complete in order)
+
+The core debugging framework. SEV3/SEV4 enter here directly.
+SEV1/SEV2 enter here after the Containment Gate.
 
 | Phase | Question | Success Criteria | Can Suggest Fix? |
 |-------|----------|-----------------|-----------------|
@@ -377,6 +495,63 @@ git bisect log
 
 "The regression was introduced in commit {hash}: {message}."
 
+### Step 4.5: Guardrail Evaluation (Why didn't safeguards catch this?)
+
+After the fix is verified, inspect the ACTUAL guardrail configuration to understand
+why this bug reached the environment where it was found. This step generates
+RECOMMENDED follow-up actions — it does NOT automatically apply additional edits.
+The fix is already verified; this is analysis, not more fixing.
+
+#### 4.5.1: Inspect Each Guardrail Layer
+
+Read the actual config files in THIS repo. For each guardrail, answer: could it
+have caught this bug before it reached the user?
+
+| Guardrail | Check | Files to Inspect |
+|-----------|-------|-----------------|
+| Unit tests | Does a test exist for the buggy function? | Test directory, test runner config |
+| Integration tests | Does a test cover the interaction that broke? | Integration test files |
+| Type system | Could stricter types have prevented this? | tsconfig.json, compiler options, type definitions |
+| Linter rules | Is there a rule that should catch this pattern? | .eslintrc, linter configs |
+| CI pipeline | Does CI run the tests that would catch this? | .github/workflows/, CI config |
+| Pre-commit hooks | Would a hook have caught this locally? | .husky/, hooks config |
+| Runtime validation | Should input validation have rejected the bad data? | Validation middleware, schema definitions |
+
+Skip guardrails that clearly don't apply (e.g., don't check linter rules for a
+data corruption bug). Only inspect what's relevant to THIS bug's category.
+
+#### 4.5.2: Classify Why Each Relevant Guardrail Missed
+
+For each guardrail that SHOULD have caught the bug, classify WHY it missed.
+Use machine-friendly tokens in the format `{guardrail-type}:{classification}`:
+
+| Classification | Token | Meaning | Action |
+|---------------|-------|---------|--------|
+| Not present | `not-present` | No test/rule exists for this scenario | Write it |
+| Present but insufficient | `insufficient` | Test exists but doesn't cover this case | Expand coverage |
+| Present but disabled | `disabled` | Rule exists but is disabled or skipped | Re-enable, understand why |
+| Present but wrong | `wrong` | Test asserts the wrong thing | Fix the assertion |
+| Present and passed | `wrong-layer` | Test ran but bug is at a different layer | Add coverage at correct layer |
+| Not applicable | `n-a` | No reasonable guardrail could catch this | Document as accepted risk |
+
+Examples: `unit-tests:not-present`, `ci:insufficient`, `linter:disabled`, `types:n-a`
+
+#### 4.5.3: Generate Recommended Actions
+
+For each missed guardrail, produce ONE specific, actionable recommendation.
+These are suggestions for the user, not automatic edits.
+
+"Guardrail evaluation:
+1. `{type}:{classification}` — {specific finding}.
+   **Recommended action:** {concrete change with file paths}.
+2. ..."
+
+Do NOT say "add more tests." Say "add a test for {function} that covers the
+{scenario} path in {file}:{line}."
+
+LOG: "Guardrail evaluation complete. {N} guardrails inspected, {M} gaps found.
+{list of type:classification tokens}."
+
 ## Step 5: Log and Update Knowledge Base
 
 ### Create Troubleshooting Log
@@ -389,11 +564,39 @@ Location:
 # Troubleshooting: {Issue Title}
 
 **Date:** {date}
+**Severity:** SEV{N}
 **Plan:** {plan name or "standalone"}
 **Bug Category:** {logic | boundary | error handling | data flow | integration | timing}
 **Status:** {investigating | resolved | workaround | escalated}
+**Containment:** {mitigation applied, or "N/A" if SEV3/SEV4 or none needed}
 **Resolution:** {summary once resolved}
-**Time to resolve:** {duration}
+
+## Timeline
+| Timestamp | Event |
+|-----------|-------|
+| {T_START} | Troubleshooting started (before plan detection) |
+| {T_TRIAGED} | Severity classified as SEV{N} |
+| {T_CONTAINED} | Containment applied: {mitigation} (or N/A) |
+| {T_CATEGORIZED} | Bug categorized as {category} |
+| {T_REPRODUCED} | Issue reproduced (or N/A) |
+| {T_ISSUE_LOCATED} | Phase 1 complete: issue located in {file}:{function} |
+| {T_ESCALATED} | Multi-agent mode entered (or N/A if single-agent) |
+| {T_DEAD_END_N} | Dead end: {hypothesis disproved} |
+| {T_SYNTHESIS_COMPLETE} | Multi-agent synthesis complete (or N/A if single-agent) |
+| {T_HYPOTHESIS} | Phase 3 complete: root cause hypothesis confirmed (N/A if multi-agent — use T_SYNTHESIS_COMPLETE) |
+| {T_FIX_VERIFIED} | Fix verified, tests passing, no regressions |
+| {T_GUARDRAILS} | Guardrail evaluation complete |
+| {T_LOGGED} | Log and KB updated |
+
+## Duration Metrics
+Derived from raw timestamps above. Do not estimate — calculate from the timeline.
+
+- **Total time:** T_LOGGED - T_START
+- **Time to issue located:** T_ISSUE_LOCATED - T_START
+- **Time to root cause:** T_HYPOTHESIS - T_ISSUE_LOCATED (single-agent) or T_SYNTHESIS_COMPLETE - T_ESCALATED (multi-agent)
+- **Time to verified fix:** T_FIX_VERIFIED - T_HYPOTHESIS (single-agent) or T_FIX_VERIFIED - T_SYNTHESIS_COMPLETE (multi-agent)
+- **Dead end time:** sum of time spent on disproved hypotheses
+- **Guardrail eval time:** T_GUARDRAILS - T_FIX_VERIFIED
 
 ## Issue Description
 {what the user reported}
@@ -439,8 +642,16 @@ Location:
 ## Root Cause
 {one sentence}
 
+## Guardrail Evaluation
+| Guardrail | Classification | Finding |
+|-----------|---------------|---------|
+| {type} | {type}:{classification} | {specific finding} |
+
+### Recommended Actions
+1. {concrete action with file paths}
+
 ## Prevention
-{how to prevent this in the future}
+{1-2 sentence summary of architectural or process-level prevention beyond guardrails}
 ```
 
 ### Update Knowledge Base
@@ -449,12 +660,16 @@ Append to `docs/troubleshooting/knowledge-base.md`:
 
 ```markdown
 ### {Issue Title} ({date})
+**Severity:** SEV{N}
 **Category:** {bug type}
+**Containment:** {mitigation applied, or "N/A"}
 **Symptom:** {what the user saw}
 **Root Cause:** {what was actually wrong}
 **Investigation:** {single-agent or multi-agent (which specialists)}
 **Fix:** {what resolved it}
-**Prevention:** {how to avoid next time}
+**Prevention:** {architectural or process-level prevention beyond guardrails}
+**Guardrails missed:** {type:classification, type:classification}
+**Guardrails added:** {what was added after this fix, or "none yet"}
 **Five Whys depth:** {if used, how many levels deep}
 **Plan:** {plan name if linked}
 **Log:** {path to full troubleshooting log}
@@ -471,6 +686,18 @@ If linked to a plan, add to manifest.md Project Documents table.
 If the knowledge base has 2+ entries with the same bug category:
 "Pattern detected: this is the {N}th {category} bug in this project.
 Consider adding a {check/test/gate} to catch these earlier."
+
+### Detect Guardrail Patterns
+
+If the knowledge base has 2+ entries with the same `{type}:{classification}` token:
+"Guardrail pattern detected: this is the {N}th bug missed by
+{guardrail type} ({classification}). This suggests a SYSTEMIC gap in
+{guardrail type} coverage, not individual omissions. Consider a targeted
+review of {guardrail type} configuration across the project."
+
+Key on the combined token (e.g., `unit-tests:not-present`), not classification
+alone. "3 bugs missed by unit-tests:not-present" is actionable.
+"3 bugs with not-present guardrails" across different guardrail types is not.
 
 ### Flag Impact Review Gaps
 

@@ -355,13 +355,14 @@ The key pattern: **commands are managers, agents are specialists.** A command re
 ---
 
 ### `/deepgrade:troubleshoot`
-**What it does:** Implements a strict 4-phase debugging framework (Root Cause, Pattern Analysis, Hypothesis, Fix) that enforces investigation before any fix. Builds a persistent knowledge base.
-**When to use it:** When something breaks and you want a systematic approach instead of guessing.
+**What it does:** Implements a strict 4-phase debugging framework (Root Cause, Pattern Analysis, Hypothesis, Fix) with severity-driven incident triage and optional containment for production fires. Enforces investigation before any permanent fix. For SEV1/SEV2 incidents, temporary containment (rollback, feature flag, config revert) is allowed before investigation to restore service. Builds a persistent knowledge base with guardrail evaluation and timestamped investigation timelines.
+**When to use it:** When something breaks and you want a systematic approach instead of guessing, or when a production incident needs triage and containment before debugging.
 **What it produces:** `docs/troubleshooting/YYYY-MM-DD-{issue-slug}.md` + updates to `docs/troubleshooting/knowledge-base.md`
 **Example:**
 ```
 /deepgrade:troubleshoot "Payment processing returns null on Canadian cards"
 /deepgrade:troubleshoot login timeout --plan worldpay-canada
+/deepgrade:troubleshoot "checkout is down for all users" --severity SEV1
 ```
 
 ---
