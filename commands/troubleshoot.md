@@ -191,12 +191,55 @@ You MUST complete each phase before moving to the next.
 </four_phase_framework>
 
 <workflow>
-## Step 0: Check Knowledge Base First
+## Step 0: Check Knowledge Base (Structured Correlation)
 
-Before ANY diagnosis, check if this issue was solved before:
+Before ANY diagnosis, check if this issue matches a past incident.
+Use multi-dimensional correlation when structured fields are available,
+with keyword grep as fallback for older entries that lack them.
+
+### 0.1: Correlation Matching
+
+Read the knowledge base and score each past entry against the current issue
+on these dimensions:
+
+| Dimension | Weight | Match Criteria |
+|-----------|--------|---------------|
+| **Error signature** | High | Same error message, exception type, or error code |
+| **Service / module** | High | Same file, module, or service affected |
+| **Bug category** | Medium | Same category (logic, boundary, data flow, etc.) |
+| **Code path** | Medium | Same function or call chain involved |
+| **Contributing factors** | Medium | Same contributing factors from postmortem |
+| **Severity** | Low | Same severity level |
+
+Score each past entry:
+```
+score = 0
+if error_signature matches: score += 30
+if same service/module:      score += 25
+if same bug category:        score += 15
+if same code path:           score += 10
+if same contributing factors: score += 15
+if same severity:            score += 5
+```
+
+### 0.2: Correlation Actions
+
+| Correlation | Score | Action |
+|------------|-------|--------|
+| **HIGH** | >= 50 | "This matches a previous incident: {title} ({date}). The fix was: {resolution}. Apply the same fix? [Y/n/investigate]" |
+| **MEDIUM** | 30-49 | "This may be related to: {title}. Root cause was: {cause}. Check this path first? [Y/n]" |
+| **LOW** | < 30 | No match surfaced. Proceed to Phase 1. |
+
+For HIGH matches, also check: was the previous fix sufficient?
+If the same pattern recurred, say so (see Recurrence Detection in Step 5).
+
+### 0.3: Backward-Compatible Fallback
+
+If the knowledge base contains entries WITHOUT structured fields (older
+format with only keyword-searchable text), fall back to keyword grep:
 
 ```bash
-# Check project knowledge base
+# Fallback for unstructured KB entries
 if [ -f "docs/troubleshooting/knowledge-base.md" ]; then
   grep -i "{issue-keywords}" "docs/troubleshooting/knowledge-base.md"
 fi
@@ -207,10 +250,11 @@ if [ -d "${LATEST_PLAN}/troubleshooting/" ]; then
 fi
 ```
 
-If match found: "This looks similar to a previous issue: {summary}.
-The fix was: {resolution}. Does this apply here?"
+Keyword grep results are treated as LOW correlation — they surface context
+but do not trigger HIGH/MEDIUM actions. Structured correlation always takes
+priority when available.
 
-If no match: proceed to Phase 1.
+If no match from either method: proceed to Phase 1.
 
 ## Step 0.5: Check Impact Review Context
 
@@ -662,15 +706,21 @@ Append to `docs/troubleshooting/knowledge-base.md`:
 ### {Issue Title} ({date})
 **Severity:** SEV{N}
 **Category:** {bug type}
+**Service/Module:** {affected file, module, or service — e.g., src/payment/charge.ts}
+**Error Signature:** {exact error message, exception type, or error code}
+**Code Path:** {function call chain — e.g., checkout → payment → charge → processResponse}
 **Containment:** {mitigation applied, or "N/A"}
 **Symptom:** {what the user saw}
 **Root Cause:** {what was actually wrong}
+**Contributing Factors:** {conditions that made the incident possible — e.g., missing null check, no timeout config}
 **Investigation:** {single-agent or multi-agent (which specialists)}
 **Fix:** {what resolved it}
 **Prevention:** {architectural or process-level prevention beyond guardrails}
 **Guardrails missed:** {type:classification, type:classification}
 **Guardrails added:** {what was added after this fix, or "none yet"}
 **Five Whys depth:** {if used, how many levels deep}
+**Recurrence count:** {how many times this pattern has occurred — start at 1}
+**Related incidents:** {titles/dates of correlated past incidents, or "none"}
 **Plan:** {plan name if linked}
 **Log:** {path to full troubleshooting log}
 ```
@@ -698,6 +748,28 @@ review of {guardrail type} configuration across the project."
 Key on the combined token (e.g., `unit-tests:not-present`), not classification
 alone. "3 bugs missed by unit-tests:not-present" is actionable.
 "3 bugs with not-present guardrails" across different guardrail types is not.
+
+### Detect Recurrence (Correlation-Driven)
+
+When a new KB entry has a HIGH correlation (>= 50) with a past entry:
+
+1. Increment the `Recurrence count` on both the new and matched entries.
+2. Add bidirectional links in `Related incidents` on both entries.
+3. If recurrence count reaches 3+:
+
+"RECURRENCE ALERT: This is the {N}th occurrence of this pattern:
+- {date}: {title} — fixed with {fix}
+- {date}: {title} — fixed with {fix}
+- NOW: same pattern recurring
+
+Previous point fixes were INSUFFICIENT. This needs systemic remediation:
+- A guardrail that prevents this CLASS of bug (test, lint rule, CI gate)
+- Addressing the underlying architectural condition
+- Escalating to tech debt remediation if root cause is known but unfixed"
+
+Recurrence detection keys on the correlation dimensions, not just bug category.
+Two "data flow" bugs in different services are not recurrence. Two bugs with the
+same service/module AND same error signature ARE recurrence.
 
 ### Flag Impact Review Gaps
 
