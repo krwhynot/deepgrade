@@ -9,7 +9,7 @@
       "name": "deepgrade",
       "description": "AI-powered codebase grading, planning, auditing, and operational readiness.",
       "version": "4.27.1",
-      "source": "."
+      "source": "./"
     }
   ]
 }
