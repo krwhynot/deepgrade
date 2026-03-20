@@ -49,7 +49,7 @@ git clone https://github.com/krwhynot/deepgrade.git
 
 | Command | Description |
 | ------- | ----------- |
-| `/deepgrade:plan` | 8-phase structured planning workflow |
+| `/deepgrade:plan` | 9-phase structured planning workflow |
 | `/deepgrade:quick-plan` | Lightweight plan for small changes |
 | `/deepgrade:plan-status` | Check plan progress and phase status |
 | `/deepgrade:plan-export` | Export a plan as a portable package |
@@ -83,16 +83,14 @@ git clone https://github.com/krwhynot/deepgrade.git
 
 ## Safety Hooks (7)
 
-The plugin includes inline safety hooks that activate
-automatically:
+The plugin includes 7 inline safety hooks that activate
+automatically. Some hooks guard multiple behaviors.
 
 | Hook | Event | What It Does |
 | ---- | ----- | ------------ |
 | Active Plan Display | SessionStart | Shows current plan name |
-| Migration Guard | PreToolUse Write/Edit | Blocks edits to migrations |
-| Force Push Guard | PreToolUse Bash | Blocks `git push --force` |
-| Hard Reset Guard | PreToolUse Bash | Blocks `git reset --hard` |
-| DB Deploy Guard | PreToolUse Bash | Blocks direct DB deploys |
+| Migration Guard | PreToolUse Write/Edit | Blocks edits to existing migrations |
+| Git + DB Guard | PreToolUse Bash | Blocks force push, hard reset, and direct DB deploys |
 | Change Tracker | PostToolUse Write/Edit | Counts file changes |
 | Test/Build Tracker | PostToolUse Bash | Records test and build runs |
 | Session Summary | Stop | Reports file change count |
@@ -155,7 +153,7 @@ The plugin auto-detects your stack. Tested on:
 | Plan documents | `docs/plans/{date}-{name}/` | Yes |
 | Specifications | `docs/specs/` | Yes |
 | ADRs | `docs/adr/` | Yes |
-| Session markers | `/tmp/tp-*` | No (OS-managed) |
+| Session markers | `/tmp/dg-*` | No (OS-managed) |
 
 ## Architecture
 
@@ -168,7 +166,7 @@ The plugin auto-detects your stack. Tested on:
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
-Current: v4.28.0
+Current: v4.27.1
 
 ## Contributing
 

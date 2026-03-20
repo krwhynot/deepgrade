@@ -82,9 +82,9 @@ MODEL SELECTION: Analysts use Sonnet (evidence gathering is read-heavy,
 pattern-matching). The orchestrator uses Opus (synthesis requires deep
 reasoning about tradeoffs and phasing decisions).
 
-## Step 3: Identify the Pattern
+## Step 3: Options Analysis and Pattern Selection
 
-Based on all 3 analyst reports, determine which plan pattern fits:
+Based on all 3 analyst reports, evaluate minimum 2 approaches:
 
 | Pattern | When to Use |
 |---------|------------|
@@ -94,6 +94,16 @@ Based on all 3 analyst reports, determine which plan pattern fits:
 | Refactor-in-Place | Improving structure without changing behavior |
 | New Component | Building something from scratch |
 | Integration | Connecting to external system |
+
+Select the top 2-3 viable patterns. For each, assess:
+- Implementation ease for this specific codebase
+- Timeline estimate
+- Risk profile
+- Rollback complexity
+
+Produce a comparison matrix in the plan's Architecture section.
+Document the winning pattern with explicit rationale.
+Document losing options with "would revisit if" conditions.
 
 ## Step 4: Generate the Plan
 

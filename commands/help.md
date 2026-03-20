@@ -30,12 +30,12 @@ works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
 
 | | `/deepgrade:plan` | `/deepgrade:quick-plan` |
 |--|-----------|-----------------|
-| **What** | Guided 8-phase workflow | One-shot plan generation |
-| **Phases** | All 8 (Brainstorm through Handoff) | Phase 4 (Plan) only |
+| **What** | Guided 9-phase workflow | One-shot plan generation |
+| **Phases** | All 9 (Brainstorm through Handoff) | Phase 4 (Plan) only |
 | **Asks questions?** | Yes, walks you through interactively | No, takes objective and generates immediately |
 | **Creates plan folder?** | Yes: `docs/plans/2026-03-07-{name}/` | No, just writes `docs/specs/{name}.md` |
 | **Research?** | Yes, scans codebase + docs + web | No, uses existing context |
-| **Audit?** | Yes, scores and challenges the plan | No (run `/deepgrade:quick-audit` separately) |
+| **Audit?** | Yes, scores and challenges the plan | Yes, auto-audits with revision loop (up to 2 iterations) |
 | **Build help?** | Yes, tracks tickets and assists | No, plan is delivered |
 | **Resumes?** | Yes, come back anytime | No, one and done |
 | **Time** | 30-60 min full workflow | 5-10 min |
@@ -140,6 +140,18 @@ Create and review technical plans for any engineering initiative.
 | plan-auditor | Scores any plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team). Produces go/no-go assessment. |
 | plan-scaffolder | Creates structured plans from vague objectives. Reads codebase + audit data to generate evidence-based phased plans. |
 
+## Knowledge Skills (5)
+
+Auto-loaded contextual knowledge that guides agent behavior during scans and reports.
+
+| Skill | What It Provides |
+|-------|-----------------|
+| deepgrade-knowledge | DeepGrade methodology for codebase audit and documentation |
+| documentation | Document generation templates (ADR, BRD, PRD, README, release notes, spec) |
+| governance-knowledge | Enterprise governance patterns, DORA metrics, quality gates, confidence decay |
+| readiness-scoring | AI readiness scoring methodology, gate thresholds, grading criteria |
+| self-audit-knowledge | LLM epistemic transparency, claim verification tiers (A/B/C), failure mode flags, cascade risk classification, evidence basis formatting |
+
 ## Documentation Skill (6 templates)
 
 Generate any project document. Auto-loaded when you mention documentation.
@@ -167,7 +179,7 @@ Don't know which format? Just say "I need to document X" and the skill will reco
 6. `/deepgrade:codebase-delta` after changes to verify improvement
 7. `/deepgrade:codebase-security` periodically
 
-**For planning any new work (the 8-phase guided workflow):**
+**For planning any new work (the 9-phase guided workflow):**
 ```
 /deepgrade:plan {name}
 ```

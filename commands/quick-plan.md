@@ -5,9 +5,13 @@ allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
 <plan_awareness>
-If $ARGUMENTS contains --plan {name}, write output to docs/specs/{name}.md
-and update docs/plans/{date}-{name}/manifest.md with a link to the spec.
-Also update docs/plans/{date}-{name}/status.json to mark plan as "complete".
+If $ARGUMENTS contains --plan {name}:
+  1. Write spec to docs/specs/{name}.md
+  2. If docs/plans/*-{name}/ exists: update its manifest.md and status.json
+  3. If docs/plans/*-{name}/ does NOT exist: do NOT create a plan folder.
+     Quick-plan is a spec generator, not a plan workflow. The spec is the
+     only output. If the user wants a full plan folder, use /deepgrade:plan.
+  4. Note in output: "Spec linked to plan: {name}" or "Spec created standalone"
 
 If no --plan flag, use the default docs/specs/ location.
 </plan_awareness>
@@ -54,11 +58,52 @@ Spawn the plan-scaffolder agent with:
 - Any audit data found in Step 2
 - Clarifications from Step 1 (if any)
 
-## Step 4: Present Results
+## Step 4: Auto-Audit (Evaluator)
 
-After the scaffolder completes:
+After the scaffolder completes, automatically run the plan-auditor agent against
+the generated plan. Do NOT ask the user to run /deepgrade:quick-audit separately.
+
+Spawn the plan-auditor agent with:
+- The generated plan at docs/specs/[plan-name].md
+- The codebase root path
+- Instruction: produce structured findings with scores per dimension
+
+Record the audit results:
+- Overall score (X/40)
+- Gap-checked status (YES/NO)
+- Specific gaps found (list with dimension references)
+
+## Step 5: Revision Loop (Optimizer)
+
+If score >= 32/40 AND gap-checked = YES:
+  -> Skip revision, proceed to Step 6
+
+If score < 32/40 OR gap-checked = NO:
+  -> Feed audit findings back to the plan-scaffolder for targeted revision
+  -> The scaffolder receives: "Revise the following sections to address these gaps:"
+     followed by the specific findings from the auditor
+  -> The scaffolder revises ONLY the failing sections (not the entire plan)
+  -> Re-run the plan-auditor on the revised plan
+
+Maximum 2 revision iterations. After 2 iterations, accept the plan at its
+current quality with audit findings attached.
+
+Track iteration history in the plan file:
+```markdown
+## Revision History
+| Version | Score | Gap-Checked | Gaps Found | Action |
+|---------|-------|-------------|------------|--------|
+| v1      | 24/40 | NO          | 7          | Revised sections 4, 5, 7 |
+| v2      | 35/40 | YES         | 0          | Accepted |
+```
+
+## Step 6: Present Results
+
+After the loop completes:
 1. Show the plan summary (problem, phases, timeline, key risks)
-2. Note the self-audit score and evidence basis distribution (should be 32+/40, <40% Tier C)
-3. Suggest: "Run /deepgrade:quick-audit docs/specs/[plan-name].md for a formal audit"
-4. Note: "This plan is a starting point. Review with your team before presenting."
+2. Show the final audit score and whether gap-checked
+3. If revisions occurred, note: "Plan was revised {N} time(s). Score improved from {X} to {Y}."
+4. Show the Revision History table
+5. Note evidence basis distribution (should be <40% Tier C)
+6. Note: "This plan has been auto-audited. Review with your team before presenting."
 </workflow>

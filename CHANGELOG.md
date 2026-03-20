@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.1.0 (2026-03-15)
+## 4.27.1 (2026-03-15)
 
 ### Added
 - LLM Self-Audit Framework: epistemic transparency for audit findings
@@ -24,7 +24,7 @@
 - Plan-scaffolder Confidence Summary uses evidence basis format
 - quick-plan Step 4 references evidence basis distribution and Tier C threshold
 
-## 2.0.0 (2026-03-06)
+## 4.27.0 (2026-03-06)
 
 ### Breaking Changes
 - Converted from standalone `.claude/` format to Claude Code plugin
@@ -60,7 +60,7 @@ If upgrading from the standalone `.claude/` version:
 3. Commands change from `/ai-readiness-scan` to `/deepgrade:readiness-scan`
 4. Commands change from `/deepgrade-audit` to `/deepgrade:codebase-audit`
 
-## 1.0.0 (2026-02-xx)
+## 4.26.0 (2026-02-xx)
 
 ### Added
 - Phase 1: 10 AI Readiness scanner agents + 2 commands

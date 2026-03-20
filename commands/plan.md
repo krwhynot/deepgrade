@@ -1,12 +1,12 @@
 ---
-description: (deepgrade) Start or resume a guided plan. Walks you through 8 phases from idea to handoff, with AI assistance at every step. Produces documents by default; codebase writes require your approval. Pass a plan name to start new or resume existing. Optionally pass source material with 'from'.
+description: (deepgrade) Start or resume a guided plan. Walks you through 9 phases from idea to handoff, with AI assistance at every step. Produces documents by default; codebase writes require your approval. Pass a plan name to start new or resume existing. Optionally pass source material with 'from'.
 argument-hint: "[plan-name] [from docs/path or 'idea: description']"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
 <identity>
 You are a planning and implementation assistant. You guide engineers through
-a structured 8-phase workflow that takes ANY starting input (vague idea, docs
+a structured 9-phase workflow that takes ANY starting input (vague idea, docs
 folder, Jira ticket, existing spec) and produces a complete, audited,
 executable plan with implementation support.
 
@@ -61,7 +61,7 @@ Scaling rules:
 | 2 | Research | What is true about our situation? | Auto (tool decides "enough") |
 | 3 | Pre-Plan | What should be in scope? | User confirmation (scope lock) |
 | 4 | Plan | How will we execute? | User confirmation |
-| 5 | Audit | What is weak or missing? | Informational |
+| 5 | Audit | What is weak or missing? | Evaluator-optimizer loop + human review |
 | 6 | Build | Execute + track progress | Per-action approval for code |
 | 7 | Impact Review | What else does this change affect? | User confirmation |
 | 8 | Test | Does it work safely? | Hard pass/fail gate |
@@ -93,6 +93,7 @@ PLAN FOLDER (homebase): docs/plans/YYYY-MM-DD-{plan-name}/
     findings.md
     reference-data.json
     intake/               <- Cleaned source docs
+  changes/                <- Immutable change records (CR-001, CR-002, ...)
   troubleshooting/        <- /deepgrade:troubleshoot logs linked to this plan
 
 PROJECT DOCUMENTS (standard locations, linked from manifest):
@@ -122,6 +123,11 @@ Owner: {name}
 ## Project Documents (in docs/)
 - [Spec: {name}](../../docs/specs/{plan-name}.md) - {date}
 - [ADR: {topic}](../../docs/adr/ADR-{topic}.md) - {date}
+
+## Change Records
+| CR | Date | Summary |
+|----|------|---------|
+| (none yet) | | |
 
 ## Codebase Files
 - {path to test files} - {date}
@@ -330,9 +336,23 @@ GATE: Automatic. Tool proceeds when stop rubric is met.
 ## Phase 3: PRE-PLAN
 Question: What should be in scope?
 
-Produce a one-page alignment checkpoint in approach.md:
+Produce an alignment checkpoint in approach.md:
 
 - Scope: IN list and OUT list
+- Options Analysis (REQUIRED): Evaluate minimum 2 approaches before selecting:
+
+  For each option:
+  - Name and approach description
+  - Pros and cons
+  - Risk level (LOW/MEDIUM/HIGH)
+  - Rollback complexity (LOW/MEDIUM/HIGH)
+
+  Comparison matrix scoring each option against:
+  - Implementation ease, Timeline, Strategic value, Risk profile, Rollback complexity
+
+  Decision Rationale: WHY the selected option won, referencing specific criteria.
+  Losing options: document "would revisit if" conditions.
+
 - Approach/Pattern: which pattern and WHY (strangler fig, feature flag, migration, new build, integration)
 - Top 3 Risks: each with impact level and mitigation
 - Constraints: timeline, team, technology
@@ -445,6 +465,23 @@ Rules:
 - Assumptions with no validation step are WARNINGS
 - Assumptions that block execution must be verified before Build phase
 
+AUTOMATED ASSUMPTION VERIFICATION:
+After generating the Assumption Register, attempt automated verification
+of all assumptions that have a verification method:
+
+For each assumption where impact = HIGH and status = unverified:
+  1. If verification method mentions file/path: run `test -f [path]`
+  2. If verification method mentions API/endpoint: note as REQUIRES_MANUAL
+  3. If verification method mentions schema/database: search for schema files
+  4. If verification method mentions config: search config files
+  5. Update assumption status in status.json:
+     - verified: automated check passed
+     - unverified: automated check failed or not automatable
+     - falsified: automated check proved assumption false
+
+Track verification results:
+  "Assumptions: X total, Y verified (Z automated, W manual), V unverified, F falsified"
+
 OUTPUT C: Scenario Matrix
 Force 8 scenarios per plan and map each to implementation, test, and monitoring:
 
@@ -497,6 +534,29 @@ Rules:
 - Unaddressed concerns are GAPS
 - "Partial" concerns are WARNINGS
 
+INFRASTRUCTURE VERIFICATION (automated, run after gap matrices):
+Cross-reference every coverage claim against verifiable artifacts.
+
+For each Scenario Matrix "Tested?" entry with a test file reference:
+  1. Check if the test file exists: `test -f "$TEST_PATH"`
+  2. If file exists, check it contains a relevant test: `grep -c "$SCENARIO_KEYWORD" "$TEST_PATH"`
+  3. If file missing or no matching test: flag as INFRA-GAP
+
+For each Scenario Matrix "Monitored?" entry with a monitoring reference:
+  1. Search for dashboard configs, alert rules, or monitoring setup files
+  2. If monitoring config missing: flag as INFRA-GAP
+
+For each Coverage Matrix "Covered By" entry with a file reference:
+  1. Verify the referenced file exists and contains relevant implementation
+  2. If file missing or no matching implementation: flag as INFRA-GAP
+
+INFRA-GAP is a distinct severity: the plan CLAIMS coverage but the
+infrastructure to deliver that coverage does not exist. This is more
+dangerous than a known gap because it creates false confidence.
+
+Report: "Infrastructure Verification: X/Y claims verified (Z% rate)"
+List all INFRA-GAPs with the claim, expected file, and actual status.
+
 PLAN LINT RULES (automated, run before presenting results):
 These are binary pass/fail checks. Any FAIL is a gap.
 
@@ -511,6 +571,9 @@ LINT-07: Every new behavior has a test or test delta         [PASS/FAIL]
 LINT-08: No unverified HIGH-impact assumption exists         [PASS/FAIL]
 LINT-09: No unaddressed cross-cutting concern for in-scope features [PASS/FAIL]
 LINT-10: Every phase has go/no-go criteria                   [PASS/FAIL]
+LINT-13: Approach has options analysis with min 2 alternatives [PASS/FAIL]
+LINT-15: All "Tested" claims have verified test infrastructure  [PASS/FAIL]
+LINT-16: All "Monitored" claims have verified monitoring infra  [PASS/FAIL]
 ```
 
 GAP SUMMARY:
@@ -519,7 +582,7 @@ After all 4 outputs + lint rules, produce:
 ```markdown
 ## Gap Summary
 
-Lint: {N}/10 passed, {M} failed
+Lint: {N}/14 passed, {M} failed
 Coverage Matrix: {N} items, {M} gaps
 Assumption Register: {N} assumptions, {M} unverified high-impact
 Scenario Matrix: 8 scenarios, {M} gaps
@@ -532,28 +595,161 @@ Gap-checked: YES / NO
 ```
 
 A plan is gap-checked ONLY when:
-- All lint rules pass
+- All lint rules pass (including LINT-14, LINT-15, and LINT-16)
 - Coverage matrix has zero GAPs
 - No unverified HIGH-impact assumptions
 - Scenario matrix has zero GAPs
 - Cross-cutting sweep has zero GAPs
+- Infrastructure verification has zero INFRA-GAPs
 
 Write docs/plans/{date}-{plan-name}/audit.md with: scored dimensions, challenges, verification results, ALL 4 gap verification outputs, lint results, gap summary.
 
 Update manifest.md: add audit.md to Plan Files table with date and score.
 
-GATE: Informational. Based on score AND gap check:
-- GREEN + gap-checked: "Plan is solid. Ready to start building."
-- GREEN + not gap-checked: "Score is good but {N} gaps found. Fix gaps before building."
-- YELLOW + gap-checked: "Plan is usable with known gaps: [list]"
-- YELLOW + not gap-checked: "Plan has gaps AND low scores. Fix before building: [prioritized list]"
-- ORANGE: "Fix these gaps before building: [prioritized list]"
-- RED: "Plan needs rework. Go back to Phase 3 or 4."
+BASELINE SNAPSHOT:
+After writing the audit, capture a per-element baseline in status.json:
+```json
+{
+  "baseline": {
+    "run_number": 1,
+    "date": "{ISO date}",
+    "plan_version": "v1",
+    "lint_results": { "LINT-01": "pass", "LINT-02": "pass", ... },
+    "coverage_items": [{ "name": "...", "status": "covered|gap" }],
+    "assumption_counts": { "total": N, "verified": N, "unverified": N, "waived": N },
+    "scenario_statuses": [{ "id": 1, "name": "Happy path", "status": "covered|partial|gap" }],
+    "concern_statuses": [{ "name": "API contract", "status": "ok|warn|gap" }],
+    "dimension_scores": [{ "name": "Problem Definition", "score": 4 }],
+    "infra_gaps": N
+  }
+}
+```
+
+On re-audit (after revision loop or manual re-run), compare current vs baseline:
+- REGRESSION: item was covered/passing, now gap/failing -> flag in audit output
+- IMPROVEMENT: item was gap/failing, now covered/passing -> report as progress
+- NEW: item not in previous baseline -> report for awareness
+
+Report: "Baseline comparison: X regressions, Y improvements, Z new items"
+Regressions are flagged as HIGH priority in the audit output.
+
+LINT-14: No regressions from previous baseline.
+If any element that was covered/passing in the previous baseline is now
+gap/failing, LINT-14 fails. Pre-existing gaps do not trigger this rule.
+LINT-14 only applies when a previous baseline exists (skipped on first audit).
+
+Update the baseline in status.json after each comparison (append to history array
+for trend tracking).
+
+GATE: Evaluator-Optimizer Loop.
+
+Based on score AND gap check, determine if auto-revision is needed:
+
+IF score >= 32 AND gap-checked = YES (GREEN + gap-checked):
+  -> "Plan is solid. Ready to start building."
+  -> Proceed to Phase 6.
+
+IF score < 32 OR gap-checked = NO:
+  -> Auto-trigger revision of the Phase 4 spec.
+  -> Feed audit findings back to the plan generation step:
+     "Revise docs/specs/{plan-name}.md to address these gaps:"
+     followed by specific findings with dimension references.
+  -> Revise ONLY the failing sections (not the entire spec).
+  -> Re-run the audit on the revised spec.
+  -> Compare re-audit against baseline: flag any regressions (items that
+     were passing in v1 but now fail in v2). Regressions indicate the
+     revision broke something that was previously working.
+  -> Maximum 2 revision iterations.
+
+After revision loop completes:
+- GREEN + gap-checked: "Plan revised and now solid. Ready to build."
+- YELLOW + gap-checked: "Plan revised. Usable with known gaps: [list]"
+- YELLOW + not gap-checked (after 2 iterations): "Plan has remaining gaps after 2 revisions. Review manually: [prioritized list]"
+- ORANGE (after 2 iterations): "Plan still needs work after 2 revisions. Fix manually: [prioritized list]"
+- RED (after 2 iterations): "Plan needs significant rework. Go back to Phase 3 or 4."
+
+Track revision history in audit.md:
+```markdown
+## Revision History
+| Version | Score | Gap-Checked | Gaps | Action |
+|---------|-------|-------------|------|--------|
+| v1      | 24/40 | NO          | 7    | Auto-revised sections 4, 5, 7 |
+| v2      | 35/40 | YES         | 0    | Accepted |
+```
 
 Update status.json (include score, rating, gap_checked boolean, gap_count), manifest.md.
 
+HUMAN REVIEW GATE (waivable):
+After the automated audit completes, prompt for human review before Build:
+
+"Automated audit complete (score: {X}/40, gap-checked: {YES/NO}).
+ Before starting Build, this plan should be reviewed by at least one person.
+ [1] Enter reviewer name(s) to proceed
+ [2] Waive review (solo mode) — requires documented reason
+ [3] View audit summary first"
+
+If [1]: Record reviewer name(s) and date in status.json:
+  { "review": { "reviewers": [{"name": "...", "date": "..."}], "outcome": "accepted" } }
+  Proceed to Phase 6.
+
+If [2]: Record waiver in status.json:
+  { "review": { "waived": true, "reason": "...", "waived_by": "..." } }
+  Proceed to Phase 6.
+
+If [3]: Show audit-derived review checklist:
+  - Audit scorecard (8 dimensions with scores)
+  - Top 3 gaps identified
+  - Top 5 risks identified
+  - Key assumptions and their verification status
+  - Cross-cutting concerns flagged as partially addressed
+  Then re-prompt [1] or [2].
+
+If [1] with reviewer names: Record review in status.json:
+  { "review": {
+      "reviewers": [{"name": "...", "date": "...", "decision": "accepted"}],
+      "outcome": "accepted",
+      "checklist_presented": true,
+      "comments": 0
+  }}
+
+For team/leadership plans: review is REQUIRED (option [2] not offered unless
+the plan was started in solo mode or the user explicitly requests solo mode).
+
+For solo mode: review is recommended but waivable with documented reason.
+
 ## Phase 6: BUILD
 Question: What got built/changed?
+
+HARD GATE: ASSUMPTION VERIFICATION (LINT-08)
+Before ANY build work begins, check assumptions in status.json:
+
+```
+For each assumption where impact = HIGH:
+  If status = unverified:
+    -> BLOCK entry to Phase 6
+    -> Present: "Cannot start Build. These HIGH-impact assumptions are unverified:"
+    -> List each with its verification method
+    -> Offer: [1] Verify now  [2] Accept risk (waiver)  [3] Back to research
+
+  If status = verified: -> PASS
+  If status = waived: -> PASS (with documented risk acceptance)
+  If status = falsified: -> BLOCK and return to Phase 3 (approach is invalid)
+
+For each assumption where impact = MEDIUM and status = unverified:
+  -> WARN but allow proceeding
+
+For each assumption where impact = LOW and status = unverified:
+  -> INFO only
+```
+
+If user chooses [2] Accept risk (waiver), require:
+- Documented risk statement
+- Approver name
+- Contingency plan if assumption fails
+- Update assumption status to "waived" in status.json
+
+This gate is NOT advisory. It is a hard block. The plan CANNOT proceed to
+Build with unverified HIGH-impact assumptions unless explicitly waived.
 
 This phase actively assists with implementation.
 
@@ -593,12 +789,42 @@ CODEBASE ACTIONS (approval required per action):
 - "Run characterization tests on Printing.FormatReceipt? [Y/n]"
 - "Create branch description for Phase 1 tickets? [Y/n]"
 
-CHANGE CONTROL (backward flow rules):
-- Minor discovery during build -> update docs/specs/{plan-name}.md section, log change note
+CHANGE CONTROL (backward flow rules with immutable records):
+After Phase 3 scope lock, accepted plan documents are immutable. Changes
+require a formal Change Record, not silent edits.
+
+- Minor discovery during build:
+  1. Create docs/plans/{date}-{name}/changes/CR-{N}.md with:
+     - What changed and why
+     - Which document/section it supersedes
+     - The NEW content (the CR is the authoritative version going forward)
+     - Impact on other phases
+  2. Add a status line to the TOP of the original document: "SUPERSEDED by CR-{N} on {date}"
+     Do NOT modify the original document's content. The CR contains the new version.
+  3. Update manifest.md with link to the Change Record
+  4. Update status.json: { "change_records": [{ "id": "CR-001", "date": "...", "summary": "..." }] }
+
 - Scope change discovered -> "This changes the scope. Go back to Pre-Plan? [Y/n]"
-  If yes: mark pre_plan and plan as STALE, return to Phase 3
-- New blocker found -> mark current build ticket as BLOCKED with reason
-- Implementation diverges from plan -> log ADR/change note in plan folder
+  If yes: create CR-{N} documenting the scope change reason, mark pre_plan
+  and plan as STALE, return to Phase 3. Original approach.md preserved.
+
+- New blocker found -> mark current build ticket as BLOCKED with reason,
+  create CR-{N} documenting the blocker and its impact.
+
+- Implementation diverges from plan -> create CR-{N} documenting the divergence
+  and rationale. This replaces informal ADR/change notes.
+
+Change Record template:
+```markdown
+# CR-{N}: {Title}
+Date: {date}
+Author: {name}
+Supersedes: {document or section}
+
+## What Changed
+## Why It Changed
+## Impact on Other Phases
+```
 
 Update status.json with build progress, manifest.md.
 
@@ -677,6 +903,30 @@ WHAT IT CHECKS:
    Any match is a potential stale reference that needs updating.
    TypeScript Issue #62835 (open): This is a known gap in all major IDEs.
 
+7. BACKWARD TRACEABILITY (does every change serve a goal?)
+   For every file changed during Build, verify the reverse coverage chain:
+   - Changed file -> Ticket that authorized the change -> Goal it serves
+
+   Orphan detection:
+   - Files changed with no ticket mapping = SCOPE CREEP (flag)
+   - Tickets with no changed files = DELIVERY GAP (flag unless explicitly deferred)
+
+   ```bash
+   # For each changed file, check if it maps to a plan ticket
+   # Compare git diff file list against ticket-file mapping in status.json
+   git diff --name-only HEAD~{N}..HEAD | while read FILE; do
+     grep -q "$FILE" docs/plans/{date}-{name}/status.json || echo "ORPHAN: $FILE"
+   done
+   ```
+
+   Any orphan file must be either:
+   - Linked to an existing ticket (developer forgot to log it)
+   - Justified as necessary infrastructure (added to a new ticket)
+   - Flagged as scope creep for review
+
+   LINT-11: Every code change maps to a plan ticket
+   LINT-12: Every plan ticket maps to at least one code change (or is explicitly deferred)
+
 PROCESS:
 PARALLELIZATION RULE: The 5 check dimensions are independent. Deploy parallel
 subagents for each dimension to speed up the review.
@@ -693,10 +943,10 @@ Objective: Analyze performance impact and transition-state safety
 Tools: Read, Grep, Glob
 Checks: dimensions 3 (Scale) and 4 (Transition-State)
 
-SUBAGENT C - Test Delta & String Paths (Sonnet):
-Objective: Compare test coverage before vs after AND scan for stale string path references
+SUBAGENT C - Test Delta, String Paths & Backward Trace (Sonnet):
+Objective: Compare test coverage before vs after, scan for stale string path references, AND verify backward traceability of all changed files
 Tools: Read, Grep, Glob, Bash
-Checks: dimensions 5 (Test Delta) and 6 (String Path References)
+Checks: dimensions 5 (Test Delta), 6 (String Path References), and 7 (Backward Traceability)
 
 Each subagent writes its section to a temp file. Orchestrator synthesizes.
 
@@ -741,6 +991,8 @@ Integration edges checked: {count}
 - [ ] Scale behavior reviewed for production load
 - [ ] Feature flag off-state tested
 - [ ] Database migration compatible with old and new code
+- [ ] No orphan code changes (all changes traced to tickets) [LINT-11]
+- [ ] No orphan tickets (all tickets have implementation or are deferred) [LINT-12]
 ```
 
 GATE: User confirmation required.
@@ -761,18 +1013,54 @@ Write docs/plans/{date}-{plan-name}/test-plan.md with:
 - Per-phase test matrix (test name, type, what it verifies)
 - Edge cases prompted by plan context
 - Characterization test candidates for changed code
+- Each criterion categorized as AUTOMATED or MANUAL (see below)
 
 CODEBASE ACTIONS (approval required):
 - "Generate characterization tests for {function}? [Y/n]"
 - "Create test stubs for new code? [Y/n]"
 
+TWO-TIER VERIFICATION:
+Split all success criteria into two categories. Run automated first,
+then pause for manual verification.
+
+TIER 1 — AUTOMATED VERIFICATION (run without human intervention):
+- [ ] All critical path tests pass (run test command)
+- [ ] TypeScript/code compiles with no errors (run build command)
+- [ ] No lint errors in changed files
+- [ ] Characterization baseline captured for any refactored code
+- [ ] Audit score is GREEN with gap-checked = YES, or YELLOW with gap-checked = YES
+
+Run all Tier 1 checks. Report results. Then PAUSE:
+
+```
+Phase 8 — Automated Verification Complete
+
+Automated checks passed:
+- [list each Tier 1 check and its result]
+
+Ready for manual verification. Please perform these checks:
+- [ ] [Manual item 1]
+- [ ] [Manual item 2]
+
+Let me know when manual testing is complete so I can proceed to Handoff.
+```
+
+TIER 2 — MANUAL VERIFICATION (requires human testing):
+- [ ] No open P0/P1 defects against this plan
+- [ ] Rollback plan has been validated (tested in staging or reviewed by ops)
+- [ ] Key user flows work as expected in staging/preview
+- [ ] Edge cases identified in test-plan.md have been manually verified
+- [ ] Deployment runbook reviewed by someone other than the author
+
+Do NOT auto-check Tier 2 items. Wait for human confirmation on each.
+Track which items the human confirmed and when:
+  { "test_gate": { "automated": { "passed": 5, "failed": 0 }, "manual": { "verified": 4, "pending": 1, "verified_by": "J. Smith", "date": "..." } } }
+
 HARD READINESS GATE:
 Before proceeding to Handoff, ALL of these must be true:
-- [ ] All critical path tests pass (or explicitly waived with documented reason)
-- [ ] No open P0/P1 defects against this plan
-- [ ] Characterization baseline captured for any refactored code
-- [ ] Audit score is GREEN or YELLOW (not ORANGE or RED)
-- [ ] Rollback plan has been validated (tested or reviewed)
+- All Tier 1 (automated) checks pass
+- All Tier 2 (manual) checks confirmed by a human
+- No Tier 2 items left in "pending" state
 
 If gate fails, report what's missing and stay in Test phase.
 
@@ -783,7 +1071,7 @@ Question: What happens next?
 
 READINESS CHECK before entering this phase:
 - Test phase complete (or explicitly waived)
-- Audit score GREEN or YELLOW
+- Audit score GREEN or YELLOW with gap-checked = YES
 - No BLOCKED tickets remaining (or explicitly deferred)
 - Rollback plan documented
 
@@ -799,12 +1087,13 @@ Present final summary:
 ```
 Plan: {name} - Complete
 
-Phases: 8/8
+Phases: 9/9
 Duration: {started} to {completed}
 Audit score: {score}/40 ({rating})
 Tickets: {done}/{total}
 
-Key decisions: [from approach.md and change notes]
+Key decisions: [from approach.md and change records]
+Change records: {count} (see changes/ folder)
 What shipped: [summary]
 What's deferred: [if anything]
 ```

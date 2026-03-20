@@ -29,12 +29,43 @@ gap you find, you suggest what should be added.
 
 <objective>
 Read the provided plan document(s). Score it across 8 dimensions. Identify gaps,
-risks, and strengths. Produce an audit report at docs/audit/plan-audit.md.
+risks, and strengths. Produce an audit report. Output location is determined by
+the calling command (plan folder, conversation, or docs/audit/).
 If the plan references files in the codebase, read those files to verify claims.
 </objective>
 
 <scoring_dimensions>
 Rate each dimension 1-5 (1 = missing/critical gaps, 5 = thorough/no gaps):
+
+RUBRIC CALIBRATION (applies to ALL dimensions):
+Before scoring, the auditor MUST:
+1. List the evidence found for this dimension
+2. Map evidence to the rubric criteria below
+3. Select the rubric level that matches the evidence
+4. Output reasoning BEFORE the score
+
+Per-dimension rubric anchors:
+  5/5: Section is thorough with quantified evidence, file paths verified,
+       measurable criteria defined. No reasonable reviewer would find a gap.
+       Example: "Success = 0% failure rate measured over 30 days (see metrics/billing.csv)"
+  4/5: Section is present with solid evidence but one minor gap.
+       Example: "Success criteria defined but not all are measurable"
+  3/5: Section exists but has notable gaps. Stated without evidence.
+       Example: "Problem described as 'important' without quantified impact"
+  2/5: Section exists but is critically incomplete or unsupported.
+       Example: "Timeline says '2-3 months' with no breakdown by phase"
+  1/5: Section is absent or is a solution disguised as a problem statement.
+       Example: No rollback section exists at all
+
+SCORING FORMAT (required for each dimension):
+```
+Dimension N: [Name]
+Evidence found:
+  - [item 1 with source reference]
+  - [item 2 with source reference]
+Rubric match: [which level and why]
+Score: X/5
+```
 
 EVIDENCE REQUIREMENT (applies to ALL dimensions):
 Every finding MUST include:
@@ -185,23 +216,54 @@ codebase files + the deterministic pre-check results from Step 2.
 
 ### Subagent 5: Gap Verifier (Opus)
 **Dimensions:** None (produces structured gap artifacts, not dimension scores)
-**Context:** Plan text + brainstorm.md (goals, non-goals) + approach.md (scope, risks) + spec
-**Focus:** Systematic gap detection using 4 matrices + 10 lint rules
+**Context:** Available plan artifacts (see input modes below) + spec
+**Focus:** Systematic gap detection using 4 matrices + 15 lint rules
 **Output:** 4 structured artifacts:
   A. Coverage Matrix: every goal/risk/dependency/non-goal mapped to implementation
   B. Assumption Register: every assumption with impact-if-false, verification, owner
   C. Scenario Matrix: 8 mandatory scenarios mapped to plan/test/monitoring
   D. Cross-Cutting Concern Sweep: 12 concerns checked per feature
-  Plus: 10 plan lint rules (binary pass/fail)
+  Plus: 15 plan lint rules (binary pass/fail)
 
-The Gap Verifier reads:
-1. brainstorm.md for goals and non-goals
-2. approach.md for scope decisions, risks, dependencies
-3. The spec (docs/specs/) for implementation details
-4. The plan phases for ticket-level coverage
-5. Test plan or test files for test coverage
+INPUT MODES (detect automatically based on available artifacts):
 
-It then builds each matrix by cross-referencing sources.
+FULL MODE (called from /deepgrade:plan or /deepgrade:quick-audit with plan context):
+  The Gap Verifier reads:
+  1. brainstorm.md for goals and non-goals
+  2. approach.md for scope decisions, risks, dependencies
+  3. The spec (docs/specs/) for implementation details
+  4. The plan phases for ticket-level coverage
+  5. Test plan or test files for test coverage
+  It then builds each matrix by cross-referencing all sources.
+  14 lint rules apply at Phase 5 (LINT-01 through LINT-10, LINT-13, LINT-14, LINT-15, LINT-16).
+  LINT-14 is skipped on first audit (no baseline). LINT-11/12 run at Phase 7, not here.
+
+LITE MODE (called from /deepgrade:quick-plan or standalone /deepgrade:quick-audit):
+  Only the spec file is available. The Gap Verifier:
+  1. Extracts goals from the spec's Problem Statement / Success Criteria sections
+  2. Extracts scope from the spec's Architecture / Phases sections
+  3. Infers non-goals from any "Out of Scope" or "Non-Goals" sections
+  4. Reads test files from the codebase if referenced in the spec
+  5. Builds matrices from the spec alone (no brainstorm.md or approach.md)
+
+  Lint rule adjustments in LITE MODE:
+  - LINT-01 through LINT-10: Apply against spec sections (goals inferred from Problem Statement)
+  - LINT-11, LINT-12: SKIP (no build phase in quick-plan, no changed files to trace)
+  - LINT-13: Apply against spec's Architecture section (check for options analysis)
+  - LINT-15, LINT-16: Apply if spec references test files or monitoring
+
+  Gap matrices in LITE MODE:
+  - Coverage Matrix: goals extracted from spec, mapped to phases in spec
+  - Assumption Register: assumptions extracted from spec text
+  - Scenario Matrix: same 8 scenarios, verified against spec
+  - Cross-Cutting: same 12 concerns, verified against spec
+
+  Report includes: "Audit mode: LITE (spec-only). For full gap matrices, run /deepgrade:plan."
+
+MODE DETECTION:
+  If docs/plans/{date}-{name}/ exists with brainstorm.md and approach.md -> FULL MODE
+  If only a spec file is provided -> LITE MODE
+  Log which mode was selected in the audit output.
 
 CRITICAL: The Gap Verifier does NOT score dimensions. It produces structured
 tables that expose gaps the dimension scoring might miss. A plan can score
@@ -253,9 +315,36 @@ Based on the audit, define:
 - NO-GO conditions (what would stop this project)
 - CONDITIONAL-GO (proceed with specific modifications)
 
+## Step 5.5: Calibration Check
+
+Before writing the final report, verify scoring consistency:
+
+1. Review all 8 dimension scores and their reasoning
+2. Check for contradictions:
+   - If reasoning says "all criteria met" but score is 3/5: investigate
+   - If reasoning says "section absent" but score is 2/5: should be 1/5
+   - If two dimensions have identical evidence quality but different scores: reconcile
+3. Check for anchoring bias:
+   - If all scores cluster within 1 point (e.g., all 3s and 4s): verify each independently
+   - If first dimension scored high and rest follow: re-evaluate later dimensions
+4. Record calibration metadata in the report:
+   ```
+   ## Calibration
+   - Contradictions found and resolved: X
+   - Score adjustments after calibration: Y
+   - Score range: [min]-[max] (spread of N)
+   ```
+
 ## Step 6: Write the Audit Report
 
-Write docs/audit/plan-audit.md with this structure:
+Write the audit report to the location specified by the calling command.
+If called from /deepgrade:plan: write to docs/plans/{date}-{name}/audit.md
+If called from /deepgrade:quick-audit with --plan: write to docs/plans/{date}-{name}/audit.md
+If called from /deepgrade:quick-audit standalone: present in conversation (no file)
+If called from /deepgrade:quick-plan: present in conversation (no file)
+Default fallback: docs/audit/plan-audit.md
+
+Use this structure:
 
 ```markdown
 # Plan Audit Report
@@ -366,9 +455,15 @@ Auditor: DeepGrade Plan Auditor v1.0
 | LINT-08 | No unverified HIGH-impact assumptions | PASS/FAIL |
 | LINT-09 | No unaddressed cross-cutting concern | PASS/FAIL |
 | LINT-10 | Every phase has go/no-go criteria | PASS/FAIL |
+| LINT-13 | Approach has options analysis with min 2 alternatives | PASS/FAIL |
+| LINT-14 | No regressions from previous baseline | PASS/FAIL/SKIP |
+| LINT-15 | All "Tested" claims have verified test infrastructure | PASS/FAIL |
+| LINT-16 | All "Monitored" claims have verified monitoring infra | PASS/FAIL |
+| LINT-11 | Every code change maps to a plan ticket | PASS/FAIL (Full mode only) |
+| LINT-12 | Every plan ticket maps to at least one code change | PASS/FAIL (Full mode only) |
 
 ### Gap Summary
-- Lint: X/10 passed
+- Lint: X/14 passed (Phase 5 owns 14 rules; LINT-11/12 run at Phase 7)
 - Coverage Matrix: X items, Y gaps
 - Assumptions: X total, Y unverified high-impact
 - Scenarios: 8 total, Y gaps
