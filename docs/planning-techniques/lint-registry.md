@@ -22,17 +22,20 @@ Single source of truth for all plan lint rules. Referenced by `plan-auditor.md`,
 | LINT-14 | No regressions from previous baseline | 5 (Audit) | Full + Lite |
 | LINT-15 | All "Tested" claims have verified test infrastructure | 5 (Audit) | Full + Lite |
 | LINT-16 | All "Monitored" claims have verified monitoring infrastructure | 5 (Audit) | Full + Lite |
+| LINT-17 | Every deliverable in Phase 4 spec must have a testing methodology assigned | 4 (Plan) / 5 (Audit) | Full + Lite |
+| LINT-18 | AI-generated code deliverables must specify a separate test writer | 4 (Plan) / 5 (Audit) | Full + Lite |
 
 ## Phase Ownership
 
-- **Phase 5 (Audit):** LINT-01 through LINT-10, LINT-13, LINT-14, LINT-15, LINT-16 (14 rules)
+- **Phase 4 (Plan):** LINT-17, LINT-18 (enforced during plan creation, audited at Phase 5)
+- **Phase 5 (Audit):** LINT-01 through LINT-10, LINT-13, LINT-14, LINT-15, LINT-16, LINT-17, LINT-18 (16 rules)
 - **Phase 7 (Impact Review):** LINT-11, LINT-12 (2 rules, Full mode only)
-- **Total:** 15 active rules (LINT-14 reserved)
+- **Total:** 18 active rules
 
 ## Audit Modes
 
-- **Full mode** (`/deepgrade:plan`, `/deepgrade:quick-audit` with plan context): All 15 rules apply. Phase 7 rules run during Impact Review.
-- **Lite mode** (`/deepgrade:quick-plan`, standalone `/deepgrade:quick-audit`): 13 rules apply. LINT-11 and LINT-12 are skipped (no build phase, no changed files to trace).
+- **Full mode** (`/deepgrade:plan`, `/deepgrade:quick-audit` with plan context): All 18 rules apply. Phase 7 rules run during Impact Review.
+- **Lite mode** (`/deepgrade:quick-plan`, standalone `/deepgrade:quick-audit`): 16 rules apply. LINT-11 and LINT-12 are skipped (no build phase, no changed files to trace).
 
 ## Gate Behavior
 
@@ -42,14 +45,16 @@ Single source of truth for all plan lint rules. Referenced by `plan-auditor.md`,
 | LINT-11 | Advisory (Phase 7) | Flags orphan code changes for review. Does not block. |
 | LINT-12 | Advisory (Phase 7) | Flags orphan tickets for review. Does not block. |
 | LINT-14 | Audit quality (Phase 5) | Fails if any previously-passing element now fails. Skipped on first audit (no baseline). |
+| LINT-17 | Audit quality (Phase 5) | Fails if any deliverable has no testing methodology or uses "unit tests" without justification. |
+| LINT-18 | Audit quality (Phase 5) | Fails if AI-generated code has the same agent as both implementation author and test author. |
 | All others | Audit quality | Contribute to gap-checked status. Plan is gap-checked only when all applicable lint rules pass. |
 
 ## Lint Count by Context
 
 | Context | Lint Rules | Count |
 |---------|-----------|-------|
-| Phase 5 Audit (Full mode) | 01-10, 13, 14, 15, 16 | 14 |
-| Phase 5 Audit (Lite mode) | 01-10, 13, 14, 15, 16 | 14 |
+| Phase 5 Audit (Full mode) | 01-10, 13-18 | 16 |
+| Phase 5 Audit (Lite mode) | 01-10, 13-18 | 16 |
 | Phase 7 Impact Review | 11, 12 | 2 |
-| Total (Full mode) | All active | 16 |
-| Total (Lite mode) | Minus 11, 12 | 14 |
+| Total (Full mode) | All active | 18 |
+| Total (Lite mode) | Minus 11, 12 | 16 |

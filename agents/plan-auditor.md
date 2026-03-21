@@ -133,10 +133,37 @@ Plan audit failure mode flags (append where applicable):
 
 ## 7. Testing & Validation (How do we PROVE it works?)
 - Is a testing strategy defined per phase?
+- Has each deliverable been assigned a testing methodology (not just "unit tests")?
+  Reference: docs/planning-techniques/10-testing-methodology-selection.md
+  11 methodologies: TDD, BDD, Characterization, Contract, Property-Based,
+  Snapshot, Shadow/Parallel, ATDD, Mutation, Exploratory, Expand/Contract
+- Is the methodology appropriate for the type of change?
+  - New code -> TDD or BDD (not characterization)
+  - Refactoring -> Characterization / Golden Master (not just unit tests)
+  - API boundaries -> Contract Testing (not just integration tests)
+  - Database schema -> Expand/Contract (not big-bang migration)
+  - Production migration -> Shadow/Parallel (not just staging)
+- Is test authorship separate from implementation authorship for AI-generated code?
 - Are characterization/golden master tests planned (for refactoring)?
 - Is there a validation step before cutover (shadow mode, reconciliation)?
 - Are acceptance criteria defined for each deliverable?
+- For database changes:
+  - Are forward AND backward migration scripts specified?
+  - Is backward compatibility tested (old code + new schema)?
+  - Are data integrity checks defined (row counts, checksums, referential integrity)?
+  - Is the expand/migrate/contract phasing explicit?
 - What does "done" look like for each phase?
+
+Scoring guidance for methodology selection:
+  5/5: Every deliverable has appropriate methodology assigned, separate test
+       authorship for AI code, database changes use expand/contract, AI failure
+       modes checked. Evidence: methodology table in spec with rationale.
+  4/5: Methodologies assigned but one is suboptimal (e.g., unit tests for
+       refactoring when characterization would be more appropriate).
+  3/5: Generic "unit tests" or "integration tests" without methodology selection.
+       Testing exists but isn't tailored to the type of change.
+  2/5: Testing mentioned but no methodology or strategy. "We'll write tests."
+  1/5: No testing strategy defined.
 
 ## 8. Team & Resources (WHO does this?)
 - Is the team identified (names, roles, or at least headcount)?

@@ -171,9 +171,30 @@ Write docs/specs/[plan-name].md with this structure:
 
 ## Testing Strategy
 
-| Phase | Test Type | Count | Coverage Target |
-|-------|----------|-------|----------------|
-[rows]
+| Phase | Methodology | Test Type | Count | Coverage Target |
+|-------|------------|----------|-------|----------------|
+[rows per phase - select methodology based on deliverable type]
+
+**Methodology Selection** (reference: docs/planning-techniques/10-testing-methodology-selection.md):
+
+For each deliverable, select methodology based on the type of change:
+- New code with clear spec -> TDD
+- Refactoring existing code -> Characterization / Golden Master
+- API integrations -> Contract Testing
+- User-facing features -> BDD
+- Database schema changes -> Expand/Contract
+- Production migration -> Shadow/Parallel
+- Pre-release quality gate -> Mutation Testing
+
+**Separate Test Authorship:** [Which agent/person writes tests vs implementation?]
+**AI Failure Mode Checks:** [Logic drift, stale deps, hidden rules, tautological tests, happy-path-only]
+
+**Database Migration Testing (if applicable):**
+- Forward migration: [Script path, empty DB + production-like data]
+- Backward migration: [Rollback script path, state restoration]
+- Data integrity: [Row counts, checksums, referential integrity checks]
+- Backward compatibility: [Old code + new schema, new code + old schema]
+- Expand/Contract phases: [Which phase are we in? What gates apply?]
 
 **Characterization Tests:** [Needed? For which functions?]
 **Shadow Mode:** [Applicable? How long before cutover?]

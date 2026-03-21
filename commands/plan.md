@@ -388,6 +388,37 @@ Include:
 - Rollback plan per phase
 - Go/no-go criteria per phase boundary
 
+TESTING METHODOLOGY SELECTION (REQUIRED):
+For EACH deliverable in the spec, select the appropriate testing methodology.
+Do NOT default to "unit tests" for everything. Reference the Testing Methodology
+Selection Framework (docs/planning-techniques/10-testing-methodology-selection.md).
+
+| # | Methodology | Evidence Tier | When to Use |
+|---|-------------|--------------|-------------|
+| 1 | TDD | ENTERPRISE-VALIDATED | New feature with clear spec, algorithms, core business logic, stored procedures |
+| 2 | BDD | INDUSTRY-RECOMMENDED | User-facing features, cross-functional teams, requirements ambiguity |
+| 3 | Characterization / Golden Master | ENTERPRISE-VALIDATED | Refactoring legacy code, extracting from monolith, data migration validation |
+| 4 | Contract Testing | INDUSTRY-RECOMMENDED | Microservices, API integrations, database backward compatibility |
+| 5 | Property-Based | INDUSTRY-RECOMMENDED | Algorithms with infinite input space, financial calculations, query performance |
+| 6 | Snapshot / Approval | INDUSTRY-RECOMMENDED | UI components, serialized output, reports, config generation |
+| 7 | Shadow / Parallel | ENTERPRISE-VALIDATED | Production migration, database cutover, replacing live systems |
+| 8 | ATDD | INDUSTRY-RECOMMENDED | Sprint planning, user story definition, database migration sign-off |
+| 9 | Mutation Testing | EMERGING PRACTICE | Pre-release quality gate, measuring test suite effectiveness |
+| 10 | Exploratory | ENTERPRISE-VALIDATED | Complex UI, late-stage discovery, automation gaps |
+| 11 | Expand/Contract | ENTERPRISE-VALIDATED | Database schema migration, renaming columns/tables, changing data types |
+
+AI-specific requirements:
+- The agent that writes implementation code MUST NOT write the tests (Separate Test Authorship)
+- AI-generated code receives higher testing scrutiny than human code
+- Every AI-generated deliverable is checked against the AI Failure Mode Checklist:
+  logic drift, stale dependencies, hidden business rule violations, tautological
+  tests, happy-path-only coverage
+
+For database schema changes, use Expand/Contract (Methodology 11) with three phases:
+  - Expand: add new alongside old (structural assertions)
+  - Migrate: dual-write, backfill, test (data integrity + shadow comparison)
+  - Contract: remove old after cutover (no orphan references)
+
 GATE: User confirmation REQUIRED.
 "Plan created with {N} phases and {M} tickets over {X} weeks. Review and confirm?"
 
@@ -993,6 +1024,26 @@ Integration edges checked: {count}
 - [ ] Database migration compatible with old and new code
 - [ ] No orphan code changes (all changes traced to tickets) [LINT-11]
 - [ ] No orphan tickets (all tickets have implementation or are deferred) [LINT-12]
+
+TESTING METHODOLOGY VERIFICATION:
+For each deliverable with an assigned testing methodology (from Phase 4):
+- [ ] Methodology is appropriate for the type of change (not defaulting to "unit tests")
+- [ ] Test authorship is separate from implementation authorship for AI-generated code
+- [ ] Database changes use Expand/Contract with forward AND backward migration scripts
+- [ ] API changes have contract tests covering old code + new schema AND new code + old schema
+- [ ] Characterization tests captured BEFORE refactoring (not after)
+- [ ] AI Failure Mode Checklist applied to all AI-generated deliverables
+
+Database Migration Testing (if applicable):
+
+| Phase | What to Test | Method |
+|-------|-------------|--------|
+| Expand | New columns/tables exist, old untouched | Structural assertions |
+| Migrate | Row counts, checksums, referential integrity preserved | Characterization + Shadow |
+| Contract | Old structures removed, no orphan refs, all code uses new schema | Structural assertions |
+| Rollback | Backward migration restores original state | Apply -> verify -> rollback -> verify |
+| Backward compat | Old code + new schema works, new code + old schema works | Contract Testing |
+| Performance | Queries under threshold, indexes present, no N+1 | Property-Based + Profiling |
 ```
 
 GATE: User confirmation required.
@@ -1014,6 +1065,79 @@ Write docs/plans/{date}-{plan-name}/test-plan.md with:
 - Edge cases prompted by plan context
 - Characterization test candidates for changed code
 - Each criterion categorized as AUTOMATED or MANUAL (see below)
+
+METHODOLOGY-SPECIFIC TEST PROCEDURES:
+Based on the testing methodology assigned in Phase 4, execute the appropriate
+test procedure for each deliverable. Reference the full framework at
+docs/planning-techniques/10-testing-methodology-selection.md.
+
+IF methodology = expand_contract:
+Execute all 18 steps of the database migration test checklist:
+
+  EXPAND PHASE:
+  - [ ] Forward migration script runs cleanly on empty DB
+  - [ ] Forward migration script runs cleanly on production-like data
+  - [ ] New columns/tables exist with correct types and constraints
+  - [ ] Old columns/tables are untouched (no dropped columns, no renamed columns)
+  - [ ] Old code works against expanded schema (backward compatible)
+  - [ ] New code works against expanded schema
+
+  MIGRATE PHASE:
+  - [ ] Dual-write triggers or application-level dual-write is active
+  - [ ] Backfill of existing data completes without errors
+  - [ ] Row counts match pre/post migration
+  - [ ] Checksums match pre/post migration (normalize volatile data)
+  - [ ] Referential integrity intact (no orphan foreign keys)
+  - [ ] Shadow comparison of old vs new query results matches
+
+  CONTRACT PHASE:
+  - [ ] Backward (rollback) migration script restores original state
+  - [ ] New code works against contracted schema
+  - [ ] Old structures removed cleanly (no leftover columns/tables)
+  - [ ] No orphan references to removed columns/tables in codebase
+  - [ ] Indexes exist on new columns (no missing index regressions)
+  - [ ] Query performance within acceptable bounds on new schema
+
+IF methodology = tdd:
+  - [ ] Test suite generated from spec BEFORE implementation
+  - [ ] All tests fail initially (Red phase verified)
+  - [ ] Implementation passes all tests (Green phase)
+  - [ ] Refactoring does not break tests
+
+IF methodology = characterization:
+  - [ ] Golden master baseline captured BEFORE changes
+  - [ ] Post-change output matches baseline (or divergences explicitly approved)
+  - [ ] Volatile data normalized before comparison (timestamps, auto-increment IDs)
+
+IF methodology = contract_testing:
+  - [ ] Consumer contracts defined
+  - [ ] Provider verification passes
+  - [ ] Old code + new schema validated against contracts
+  - [ ] New code + old schema validated against contracts
+
+IF methodology = shadow_parallel:
+  - [ ] Dual-write infrastructure in place
+  - [ ] Comparison monitoring active
+  - [ ] Divergence rate below threshold before cutover
+
+IF methodology = property_based:
+  - [ ] Invariants defined and documented
+  - [ ] Input generators cover edge cases
+  - [ ] All properties hold under generated inputs
+
+IF methodology = bdd:
+  - [ ] Gherkin specs written by humans (product/QA)
+  - [ ] Step definitions wired and passing
+  - [ ] All Given/When/Then scenarios covered
+
+IF methodology = snapshot_approval:
+  - [ ] Snapshots captured and approved by humans
+  - [ ] No blind snapshot updates (each change reviewed)
+
+IF methodology = mutation_testing:
+  - [ ] Mutation testing tool configured and run
+  - [ ] Mutation score above team-calibrated threshold
+  - [ ] All surviving mutants reviewed and justified
 
 CODEBASE ACTIONS (approval required):
 - "Generate characterization tests for {function}? [Y/n]"
