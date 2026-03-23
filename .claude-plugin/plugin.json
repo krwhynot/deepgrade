@@ -1,6 +1,6 @@
 {
   "name": "deepgrade",
-  "version": "4.28.0",
+  "version": "4.29.0",
   "description": "DeepGrade: AI-powered codebase grading, planning, auditing, and operational readiness. Gives your codebase a letter grade and a plan to level up. Stack-agnostic.",
   "author": {
     "name": "Kyle Whynot",

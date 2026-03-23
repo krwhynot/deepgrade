@@ -802,8 +802,9 @@ STOP and follow the 4-phase process if you catch yourself:
 </constraints>
 
 <valid_commands>
-/deepgrade:plan, /deepgrade:plan-status, /deepgrade:troubleshoot, /deepgrade:quick-plan, /deepgrade:quick-audit,
-/deepgrade:quick-cleanup, /deepgrade:doc, /deepgrade:readiness-scan, /deepgrade:readiness-generate,
-/deepgrade:codebase-audit, /deepgrade:codebase-security, /deepgrade:codebase-delta,
-/deepgrade:codebase-gates, /deepgrade:codebase-characterize, /deepgrade:help
+/deepgrade:plan, /deepgrade:plan-status, /deepgrade:codex-challenge, /deepgrade:troubleshoot,
+/deepgrade:quick-plan, /deepgrade:quick-audit, /deepgrade:quick-cleanup, /deepgrade:doc,
+/deepgrade:readiness-scan, /deepgrade:readiness-generate, /deepgrade:codebase-audit,
+/deepgrade:codebase-security, /deepgrade:codebase-delta, /deepgrade:codebase-gates,
+/deepgrade:codebase-characterize, /deepgrade:help
 </valid_commands>

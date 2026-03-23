@@ -1,5 +1,23 @@
 # Changelog
 
+## 4.29.0 (2026-03-22)
+
+### Added
+- New command: `/deepgrade:codex-challenge` — Evaluator-Optimizer loop between Claude and OpenAI Codex CLI
+- Score-driven convergence: Codex scores plan (8 dimensions × 5 = max 40), Claude optimizes until 36/40 GREEN achieved
+- 8 adversarial review dimensions (problem, architecture, sequencing, risk, rollback, timeline, testing, omissions)
+- Model escalation: auto-upgrades to gpt-5.4 when score < 24/40 (RED)
+- Structured `codex-review.md` report with per-dimension score trajectory and gap resolution log
+- Pre-review backup system with timestamped snapshots in `.codex-backup/`
+- Schema-validated JSON output via Codex CLI `--output-schema` (eliminates free-text parsing)
+- Read-only sandbox: no `--dangerously-bypass-approvals-and-sandbox` needed (default read-only verified)
+- Ephemeral sessions via `--ephemeral` flag (no session file persistence)
+- Fail-closed parsing with JSON primary, legacy text fallback
+- Security isolation: Codex runs from `os.tmpdir()` in read-only sandbox
+- Parser regression tests: 41 test cases covering JSON, text, schema, and edge cases
+- Windows-compatible Codex invocation via Node.js temp-file pattern
+- 15-minute hard ceiling with per-round budget checkpoints
+
 ## 4.27.1 (2026-03-15)
 
 ### Added

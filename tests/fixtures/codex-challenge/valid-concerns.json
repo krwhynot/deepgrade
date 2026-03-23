@@ -1,0 +1,20 @@
+{
+  "scores": {
+    "problem_definition": { "score": 4, "justification": "Problem is stated but success criteria lack quantitative targets." },
+    "architecture": { "score": 3, "justification": "Design is present but missing error handling patterns and retry logic." },
+    "sequencing": { "score": 4, "justification": "Phases are mostly well-ordered but database migration should precede API changes." },
+    "risk": { "score": 3, "justification": "Some risks identified but no mitigation for vendor lock-in or data loss scenarios." },
+    "rollback": { "score": 2, "justification": "Rollback mentioned but no concrete procedure for database schema changes." },
+    "timeline": { "score": 4, "justification": "Estimates provided but no buffer for integration testing delays." },
+    "testing": { "score": 3, "justification": "Unit tests planned but no characterization tests for legacy code paths." },
+    "omissions": { "score": 3, "justification": "Missing monitoring strategy, no alerting for degraded performance." }
+  },
+  "total": 26,
+  "gaps": [
+    { "dimension": "architecture", "score": 3, "issue": "No error handling or retry pattern defined for external API calls", "fix": "Add circuit breaker pattern with exponential backoff for all external integrations" },
+    { "dimension": "risk", "score": 3, "issue": "Vendor lock-in risk not addressed for cloud provider dependencies", "fix": "Define abstraction layer for cloud services and document migration path" },
+    { "dimension": "rollback", "score": 2, "issue": "Database rollback procedure is aspirational, not concrete", "fix": "Add reversible migration scripts with data backup verification steps" },
+    { "dimension": "testing", "score": 3, "issue": "No characterization tests to capture existing behavior before refactoring", "fix": "Generate golden master tests for critical paths using /deepgrade:codebase-characterize" },
+    { "dimension": "omissions", "score": 3, "issue": "No observability strategy for production deployment", "fix": "Add monitoring dashboards, alerting rules, and SLO definitions for key metrics" }
+  ]
+}

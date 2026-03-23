@@ -1,0 +1,31 @@
+SCORES:
+1. Problem Definition: 4 — Problem is stated but success criteria lack quantitative targets.
+2. Architecture: 3 — Design is present but missing error handling patterns and retry logic.
+3. Sequencing: 4 — Phases are mostly well-ordered but database migration should precede API changes.
+4. Risk: 3 — Some risks identified but no mitigation for vendor lock-in or data loss scenarios.
+5. Rollback: 2 — Rollback mentioned but no concrete procedure for database schema changes.
+6. Timeline: 4 — Estimates provided but no buffer for integration testing delays.
+7. Testing: 3 — Unit tests planned but no characterization tests for legacy code paths.
+8. Omissions: 3 — Missing monitoring strategy, no alerting for degraded performance.
+TOTAL: 26/40
+
+GAPS (for any dimension scoring below 5):
+GAP-1: Dimension 2, Score 3/5
+Issue: No error handling or retry pattern defined for external API calls
+Fix: Add circuit breaker pattern with exponential backoff for all external integrations
+
+GAP-2: Dimension 4, Score 3/5
+Issue: Vendor lock-in risk not addressed for cloud provider dependencies
+Fix: Define abstraction layer for cloud services and document migration path
+
+GAP-3: Dimension 5, Score 2/5
+Issue: Database rollback procedure is aspirational, not concrete
+Fix: Add reversible migration scripts with data backup verification steps
+
+GAP-4: Dimension 7, Score 3/5
+Issue: No characterization tests to capture existing behavior before refactoring
+Fix: Generate golden master tests for critical paths using /deepgrade:codebase-characterize
+
+GAP-5: Dimension 8, Score 3/5
+Issue: No observability strategy for production deployment
+Fix: Add monitoring dashboards, alerting rules, and SLO definitions for key metrics
