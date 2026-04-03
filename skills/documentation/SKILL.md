@@ -80,7 +80,7 @@ create for Y" or "help me with documentation", analyze their situation:
 Based on the DeepGrade audit, here are recommended documents to create:
 
 HIGH PRIORITY:
-  - SPEC for monolith extraction (39 VB.NET files need a refactoring plan)
+  - SPEC for monolith extraction (legacy modules need a refactoring plan)
   - ADR for credential rotation (5 hardcoded credentials found)
   - PRD for [feature with no PRD] (HIGH risk, no documentation)
 
@@ -163,3 +163,29 @@ as files in the plugin's commands/ directory. The valid commands are:
 
 NEVER suggest a command that is not in this list. If you are unsure whether a
 command exists, use `/deepgrade:help` to check.
+
+## External Enrichment (when MCP search tools available)
+
+When generating documentation, agents can enhance quality by looking up
+external sources. This is OPTIONAL — all templates work without MCP tools.
+
+### When to Search
+- **Specs/ADRs:** Search ref_search_documentation for framework-specific
+  configuration examples and recommended patterns before writing Technical
+  Approach sections.
+- **ADRs:** Search web_search_exa for real-world architecture examples
+  matching the decision context (e.g., "companies using event sourcing
+  for order processing") to strengthen Decision Drivers sections.
+- **READMEs:** Search ref_search_documentation for the project's primary
+  framework documentation to verify setup instructions are current.
+
+### How to Search
+- Use ref_search_documentation for official framework/library docs
+- Use web_search_exa for real-world examples and patterns
+- Always attribute external sources: "[Source: {title}]({url})"
+- Tag unverifiable claims: "[UNVERIFIED — based on training data]"
+
+### When NOT to Search
+- **Release notes** — content comes from git log, not external sources
+- **BRDs** — business requirements come from stakeholders, not web search
+- **Changelogs** — content comes from commit history and version tags

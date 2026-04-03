@@ -306,7 +306,7 @@ Research runs three parallel tracks simultaneously:
 | :------ | :------------- | :----------- |
 | **Codebase Scan** | Finds all related code in the current project | Grep, Glob, Read |
 | **Source Doc Cleanup** | Cleans and structures any provided documents | Read, Write |
-| **Best Practices** | Searches for how others solved similar problems | WebSearch, WebFetch |
+| **Best Practices** | Searches for how others solved similar problems | Ref (ref_search_documentation, ref_read_url), Exa (web_search_exa, get_code_context_exa), Perplexity (perplexity_ask), WebSearch, WebFetch |
 
 The three tracks are independent, so DeepGrade runs them as parallel subagents. This is not just a performance optimization. Parallel execution prevents the sequential bias where findings from Track 1 color the interpretation of Track 2.
 

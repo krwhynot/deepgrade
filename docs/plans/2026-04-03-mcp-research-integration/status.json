@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "plan_name": "mcp-research-integration",
+  "plan_dir": "docs/plans/2026-04-03-mcp-research-integration",
+  "created": "2026-04-03T00:00:00Z",
+  "current_phase": "handoff",
+  "documents": {
+    "brainstorm": "docs/plans/2026-04-03-mcp-research-integration/brainstorm.md",
+    "codebase_scan": "docs/plans/2026-04-03-mcp-research-integration/research/codebase-scan.md",
+    "best_practices": "docs/plans/2026-04-03-mcp-research-integration/research/best-practices.md",
+    "findings": "docs/plans/2026-04-03-mcp-research-integration/research/findings.md",
+    "approach": "docs/plans/2026-04-03-mcp-research-integration/approach.md",
+    "confidence": "docs/plans/2026-04-03-mcp-research-integration/confidence.md",
+    "spec": "docs/specs/mcp-research-integration.md",
+    "audit": "docs/plans/2026-04-03-mcp-research-integration/audit.md",
+    "impact_review": "docs/plans/2026-04-03-mcp-research-integration/impact-review.md",
+    "test_plan": "docs/plans/2026-04-03-mcp-research-integration/test-plan.md"
+  },
+  "phases": {
+    "brainstorm": {"status": "complete", "completed": "2026-04-03"},
+    "research": {"status": "complete", "completed": "2026-04-03"},
+    "pre_plan": {"status": "complete", "completed": "2026-04-03"},
+    "plan": {"status": "complete", "completed": "2026-04-03"},
+    "audit": {"status": "complete", "completed": "2026-04-03", "score": 30, "rating": "YELLOW", "gap_checked": true},
+    "build": {"status": "complete", "completed": "2026-04-03"},
+    "impact_review": {"status": "complete", "completed": "2026-04-03"},
+    "test": {"status": "complete", "completed": "2026-04-03", "tier1": "11/11 PASS", "tier2": "pending"},
+    "handoff": {"status": "complete", "completed": "2026-04-03"}
+  },
+  "tickets": {
+    "MCP-001": {"status": "complete", "file": "skills/mcp-research/SKILL.md", "type": "new"},
+    "MCP-002": {"status": "complete", "note": "Folded into MCP-003"},
+    "MCP-003": {"status": "complete", "file": "commands/plan.md", "type": "edit"},
+    "MCP-004": {"status": "complete", "file": "commands/troubleshoot.md", "type": "edit"},
+    "MCP-005": {"status": "complete", "files": ["skills/documentation/SKILL.md", "commands/doc.md"], "type": "edit"},
+    "MCP-006": {"status": "complete", "file": "agents/integration-scanner.md", "type": "edit"},
+    "MCP-007": {"status": "complete", "file": "agents/dependency-mapper.md", "type": "edit"},
+    "MCP-008": {"status": "complete", "file": "commands/readiness-generate.md", "type": "edit"},
+    "MCP-009": {"status": "complete", "file": "METHODOLOGY.md", "type": "edit"}
+  },
+  "review": {
+    "waived": true,
+    "reason": "Solo developer with full rollback capability and LOW risk profile",
+    "waived_by": "Kyle"
+  }
+}

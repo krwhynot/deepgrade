@@ -1,7 +1,7 @@
 ---
 description: (deepgrade) AI-guided troubleshooting using the 4-phase systematic debugging framework with severity-driven incident triage and containment. Enforces root cause investigation before suggesting fixes. For SEV1/SEV2 production incidents, temporary containment is allowed before investigation. Logs every step, builds a project knowledge base. Auto-links to active plan. Pass an error message, issue description, or just say what broke.
 argument-hint: "[error message or issue description] [--plan plan-name] [--severity SEV1|SEV2|SEV3|SEV4]"
-allowed-tools: Read, Write, Grep, Glob, Bash, Task
+allowed-tools: Read, Write, Grep, Glob, Bash, Task, ref_search_documentation, ref_read_url, web_search_exa, get_code_context_exa
 ---
 
 <identity>
@@ -276,6 +276,34 @@ fi
 If the impact review flagged integration edges related to this area,
 say: "The Impact Review flagged this area: {finding}. This may be
 related. I'll check this path first."
+
+### Step 0.2: External Context (if MCP search tools available)
+
+After checking the local knowledge base, search external sources for known issues.
+This step is OPTIONAL — skip entirely if no MCP search tools are available.
+
+IF ref_search_documentation is available:
+  Search for the error message or symptom in the framework's official docs.
+  Use a complete question: ref_search_documentation("NullReferenceException in ASP.NET middleware pipeline")
+  Look for: known bugs, breaking changes, migration notes, configuration requirements.
+
+IF web_search_exa or get_code_context_exa is available:
+  Search for the exact error message on GitHub issues and Stack Overflow.
+  Use web_search_exa for error signatures, get_code_context_exa for code-related fixes.
+  Look for: resolved issues with the same error, workarounds, version-specific bugs.
+
+Mark external findings with evidence tier:
+  - Framework docs match: "A-HIGH: confirmed in {framework} docs v{version}"
+  - GitHub issue match: "B-MEDIUM: matches GitHub issue #{number}, {status}"
+  - SO answer match: "B-MEDIUM: matches SO answer with {votes} votes"
+
+IMPORTANT: External matches inform hypothesis formation but do NOT replace
+reading THIS codebase's actual code. The plausible hypothesis warning still
+applies — always verify external findings against the local implementation
+before forming a hypothesis.
+
+IF no MCP search tools available:
+  Skip this step entirely. Proceed to Phase 1 with codebase-only investigation.
 
 ## Phase 1: ROOT CAUSE INVESTIGATION
 

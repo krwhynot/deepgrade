@@ -1,7 +1,7 @@
 ---
 description: (deepgrade) Start or resume a guided plan. Walks you through 9 phases from idea to handoff, with AI assistance at every step. Produces documents by default; codebase writes require your approval. Pass a plan name to start new or resume existing. Optionally pass source material with 'from'.
 argument-hint: "[plan-name] [from docs/path or 'idea: description']"
-allowed-tools: Read, Write, Grep, Glob, Bash, Task
+allowed-tools: Read, Write, Grep, Glob, Bash, Task, ref_search_documentation, ref_read_url, web_search_exa, get_code_context_exa, perplexity_search, perplexity_ask
 ---
 
 <identity>
@@ -298,11 +298,23 @@ Output: docs/plans/{date}-{name}/research/intake/ (structured files)
 Read all files in the source folder. Extract structured data per content type.
 Write cleaned data to research/intake/.
 
-TRACK 3 - BEST PRACTICES (Subagent: Sonnet, if web search available):
+TRACK 3 - BEST PRACTICES (Subagent: Sonnet, if external search tools available):
 Objective: Find how others solved similar problems.
-Tools: Read, WebSearch, WebFetch
+Tools: Read, ref_search_documentation, ref_read_url, web_search_exa, get_code_context_exa, perplexity_ask, WebSearch, WebFetch
 Output: docs/plans/{date}-{name}/research/best-practices.md
-Search for how others solved similar problems. Note recommended approaches.
+
+Search strategy (use in order, stop when sufficient):
+1. Ref: Search framework/library docs for the specific technologies in scope.
+   Use ref_search_documentation with a complete question (not keywords).
+2. Exa: Search for code examples of the pattern being considered.
+   Use get_code_context_exa for implementation examples, web_search_exa for general patterns.
+3. Perplexity: If Ref + Exa are insufficient, ask a targeted research question.
+   Use perplexity_ask for focused answers with citations.
+4. WebSearch/WebFetch: Fallback if MCP tools are not available.
+
+If NO external search tools are available:
+  Fall back to codebase-only research using built-in tools.
+  Tag in findings.md: "[EXTERNAL RESEARCH UNAVAILABLE — findings based on codebase and training data only]"
 
 SYNTHESIS (after all tracks complete):
 Read all three track outputs. Cross-reference findings.
@@ -532,8 +544,12 @@ HIGH-impact entries MUST have at least one TIER A or TIER B source.
 If no verifiable source can be found for a HIGH-impact claim, flag it:
 "[SOURCE NEEDED — this claim requires manual verification before scope lock]"
 
-URL VERIFICATION: When WebSearch or WebFetch tools are available, verify that
-reference URLs for HIGH-impact entries are reachable before writing them.
+URL VERIFICATION: When ref_read_url, web_search_exa, WebSearch, or WebFetch
+tools are available, verify that reference URLs for HIGH-impact entries are
+reachable before writing them.
+- Prefer ref_read_url for documentation URLs (returns clean markdown, trajectory-aware)
+- Use web_search_exa for general web URLs (semantic matching)
+- Fall back to WebFetch if MCP tools are not available
 If a URL is dead or redirects to unrelated content, downgrade to TIER C and
 flag as "[LINK DEAD — needs replacement source]".
 
@@ -1494,7 +1510,7 @@ On resume, check freshness of all completed phases and report any staleness.
 |---------|----------|
 | Source folder unreadable | Skip doc cleanup, continue with codebase + web |
 | Codebase scan finds nothing | Note "no existing code found", proceed |
-| Web research unavailable | Skip web track, note limitation |
+| MCP/web research unavailable | Skip Track 3 or use codebase-only research, tag "[EXTERNAL RESEARCH UNAVAILABLE]" |
 | Phase partially complete | Save to status.json, allow resume |
 | Existing plan folder | Ask: resume existing or create {name}-2? |
 | status.json corrupted | Rebuild from existing files in plan folder |

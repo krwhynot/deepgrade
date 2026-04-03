@@ -372,6 +372,47 @@ For Prisma:
 
 If .mcp.json already exists, MERGE the new entry. Do not overwrite existing servers.
 
+**5.7 (No MCP servers configured — research tools):**
+Generate .mcp.json with recommended research MCP servers based on detected stack.
+
+Recommend servers based on need (respect Check 8.5 — stay under 5 total servers):
+- **All stacks:** Ref (documentation search — always useful)
+- **Web/frontend stacks** (detected by package.json with React/Vue/Angular/Next): Add Exa
+- **Enterprise/complex stacks** (multiple services, migration context): Add Perplexity
+
+If .mcp.json already has database MCP servers, recommend at most 1 research server
+to stay under the 5-server budget.
+
+Template (Ref — recommended for all stacks):
+```json
+{
+  "mcpServers": {
+    "ref": {
+      "type": "http",
+      "url": "https://api.ref.tools/mcp?apiKey=YOUR_REF_API_KEY"
+    }
+  }
+}
+```
+
+Extended template (for stacks that benefit from code search):
+```json
+{
+  "mcpServers": {
+    "ref": {
+      "type": "http",
+      "url": "https://api.ref.tools/mcp?apiKey=YOUR_REF_API_KEY"
+    },
+    "exa": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp?exaApiKey=YOUR_EXA_API_KEY"
+    }
+  }
+}
+```
+
+If .mcp.json already exists, MERGE new entries. Do not overwrite existing servers.
+
 **9.6 (No seed data):**
 Generate a starter seed file based on detected_stack.
 
