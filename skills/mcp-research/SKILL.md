@@ -117,10 +117,16 @@ when the server is connected.
 
 Server builds differ in which tools they expose, so treat this list as the set
 worth *looking for*, not a guarantee. Anything absent from the connected tool
-list falls through to graceful degradation. Do not add a tool here without
-observing it on a live connection: earlier revisions advertised
-`get_code_context_exa`, `crawling_exa`, and `web_search_advanced_exa`, none of
-which exist on either Exa server, so every recommendation to use them degraded.
+list falls through to graceful degradation — which is also why an entry here
+that your server does not carry costs you nothing beyond a wasted lookup.
+
+Do not add a tool to this list without observing it on a live connection.
+Earlier revisions of this skill advertised `get_code_context_exa`,
+`crawling_exa`, and `web_search_advanced_exa` and routed the selection matrix
+through them; on the Exa servers we were able to inspect, only `web_search_exa`
+and `web_fetch_exa` were present, so those recommendations degraded every time.
+If your Exa server does expose a code-context tool, prefer it for code searches
+— the suffix-match rule above will find it.
 
 ## When NOT to Use External Search
 

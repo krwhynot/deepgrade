@@ -64,16 +64,73 @@ Options:
 "unrecognized fields" applies to the manifest schema, which is why it never sees a `skills:`
 key in an agent file either way.
 
-## Decision (F27)
+## Probe 4 — can any local mechanism verify a frontmatter key? No.
 
-Ship the documented fallback: append `Skill` to `tools:` on the seven agents that reference a
-knowledge skill. The `skills:` preload key is *not* ruled out — it may well work — but it cannot
-be verified here, and an unrecognized frontmatter key would silently no-op. That silent no-op is
-exactly the F27 defect, so adopting an unverifiable mechanism to fix it would risk reshipping it.
-`Skill` is spec-confirmed and works regardless.
+Two further probes were run and both turned out **non-falsifying**. Recorded because a
+non-falsifying probe is worse than no probe: it manufactures false confidence.
 
-The Layer-1 guard accepts **either** mechanism, so if `skills:` is confirmed later, switching is a
-one-line change per agent with the test already in place.
+**4a. `--agents` inline definition.** If the CLI validated tool names, an unknown one would
+error. It does not:
+
+| `tools` value | output | exit |
+|---|---|---|
+| `"Read"` | `ok` | 0 |
+| `"Skill"` | `ok` | 0 |
+| `"Zzzdefinitelynotatool"` | `ok` | 0 |
+
+A definitely-invalid name behaves exactly like a valid one, so this distinguishes nothing.
+
+**4b. `claude --plugin-dir . plugin details deepgrade`.** This *does* read the working tree
+(`Source: deepgrade@inline`) and reports `Agents (22)`, which looked like a loader check. It
+is not — the count tracks files, not parse success:
+
+| mutation to `agents/risk-assessor.md` | reported count |
+|---|---|
+| baseline | `Agents (22)` |
+| `name:` line deleted | `Agents (22)` |
+| invalid YAML (`tools: [unclosed, "broken`) | `Agents (22)` |
+| frontmatter block never closed | `Agents (22)` |
+| **file removed** | `Agents (21)` |
+
+Useful as a file-presence check and nothing more. It cannot confirm that any frontmatter key is
+honored, and — importantly — its tolerance of corrupt frontmatter is *not* evidence that the
+runtime tolerates it, since the inventory is derived from filenames.
+
+## Decision (F27) — revised 2026-07-29 after audit
+
+Both clauses of the finding's fix ship, and **both** access mechanisms:
+
+- `Skill` in `tools:`, and `skills: ["deepgrade:self-audit-knowledge"]` in frontmatter
+- the seven agent bodies now name the skill as `deepgrade:self-audit-knowledge`
+
+**Neither mechanism is verifiable on this machine.** The first revision of this document claimed
+`Skill` was "spec-confirmed" and rejected `skills:` as unverifiable. That was an asymmetric
+standard: validator silence is evidence about the validator, not about either mechanism, and the
+plan's own reference data states the field exists —
+
+> "plugin agent frontmatter supports a `skills` field to preload skills into subagents
+> (plugins-reference, Agents section)"
+
+So the honest position is that both are spec-attested and neither is locally testable. Shipping
+both means only one has to be honored. The acceptance matrix permits either, so this satisfies it
+twice over.
+
+**Known cost of belt-and-braces:** if `skills:` *is* honored, it preloads the skill (~1.5k tokens
+per the `plugin details` per-component figures) on every invocation of those seven agents, where
+the `Skill` tool would have loaded it on demand. Accepted — a skill that always loads beats a
+skill that may never load — but worth revisiting if agent invocation cost becomes a concern.
+
+**The clause that was missed.** Commit `103574e` marked F27 closed having done only the first
+clause. The finding's fix text reads "add `Skill` to their tools allowlists **and** reference the
+namespaced name `deepgrade:self-audit-knowledge`". All seven bodies still said
+`self-audit-knowledge`, unqualified — F21's own defect (bare names do not resolve) in a different
+field, shipped in the same commit that fixed F21. The Layer-1 assertion passed throughout because
+it checked whether the agent *could* load a skill, never whether the name it was told to load was
+addressable: a capability check standing in for a resolution check. The guard now asserts both,
+plus that every referenced and preloaded skill exists on disk.
+
+**Rule this yields:** when a finding's fix text contains a conjunction, each clause is a separate
+acceptance criterion. Closing on one is closing on none.
 
 ## Consequence beyond U1
 

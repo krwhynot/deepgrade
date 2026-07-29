@@ -4,6 +4,7 @@ description: Use this agent to crawl a codebase and produce a feature inventory 
 model: sonnet
 color: green
 tools: Read, Grep, Glob, Bash, Write, Skill
+skills: ["deepgrade:self-audit-knowledge"]
 ---
 
 You are a codebase feature inventory specialist. Your job is to produce a complete
@@ -128,4 +129,4 @@ Stack: [from STACK PROFILE]
 - Do NOT create any files outside docs/audit/.
 - Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`. If you did not run a command or read the file, it is Tier C.
 - Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`, `[DEAD-CODE-UNCERTAIN]`.
-- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.
+- Reference the deepgrade:self-audit-knowledge skill for tier definitions and failure mode taxonomy.

@@ -3,7 +3,7 @@
   "plan_name": "plugin-hardening-v5",
   "plan_dir": "docs/plans/2026-07-20-plugin-hardening-v5",
   "created": "2026-07-20",
-  "current_phase": "audit",
+  "current_phase": "build",
   "mode": "solo",
   "source": {
     "type": "structural_audit",
@@ -297,7 +297,7 @@
         "f07_negative": "Edit deliberately granted to NO agent. These agents characterize a codebase; they must not be able to modify it. Asserted.",
         "f32_binding": "The canonical convention block is byte-identical in skills/mcp-research/SKILL.md and CONTRIBUTING.md, bound by a same-string assertion. A convention stated in one place and not the other is exactly how this defect reships.",
         "new_assertions": "11 added to layer1 (F02, F03 both directions, F07 sweep + floor, F07 no-Edit negative, F21 sweep, F27 sweep + floor, flow-array shape, F32 same-string, F32 content, F32 stale-rule, F32 phantom-Exa)",
-        "mutation_tested": "13 mutations, ALL CAUGHT - including two that only a floor assertion can catch (hiding an agent from the F07 sweep; gutting the F32 rule identically in both files so the same-string check still passes)",
+        "mutation_tested": "20 mutations, ALL CAUGHT. M1-M13 (pre-audit) cover access: dropped/leaked tools, hidden sweep subject, granted Edit, re-added bare name, restored flow array, F32 drift/gutting/stale-rule/phantom-Exa. M14-M20 (post-audit) cover resolution and accounting: stripped namespace, dangling reference, RENAMED SKILL DIRECTORY orphaning all 7 refs, unqualified preload entry, bare name inside a flow array, hardcoded qualified mcp__ identifier, and two-violations-must-tally-as-two. LESSON: all 13 original mutations targeted ACCESS because that is what I assumed the defect was, so none could reveal that the guard never checked RESOLUTION. Mutation testing proves an assertion can fail; it cannot tell you the assertion checks the right property. M16 is the mutation that would have caught this on day one.",
         "assertion_bug_caught_by_mutation_testing": "sed -n '/^---$/,/^---$/!p' to strip frontmatter pairs the delimiters with '---' horizontal rules in agent BODIES and deletes body chunks, hiding 3 of 20 agents from the F07 sweep while still reporting a pass. Same species as the Wave 1 regex bug. Replaced with a first-block-only awk, and both derived sweeps now assert a floor on their subject count so a derivation matching nothing fails loudly instead of passing vacuously.",
         "in_wave_extension": "F32's acceptance row names skills/mcp-research/SKILL.md only, but the same phantom Exa tool names (get_code_context_exa, crawling_exa, web_search_advanced_exa - none exist on any Exa server) also appear in commands/plan.md and commands/troubleshoot.md body text. Fixing the skill while leaving live prose recommending a nonexistent tool would leave the defect shipping, so those 4 lines were fixed under the same finding. Recorded, not silent.",
         "measurement_notes": [
@@ -305,7 +305,15 @@
           "F07's 13 and F27's 7 were re-derived from the tree; both matched the finding exactly.",
           "14 files are CRLF in a Windows working tree while the index is uniformly LF (commands/troubleshoot.md among them). No runtime impact - markdown and YAML tolerate CRLF - but guards must strip \r or they pass on one checkout and fail on the other. Handled in-test rather than by widening .gitattributes scope, which would require a CR."
         ],
-        "suite": "183 pass / 0 fail (L1 111, L2 15, L3 9, L4 7, L5 41)"
+        "suite": "183 pass / 0 fail (L1 111, L2 15, L3 9, L4 7, L5 41), measured per layer",
+        "f27_reopened_and_completed": "F27 was marked closed at 103574e having satisfied only the FIRST clause of its fix. The fix text reads 'add Skill to their tools allowlists AND reference the namespaced name deepgrade:self-audit-knowledge'. All 7 agent bodies still said 'self-audit-knowledge' unqualified - which is F21's own defect (bare names do not resolve) in a different field, shipped in the same commit that fixed F21. Caught by a fresh-lens audit, not by the suite: the Layer-1 assertion checked whether the agent COULD load a skill and never whether the name it was told to load was addressable, i.e. a capability check standing in for a resolution check. Now fixed - 7 bodies namespaced, `skills: [\"deepgrade:self-audit-knowledge\"]` added alongside `Skill`, and the guard asserts namespacing plus on-disk existence for both the body references and the preload entries. RULE: when a finding's fix text contains a conjunction, each clause is a separate acceptance criterion.",
+        "guard_bugs_found_by_audit": [
+          "F21 guard: fail() ran inside a piped `while`, i.e. a subshell, so PASS/FAIL increments were lost and N violations tallied as 1. The verdict was still red, which is why mutation M7 could not see it - M7 asserted the verdict, not the accounting.",
+          "F21 guard: false negative on a bare MCP name inside a YAML flow array (preceded by '\"', so the leading (^|[,[:space:]]) never matched). Coverage survived only because assertion 12g separately bans flow arrays - the guard was silently coupled to an unrelated assertion.",
+          "F21 guard: a CORRECTLY qualified mcp__exa__web_search_exa was flagged and reported as a 'bare MCP name' - right to flag, wrong diagnosis. Rewritten to tokenize the allowlist and report the two cases distinctly.",
+          "mcp-research SKILL.md shipped a machine-specific absolute claim ('none of which exist on either Exa server' - 'either' meaning the two connected to the author's machine) in a doc distributed to all users. Rescoped to 'on the Exa servers we were able to inspect'."
+        ],
+        "assertion_count_note": "The post-audit fix did NOT change the assertion count: the F21 and F27 checks were REPLACED, not added, so layer 1 stayed at 111 and the total at 183. An interim edit of this file claimed '183 -> 185' before measuring; corrected. The added rigor is in WHAT the two assertions check (resolution, not capability; tokenized allowlist, not line regex) and in the mutation count, which went 13 -> 20 with all 20 caught."
       }
     },
     "impact_review": {
@@ -380,7 +388,7 @@
       "id": "U1",
       "unknown": "whether `claude plugin validate` accepts a `skills:` key in agent frontmatter (F27's preferred fix, which preloads a skill without granting a new tool)",
       "blocks": "nothing; documented fallback is to append `Skill` to the tools allowlist",
-      "resolution": "RESOLVED-NEGATIVE 2026-07-29 (PHV5-020). The question cannot be answered by the validator, because the validator does not read agent frontmatter at all. Falsifying control: `agents/risk-assessor.md` line 2 (`name: risk-assessor`) was deleted and `claude plugin validate .claude-plugin/plugin.json --strict` still printed 'Validation passed'; the directory form validates `marketplace.json` and likewise passed. `validate --help` confirms the scope: 'Validate a plugin or marketplace manifest'. F27 therefore ships the documented fallback (`Skill` in `tools:`), whose behavior is spec-confirmed; an unrecognized `skills:` key would silently no-op, which is precisely the F27 failure mode. CONSEQUENCE BEYOND U1: the entire agent- and command-frontmatter defect class (F01, F02, F03, F07, F17, F21, F27) is invisible to `validate --strict`, widening the already-recorded F21 note ('validate passes on bare names'). U7 lists `validate --strict` among the EIGHT relied-upon behaviors - it is relied upon for manifest schema only, not component wiring. tests/layer1-config-wiring.sh is the sole guard for this class."
+      "resolution": "RESOLVED-NEGATIVE 2026-07-29 (PHV5-020), record CORRECTED after audit. The question cannot be answered locally: `claude plugin validate` does not read agent frontmatter at all. Falsifying control: `agents/risk-assessor.md` line 2 (`name: risk-assessor`) was deleted and `claude plugin validate .claude-plugin/plugin.json --strict` still printed 'Validation passed'; the directory form validates marketplace.json and likewise passed. `validate --help` confirms the scope: 'Validate a plugin or marketplace manifest'. TWO FURTHER PROBES WERE RUN AND BOTH PROVED NON-FALSIFYING, recorded so they are not mistaken for evidence: (a) `--agents` with tools ['Zzzdefinitelynotatool'] behaves identically to ['Read'] and ['Skill'], so the CLI does not validate tool names; (b) `claude --plugin-dir . plugin details deepgrade` does read the working tree but its 'Agents (22)' count tracks FILES, not parse success - a deleted `name:` line, invalid YAML, and an unterminated frontmatter block all still report 22; only removing the file drops it to 21. CORRECTION TO THE FIRST RECORD: it claimed `Skill` in `tools:` was 'spec-confirmed' while rejecting `skills:` as unverifiable. That was an asymmetric standard - validator silence is evidence about the validator, not about either mechanism - and the plan's own reference-data states the field exists ('plugin agent frontmatter supports a skills field to preload skills into subagents, plugins-reference, Agents section'). Both are spec-attested and neither is locally testable, so F27 now ships BOTH, needing only one to be honored. CONSEQUENCE BEYOND U1 (unchanged): the entire agent- and command-frontmatter defect class (F01, F02, F03, F07, F17, F21, F27) is invisible to `validate --strict`. U7 lists `validate --strict` among the EIGHT relied-upon behaviors - it is relied upon for manifest schema only, never component wiring. tests/layer1-config-wiring.sh is the sole guard for this class."
     },
     {
       "id": "U3",
@@ -832,6 +840,20 @@
         "POSIX_RUNTIME_VERIFIED",
         "CI_ONLY (default)"
       ]
+    }
+  ],
+  "candidate_findings": [
+    {
+      "id": "CAND-1",
+      "observation": "`Agent` vs `Task` are now inconsistent in-tree: 2 agents list `Agent` in tools: (per F03's spec basis, and corroborated by this session's Explore agent spec which enumerates 'All tools except Agent, ...'), while 15 command allowed-tools entries list `Task`.",
+      "why_it_matters": "If `Task` is a superseded name, those 15 entries are dead - the same defect class as F21. allowed-tools is a permission grant so the blast radius is small, but the inconsistency is unverified either way and `validate --strict` cannot see it.",
+      "status": "NOT IN WAVE 2 SCOPE. Raised for triage; needs an empirical check of whether both names resolve."
+    },
+    {
+      "id": "CAND-2",
+      "observation": "`claude plugin details deepgrade` reports 'Skills (23)' - it counts the 17 commands together with the 6 knowledge skills. README/GUIDE/help state 17 commands and 6 skills separately.",
+      "why_it_matters": "Not a defect - different taxonomy - but anyone reconciling the docs against `plugin details` output will read '6 skills' as wrong. Worth a footnote wherever the counts are asserted.",
+      "status": "Cosmetic. Candidate for Wave 3's doc-count follow-up if one occurs."
     }
   ]
 }

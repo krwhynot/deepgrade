@@ -57,6 +57,12 @@ to have. `claude plugin validate --strict` does not catch either case — it rea
 only `plugin.json` and `marketplace.json`, never agent or command frontmatter —
 so `tests/layer1-config-wiring.sh` guards this instead.
 
+The same rule applies to **skill** names, which are not MCP tools but fail the
+same way: plugin skills address as `plugin:skill`, so an agent that says
+"reference the `self-audit-knowledge` skill" is naming something unresolvable.
+Write `deepgrade:self-audit-knowledge`. Nothing in the toolchain catches an
+unqualified skill reference either.
+
 The block above is byte-identical to the one in `skills/mcp-research/SKILL.md`
 and a test asserts they stay that way. Edit both or neither.
 

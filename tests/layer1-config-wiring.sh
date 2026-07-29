@@ -751,37 +751,85 @@ else
   pass "F07: no agent grants Edit"
 fi
 
-# --- 12e. F21: bare MCP names never resolve. Validate passes on them, so guard here.
-mcp_bare=$(grep -nE '^(tools|allowed-tools):' "$AGENTS_DIR"/*.md "$COMMANDS_DIR"/*.md 2>/dev/null \
-           | grep -E '(^|[,[:space:]])(ref_[a-z_]+|[a-z_]+_exa|perplexity_[a-z_]+)([,[:space:]]|$)')
-if [ -n "$mcp_bare" ]; then
-  echo "$mcp_bare" | while IFS= read -r line; do
-    fail "F21: bare MCP name in an allowlist — never resolves: $line"
+# --- 12e. F21: no MCP identifier of any shape belongs in an allowlist.
+#      Validate passes on bare names, so this is the only guard.
+#
+#      Tokenize the allowlist and test each entry, rather than regex-matching the
+#      whole line. The line-based form this replaced had three bugs: it missed a
+#      bare name inside a YAML flow array (preceded by `"`, so the leading
+#      (^|[,[:space:]]) never matched — coverage survived only by accident,
+#      because 12g separately bans flow arrays); it reported a correctly
+#      qualified mcp__server__tool as a "bare name", which is the wrong
+#      diagnosis; and its fail() calls ran inside a piped `while`, i.e. a
+#      subshell, so every violation past the first was lost from the tally.
+mcp_bad=0
+while IFS= read -r line; do
+  file=${line%%:*}; rest=${line#*:}; body=${rest#*:}
+  # strip the key, then split on commas and YAML flow-array punctuation
+  for tok in $(echo "${body#*:}" | tr -d '\r' | tr ',[]"'"'" ' \n' | tr -s ' '); do
+    case "$tok" in
+      mcp__*)
+        fail "F21: $file hardcodes the MCP identifier '$tok' — the <server> segment is chosen by the installing user, so this resolves only on the author's machine"
+        mcp_bad=$((mcp_bad + 1)) ;;
+      ref_*|*_exa|perplexity_*)
+        fail "F21: $file lists the bare MCP name '$tok' — bare names never resolve to a tool"
+        mcp_bad=$((mcp_bad + 1)) ;;
+    esac
   done
-  FAIL=$((FAIL + 1))
-else
-  pass "F21: no bare MCP identifiers in any tools:/allowed-tools: list"
-fi
+done <<EOF
+$(grep -nE '^(tools|allowed-tools):' "$AGENTS_DIR"/*.md "$COMMANDS_DIR"/*.md 2>/dev/null)
+EOF
+[ "$mcp_bad" -eq 0 ] && pass "F21: no MCP identifier, bare or qualified, appears in any tools:/allowed-tools: list"
 
-# --- 12f. F27: an agent told to reference a knowledge skill must be able to load one.
+# --- 12f. F27: an agent told to reference a knowledge skill must be able to load
+#      it AND must name it in a form that resolves. Checking only the first is a
+#      capability check standing in for a resolution check: commit 103574e passed
+#      it while all 7 agents still named the skill unqualified, which is F21's
+#      defect in a different field. Both clauses of the F27 fix are asserted here.
 f27_subjects=0
 f27_bad=0
 for f in "$AGENTS_DIR"/*.md; do
-  grep -qE '\b(self-audit-knowledge|deepgrade-knowledge|governance-knowledge|mcp-research|readiness-scoring) skill\b' "$f" || continue
+  refs=$(grep -ohE '\b(deepgrade:)?[a-z][a-z-]*(knowledge|scoring|research) skill\b' "$f" 2>/dev/null \
+         | sed 's/ skill$//' | sort -u)
+  [ -z "$refs" ] && continue
   f27_subjects=$((f27_subjects + 1))
-  # Either mechanism satisfies the requirement: the Skill tool, or a `skills:`
-  # preload key. U1 (2026-07-29) could not confirm the validator accepts
-  # `skills:` — it does not read agent frontmatter at all — so shipping code
-  # uses the Skill tool, whose behavior is spec-confirmed.
+  b=$(basename "$f")
+
+  # (a) access: the Skill tool, or the `skills:` preload key. Either satisfies it.
   if ! has_tool Skill "$(tools_of "$f")" && ! grep -q '^skills:' "$f"; then
-    fail "F27: $(basename "$f") references a knowledge skill but can neither invoke nor preload one"
+    fail "F27: $b references a knowledge skill but can neither invoke nor preload one"
     f27_bad=1
   fi
+
+  # (b) resolution: every referenced name must be namespaced AND exist on disk.
+  for ref in $refs; do
+    case "$ref" in
+      deepgrade:*) ;;
+      *) fail "F27: $b names the skill '$ref' unqualified — plugin skills address as plugin:skill (deepgrade:$ref)"
+         f27_bad=1; continue ;;
+    esac
+    bare=${ref#deepgrade:}
+    if [ ! -f "$SKILLS_DIR/$bare/SKILL.md" ]; then
+      fail "F27: $b references skill '$ref' but $SKILLS_DIR/$bare/SKILL.md does not exist"
+      f27_bad=1
+    fi
+  done
+
+  # (c) a `skills:` entry must itself resolve — an unverifiable mechanism
+  #     pointing at a nonexistent skill is worse than no mechanism.
+  for pre in $(grep -m1 '^skills:' "$f" 2>/dev/null | tr -d '\r' | sed 's/^skills://' \
+               | tr ',[]"'"'" ' \n' | tr -s ' '); do
+    case "$pre" in
+      deepgrade:*) [ -f "$SKILLS_DIR/${pre#deepgrade:}/SKILL.md" ] \
+                     || { fail "F27: $b preloads '$pre' but that skill does not exist"; f27_bad=1; } ;;
+      ?*) fail "F27: $b preloads '$pre' unqualified — use deepgrade:$pre"; f27_bad=1 ;;
+    esac
+  done
 done
 if [ "$f27_subjects" -lt 7 ]; then
   fail "F27: sweep derived only $f27_subjects skill-referencing agents (expected >= 7) — the derivation is broken"
 elif [ "$f27_bad" -eq 0 ]; then
-  pass "F27: all $f27_subjects agents referencing a knowledge skill can load it"
+  pass "F27: all $f27_subjects agents referencing a knowledge skill can load it and name it resolvably"
 fi
 
 # --- 12g. Ride-along: tools: uses one shape (comma-separated), not YAML flow arrays.

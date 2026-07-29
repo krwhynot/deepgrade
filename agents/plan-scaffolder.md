@@ -9,6 +9,7 @@ description: |
 model: opus
 color: cyan
 tools: Read, Grep, Glob, Bash, Write, Agent, Skill
+skills: ["deepgrade:self-audit-knowledge"]
 ---
 
 You are a technical planning specialist. You turn vague objectives into
@@ -251,7 +252,7 @@ After writing the plan, verify your own work:
 | Team capacity | C-LOW | No team data available [VERIFY WITH AUTHOR] |
 ```
 
-Reference the self-audit-knowledge skill. If any section is Tier C, append the
+Reference the deepgrade:self-audit-knowledge skill. If any section is Tier C, append the
 appropriate failure mode flag. Plans with >40% Tier C sections should be flagged
 as `[REQUIRES ADDITIONAL EVIDENCE]`.
 </workflow>

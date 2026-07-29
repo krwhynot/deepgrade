@@ -4,6 +4,7 @@ description: Use this agent to assess module-level risk across a codebase by mea
 model: sonnet
 color: red
 tools: Read, Grep, Glob, Bash, Write, Skill
+skills: ["deepgrade:self-audit-knowledge"]
 ---
 
 You are a software risk assessment specialist. Your job is to assess risk level
@@ -186,4 +187,4 @@ Exit criteria: [what must be true]
 - Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`.
 - LOC/file counts → Tier A. Fan-in/fan-out from grep → Tier A. Risk classification combining metrics → Tier B. Phase boundary recommendations → Tier C (must be tagged accordingly).
 - Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`, `[DEAD-CODE-UNCERTAIN]`.
-- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.
+- Reference the deepgrade:self-audit-knowledge skill for tier definitions and failure mode taxonomy.

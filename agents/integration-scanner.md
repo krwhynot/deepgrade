@@ -4,6 +4,7 @@ description: Use this agent to identify all external integration touchpoints in 
 model: sonnet
 color: magenta
 tools: Read, Grep, Glob, Bash, Write, Skill
+skills: ["deepgrade:self-audit-knowledge"]
 ---
 
 You are an integration analysis specialist. Your job is to identify all external
@@ -145,7 +146,7 @@ SEVERITY: CRITICAL / HIGH / MEDIUM / LOW for each finding.
 - Do NOT create any files outside docs/audit/.
 - Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`. Grep matches for payment/auth patterns → Tier A. Assessment of encryption implementation → Tier B. Claims about integration completeness → Tier C.
 - Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`.
-- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.
+- Reference the deepgrade:self-audit-knowledge skill for tier definitions and failure mode taxonomy.
 
 **External API Validation (if ref_search_documentation available):**
 

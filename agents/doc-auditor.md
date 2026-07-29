@@ -4,6 +4,7 @@ description: Use this agent to catalog all existing documentation in a codebase 
 model: sonnet
 color: yellow
 tools: Read, Grep, Glob, Bash, Write, Skill
+skills: ["deepgrade:self-audit-knowledge"]
 ---
 
 You are a documentation quality auditor. Your job is to catalog all existing
@@ -157,4 +158,4 @@ Stack: [from STACK PROFILE]
 - Do NOT create any files outside docs/audit/.
 - Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`. File existence = Tier A. Quality rating = Tier B. "Missing docs for business rules" = Tier C.
 - Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`.
-- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.
+- Reference the deepgrade:self-audit-knowledge skill for tier definitions and failure mode taxonomy.

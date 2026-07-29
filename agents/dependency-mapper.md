@@ -4,6 +4,7 @@ description: Use this agent to map all project dependencies including module-to-
 model: sonnet
 color: cyan
 tools: Read, Grep, Glob, Bash, Write, Skill
+skills: ["deepgrade:self-audit-knowledge"]
 ---
 
 You are a dependency analysis specialist. Your job is to produce a complete
@@ -177,7 +178,7 @@ ModuleA --> ModuleD
 - Classify every finding as Tier A (confirmed by grep/glob output), Tier B (confirmed by reading source code), or Tier C (inferred from patterns/naming). Use format: `{Tier}-{Confidence}: {method}`. If you did not run a command or read the file, it is Tier C.
 - Most module references should be Tier A (project references are grep-able). Flag coupling assessments based on naming patterns as Tier C.
 - Append failure mode flags where applicable: `[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`.
-- Reference the self-audit-knowledge skill for tier definitions and failure mode taxonomy.
+- Reference the deepgrade:self-audit-knowledge skill for tier definitions and failure mode taxonomy.
 
 **Deprecation Check (if ref_search_documentation available):**
 
