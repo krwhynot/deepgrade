@@ -58,7 +58,7 @@ plugin/skill specification, so that every component the plugin advertises actual
 | 3. Pre-Plan | **Complete (2026-07-29).** Adversarial review PASSED — GO (Codex, perfect score; details in `codex-review.md` and `status.json`); owner signed off; plan directory committed at `0b72995` |
 | 4. Plan | **Complete (2026-07-29)** — spec confirmed at the Phase 4 gate (33 tickets, 9 waves, est. 28–34 working days incl. buffer) |
 | 5. Audit | **Complete (2026-07-29) — 34/40 GREEN, gap-checked YES, lint 15/15, zero regressions** (v1 30/40 → auto-revised → v2 34/40). Human-review gate is the next step |
-| 6. Build | **In Progress — Wave 0 partial: PHV5-001 + PHV5-002 complete** (`c6d3047`, `fe76853`). Suite baseline 115/4 → **156/4**; `validate --strict` passes; 22 sources snapshotted + hashed; clean-clone verified. Remaining in Wave 0: PHV5-003 (U7 floor), PHV5-004 (G0/U6 probe), PHV5-005 (CI) — all need an interactive authenticated session |
+| 6. Build | **In Progress — Wave 0: PHV5-001, PHV5-002, PHV5-004 complete.** Suite baseline 115/4 → **156/4**; `validate --strict` passes; 22 sources snapshotted + hashed; clean-clone verified. **G0 RESOLVED → lane N (node-canonical); U6 resolved (notice user-visible, CR-1 stands); G1 = CI_ONLY.** Lanes B/I not needed. Wave 4 unblocked. Remaining in Wave 0: PHV5-003 (U7 floor), PHV5-005 (CI matrix) |
 | 7. Impact Review | Not Started |
 | 8. Test | Not Started |
 | 9. Handoff | Not Started |

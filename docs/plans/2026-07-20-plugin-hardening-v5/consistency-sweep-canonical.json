@@ -5,12 +5,13 @@
     "unknown": "what Claude Code surfaces when an exec-form hook command cannot be spawned (interpreter missing), and whether that notice is user-visible",
     "classification": "conditionally-blocking",
     "classification_note": "reclassified v11 (round 10: v10 made U6 capable of blocking lane selection but this entry still said it blocks nothing); reduced to an exact enum and canonically locked v13 (round 12: affirmative-token regexes admit their own negation)",
-    "blocks": "lane-N selection only: CR-1 conditions lane N on the notice's visible form - invisible means CR-1 void, G0 records BLOCKED, Wave 0 pauses before its CI-enable step pending a new owner CR (CR-1 Return path). Does not block lanes B/I or Waves 1-3. Settled by the Wave 0 probe incl. the node-less case; defines the 3.1.6 honest spawn limit"
+    "blocks": "lane-N selection only: CR-1 conditions lane N on the notice's visible form - invisible means CR-1 void, G0 records BLOCKED, Wave 0 pauses before its CI-enable step pending a new owner CR (CR-1 Return path). Does not block lanes B/I or Waves 1-3. Settled by the Wave 0 probe incl. the node-less case; defines the 3.1.6 honest spawn limit",
+    "resolution": "RESOLVED 2026-07-29 (PHV5-004, interactive session, node hidden from PATH). The notice IS user-visible and names the exact cause. Verbatim, two lines: 'SessionStart:startup hook error' / 'Failed with non-blocking status code: Error occurred while executing hook command: Executable not found in $PATH: \"node\"'. The CR-1 condition is MET; CR-1 stands. QUALIFICATION discovered by the same probe and recorded rather than glossed: the notice appears in INTERACTIVE sessions only - `claude -p` print mode suppresses it, proven by a control run in which a SUCCESSFUL hook also produced no diagnostic output even under --debug. The 3.1.6 honest spawn limit is therefore narrowed to: visible interactively, silent in headless/print/CI runs."
   },
   "G0": {
     "id": "G0",
     "claim": "a distributable hook launcher fires on this host",
-    "status": "unproven",
+    "status": "RESOLVED 2026-07-29: PASS on candidate (n) node exec form, all three distributability clauses met, and the CR-1 condition met by the U6 resolution - terminal state is lane N. Candidate (s) shell form also fired (lane B viable but not selected); candidate (b) bash exec form did NOT fire, confirming section 3.1.1's corrected reasoning; candidate (d) absolute-path fired and is recorded NOT-PASS by rule. Evidence: research/g0-probe-results.md",
     "blocks": "which 3.1 lane runs (N preferred / B / I - all three fully specified with their own 4a/4b/4c)",
     "terminal_states": [
       "lane N (requires the CR-1 condition: U6 shows the node-absent spawn failure user-visibly)",
