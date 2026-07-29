@@ -1,0 +1,88 @@
+{
+  "_comment": [
+    "PHV5-041 acceptance corpus for the PreToolUse:Bash guard. This is the FALSIFIER:",
+    "a matcher that fails any row here fails the ticket, whatever its implementation.",
+    "",
+    "This corpus lives in a FILE, not in test command lines, for a reason discovered",
+    "while writing it: the live guard denies any Bash command whose text contains a",
+    "trigger string, so a harness that passes payloads as shell arguments gets blocked",
+    "before it can run. That is F24 reproducing itself against its own test suite.",
+    "",
+    "want_exit: 0 = allow (or ask, which is also exit 0 with JSON), 2 = deny.",
+    "want_decision: expected permissionDecision once F22/F26 land; null = no JSON needed."
+  ],
+  "cases": [
+    { "id": "F25-lease-allow", "want_exit": 0, "want_decision": null,
+      "why": "F25: --force-with-lease is the safe form and must be allowed. A '--force\\b' pattern matches INSIDE it because '-' is a word boundary.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git push --force-with-lease" } } },
+
+    { "id": "F24-reproduction-deny", "want_exit": 2, "want_decision": "deny",
+      "why": "The reproduction payload named verbatim in the F24 acceptance row. A real force-push in a compound command must be denied via the PARSED tool_input.command — the quoted commit message must not shield it.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git commit -m \"wip\" && git push --force" } } },
+
+    { "id": "F25-force-deny", "want_exit": 2, "want_decision": "deny",
+      "why": "F25: the unqualified long flag must be denied.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git push --force" } } },
+
+    { "id": "F25-shortflag-deny", "want_exit": 2, "want_decision": "deny",
+      "why": "F25: bare -f is the same operation and must be denied.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git push -f origin main" } } },
+
+    { "id": "F24-quoted-mention-allow", "want_exit": 0, "want_decision": null,
+      "why": "F24 core: the danger string appears only inside a quoted argument. Tokenize or strip quoted spans before matching; a bare regex over the raw command denies this.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git commit -m \"never use git push --force on main\"" } } },
+
+    { "id": "F24-decoy-description-allow", "want_exit": 0, "want_decision": null,
+      "why": "F24 cross-field decoy: enforce only what is parsed from tool_input.command. NOTE this row is necessary but NOT sufficient — mutation M4 proved it cannot detect a raw-payload grep for '\"command\":', because 'description' is a different key name and the grep still finds the right field. F24-decoy-sibling-key-allow is the row that discriminates.",
+      "payload": { "session_id": "s", "description": "git push --force", "tool_input": { "command": "ls -la" } } },
+
+    { "id": "F24-decoy-sibling-key-allow", "want_exit": 0, "want_decision": null,
+      "why": "F24 field-blindness, the discriminating form: a SIBLING object carries its own 'command' key holding a danger string, serialized BEFORE tool_input. A first-match grep for '\"command\":\"[^\"]*\"' picks up meta.command and denies a benign 'ls'. Only extraction of the named tool_input.command path allows this. Added after mutation M4 escaped the weaker decoy row.",
+      "payload": { "session_id": "s", "meta": { "command": "git push --force" }, "tool_input": { "command": "ls -la" } } },
+
+    { "id": "F24-decoy-content-allow", "want_exit": 0, "want_decision": null,
+      "why": "F24 cross-field decoy in a different field name.",
+      "payload": { "session_id": "s", "tool_input": { "command": "cat notes.txt", "content": "reminder: supabase db push is banned" } } },
+
+    { "id": "F24-readonly-grep-allow", "want_exit": 0, "want_decision": null,
+      "why": "Audit v1 gap 2, reproduced live: the current guard denies a read-only grep whose SEARCH PATTERN contains a DB-deploy string.",
+      "payload": { "session_id": "s", "tool_input": { "command": "grep -rn 'supabase db push' docs/" } } },
+
+    { "id": "F22-reset-hard-ask", "want_exit": 0, "want_decision": "ask",
+      "why": "F22: destructive-but-legitimate. Must be permissionDecision 'ask' at exit 0, never a deny, and never stderr on exit 0 (F26).",
+      "payload": { "session_id": "s", "tool_input": { "command": "git reset --hard" } } },
+
+    { "id": "row1-db-push-deny", "want_exit": 2, "want_decision": "deny",
+      "why": "Ledger row 1: the DB-deploy guard exists ONLY inline today. It must survive the port, and must run BEFORE the non-git early-exit.",
+      "payload": { "session_id": "s", "tool_input": { "command": "supabase db push" } } },
+
+    { "id": "row1-dry-run-allow", "want_exit": 0, "want_decision": null,
+      "why": "Ledger row 1 exemption: --dry-run validates without deploying.",
+      "payload": { "session_id": "s", "tool_input": { "command": "supabase db push --dry-run" } } },
+
+    { "id": "row1-prisma-deny", "want_exit": 2, "want_decision": "deny",
+      "why": "Ledger row 1, second engine.",
+      "payload": { "session_id": "s", "tool_input": { "command": "prisma migrate deploy" } } },
+
+    { "id": "row1-after-earlyexit-deny", "want_exit": 2, "want_decision": "deny",
+      "why": "Ledger row 1 ordering proof: this command is NOT a git command, so any DB guard placed below the 'git (commit|push) || exit 0' line is dead code and this row passes only if the guard runs first.",
+      "payload": { "session_id": "s", "tool_input": { "command": "dotnet ef database update" } } },
+
+    { "id": "F24-exemption-position", "want_exit": 2, "want_decision": "deny",
+      "why": "Exemption tokens count only inside the command field. The token is embedded in a space-delimited sentence so that a whitespace-anchored regex applied to the RAW payload WOULD match it — the earlier form ('--dry-run' alone) was quote-wrapped in the JSON and matched neither way, so mutation M8 escaped it. Now the row discriminates.",
+      "payload": { "session_id": "s", "description": "validate with --dry-run first", "tool_input": { "command": "flyway migrate" } } },
+
+    { "id": "F24-malformed-fail-closed", "want_exit": 2, "want_decision": "deny",
+      "why": "3.1.6: a malformed payload under a REAL parser fails closed. Distinct from having no parser at all, which allows.",
+      "payload_raw": "{\"session_id\":\"s\",\"tool_input\":{\"command\":\"git push --force\"",
+      "payload": null },
+
+    { "id": "F24-no-command-allow", "want_exit": 0, "want_decision": null,
+      "why": "Nothing to enforce means nothing to deny — never deny on an absent field.",
+      "payload": { "session_id": "s", "tool_input": {} } },
+
+    { "id": "F24-escaped-quote-allow", "want_exit": 0, "want_decision": null,
+      "why": "The '\"command\":\"[^\"]*\"' grep truncates at the first quote, so an escaped quote inside the command silently changes what gets matched.",
+      "payload": { "session_id": "s", "tool_input": { "command": "echo \"a \\\" quote then git push --force\"" } } }
+  ]
+}
