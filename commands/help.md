@@ -141,7 +141,7 @@ Create and review technical plans for any engineering initiative.
 | plan-auditor | Scores any plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team). Produces go/no-go assessment. |
 | plan-scaffolder | Creates structured plans from vague objectives. Reads codebase + audit data to generate evidence-based phased plans. |
 
-## Knowledge Skills (5)
+## Knowledge Skills (6)
 
 Auto-loaded contextual knowledge that guides agent behavior during scans and reports.
 
@@ -150,6 +150,7 @@ Auto-loaded contextual knowledge that guides agent behavior during scans and rep
 | deepgrade-knowledge | DeepGrade methodology for codebase audit and documentation |
 | documentation | Document generation templates (ADR, BRD, PRD, README, release notes, spec) |
 | governance-knowledge | Enterprise governance patterns, DORA metrics, quality gates, confidence decay |
+| mcp-research | When and how to use external MCP search tools (Ref, Exa, Perplexity): tool selection heuristics, token budget rules, graceful degradation |
 | readiness-scoring | AI readiness scoring methodology, gate thresholds, grading criteria |
 | self-audit-knowledge | LLM epistemic transparency, claim verification tiers (A/B/C), failure mode flags, cascade risk classification, evidence basis formatting |
 

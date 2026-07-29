@@ -6,7 +6,9 @@
 2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/deepgrade.git`
 3. Create a feature branch: `git checkout -b feature/your-feature`
 4. Make changes
-5. Test with Claude Code: `/plugin install deepgrade --scope user`
+5. Test with Claude Code: `claude --plugin-dir /path/to/deepgrade` (live-edit: your working tree is read
+   directly, so changes take effect on the next session). To test the *installed* path instead:
+   `/plugin install deepgrade@deepgrade-marketplace --scope user`
 6. Submit a pull request
 
 ## Plugin Structure

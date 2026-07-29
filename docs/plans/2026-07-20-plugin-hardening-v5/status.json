@@ -161,8 +161,17 @@
       "status": "in_progress",
       "started": "2026-07-29",
       "wave": 0,
-      "tickets_complete": ["PHV5-001", "PHV5-002", "PHV5-004"],
+      "tickets_complete": ["PHV5-001", "PHV5-002", "PHV5-004", "PHV5-030", "PHV5-031"],
       "tickets_remaining_wave_0": ["PHV5-003 U7 floor", "PHV5-005 CI matrix"],
+      "wave_3_complete": {
+        "date": "2026-07-29",
+        "findings_closed": ["F18 CHANGELOG stale", "F19 README counts", "F20A GUIDE snapshot", "F04 update-flow docs"],
+        "suite": "167 pass / 0 fail - FULLY GREEN for the first time (L1 95, L2 15, L3 9, L4 7, L5 41)",
+        "expected_failures_file": "EMPTIED - zero failures now tolerated; comparator contract verified against the empty set",
+        "new_assertions": "9 added to layer1 (5 F20A GUIDE conformance + 4 F04 update-flow). GUIDE.md previously had ZERO layer1 coverage, which is how it drifted to v4.28.0 unnoticed.",
+        "mutation_tested": "all 5 mutation probes correctly rejected (wrong GUIDE version, 8-phase claim, false auto-update claim, unqualified install command, wrong skill count) - the new assertions are falsifying, not tautological",
+        "deferred_by_design": "GUIDE.md 'Zero Dependencies' and '7 Safety Hooks' left unchanged - section 9.2 assigns both to Wave 4 (4a and 4b respectively), where they become false"
+      },
       "remaining_need": "PHV5-003 needs authenticated installs of old CLI versions; PHV5-005 needs a push to GitHub",
       "lane_selected": "N - node-canonical (G0 terminal state, 2026-07-29). Lane B proven viable as fallback ((s) shell form fired) but not selected; lane I not needed.",
       "commits": ["c6d3047 PHV5-001+002", "fe76853 CR-2 fixture line endings"],

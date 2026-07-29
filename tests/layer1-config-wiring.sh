@@ -478,6 +478,112 @@ fi
 echo ""
 
 # ===========================================================================
+# 8. GUIDE.md conformance (F20A) — added by PHV5-031
+#
+# GUIDE.md carried NO assertions before this, which is exactly how it drifted
+# to v4.28.0 while plugin.json read 4.31.0. It is a user-facing snapshot of the
+# plugin's shape, so every number in it is a claim that can go stale silently.
+# ===========================================================================
+echo ""
+echo "--- GUIDE.md conformance (F20A) ---"
+
+GUIDE="GUIDE.md"
+if [ ! -f "$GUIDE" ]; then
+  fail "F20A: $GUIDE does not exist"
+else
+  # 8a. Version in the H1 heading must equal plugin.json's
+  guide_version=$(grep -oE "^# DeepGrade Knowledge Guide v[0-9]+\.[0-9]+\.[0-9]+" "$GUIDE" \
+                  | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
+  if [ -z "$guide_version" ]; then
+    fail "F20A: no 'DeepGrade Knowledge Guide vX.Y.Z' heading found in $GUIDE"
+  elif [ "$guide_version" = "$pj_version" ]; then
+    pass "F20A: GUIDE version matches plugin.json ($guide_version)"
+  else
+    fail "F20A: Version mismatch: plugin.json=$pj_version GUIDE=$guide_version"
+  fi
+
+  # 8b. Any version badge must agree with the heading (they drifted together before)
+  badge_mismatch=$(grep -oE "v[0-9]+\.[0-9]+\.[0-9]+-stable|DeepGrade_v[0-9]+\.[0-9]+\.[0-9]+" "$GUIDE" \
+                   | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | grep -vxF "$pj_version" | head -1)
+  if [ -n "$badge_mismatch" ]; then
+    fail "F20A: GUIDE badge shows $badge_mismatch but plugin.json is $pj_version"
+  else
+    pass "F20A: GUIDE version badges agree with plugin.json"
+  fi
+
+  # 8c. Command count in the subtitle must equal the real count
+  guide_cmd_count=$(grep -oE '\*\*[0-9]+ Commands\*\*' "$GUIDE" | head -1 | grep -oE '[0-9]+')
+  if [ -z "$guide_cmd_count" ]; then
+    warn "F20A: no '**N Commands**' subtitle found in $GUIDE"
+  elif [ "$guide_cmd_count" -eq "$cmd_count" ]; then
+    pass "F20A: GUIDE command count matches commands/ ($cmd_count)"
+  else
+    fail "F20A: Command count mismatch: commands/ has $cmd_count, GUIDE says $guide_cmd_count"
+  fi
+
+  # 8d. Skill count in the subtitle must equal the real count
+  real_skill_count=$(find skills -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  guide_skill_count=$(grep -oE '\*\*[0-9]+ Skills\*\*' "$GUIDE" | head -1 | grep -oE '[0-9]+')
+  if [ -z "$guide_skill_count" ]; then
+    warn "F20A: no '**N Skills**' subtitle found in $GUIDE"
+  elif [ "$guide_skill_count" -eq "$real_skill_count" ]; then
+    pass "F20A: GUIDE skill count matches skills/ ($real_skill_count)"
+  else
+    fail "F20A: Skill count mismatch: skills/ has $real_skill_count, GUIDE says $guide_skill_count"
+  fi
+
+  # 8e. The planning workflow has NINE phases. GUIDE said "8-phase" while listing
+  #     all nine by name — a self-contradiction no assertion could catch.
+  if grep -qE '[0-9]+-phase' "$GUIDE" && grep -qE '\b8-phase\b' "$GUIDE"; then
+    fail "F20A: GUIDE still describes an '8-phase' workflow (it has 9 phases)"
+  else
+    pass "F20A: GUIDE contains no stale '8-phase' claim"
+  fi
+fi
+
+# ===========================================================================
+# 9. Update-flow documentation (F04) — added by PHV5-031
+#
+# An installed plugin lives in a versioned cache dir and third-party
+# auto-update is OFF by default, so "picks up changes automatically" was
+# actively false and would strand users on a stale version silently.
+# ===========================================================================
+echo ""
+echo "--- Update-flow documentation (F04) ---"
+
+# 9a. The false auto-update claim must not reappear in any shipped doc
+autoupdate_claim=$(grep -rln "picks up changes automatically" \
+                     --include='*.md' . 2>/dev/null | grep -v '^\./docs/plans/' | head -1)
+if [ -n "$autoupdate_claim" ]; then
+  fail "F04: false auto-update claim present in $autoupdate_claim"
+else
+  pass "F04: no 'picks up changes automatically' claim in shipped docs"
+fi
+
+# 9b. Every install command must be marketplace-qualified
+bare_install=$(grep -rn '/plugin install deepgrade' --include='*.md' . 2>/dev/null \
+               | grep -v '^\./docs/plans/' | grep -v 'deepgrade@' | head -1)
+if [ -n "$bare_install" ]; then
+  fail "F04: unqualified install command (missing @deepgrade-marketplace): $bare_install"
+else
+  pass "F04: all install commands are marketplace-qualified"
+fi
+
+# 9c. The documented update path must name the four-command sequence
+if grep -q '/plugin marketplace update' "$GUIDE" && grep -q '/reload-plugins' "$GUIDE"; then
+  pass "F04: GUIDE documents the marketplace update + reload sequence"
+else
+  fail "F04: GUIDE does not document '/plugin marketplace update' + '/reload-plugins'"
+fi
+
+# 9d. Live-edit must be tied to --plugin-dir, the only place it is true
+if grep -q -- '--plugin-dir' "$GUIDE"; then
+  pass "F04: GUIDE ties the live-edit flow to --plugin-dir"
+else
+  fail "F04: GUIDE describes no --plugin-dir live-edit flow"
+fi
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="

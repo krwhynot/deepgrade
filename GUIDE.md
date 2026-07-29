@@ -1,11 +1,11 @@
 <div align="center">
 
-# DeepGrade Knowledge Guide v4.28.0
+# DeepGrade Knowledge Guide v4.31.0
 
-**16 Commands** &nbsp;&bull;&nbsp; **22 Agents** &nbsp;&bull;&nbsp; **5 Skills** &nbsp;&bull;&nbsp; **7 Safety Hooks** &nbsp;&bull;&nbsp; **Zero Dependencies**
+**17 Commands** &nbsp;&bull;&nbsp; **22 Agents** &nbsp;&bull;&nbsp; **6 Skills** &nbsp;&bull;&nbsp; **7 Safety Hooks** &nbsp;&bull;&nbsp; **Zero Dependencies**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDE4Yy00LjQxIDAtOC0zLjU5LTgtOHMzLjU5LTggOC04IDggMy41OSA4IDgtMy41OSA4LTggOHoiLz48L3N2Zz4=)](https://github.com/krwhynot/deepgrade)
-[![Version](https://img.shields.io/badge/v4.28.0-stable-2ECC71?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/v4.31.0-stable-2ECC71?style=for-the-badge)](#)
 [![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
 
 </div>
@@ -205,7 +205,7 @@ The key pattern: **commands are managers, agents are specialists.** A command re
 ---
 
 ### `/deepgrade:plan`
-**What it does:** Walks you through an 8-phase guided planning workflow: Brainstorm, Research, Pre-Plan, Plan, Audit, Build, Impact Review, Test, and Handoff.
+**What it does:** Walks you through a 9-phase guided planning workflow: Brainstorm, Research, Pre-Plan, Plan, Audit, Build, Impact Review, Test, and Handoff.
 **When to use it:** For any significant initiative -- migrations, new features, refactoring projects. This is the full workflow.
 **What it produces:** `docs/plans/YYYY-MM-DD-{name}/` folder with manifest, status, brainstorm, approach, research, audit, specs, and more.
 **Example:**
@@ -218,7 +218,7 @@ The key pattern: **commands are managers, agents are specialists.** A command re
 
 ### `/deepgrade:quick-plan`
 **What it does:** One-shot plan generation from a vague objective. Analyzes the codebase and produces a phased technical plan targeting 32+/40 on audit dimensions.
-**When to use it:** For smaller changes where the full 8-phase workflow is overkill.
+**When to use it:** For smaller changes where the full 9-phase workflow is overkill.
 **What it produces:** `docs/specs/{plan-name}.md`
 **Example:**
 ```
@@ -497,7 +497,7 @@ The parallel fan-out is why the scan is fast despite checking 52 things -- all 9
 
 Skills are persistent knowledge that loads automatically when relevant. They are not commands you type and not agents that scan files. Think of them as reference books that the plugin carries in its back pocket -- when a command or agent needs domain knowledge, the right skill silently loads into context.
 
-### The 5 Skills
+### The 6 Skills
 
 **readiness-scoring** -- Contains the grading rubric (A+ to F), the 9 scoring gates with max points, confidence thresholds, and the principle of deterministic scoring (all checks use bash commands with fixed thresholds, no AI judgment). Loads automatically during readiness scans and when interpreting scores.
 
@@ -798,11 +798,11 @@ your-project/
 
 3. **Install to user scope** (recommended -- this makes it available in every project):
    ```
-   /plugin install deepgrade --scope user
+   /plugin install deepgrade@deepgrade-marketplace --scope user
    ```
    Alternatively, install to project scope if you only want it in one project:
    ```
-   /plugin install deepgrade --scope project
+   /plugin install deepgrade@deepgrade-marketplace --scope project
    ```
 
 4. **Verify the installation:**
@@ -828,14 +828,28 @@ your-project/
 
 ## Section 10: How to Update
 
-Pull the latest version and restart Claude Code:
+An installed plugin lives in a **versioned cache directory**, and third-party marketplace auto-update
+is **off by default**. Pulling the repository does not update an installed copy — you must refresh the
+marketplace and update the plugin explicitly:
 
-```bash
-cd /path/to/deepgrade
-git pull
+```
+/plugin marketplace update deepgrade-marketplace
+/plugin update deepgrade
+/reload-plugins
+/plugin list
 ```
 
-The next time Claude Code starts a session, it reads the updated plugin files. No reinstall needed -- the plugin marketplace entry points to the directory, and Claude Code picks up changes automatically.
+`/plugin list` is the verification step: confirm the version shown is the one you expect. **Without a
+version bump in `plugin.json`, nothing propagates** — the version is the cache key.
+
+> [!IMPORTANT]
+> **Editing plugin files does not affect an installed copy.** The live-edit workflow — where changes
+> take effect on the next session with no reinstall — applies **only** when you run Claude Code with
+> `--plugin-dir`, pointing directly at your working tree:
+> ```bash
+> claude --plugin-dir /path/to/deepgrade
+> ```
+> Use this for plugin development. For an installed plugin, use the four-command sequence above.
 
 ---
 
@@ -918,6 +932,6 @@ On Windows, `jq` installed via `winget` lands in `$LOCALAPPDATA/Microsoft/WinGet
 
 ---
 
-[![Generated](https://img.shields.io/badge/Generated_for-DeepGrade_v4.28.0-5A45FF?style=flat-square)](#) &nbsp; [![Date](https://img.shields.io/badge/2026--03--10-stable-2ECC71?style=flat-square)](#) &nbsp; [![License](https://img.shields.io/badge/MIT-License-F39C12?style=flat-square)](#)
+[![Generated](https://img.shields.io/badge/Generated_for-DeepGrade_v4.31.0-5A45FF?style=flat-square)](#) &nbsp; [![Date](https://img.shields.io/badge/2026--03--10-stable-2ECC71?style=flat-square)](#) &nbsp; [![License](https://img.shields.io/badge/MIT-License-F39C12?style=flat-square)](#)
 
 </div>

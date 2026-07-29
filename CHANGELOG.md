@@ -1,5 +1,35 @@
 # Changelog
 
+## 4.31.0 (2026-04-03)
+
+### Added
+- Optional MCP research tool integration across planning, troubleshooting, documentation, and audit
+  workflows. **All integrations degrade gracefully — the plugin works identically with no MCP servers
+  connected.**
+- New knowledge skill: `skills/mcp-research/SKILL.md` — tool selection heuristics and tier mapping
+  (Ref → Exa → Perplexity), token budget rules, and graceful degradation patterns
+- `/deepgrade:plan`: tiered Ref → Exa → Perplexity search in Phase 2 Track 3, plus URL verification
+  for HIGH-impact confidence entries
+- `/deepgrade:troubleshoot`: Step 0.2 external documentation and issue lookup (Ref + Exa)
+- `/deepgrade:doc` and the documentation skill: external enrichment for specs, ADRs, and READMEs
+- `integration-scanner`: API validation against external documentation via Ref
+- `dependency-mapper`: deprecation checking via Ref documentation
+
+### Changed
+- `METHODOLOGY.md`: Track 3 tools table updated for the tiered search strategy
+- `/deepgrade:readiness-generate`: now offers to generate a research MCP server `.mcp.json`
+
+## 4.30.0 (2026-03-31)
+
+### Added
+- `confidence.md` brief in the planning process — a stakeholder-readable knowledge brief grounding
+  every tool, method, and pattern choice in external industry evidence. Created in Phase 3 (Pre-Plan),
+  reinforced in Phase 5 (Audit).
+- Source credibility tiers (A/B/C) with impact classification and required rationale per entry
+- LINT-17 and LINT-18 validation rules for confidence brief completeness
+- Confidence falsification protocol, staleness cascade integration, timeline-pressure protections for
+  HIGH-impact entries, and a conflicting-evidence protocol
+
 ## 4.29.0 (2026-03-22)
 
 ### Added
