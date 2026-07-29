@@ -1,0 +1,661 @@
+{
+  "source": "workflow wf_f737844e-590 (142 agents, adversarially verified)",
+  "audited_commit": "4fb4b64",
+  "plugin_version": "4.31.0",
+  "audit_date": "2026-07-19",
+  "totals": {
+    "unique_confirmed": 65,
+    "in_scope": 33,
+    "backlog": 32
+  },
+  "severity_counts": {
+    "critical": 1,
+    "high": 5,
+    "medium": 26,
+    "low": 19,
+    "info": 14
+  },
+  "in_scope": [
+    {
+      "id": "F01",
+      "area": "agents",
+      "severity": "critical",
+      "requirement_level": "required",
+      "title": "Duplicate agent name 'report-generator' in two files — one agent silently never loads",
+      "file": "deepgrade-plugin/agents/readiness-report-generator.md:2",
+      "detail": "Both agents/readiness-report-generator.md (line 2) and agents/deepgrade-report-generator.md (line 2) declare `name: report-generator`. Identity comes only from the `name` field, so both register as `deepgrade:report-generator` and only one file loads (chosen by undocumented filesystem read order). These are two DIFFERENT agents with different tools (Read,Write vs Read,Write,Grep,Glob) and different report contracts: commands/readiness-scan.md:106 deploys 'report-generator' expecting the AI-readiness report writer, while commands/codebase-audit.md:192 deploys 'report-generator' expecting the DeepGrade severity report writer. Whichever file loses the read-order race, one of the two flagship pipelines runs with the wrong system prompt (or the correct one never runs at all).",
+      "spec_basis": "Subagent spec: \"Keep `name` values unique across the whole tree: duplicate names under one directory load only one file, chosen by filesystem read order (undocumented precedence). /doctor reports duplicates (v2.1.205+).\" Also: \"`name` — unique identifier\".",
+      "fix": "Rename the frontmatter names to be unique and update callers: e.g. `name: readiness-report-generator` in readiness-report-generator.md and `name: deepgrade-report-generator` in deepgrade-report-generator.md, then fix the references in commands/readiness-scan.md and commands/codebase-audit.md. Run `claude plugin validate ./deepgrade-plugin` and `/doctor` to confirm no duplicates remain.",
+      "corroborated_by": [
+        "commands",
+        "consistency"
+      ]
+    },
+    {
+      "id": "F02",
+      "area": "agents",
+      "severity": "high",
+      "requirement_level": "required",
+      "title": "doc-auditor and integration-scanner cannot execute their own workflow: Bash and Write missing from tools allowlist",
+      "file": "deepgrade-plugin/agents/doc-auditor.md:6",
+      "detail": "doc-auditor.md:6 grants only `Read, Grep, Glob`, yet its body is built around bash pipelines (lines 32-105: find/grep/while loops for JSDoc/XML-doc/docstring coverage and module counts) and mandates writing an output file (line 10: 'Write output to docs/audit/documentation-audit.md'). With neither Bash nor Write allowlisted, the agent can run none of its documented detection commands and has NO mechanism to create its contract output file — the downstream deepgrade-report-generator (which reads docs/audit/documentation-audit.md, deepgrade-report-generator.md:18) gets nothing. integration-scanner.md:6 has the same defect: `Read, Grep, Glob, ref_search_documentation, ref_read_url` (the last two don't resolve, see separate finding) with a bash-driven body (lines 32-87 security/payment/hardware greps) and a required output file (line 10: docs/audit/integration-scan.md) but no Bash and no Write.",
+      "spec_basis": "Subagent spec: `tools` is an allowlist — anything not listed is unavailable to the subagent. Best practice: \"Limit tool access: grant only necessary permissions\" — which requires the necessary ones to be present.",
+      "fix": "Change doc-auditor.md frontmatter to `tools: Read, Grep, Glob, Bash, Write` and integration-scanner.md to `tools: Read, Grep, Glob, Bash, Write` (plus correctly-scoped MCP names if desired), or rewrite the bodies to use only Grep/Glob and return findings as text for the orchestrator to persist.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F03",
+      "area": "agents",
+      "severity": "high",
+      "requirement_level": "required",
+      "title": "plan-scaffolder and plan-auditor instruct spawning parallel subagents but omit the Agent tool — nested delegation is disabled",
+      "file": "deepgrade-plugin/agents/plan-scaffolder.md:11",
+      "detail": "plan-scaffolder.md:11 and plan-auditor.md:11 both set `tools: [\"Read\", \"Grep\", \"Glob\", \"Bash\", \"Write\"]`. plan-scaffolder Step 2 (lines 41-83) mandates 'Deploy 3 analyst subagents in parallel' with per-analyst model selection; plan-auditor Step 4 (lines 215-308) mandates deploying 4-5 specialist reviewers (Architecture/Risk on Opus, Execution/Quality on Sonnet, plus Gap Verifier). Per spec, when `tools` is specified, omitting `Agent` prevents the subagent from spawning nested subagents — so the entire multi-agent design (including the documented anti-anchoring rationale and Opus/Sonnet cost split) silently never executes; the agent will do everything single-threaded in its own context or emit errors trying.",
+      "spec_basis": "Subagent spec, `tools` field: \"bare `Agent` enables nested subagents; omitting `Agent` prevents spawning\"; nesting supported v2.1.172+ with depth limit 5.",
+      "fix": "Add `Agent` to both tools lists (e.g. `tools: Read, Grep, Glob, Bash, Write, Agent`), or remove the parallel-subagent steps and have the calling skill/command orchestrate the specialists instead.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F04",
+      "area": "consistency",
+      "severity": "high",
+      "requirement_level": "required",
+      "title": "GUIDE.md update instructions contradict the copy-to-cache and version-pinning model — users following them never receive updates",
+      "file": "deepgrade-plugin/GUIDE.md:836",
+      "detail": "GUIDE.md Section 10 (lines 831-838) says: pull the latest with `git pull`, \"No reinstall needed -- the plugin marketplace entry points to the directory, and Claude Code picks up changes automatically.\" This is false for installed plugins: installs are copied into the version-keyed cache, and because plugin.json pins `version: 4.31.0`, existing users get updates only when that string changes and they run marketplace/plugin update. Also GUIDE.md:801/805 installs with `/plugin install deepgrade --scope user|project`, omitting the `@deepgrade-marketplace` suffix used by the official syntax and by README.md:31; GUIDE.md:796 uses `/plugin marketplace add /path/to/deepgrade` while README uses the GitHub shorthand — two divergent flows for the same plugin. CONTRIBUTING.md:9 repeats the marketplace-less `/plugin install deepgrade --scope user` without a preceding `marketplace add`.",
+      "spec_basis": "\"Marketplace plugins are COPIED to ~/.claude/plugins/cache (each version its own dir)\"; \"`version` pins the plugin; users receive updates ONLY when you bump it\"; \"If you set version, bump it on EVERY release — pushing commits without changing the string does nothing for existing users\"; install syntax is `/plugin install <plugin>@<marketplace-name>`; local marketplace paths use `./` form; live-reload without reinstall is the `claude --plugin-dir` dev flow, not the installed flow.",
+      "fix": "Rewrite GUIDE Section 10 to: bump `version`, then `/plugin marketplace update deepgrade-marketplace` + `/plugin update deepgrade` (or reinstall); use `/plugin install deepgrade@deepgrade-marketplace` everywhere; reserve the git-clone/live-edit description for `claude --plugin-dir ./deepgrade` development.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F05",
+      "area": "hooks",
+      "severity": "high",
+      "requirement_level": "recommended",
+      "title": "Inline one-liners drifted from the script versions — guards lost coverage and features that documentation still promises",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:39",
+      "detail": "Comparing inline hooks to the scripts they were derived from: (1) Migration guard (plugin.json:39) matches only */migrations/*|*/Migrations/* AND requires .sql; dg-migration-guard.sh:11-23 also covers */migrate/*, */alembic/versions/*, */drizzle/*, */changelog/*, numeric-prefixed files (^[0-9]{4,14}), Flyway V-prefixed files, and ModelSnapshot.cs — so Alembic, Drizzle, EF Core snapshots, and Rails/Prisma non-.sql migrations are unguarded at runtime. (2) Git guard (plugin.json:49) lacks dg-git-guard.sh Layer 2 (staging-count sanity, lines 30-47) and Layer 3 (build verification before commit, lines 49-71). (3) Change tracker (plugin.json:61) writes key \"total\" with no threshold check; dg-track-change.sh:19-35 writes \"total_changes_since_audit\" and emits the '/deepgrade:codebase-delta' nudge at DG_CHANGE_THRESHOLD (default 15) — the nudge never fires, and the tracker schema diverged (a wired script would read 0 from files the inline hook writes). (4) Stop hook (plugin.json:83) lost dg-session-stop.sh:21-33 test-verification ('files changed but no tests ran'). (5) SessionStart (plugin.json:27) lost dg-session-start.sh:11-26 status.json phase/status readout and 7-day audit-staleness warning. (6) Test/build tracker (plugin.json:71) recognizes fewer runners than dg-track-test.sh:15-30 (missing pnpm/yarn test, mocha, ava, tox, go test, msbuild, go build/vet). METHODOLOGY.md:1795-1811 describes hook behavior with the scripts cited as 'Source', so documented safety behavior does not match shipped behavior.",
+      "spec_basis": "Plugins checklist best practice: validate and test what actually ships ('claude plugin validate', 'Test scripts manually by piping sample JSON to stdin'); shipping two divergent implementations with only one wired defeats the documented single-source hooks/hooks.json layout that exists precisely to keep hook logic reviewable and in sync.",
+      "fix": "Pick one source of truth. Wire the scripts via hooks/hooks.json (restoring lost coverage: alembic/drizzle/EF paths, build verification, threshold nudge, test-verification, staleness check) and delete the inline copies — or delete the scripts and port the missing logic into the maintained config. Align the tracker JSON key (session_changes/total_changes_since_audit) across whichever implementations remain.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F06",
+      "area": "manifest",
+      "severity": "high",
+      "requirement_level": "required",
+      "title": "Eight shipped hook scripts in scripts/ are never wired to any hook config — their functionality silently never runs",
+      "file": "deepgrade-plugin/scripts/dg-subagent-stop.sh:1",
+      "detail": "scripts/ contains full hook implementations (dg-git-guard.sh, dg-migration-guard.sh, dg-session-start.sh, dg-session-stop.sh, dg-subagent-stop.sh, dg-pre-compact.sh, dg-track-change.sh, dg-track-test.sh) that are referenced by NO hook configuration — not by the inline hooks in .claude-plugin/plugin.json, and there is no hooks/hooks.json (grep for the script names across all .json/.md finds only prose mentions in GUIDE.md/METHODOLOGY.md/CONTRIBUTING.md). The inline hooks are simplified rewrites, and the two have drifted substantially: (1) dg-subagent-stop.sh implements a SubagentStop logging hook with no inline counterpart at all — that event handler never fires; (2) dg-git-guard.sh layers 2–3 (staging-count sanity check, build-verification-before-commit) never run; (3) dg-migration-guard.sh covers */migrate/*, alembic/versions, drizzle, changelog dirs and ModelSnapshot.cs while the inline version (plugin.json:39) only matches */migrations/* + .sql; (4) dg-track-change.sh writes key \"total_changes_since_audit\" and emits a 15-change audit nudge, while the inline PostToolUse hook (plugin.json:61) writes an incompatible key \"total\" and has no nudge; (5) dg-session-stop.sh's test-verification warning never runs. Additionally all scripts are committed mode 100644 (git ls-files -s), not executable, so wiring them as-is would fail on macOS/Linux installs.",
+      "spec_basis": "Plugin hooks run only when configured: \"Plugin hooks live in hooks/hooks.json at the plugin root\" (or via the manifest `hooks` field); scripts/ is not an auto-discovered component directory. Also: \"Hook scripts must be executable (chmod +x) with proper shebang.\" Marketplace installs copy the entire plugin dir to every installer's ~/.claude/plugins/cache, so this is dead payload shipped to all users.",
+      "fix": "Pick one source of truth. Recommended: create hooks/hooks.json that invokes the scripts in exec form, e.g. {\"type\":\"command\",\"command\":\"bash\",\"args\":[\"${CLAUDE_PLUGIN_ROOT}/scripts/dg-git-guard.sh\"]}, add the missing SubagentStop entry, chmod +x the scripts (git update-index --chmod=+x), and delete the inline `hooks` object from plugin.json. Otherwise delete scripts/ so installers don't receive dead, misleading code.",
+      "corroborated_by": [
+        "hooks"
+      ]
+    },
+    {
+      "id": "F07",
+      "area": "agents",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "13 agents are required to write output files but 'Write' is not in their tools allowlist",
+      "file": "deepgrade-plugin/agents/baseline-scanner.md:6",
+      "detail": "These agents' bodies mandate writing a machine-readable contract file, but their `tools` allowlists omit Write: baseline-scanner.md (:6 vs :65), entry-scanner.md (:6 vs :94), convention-scanner.md (:6 vs :99), feedback-scanner.md (:6 vs :106), manifest-scanner.md (:6 vs :58), structure-scanner.md (:6, only `Bash, Glob`, vs :214), context-scanner.md (:6 vs :266), budget-scanner.md (:6 vs :428), database-scanner.md (:6 vs :570), feature-scanner.md (:6 vs :10), risk-assessor.md (:6 vs :11), dependency-mapper.md (:6 vs :10), security-scanner.md (:11 vs :29). All have Bash, so the only path to producing docs/audit/*.json|.md is shell redirection/heredocs — fragile for large JSON, and in tension with each agent's own constraint 'Do NOT create ANY files outside docs/audit/... No temp scripts'. If the model doesn't improvise the Bash workaround, the orchestrating readiness-scan/codebase-audit commands find no scanner output and the composite scoring breaks.",
+      "spec_basis": "Subagent spec: `tools` is an allowlist; tools not listed are unavailable. Best practice: \"Limit tool access: grant only necessary permissions\" — Write is necessary for a file-writing contract.",
+      "fix": "Add `Write` to the `tools` line of all 13 agents (e.g. `tools: Read, Glob, Grep, Bash, Write`). Optionally add `disallowedTools: Edit` to keep source files untouchable while allowing new report files.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F08",
+      "area": "agents",
+      "severity": "medium",
+      "requirement_level": "required",
+      "title": "gate-generator emits Claude Code hooks to an undocumented location and Unix-only hook scripts",
+      "file": "deepgrade-plugin/agents/gate-generator.md:88",
+      "detail": "gate-generator instructs creating/merging project hooks at `.claude/hooks/hooks.json` (lines 27, 60, 88, 109). Documented hook-config locations are settings files (.claude/settings.json etc.); `hooks/hooks.json` is the PLUGIN hook format at plugin root. Hooks written to `.claude/hooks/hooks.json` are not a documented load path, so the generated risk-zone warnings and do-not-touch guards may never fire. Additionally the generated hook scripts are bash + python3 with `chmod +x` (lines 159-235, 249-403, 237, 405) — on this Windows 11 host, python3 is frequently absent (py launcher instead) and chmod is meaningless outside Git Bash, while the docs explicitly recommend PowerShell hook scripts on Windows. Same portability caveat applies to the plugin's own reliance on `/tmp` paths, but that is outside agents/ scope.",
+      "spec_basis": "Plugin spec hooks: \"`hooks/hooks.json` format... same format as settings.json hooks\" (settings.json is the project mechanism); \"Hook scripts must be executable with proper shebang\". Subagent spec: \"Windows: write hook scripts in PowerShell and add `shell: powershell` to the hook entry.\"",
+      "fix": "Change the generation target to the `hooks` key of `.claude/settings.json` (merge, don't overwrite), and generate PowerShell variants (or `python` / `py -3` fallbacks) with `shell: powershell` entries when the host is Windows.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F09",
+      "area": "commands",
+      "severity": "medium",
+      "requirement_level": "required",
+      "title": "quick-cleanup.md uses $1 in a bash block — Claude Code's 0-based $N substitution injects the SECOND argument (topic-name) as the folder path",
+      "file": "deepgrade-plugin/commands/quick-cleanup.md:73",
+      "detail": "Line 73: FOLDER=\"$1\" inside the Step 1 bash block. Per the slash-command spec, $N placeholders in command content are 0-based indexed argument substitutions applied BEFORE the content reaches Claude ($0 = first arg, $1 = second arg), and substitution is not suppressed inside code fences. The argument-hint (line 3) documents '[folder-path] [topic-name] [--plan plan-name]'. So '/deepgrade:quick-cleanup ./messy-docs worldpay' substitutes $1 -> 'worldpay', producing FOLDER=\"worldpay\" — the topic name, not the folder. With only one argument, $1 is unmatched and stays literal, then expands to empty when the Bash tool runs the snippet.",
+      "spec_basis": "'$ARGUMENTS[N] — 0-based indexed arg; $N (e.g. $0, $1) is shorthand. NOTE: 0-based — $0 is the FIRST argument'; 'unmatched indexed placeholder stays literal'; 'Escape a literal $ before a digit ... with a single backslash'.",
+      "fix": "Replace $1 with an unambiguous instruction-level placeholder (e.g. 'FOLDER=\"{folder-path from $ARGUMENTS}\"'), or use $0 if the first positional arg is intended, or escape as \\$1 if a literal shell positional is truly meant.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F10",
+      "area": "commands",
+      "severity": "medium",
+      "requirement_level": "required",
+      "title": "Duplicate declaration collision: bash uses undefined ${PROJECT_ROOT} and 0-based-colliding $1 placeholders in plan-export.md",
+      "file": "deepgrade-plugin/commands/plan-export.md:344",
+      "detail": "Line 344: mv \"$ZIP_NAME\" \"${PROJECT_ROOT}/${ZIP_NAME}\" — ${PROJECT_ROOT} is not a documented substitution variable and is never defined in the snippet; in bash it expands empty, moving the zip to '/{name}.zip' (filesystem root) or failing. The documented variable is ${CLAUDE_PROJECT_DIR}. Additionally lines 29-32 use $1 ('if [ -d \"docs/plans/$1\" ]') for the FIRST argument, but $1 is the 0-based SECOND argument: with the documented single '[plan-name]' argument it is unmatched, stays literal, then expands empty at Bash-execution time, breaking the plan-resolution logic; if a user types two tokens, the wrong token is substituted.",
+      "spec_basis": "'${CLAUDE_PROJECT_DIR} — project root (v2.1.196+); applies to body AND allowed-tools'; '$N ... 0-based — $0 is the FIRST argument'; 'unmatched indexed placeholder stays literal'.",
+      "fix": "Use ${CLAUDE_PROJECT_DIR} for the project root, and replace $1 with $0 or a prose placeholder like {plan-name} throughout Step 1.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F11",
+      "area": "commands",
+      "severity": "medium",
+      "requirement_level": "required",
+      "title": "readiness-generate.md tells users/Claude to run /ai-readiness-scan and /ai-readiness-generate — commands that do not exist under the plugin namespace",
+      "file": "deepgrade-plugin/commands/readiness-generate.md:2",
+      "detail": "The description (line 2) documents usage as '/ai-readiness-generate [number] ...'; line 12 says 'tell the user to run /ai-readiness-scan first'; lines 37-38 and 453 say to remind the user to re-scan with '/ai-readiness-scan'. The real invocations are /deepgrade:readiness-generate and /deepgrade:readiness-scan (plugin commands are always namespaced by the manifest name). Claude will faithfully echo the nonexistent command names to users. Related: this command documents taking an argument ([number] | all-critical | all, parsed at lines 23-27) but declares no argument-hint and never uses $ARGUMENTS (Claude Code will append 'ARGUMENTS: <value>' automatically, so it functions, but autocomplete gives no hint).",
+      "spec_basis": "'Plugin skills are ALWAYS namespaced (/my-plugin:hello) to prevent conflicts'; command name = file name w/o extension namespaced as /plugin-name:name. argument-hint is the documented autocomplete field for commands that take arguments.",
+      "fix": "Replace all /ai-readiness-* strings with /deepgrade:readiness-scan and /deepgrade:readiness-generate, and add argument-hint: \"[number|all-critical|all]\".",
+      "corroborated_by": []
+    },
+    {
+      "id": "F12",
+      "area": "commands",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "plan.md is a 1,529-line monolithic command (~26K tokens) — 3x the documented size guidance, and compaction will drop most of the 9-phase workflow mid-plan",
+      "file": "deepgrade-plugin/commands/plan.md:1",
+      "detail": "plan.md is 1,529 lines; troubleshoot.md is 839 and codex-challenge.md 533. Invoked skill content persists in context for the session, and on compaction only the first 5,000 tokens per skill are retained under a shared 25,000-token budget — for plan.md that means Phases 4-9 (the audit rubric, build gates, impact review, test, handoff) are exactly what gets dropped during the long-running interactive workflow the command orchestrates. As flat commands/ files, none of these can use supporting files for progressive disclosure.",
+      "spec_basis": "'Keep SKILL.md under 500 lines; move detailed reference material to separate files'; 'loaded content stays in context across turns (recurring token cost)'; 'Compaction keeps first 5,000 tokens per skill under a shared 25,000-token budget'.",
+      "fix": "Convert plan (and troubleshoot, codex-challenge) to skills/<name>/SKILL.md directories with per-phase reference files loaded on demand (e.g. phases/phase-5-audit.md), keeping SKILL.md as the dispatcher under 500 lines.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F13",
+      "area": "commands",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "plan-status.md checks the wrong directory ('plans' instead of 'docs/plans') and exits with 'No plans found' even when plans exist",
+      "file": "deepgrade-plugin/commands/plan-status.md:11",
+      "detail": "Line 11: if [ ! -d \"plans\" ]; then echo \"No plans found.\"; exit 0; fi — but the loop on line 16 iterates docs/plans/*/, and every other command in the plugin writes plans to docs/plans/. In the standard layout (docs/plans exists, ./plans does not) the overview path always prints 'No plans found' and exits, so the no-argument mode never works. Concrete functional risk, not a spec-field issue.",
+      "spec_basis": "Functional risk category from the audit rubric (component malfunctions); the command's own description promises 'Show status of all active plans'.",
+      "fix": "Change the guard to [ ! -d \"docs/plans\" ] (or drop it and rely on the glob loop's null case).",
+      "corroborated_by": []
+    },
+    {
+      "id": "F14",
+      "area": "commands",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "No side-effectful command sets disable-model-invocation — Claude can auto-trigger gate generation, plan export, and mass artifact generation",
+      "file": "deepgrade-plugin/commands/codebase-gates.md:1",
+      "detail": "All 17 commands omit disable-model-invocation, so all are model-invocable (all 17 appear in the skill listing with full descriptions). codebase-gates.md writes .github/workflows/deepgrade-gate.yml, .claude/hooks/hooks.json, .claude/scripts/*.sh and .pre-commit-config.yaml into the user's repo; plan-export.md creates zips at the project root; readiness-generate.md writes CLAUDE.md, .claude/settings.json permission rules, .mcp.json entries and seed files. These are exactly the 'side-effectful workflow' class the docs say should be user-only. A tangential auto-invocation (e.g. Claude deciding mid-conversation to 'generate gates') would silently modify CI and hook configuration.",
+      "spec_basis": "'Use disable-model-invocation: true for /commit, /deploy-style side-effect workflows'; it also 'removes description from Claude's context', reducing the always-on listing cost.",
+      "fix": "Add disable-model-invocation: true to codebase-gates.md, plan-export.md, and readiness-generate.md (and consider it for plan.md); keep read-only scans model-invocable.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F15",
+      "area": "commands",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Embedded bash workflows depend on tools absent from stock Windows Git Bash: zip, python3, pdftotext, pandoc",
+      "file": "deepgrade-plugin/commands/plan-export.md:341",
+      "detail": "plan-export.md:341 runs 'zip -r' with no fallback — Git for Windows does not ship zip.exe, so Step 8 fails on the host platform (Windows 11). plan-status.md:22 and troubleshoot.md:89 shell out to python3 (frequently absent or a broken WindowsApps stub in Git Bash; the 2>/dev/null fallback yields an empty phase string). quick-cleanup.md relies on pdftotext/pandoc/python3 (lines 174-210) but at least documents fallbacks and a [MANUAL REVIEW] path. plan-export also stages to /tmp (line 49), which works under Git Bash but not if Claude uses PowerShell on Windows.",
+      "spec_basis": "Audit rubric: 'high/medium = component malfunctions on some platforms — weigh Windows portability'; docs pattern is bundled scripts referenced via ${CLAUDE_PLUGIN_ROOT} rather than assuming host tools.",
+      "fix": "For zip, add a PowerShell Compress-Archive fallback (or instruct Claude to pick per-platform); for JSON parsing replace python3 one-liners with jq-with-grep fallback (the pattern plugin.json hooks already use) or plain grep/sed.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F16",
+      "area": "consistency",
+      "severity": "medium",
+      "requirement_level": "required",
+      "title": "Bundled methodology docs referenced by project-relative paths that will not exist after install",
+      "file": "deepgrade-plugin/commands/plan.md:609",
+      "detail": "commands/plan.md:609 and :1334, commands/codex-challenge.md:25, agents/plan-scaffolder.md:178, and agents/plan-auditor.md:137 all reference `docs/planning-techniques/10-testing-methodology-selection.md` / `02-evaluator-optimizer-loop.md` as bare relative paths. Those files exist only inside the plugin repo; installed plugins are copied to ~/.claude/plugins/cache and commands execute with the user's project as cwd, so Read/reference of `docs/planning-techniques/...` resolves against the user's project and fails — the shipped testing-methodology and evaluator-optimizer frameworks silently never load for any installed user. The correct pattern is already used elsewhere: commands/doc.md:16 uses `${CLAUDE_PLUGIN_ROOT}/skills/documentation/SKILL.md`. Separately, docs/troubleshooting-techniques/ (9 files) is referenced by nothing at all.",
+      "spec_basis": "\"Marketplace plugins are COPIED to ~/.claude/plugins/cache\"; \"use ${CLAUDE_PLUGIN_ROOT} ... to reference files in the plugin's installation directory (needed because plugins are copied to cache)\"; inline `${CLAUDE_PLUGIN_ROOT}` substitution works anywhere in skill/agent content.",
+      "fix": "Prefix every bundled-doc reference in commands/ and agents/ with `${CLAUDE_PLUGIN_ROOT}/` (e.g. `${CLAUDE_PLUGIN_ROOT}/docs/planning-techniques/10-testing-methodology-selection.md`), or move the referenced material into the relevant skills; delete or wire up docs/troubleshooting-techniques/.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F17",
+      "area": "consistency",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Advertised runtime agent names don't match actual frontmatter names — @-mentions and docs point at names that don't resolve",
+      "file": "deepgrade-plugin/agents/context-scanner.md:2",
+      "detail": "Five agents kept their pre-4.27.0 names in frontmatter while only the files were renamed: context-scanner.md registers `context-file-scanner`, entry-scanner.md registers `entry-point-scanner`, feedback-scanner.md registers `feedback-loop-scanner`, budget-scanner.md registers `context-budget-scanner`, doc-auditor.md registers `documentation-auditor`. README.md:160 (\"22 agents\"), GUIDE.md agent tables (lines 456-464), and help.md:99-105 all advertise the new file-based names (context-scanner, entry-scanner, feedback-scanner, budget-scanner, doc-auditor), so `deepgrade:context-scanner` etc. do not exist at runtime. CHANGELOG.md 4.27.0 \"Changed\" section (lines 66-70) claims these renames happened. The orchestrating commands (readiness-scan.md:50-56, codebase-audit.md:123) happen to use the old frontmatter names, so the pipelines work — but every user-facing document names agents that cannot be invoked.",
+      "spec_basis": "Agents are addressed as `plugin-name:agent-name` where the name comes from agent frontmatter `name`; docs recommend consistent naming so components are discoverable (validate checks agent frontmatter).",
+      "fix": "Align frontmatter `name` with each filename (finishing the 4.27.0 rename), then update commands/readiness-scan.md and codebase-audit.md to the new names — or, if backward compatibility matters, update README/GUIDE/help.md to the real frontmatter names.",
+      "corroborated_by": [
+        "agents",
+        "commands"
+      ]
+    },
+    {
+      "id": "F18",
+      "area": "consistency",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "CHANGELOG.md is stale: latest entry is 4.29.0 (2026-03-22) while the shipped version is 4.31.0",
+      "file": "deepgrade-plugin/CHANGELOG.md:3",
+      "detail": "plugin.json:3 and marketplace.json:11 both say 4.31.0, but CHANGELOG.md's newest entry is `## 4.29.0 (2026-03-22)`. Git history confirms two undocumented releases: \"chore: bump version to 4.30.0\" (c1a9457) and the 4.31.0 MCP-research integration (4fb4b64). The plugin's own test suite catches this: tests/layer1-config-wiring.sh currently exits 1 with \"Version mismatch: plugin.json=4.31.0 CHANGELOG=4.29.0\".",
+      "spec_basis": "\"choose versioning strategy (explicit semver `version` for stable releases — bump MAJOR/MINOR/PATCH and keep CHANGELOG.md)\"; \"If you set version, bump it on EVERY release\" — the changelog is the documented companion of explicit-semver pinning.",
+      "fix": "Add 4.30.0 and 4.31.0 entries to CHANGELOG.md (confidence.md planning brief; Ref/Exa/Perplexity MCP research integration + mcp-research skill) and make `bash tests/layer1-config-wiring.sh` a pre-release gate so a version bump cannot ship without a changelog entry.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F19",
+      "area": "consistency",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "README.md version and component counts are stale (v4.27.1, 16 commands, 5 skills)",
+      "file": "deepgrade-plugin/README.md:169",
+      "detail": "README.md:169 says \"Current: v4.27.1\" (actual 4.31.0 — three releases behind). README.md:46 \"Commands (16)\" but commands/ contains 17 .md files; the tables omit `/deepgrade:codex-challenge` entirely. README.md:161 \"5 skills\" but skills/ contains 6 (mcp-research missing). layer1-config-wiring.sh fails on both the version (\"plugin.json=4.31.0 README=4.27.1\") and the command count (\"commands/ has 17 files, README says 16\").",
+      "spec_basis": "\"Best practices for sharing: add README.md\" — the README is the primary user-facing description of installed components; keeping semver releases consistent across metadata is the documented versioning practice the repo's own Layer 1 test encodes.",
+      "fix": "Update README to v4.31.0, list codex-challenge under Auditing (17 commands), and count 6 skills; re-run tests/layer1-config-wiring.sh until it passes.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F20",
+      "area": "consistency",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "GUIDE.md is a stale v4.28.0 snapshot: wrong version, wrong counts, and it documents hook behavior the shipped hooks do not implement",
+      "file": "deepgrade-plugin/GUIDE.md:3",
+      "detail": "GUIDE.md:3/8/921 brand it v4.28.0 with \"16 Commands • 22 Agents • 5 Skills\" (actual: 4.31.0, 17 commands, 6 skills; codex-challenge and mcp-research are absent from all GUIDE sections). GUIDE.md:208 calls /deepgrade:plan an \"8-phase\" workflow while listing nine phases (plan.md:2 and help.md:16 correctly say 9). More consequential: GUIDE documents behaviors that exist only in the non-runtime scripts/, not in the inline hooks that actually ship in plugin.json — GUIDE.md:625-629 says the Change Tracker warns at a DG_CHANGE_THRESHOLD of 15 (\"Consider /deepgrade:codebase-delta\"), and GUIDE.md:641-645 plus the Section 7 diagram say the Stop hook \"warns if no tests ran\". The inline PostToolUse hook (plugin.json:61) only increments counters with no threshold message, and the inline Stop hook (plugin.json:83) only prints the change count — those behaviors live solely in scripts/dg-track-change.sh and scripts/dg-session-stop.sh, which README.md:163 correctly labels \"Hook logic reference (not runtime)\".",
+      "spec_basis": "Plugin docs shipped to installers should describe the components as they load and run (hooks defined in the manifest are what execute); documenting non-existent hook behavior misleads users about the safety guarantees the plugin provides.",
+      "fix": "Regenerate GUIDE.md against 4.31.0 (add codex-challenge and mcp-research; correct counts and \"9-phase\"), and either port the threshold-nudge and no-tests-ran logic from scripts/ into the inline hooks or rewrite GUIDE Sections 7/11 to describe only what the inline hooks actually do.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F21",
+      "area": "consistency",
+      "severity": "medium",
+      "requirement_level": "required",
+      "title": "Bare MCP tool names in agent `tools` and command `allowed-tools` can never match real tool identifiers",
+      "file": "deepgrade-plugin/agents/dependency-mapper.md:5",
+      "detail": "agents/dependency-mapper.md:5 and agents/integration-scanner.md:5 list `ref_search_documentation, ref_read_url` in `tools:`; commands/doc.md:4, plan.md:4, and troubleshoot.md:4 list `ref_search_documentation, ref_read_url, web_search_exa, get_code_context_exa, perplexity_search, perplexity_ask` in `allowed-tools`. MCP tools are exposed as `mcp__<server>__<tool>` (or `mcp__plugin_<plugin>_<server>__<tool>` for plugin-bundled servers), so these bare names never match: the intended research tools are silently not granted, and an agent whose `tools` list restricts it may lose access it was meant to have. The plugin ships no .mcp.json, so these servers are assumed to be user-installed. The mcp-research skill's graceful-degradation design masks the failure, which is exactly why it would go unnoticed.",
+      "spec_basis": "Plugin MCP tool invocation naming is `mcp__plugin_<plugin>_<server>__<tool>`; hooks/matchers using bare server/tool keys \"never fire\" — the scoped-name requirement applies to any place tools are referenced by identifier.",
+      "fix": "Use the fully-qualified `mcp__<server>__<tool>` names in `tools`/`allowed-tools` (matching the server names your docs assume, e.g. `mcp__Ref__ref_search_documentation`), or drop them from the lists and let the mcp-research skill guide opportunistic use.",
+      "corroborated_by": [
+        "agents",
+        "commands"
+      ]
+    },
+    {
+      "id": "F22",
+      "area": "hooks",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "git reset --hard 'WARNING' actually hard-blocks the command — exit 2 on PreToolUse denies, it never asks",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:49",
+      "detail": "The PreToolUse Bash one-liner (plugin.json:49) does: echo \"[DeepGrade] WARNING: git reset --hard discards changes.\">&2 && exit 2. On PreToolUse, exit 2 is a blocking error — the tool call is denied outright; there is no confirm step. dg-git-guard.sh:22-25 has the same defect with message 'Are you sure?' — a question no one can answer, because the mechanism is deny-only. Result: 'git reset --hard' is unconditionally impossible in any session with the plugin enabled, including legitimate uses, and the stderr text fed back to Claude says WARNING rather than 'blocked', inviting pointless retries of the same command. tests/layer2-hook-simulation.sh:212-218 codifies the contradiction: test name 'Blocks hard reset (exit 2)' while asserting stderr contains 'WARNING'. The spec provides an explicit warn-and-confirm mechanism this hook should use.",
+      "spec_basis": "Exit codes checklist: 'Exit 2 blocks for: PreToolUse (blocks tool)'. JSON output checklist: PreToolUse hookSpecificOutput supports permissionDecision 'allow'|'deny'|'ask' with permissionDecisionReason — 'ask' is the documented way to warn the user and let them decide.",
+      "fix": "For the warn case, exit 0 and print JSON: {\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"git reset --hard discards all uncommitted changes.\"}}. Keep exit 2 (or permissionDecision:'deny') only for the force-push and DB-deploy cases that are genuinely meant to be blocked, and word their stderr as BLOCKED.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F23",
+      "area": "hooks",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Hooks defined as quadruple-escaped inline bash -c one-liners in plugin.json instead of hooks/hooks.json + ${CLAUDE_PLUGIN_ROOT} scripts",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:20",
+      "detail": "The entire hooks config lives as an inline object in the manifest (plugin.json:20-101), with each handler a single-line bash -c string up to ~1,100 characters containing four escaping layers (JSON string escaping -> host shell parsing of bash -c '...' -> the single-quoted script -> embedded '\"'\"' sequences for sed/grep quoting). The manifest 'hooks' field does accept inline config, so this loads — but it directly caused the drift in the previous finding (the one-liners are impractical to edit, so the .sh versions evolved separately and were never re-synced), it prevents shellcheck/linting, and it forces the test suite to extract command strings by array index. ${CLAUDE_PLUGIN_ROOT} is used nowhere in the hook config even though the plugin ships a scripts/ directory purpose-built for this.",
+      "spec_basis": "Hooks checklist: '[REQUIRED] Plugin hooks live in hooks/hooks.json at the plugin root'; '[RECOMMENDED] Prefer exec form with args for anything using ${CLAUDE_PLUGIN_ROOT}'; plugins checklist: '${CLAUDE_PLUGIN_ROOT} = absolute path to plugin install dir (use for bundled scripts/binaries/configs)'.",
+      "fix": "Move hook definitions to deepgrade-plugin/hooks/hooks.json and replace each one-liner with an exec-form handler: {\"type\":\"command\",\"command\":\"bash\",\"args\":[\"${CLAUDE_PLUGIN_ROOT}/scripts/dg-git-guard.sh\"],\"timeout\":5} (bash is guaranteed present because Claude Code on Windows runs shell-form hooks through Git Bash anyway). Remove the 'hooks' key from plugin.json.",
+      "corroborated_by": [
+        "manifest",
+        "manifest"
+      ]
+    },
+    {
+      "id": "F24",
+      "area": "hooks",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "jq-less fallback parsing fails open on the blocking guards for any command containing a quote",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:49",
+      "detail": "When jq is unavailable, the guards fall back to grep -o '\"command\":\"[^\"]*\"' (plugin.json:39, 49; same pattern in dg-git-guard.sh:9 and METHODOLOGY.md:1817-1824). The [^\"]* class stops at the first escaped quote in the JSON, so a payload like {\"tool_input\":{\"command\":\"git commit -m \\\"wip\\\" && git push --force\"}} extracts only 'git commit -m \\' — the force-push, hard-reset, and DB-deploy patterns are never seen and the hook exits 0, silently allowing the operation. This contradicts the plugin's own documented design rule at METHODOLOGY.md:1768-1771 ('If the guard can't parse its input, BLOCK, don't allow') and METHODOLOGY.md:1809's acknowledgment that fail-open on the blocking hooks is a security hole. The SessionStart warning mitigates but does not close the gap, and (next finding) that warning is itself not reliably visible.",
+      "spec_basis": "Hooks best practices: hook-side filtering is best-effort and fails open — 'use the permission system for hard enforcement'; security considerations section is explicitly recommended reading before deploying hooks that gate dangerous commands.",
+      "fix": "In the fallback path, detect that the payload contains \\\" inside the command value (or that extraction is lossy) and fail closed for the blocking guards (exit 2 with a 'cannot parse input, install jq' stderr), matching the documented BY-DEFAULT-BLOCK rule. Better: ship the guard as a script and parse with python3/node when jq is absent, or enforce via permission deny rules instead of hooks.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F25",
+      "area": "hooks",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Force-push guard also blocks git push --force-with-lease, the safer alternative the script version explicitly recommends",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:49",
+      "detail": "The inline regex git\\s+push.*--force (plugin.json:49) matches 'git push --force-with-lease origin main', so the recommended safe variant is blocked with the message 'Force push not allowed.' dg-git-guard.sh:17-19 has the same false positive — '--force\\b' still matches '--force-with-lease' because the boundary between 'force' and '-' is a \\b match — while its own stderr says 'Use --force-with-lease if needed', telling Claude to retry a command the same hook will block again.",
+      "spec_basis": "Hooks guide PreToolUse examples pattern-match dangerous commands precisely so safe variants pass; a deny hook whose own remediation advice is itself denied is a malfunctioning guard (blocking loop with no exit).",
+      "fix": "Exclude the lease form, e.g. grep -qE 'git\\s+push[^|;&]*(--force(\\s|$)|-f(\\s|$))' or add a negative check: echo \"$C\" | grep -q -- --force-with-lease && exit 0 before the block.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F26",
+      "area": "manifest",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Stop and PreCompact hooks print user-facing messages to plain stdout on exit 0 — spec says that output is never surfaced for these events",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:83",
+      "detail": "The Stop hook (line 83) ends with `echo \"[DeepGrade] Session: $C files changed.\";exit 0` and the PreCompact hook (line 95) with `echo \"[DeepGrade] Compacting. Plan: ... Resume with /deepgrade:plan ...\"` — both plain (non-JSON) stdout on exit 0. Per the hooks spec, stdout on exit 0 is parsed as JSON, and plain stdout becomes context ONLY for SessionStart and UserPromptSubmit; for Stop and PreCompact non-JSON stdout is discarded (visible only in verbose/debug). So the session summary and the compact-resume instruction — the entire purpose of these two hooks — reach neither the user nor Claude in normal operation. The SessionStart jq-missing warning (line 27) has the same problem: it writes to stderr with exit 0, and stderr is only surfaced on non-zero exit.",
+      "spec_basis": "\"Exit 0 = success; stdout parsed for JSON\"; \"Plain stdout also becomes context for SessionStart and UserPromptSubmit\" (no other events listed); exit codes other than 0/2 surface stderr, exit 0 does not. User-visible messaging is done via JSON: \"systemMessage (string warning to user)\".",
+      "fix": "On exit 0, emit JSON instead: {\"systemMessage\": \"[DeepGrade] Session: N files changed.\"} for Stop, and for PreCompact either systemMessage or context-appropriate JSON. Move the jq warning into JSON systemMessage on the SessionStart hook (its plan-name echo on stdout-as-context is fine and can stay).",
+      "corroborated_by": [
+        "hooks"
+      ]
+    },
+    {
+      "id": "F27",
+      "area": "skills",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Knowledge skills cannot load inside the scanner subagents that are told to use them",
+      "file": "deepgrade-plugin/skills/self-audit-knowledge/SKILL.md:3",
+      "detail": "self-audit-knowledge is described as 'Auto-invoked during codebase audits, plan audits, and report generation', and seven agents explicitly instruct 'Reference the self-audit-knowledge skill' (agents/risk-assessor.md:189, agents/dependency-mapper.md:180, agents/integration-scanner.md:148, agents/feature-scanner.md:131, agents/doc-auditor.md:160, agents/plan-auditor.md:81, agents/plan-scaffolder.md:254). But those agents declare restricted tool allowlists such as 'tools: Read, Grep, Glob, Bash' (e.g. agents/risk-assessor.md:6) that exclude the Skill tool, and none declares the agent-frontmatter 'skills' field to preload it. There is also no filesystem path the subagent could Read (installed plugins live in ~/.claude/plugins/cache, which Glob/Grep skip). So the skill silently never loads in the exact subagent contexts it exists for; the audit runs without its tier definitions. The same applies to mcp-research ('Auto-invoked when agents need external research', skills/mcp-research/SKILL.md:3) — no agent can invoke it.",
+      "spec_basis": "Skills load via L1 metadata matching — 'Claude matches requests against [description] for auto-invocation' — only where the Skill tool/listing is available; plugin agent frontmatter supports a 'skills' field to preload skills into subagents, and 'tools' is an explicit allowlist that removes unlisted tools (plugins-reference, Agents section).",
+      "fix": "Either add 'skills:' preloading (e.g. skills: [\"deepgrade:self-audit-knowledge\"]) to each scanner agent's frontmatter, add Skill to their tools allowlists and reference the namespaced name 'deepgrade:self-audit-knowledge', or inline the tier/flag definitions into the agent bodies and drop the skill reference.",
+      "corroborated_by": [
+        "agents"
+      ]
+    },
+    {
+      "id": "F28",
+      "area": "skills",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Pure-knowledge skills' descriptions claim an 'Auto-invoked' mechanism that nothing implements, so they may silently never run",
+      "file": "deepgrade-plugin/skills/deepgrade-knowledge/SKILL.md:3",
+      "detail": "deepgrade-knowledge ('Auto-invoked during DeepGrade audits'), governance-knowledge ('Auto-invoked during delta scans, gate setup, security scans...', skills/governance-knowledge/SKILL.md:3), readiness-scoring ('Auto-invoked when running readiness scans', skills/readiness-scoring/SKILL.md:3) and mcp-research (skills/mcp-research/SKILL.md:3) are referenced by ZERO commands or agents (grep across commands/ and agents/ finds only help.md's listing table and a passing mention in codebase-audit.md:238). 'Auto-invoked' is not a mechanism in Claude Code — invocation happens only when Claude matches the USER's request against the description. Since the audit/scan workflows are driven by command skills that never mention these knowledge skills, and their descriptions contain workflow-internal phrasing rather than things a user would say, loading is left to chance. Their descriptions are also noun phrases ('Knowledge about X') rather than the recommended third-person action form, and several overlap the same trigger space ('codebase audits' appears in deepgrade-knowledge AND self-audit-knowledge AND the codebase-audit command), making the model's choice ambiguous.",
+      "spec_basis": "'description (string) — what the skill does AND when to use it; Claude matches requests against it for auto-invocation'; '[RECOMMENDED] Specific descriptions with key trigger terms; avoid vagueness'; '[RECOMMENDED] Write description in third person (\"Processes Excel files...\")'.",
+      "fix": "Make loading deterministic: have the orchestrating command skills explicitly invoke them (Skill tool with 'deepgrade:governance-knowledge' etc.) or preload via agent 'skills' frontmatter; rewrite descriptions to state concrete triggers ('Use when interpreting readiness scan scores, choosing gate thresholds...') instead of asserting 'Auto-invoked'.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F29",
+      "area": "skills",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Resource templates deploy four agents that do not exist in the plugin",
+      "file": "deepgrade-plugin/skills/documentation/resources/adr-template.md:49",
+      "detail": "adr-template.md:49 ('Deploy the **adr-generator** agent'), brd-template.md:57 ('brd-generator'), prd-template.md:60 ('prd-generator'), and readme-template.md:42 ('readme-generator') instruct spawning agents that are not present in agents/ (the 22 agent files include no adr/brd/prd/readme generator; a repo-wide grep finds these names only inside the four templates). A Task call with subagent type 'deepgrade:adr-generator' will fail, so the generation step either errors or the model silently improvises the document without the promised linkage/validation steps (update document-linkage.json, validate JSON).",
+      "spec_basis": "Plugin agents must exist as markdown files in agents/ (or manifest 'agents' paths) to be invokable as 'plugin-name:agent-name' (plugins-reference, Agents/Invocation); best-practices requires auditing bundled files so instructions match what actually ships ('Observe how Claude navigates the skill... iterate on real behavior').",
+      "fix": "Either add the four generator agents to agents/, or rewrite the templates' Step 'Generate' sections as inline instructions the current conversation executes (drop the 'Deploy the X agent' framing).",
+      "corroborated_by": []
+    },
+    {
+      "id": "F30",
+      "area": "skills",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Same dispatcher shipped twice: /deepgrade:doc (command) and /deepgrade:documentation (skill) with near-identical descriptions",
+      "file": "deepgrade-plugin/skills/documentation/SKILL.md:3",
+      "detail": "commands/doc.md:2 and skills/documentation/SKILL.md:3 both describe 'Generate project documentation... routes/dispatches to the appropriate template', producing two entries in the skill listing and slash menu that compete for the same auto-invocation triggers ('create adr', 'release notes', ...). Users see both /deepgrade:doc and /deepgrade:documentation; the model can pick either, and only the doc.md path carries the ${CLAUDE_PLUGIN_ROOT} anchor and the --plan awareness block, so behavior differs depending on which one fires. Docs treat commands/ as legacy now that commands are merged into skills. The skill name 'documentation' is also exactly the 'overly generic' naming pattern the docs warn against.",
+      "spec_basis": "'[LEGACY] commands/ ... still works ... but docs say \"Use skills/ for new plugins\" — commands have been merged into skills'; naming guidance: 'Avoid vague (helper, utils), overly generic (documents, data)'; description guidance implies distinct, non-colliding trigger text per skill.",
+      "fix": "Consolidate to one entry point: move the plan-awareness block and a ${CLAUDE_SKILL_DIR}-anchored dispatch into the skill and delete commands/doc.md (or keep doc.md and set 'user-invocable: false' + strip trigger keywords from the skill description so only one surface auto-invokes).",
+      "corroborated_by": []
+    },
+    {
+      "id": "F31",
+      "area": "skills",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "Templates tell users to run commands that do not exist (/audit, /create-prd, /create-brd, /create-adr)",
+      "file": "deepgrade-plugin/skills/documentation/resources/adr-template.md:12",
+      "detail": "adr-template.md:12, brd-template.md:9, prd-template.md:9 and readme-template.md:9 all say 'No audit baseline found. Run /audit first.' — no /audit command exists (the real one is /deepgrade:codebase-audit). brd-template.md:77 suggests '/create-prd [feature]', prd-template.md:81 '/create-brd [domain]', prd-template.md:97 '/create-adr [feature topic]' — none exist. This directly violates the parent skill's own Command Reference Rule (documentation/SKILL.md:147-165: 'NEVER suggest a command that is not in this list'), so the skill contradicts its bundled resources and users get dead commands. spec-template.md:203-208 uses the correct /deepgrade:doc and /deepgrade:quick-audit forms, showing the intended pattern.",
+      "spec_basis": "Plugin skills are ALWAYS namespaced '/plugin-name:skill-name'; best-practices: 'Consistent terminology throughout (one term per concept)' and audit bundled files so instructions match shipped components.",
+      "fix": "Replace with real namespaced commands: '/deepgrade:codebase-audit' for the baseline message and '/deepgrade:doc prd|brd|adr <topic>' for the chain suggestions, matching the whitelist in SKILL.md lines 150-162.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F32",
+      "area": "skills",
+      "severity": "medium",
+      "requirement_level": "recommended",
+      "title": "mcp-research teaches unqualified MCP tool names, triggering its own 'tool unavailable' degradation path",
+      "file": "deepgrade-plugin/skills/mcp-research/SKILL.md:87",
+      "detail": "The 'Verified Tool Names' section (lines 82-101) and the selection matrix (lines 16-26) list bare names: ref_search_documentation, web_search_exa, get_code_context_exa, perplexity_search, etc. In Claude Code, MCP tools register with server-qualified names (e.g. mcp__perplexity__perplexity_search, mcp__exa__web_search_exa — exactly how they appear in this environment). The skill even codifies the failure mode at lines 83-85: 'If a tool name doesn't match, the tool is simply unavailable (graceful degradation applies)' — meaning an exact-name check will wrongly conclude the tools are absent and skip external research even when the servers are connected.",
+      "spec_basis": "'[RECOMMENDED] MCP tools: always fully qualify as ServerName:tool_name to avoid \"tool not found\"' (best-practices doc).",
+      "fix": "List the fully qualified forms (mcp__<server>__<tool>) alongside the base names, and change the availability rule to match by tool-name suffix across connected servers rather than exact bare-name equality.",
+      "corroborated_by": []
+    },
+    {
+      "id": "F33",
+      "area": "standalone-skill",
+      "severity": "low",
+      "requirement_level": "recommended",
+      "title": "Nine technique files are near-duplicates of plugin docs with diverging phase numbering and incompatible KB schemas",
+      "file": "troubleshooting-skill/resources/techniques/08-smart-correlation-engine.md:95",
+      "detail": "Every techniques/0N file has a same-named sibling in deepgrade-plugin/docs/troubleshooting-techniques/. Diffs show real divergence, not just copies: (1) phase numbering — plugin copies reference the plugin command's Phase 0/1/2/5/6 pipeline (e.g. plugin 02 line 35 'Skip to standard investigation (Phase 2)') while skill copies were renumbered to the 4-phase core (skill 02 line 35 'Phase 1 of core methodology'); (2) KB entry shape — plugin 08 embeds an inline KB structure including a '**Plan:**' field, while the skill points to kb-schema.md which has no Plan field and adds a machine-token 'Guardrails Missed' format (kb-schema.md lines 79-96) absent from the plugin copy; (3) skill 05 adds a Token column (lines 44-53) the plugin copy lacks; (4) plugin copies retain 'Status Before Implementation'/'Implementation' design-note sections stripped from the skill. Consequence: two sources of truth that will drift further, and KB entries written under the plugin's format will not correlate cleanly with entries written under the skill's schema (different field sets, different guardrail-miss formats: 'unit test (not present)' vs 'unit-tests:not-present').",
+      "spec_basis": "Best-practices: consistent terminology (one term per concept) and no stale/superseded material; duplication across two shipped copies is a concrete maintenance/functional risk (entries produced by one variant break the other's correlation matching), not a loading error.",
+      "fix": "Declare one copy canonical. Either have the plugin's docs state they are the design-history originals (and point users to the skill for the current versions), or generate one set from the other at release time. At minimum, align the KB entry field sets (add/drop the Plan field deliberately, unify the guardrail-miss token format) so entries are cross-compatible.",
+      "corroborated_by": [],
+      "in_scope_reason": "User scope decision: resolve plugin/standalone-skill duplication"
+    }
+  ],
+  "backlog": [
+    {
+      "area": "agents",
+      "severity": "low",
+      "title": "Garbled 'Output' instruction sentence duplicated across 8 scanner agents (text-merge artifact)",
+      "file": "deepgrade-plugin/agents/baseline-scanner.md:65",
+      "fix": "Rewrite as one sentence in all 8 files: 'Write results as JSON to <path> following the standard scanner output schema with all N checks. COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above; fill in only score, evidence, and remediation values.'"
+    },
+    {
+      "area": "agents",
+      "severity": "low",
+      "title": "database-scanner's JSON template contradicts its own fixed name contract for check 9.1",
+      "file": "deepgrade-plugin/agents/database-scanner.md:588",
+      "fix": "Change line 588 to `\"name\": \"Schema source of truth exists\"`."
+    },
+    {
+      "area": "agents",
+      "severity": "low",
+      "title": "plan-auditor and gate-generator bodies have internal numbering/count inconsistencies",
+      "file": "deepgrade-plugin/agents/plan-auditor.md:215",
+      "fix": "Renumber the workflow steps sequentially and reconcile the 4-vs-5 subagent counts in plan-auditor.md; renumber the second Step 4.5 in gate-generator.md to Step 4.6."
+    },
+    {
+      "area": "commands",
+      "severity": "low",
+      "title": "valid_commands allowlists are stale: plan.md omits 3 existing commands, codex-challenge.md and troubleshoot.md omit plan-export",
+      "file": "deepgrade-plugin/commands/plan.md:1520",
+      "fix": "Regenerate all three valid_commands blocks from the actual commands/ directory listing (17 entries)."
+    },
+    {
+      "area": "commands",
+      "severity": "low",
+      "title": "help.md contains stale toolkit metadata: '(/tp)' prefix, 'Knowledge Skills (5)' vs 6 shipped, and un-namespaced doc examples",
+      "file": "deepgrade-plugin/commands/help.md:5",
+      "fix": "Remove '(/tp)', add mcp-research to the skills table (count 6), and prefix doc examples with /deepgrade:doc."
+    },
+    {
+      "area": "commands",
+      "severity": "low",
+      "title": "codex-challenge.md references a 'plan-review.js' hook that does not exist in the plugin",
+      "file": "deepgrade-plugin/commands/codex-challenge.md:24",
+      "fix": "Delete the sentence or reword to describe the pattern without naming a file."
+    },
+    {
+      "area": "commands",
+      "severity": "low",
+      "title": "Legacy flat commands/ layout used for all 17 workflows instead of the recommended skills/ directories",
+      "file": "deepgrade-plugin/commands/plan.md:1",
+      "fix": "Migrate the large workflow commands to skills/<name>/SKILL.md with supporting files; flat files may remain for the small ones (help, plan-status) — invocation names (/deepgrade:<name>) are unchanged."
+    },
+    {
+      "area": "commands",
+      "severity": "low",
+      "title": "Every description begins with a redundant '(deepgrade)' prefix, inflating the always-on skill listing",
+      "file": "deepgrade-plugin/commands/codebase-audit.md:2",
+      "fix": "Drop the '(deepgrade) ' prefix from all 17 descriptions; treat allowed-tools as first-turn convenience only."
+    },
+    {
+      "area": "consistency",
+      "severity": "low",
+      "title": "Test suite gaps: currently failing at HEAD, codex-challenge tests unwired, and layer1 over-asserts required manifest fields",
+      "file": "deepgrade-plugin/tests/run-all.sh:90",
+      "fix": "Fix the drift so layer1 passes, add `node tests/codex-challenge-test.js` as a layer in run-all.sh (or delete it with the legacy parser), soften layer1's required-field assertion to `name`, and remove the stale plan-review.js sentence from codex-challenge.md."
+    },
+    {
+      "area": "hooks",
+      "severity": "low",
+      "title": "$LOCALAPPDATA PATH augmentation is broken under Git Bash — colon in the Windows path splits the PATH entry",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:27",
+      "fix": "Convert before appending: P=$(cygpath -u \"$LOCALAPPDATA\" 2>/dev/null) && PATH=\"$PATH:$P/Microsoft/WinGet/Links\". Or drop the preamble entirely: Git Bash converts the inherited Windows PATH (which winget already extends) to POSIX form at startup, so 'command -v jq' generally works without help."
+    },
+    {
+      "area": "hooks",
+      "severity": "low",
+      "title": "Session state written to /tmp with predictable names and never cleaned up",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:61",
+      "fix": "Write state under \"$CLAUDE_PLUGIN_DATA/sessions/$S/\" (mkdir -p), or at minimum \"${TMPDIR:-/tmp}\"; add a SessionEnd hook that removes the session's files."
+    },
+    {
+      "area": "hooks",
+      "severity": "low",
+      "title": "layer2 tests extract hooks by array index and lock in drifted behavior",
+      "file": "deepgrade-plugin/tests/layer2-hook-simulation.sh:48",
+      "fix": "Select hooks by matcher instead of index: jq -r '.hooks.PreToolUse[] | select(.matcher==\"Bash\") | .hooks[0].command'. Add a realistic PostToolUse payload including tool_input.file_path, plus cases for SessionStart/Stop/PreCompact. Update Test 5 once the reset --hard hook is fixed to ask instead of block."
+    },
+    {
+      "area": "hooks",
+      "severity": "low",
+      "title": "Stop hook does not check stop_hook_active",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:83",
+      "fix": "Add at the top of the Stop hook: echo \"$I\" | jq -e '.stop_hook_active == true' >/dev/null 2>&1 && exit 0."
+    },
+    {
+      "area": "manifest",
+      "severity": "low",
+      "title": "~700 KB of inert payload (docs/, tests/, .vscode/, METHODOLOGY.md, GUIDE.md) ships to every installer",
+      "file": "deepgrade-plugin/docs",
+      "fix": "Move dev-only material (docs/plans, tests/, .vscode/, internal methodology docs) out of the plugin source or point the marketplace entry at a subdirectory containing only shippable content; keep README/LICENSE/CHANGELOG."
+    },
+    {
+      "area": "marketplace",
+      "severity": "low",
+      "title": "version duplicated in marketplace entry and plugin.json — marketplace value is silently masked",
+      "file": "deepgrade-plugin/.claude-plugin/marketplace.json:11",
+      "fix": "Delete the \"version\" line from the plugins[0] entry in marketplace.json and keep plugin.json as the single version authority. Alternatively, since this is an actively developed plugin on a git source, consider omitting `version` in both files so every pushed commit (SHA) counts as a new version and users auto-update without manual bumps."
+    },
+    {
+      "area": "marketplace",
+      "severity": "low",
+      "title": "Missing top-level marketplace description — documented validator warning",
+      "file": "deepgrade-plugin/.claude-plugin/marketplace.json:2",
+      "fix": "Add a top-level \"description\" next to \"name\", e.g. \"description\": \"Marketplace for the DeepGrade codebase grading and planning toolkit.\""
+    },
+    {
+      "area": "skills",
+      "severity": "low",
+      "title": "Unescaped $1 in documentation SKILL.md body is subject to argument substitution",
+      "file": "deepgrade-plugin/skills/documentation/SKILL.md:31",
+      "fix": "Escape as \\$1 in SKILL.md lines 31 and 143 (and any other literal $N mentions), keeping $ARGUMENTS at line 13 unescaped since substitution is intended there."
+    },
+    {
+      "area": "skills",
+      "severity": "low",
+      "title": "Reference files over 100 lines lack a table of contents",
+      "file": "deepgrade-plugin/skills/documentation/resources/release-notes-template.md:1",
+      "fix": "Add a short TOC (section list) at the top of release-notes-template.md and spec-template.md."
+    },
+    {
+      "area": "agents",
+      "severity": "info",
+      "title": "tools declared as YAML flow arrays instead of the documented comma-separated string in 6 agents",
+      "file": "deepgrade-plugin/agents/characterization-generator.md:10",
+      "fix": "Normalize the 6 files to the documented string form, e.g. `tools: Read, Grep, Glob, Bash, Write`, and run `claude plugin validate ./deepgrade-plugin --strict`."
+    },
+    {
+      "area": "agents",
+      "severity": "info",
+      "title": "Invalid color value 'magenta'; `color` is not in the plugin-agent supported-field list",
+      "file": "deepgrade-plugin/agents/convention-scanner.md:5",
+      "fix": "Change `magenta` to `pink` or `purple` in the two files; accept that `color` may be a no-op for plugin agents (or drop it)."
+    },
+    {
+      "area": "agents",
+      "severity": "info",
+      "title": "$ARGUMENTS placeholder used in agent bodies where it is not substituted",
+      "file": "deepgrade-plugin/agents/characterization-generator.md:40",
+      "fix": "Reword to 'Read the task description you were given to determine what to characterize' in both files."
+    },
+    {
+      "area": "consistency",
+      "severity": "info",
+      "title": ".vscode/settings.json validates plugin.json against the wrong (and unofficial) schema URL",
+      "file": "deepgrade-plugin/.vscode/settings.json:7",
+      "fix": "Point the fileMatch at the schemastore plugin-manifest URL (and optionally add a second mapping for `.claude-plugin/marketplace.json`), or embed `$schema` directly in each JSON file."
+    },
+    {
+      "area": "hooks",
+      "severity": "info",
+      "title": "\"matcher\": \"*\" on the Stop event — Stop does not support matchers",
+      "file": "deepgrade-plugin/.claude-plugin/plugin.json:79",
+      "fix": "Delete the matcher field from the Stop entry (or from all entries where '*' means match-all, since omitted = match all)."
+    },
+    {
+      "area": "marketplace",
+      "severity": "info",
+      "title": "Plugin entry omits category and tags discovery metadata",
+      "file": "deepgrade-plugin/.claude-plugin/marketplace.json:8",
+      "fix": "Add e.g. \"category\": \"productivity\" (or \"code-quality\") and \"tags\": [\"audit\", \"planning\", \"code-quality\", \"documentation\"] to the plugins[0] entry."
+    },
+    {
+      "area": "marketplace",
+      "severity": "info",
+      "title": "owner.email is not a deliverable address (krwhynot@github.com)",
+      "file": "deepgrade-plugin/.claude-plugin/marketplace.json:5",
+      "fix": "Replace with a real address (e.g. a personal mailbox or krwhynot@users.noreply.github.com), or drop the email field entirely since it is optional."
+    },
+    {
+      "area": "marketplace",
+      "severity": "info",
+      "title": "Relative \"./\" source breaks direct-URL marketplace distribution",
+      "file": "deepgrade-plugin/.claude-plugin/marketplace.json:12",
+      "fix": "No change needed if installation is documented as `/plugin marketplace add krwhynot/deepgrade` (GitHub-hosted, the recommended path). If raw-URL distribution is ever desired, switch the source to a github object: \"source\": {\"source\": \"github\", \"repo\": \"krwhynot/deepgrade\"} — otherwise just ensure the README never advertises a raw marketplace.json URL."
+    },
+    {
+      "area": "marketplace",
+      "severity": "info",
+      "title": "Marketplace file location is only valid because deepgrade-plugin is itself the hosted repo root",
+      "file": "deepgrade-plugin/.claude-plugin/marketplace.json:1",
+      "fix": "Keep publishing deepgrade-plugin as its own repository (current state is correct). If the parent folder ever becomes the published repo, move marketplace.json to <repo-root>/.claude-plugin/ and change the entry source to \"./deepgrade-plugin\", adding troubleshooting-skill as its own plugin entry rather than a ../ reference."
+    },
+    {
+      "area": "skills",
+      "severity": "info",
+      "title": "Bundled directory named resources/ instead of the documented references//scripts//assets convention",
+      "file": "deepgrade-plugin/skills/documentation/resources",
+      "fix": "Optionally rename resources/ to references/ (updating the six links in SKILL.md lines 22-27 and the Execution instruction at line 142) for consistency with documented conventions; otherwise leave as-is."
+    },
+    {
+      "area": "skills",
+      "severity": "info",
+      "title": "Time-stamped content in mcp-research body",
+      "file": "deepgrade-plugin/skills/mcp-research/SKILL.md:82",
+      "fix": "Drop the date (or move currency concerns into the availability-check instruction: 'verify against the live tool listing at run time')."
+    },
+    {
+      "area": "standalone-skill",
+      "severity": "info",
+      "title": "Skill directory name (troubleshooting-skill) does not match frontmatter name (troubleshooting), so as-shipped invocation name differs from display name",
+      "file": "troubleshooting-skill/SKILL.md:2",
+      "fix": "Rename the bundle directory to `troubleshooting/` (matching `name:`), or add a one-line warning at the top of the Install section: 'Do not copy the troubleshooting-skill folder itself — the folder name becomes the /command name.'"
+    },
+    {
+      "area": "standalone-skill",
+      "severity": "info",
+      "title": "Residual 'multi-agent' escalation references contradict README's stated deliberate omission of multi-agent orchestration",
+      "file": "troubleshooting-skill/resources/techniques/01-severity-classification-and-triage.md:31",
+      "fix": "Reword to platform-neutral language, e.g. 'Immediate, additional responders' / 'expanded investigation team', or add a note that in single-agent use this means prioritized, parallel-track investigation by the user's team."
+    },
+    {
+      "area": "standalone-skill",
+      "severity": "info",
+      "title": "Second-level reference chain and a root-relative prose path inside resource files",
+      "file": "troubleshooting-skill/resources/techniques/08-smart-correlation-engine.md:98",
+      "fix": "In methodology.md line 79, use the full skill-root path with filename (resources/techniques/03-blast-radius-assessment.md). Optionally replace the ../kb-schema.md link in techniques/08 with plain text naming the file, since SKILL.md already links it."
+    }
+  ]
+}

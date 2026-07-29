@@ -1,0 +1,24 @@
+{
+  "_comment": "Canonical locked-state values (v13, round 12; equality semantics corrected v16, round 15). The sweep asserts value-level equality between these and status.json - order-insensitive for object members, order-PRESERVING for arrays (array order is semantic, e.g. G0.terminal_states). Changing a locked contract legitimately REQUIRES updating this file in the same diff - that visibility is the design (same trust model as the exact-line exemptions file).",
+  "U6": {
+    "id": "U6",
+    "unknown": "what Claude Code surfaces when an exec-form hook command cannot be spawned (interpreter missing), and whether that notice is user-visible",
+    "classification": "conditionally-blocking",
+    "classification_note": "reclassified v11 (round 10: v10 made U6 capable of blocking lane selection but this entry still said it blocks nothing); reduced to an exact enum and canonically locked v13 (round 12: affirmative-token regexes admit their own negation)",
+    "blocks": "lane-N selection only: CR-1 conditions lane N on the notice's visible form - invisible means CR-1 void, G0 records BLOCKED, Wave 0 pauses before its CI-enable step pending a new owner CR (CR-1 Return path). Does not block lanes B/I or Waves 1-3. Settled by the Wave 0 probe incl. the node-less case; defines the 3.1.6 honest spawn limit"
+  },
+  "G0": {
+    "id": "G0",
+    "claim": "a distributable hook launcher fires on this host",
+    "status": "unproven",
+    "blocks": "which 3.1 lane runs (N preferred / B / I - all three fully specified with their own 4a/4b/4c)",
+    "terminal_states": [
+      "lane N (requires the CR-1 condition: U6 shows the node-absent spawn failure user-visibly)",
+      "lane B",
+      "lane I",
+      "BLOCKED (U6 notice invisible - CR-1 void; Wave 0 pauses before its CI-enable step, Wave 4 does not start, new owner CR required per CR-1 Return path)"
+    ],
+    "note": "bash NOT on PATH outside Git Bash; node exec form is the vendor-documented portable pattern and probes first; absolute-path candidates are diagnostic-only and can never PASS"
+  },
+  "release_identity": "REVISED v11: full-SHA GitHub source object (sha controls; ref for humans) via the two-commit release/catalog sequence; identity proven by normalized installed-tree comparison - archive of the catalog's authoritative sha, with ref separately asserted to resolve to it, vs installPath, cache metadata excluded; U7 eighth behavior = pinned-source resolution at the floor; same-profile publication proofs"
+}
