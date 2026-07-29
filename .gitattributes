@@ -13,6 +13,12 @@
 # Shell scripts must be LF on every platform, always.
 *.sh text eol=lf
 
+# Test fixtures are DATA READ BY those shell scripts — tab-separated files compared with
+# `cut -f2` / `grep -qxF`. A trailing \r makes every string comparison fail silently: no
+# error, just wrong answers (a fresh clone reported 5 orphan files instead of 2). Same
+# core.autocrlf landmine as above, quieter failure mode. See changes/CR-2.md.
+tests/fixtures/** text eol=lf
+
 # Wave 0 snapshots are an immutable historical record whose SHA-256 hashes are recorded in
 # snapshots/LEDGER-HEADER.md and are the sole input to the Wave 6 reconciliation. Any line-ending
 # normalization would change their bytes and invalidate every recorded hash. Freeze them: no
