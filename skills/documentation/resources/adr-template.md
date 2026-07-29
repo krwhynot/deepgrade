@@ -9,7 +9,7 @@ Search the audit baselines for content related to "$1":
 - `docs/audit/baseline/dependency-map.json` - dependency decisions
 - `docs/audit/baseline/feature-inventory.json` - feature-related decisions
 
-If no baseline exists: "No audit baseline found. Run /audit first."
+If no baseline exists: "No audit baseline found. Run /deepgrade:codebase-audit first."
 
 If "$1" is vague or could map to multiple decisions, present options:
 ```
@@ -46,12 +46,12 @@ Related existing ADRs: [list from docs/adr/]
 
 **Step 2: Generate ADR**
 
-Deploy the **adr-generator** agent with:
+Generate the ADR directly, using:
 - The specific decision topic
 - Related feature IDs
 - Related findings from the baselines
 
-The agent will:
+Steps:
 1. Create `docs/adr/` directory if needed
 2. Read existing ADRs to match style
 3. Write ADR-{NNN}-{topic}.md

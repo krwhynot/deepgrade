@@ -55,7 +55,7 @@ Store the focus priorities in memory. Pass relevant items to each agent:
   HIGH focus items about untested modules (flag as HIGH risk)
 - integration-scanner: HIGH focus items about security surface, database
   connection patterns
-- report-generator: the full priority list for the executive summary
+- deepgrade-report-generator: the full priority list for the executive summary
 
 If no readiness report exists, proceed to Step 0b (full stack detection).
 
@@ -120,7 +120,7 @@ Pass this STACK PROFILE to every subagent as their first context paragraph.
 2. **dependency-mapper**: Map project refs, packages, coupling, circular deps.
    Pass: STACK PROFILE + "Write output to docs/audit/dependency-map.md"
 
-3. **documentation-auditor**: Catalog existing docs, comments, coverage gaps.
+3. **doc-auditor**: Catalog existing docs, comments, coverage gaps.
    Pass: STACK PROFILE + "Write output to docs/audit/documentation-audit.md"
 
 Wait for all three to complete before proceeding.
@@ -189,7 +189,7 @@ Draft the synthesis with self-audit stats for the report generator, including:
 
 ## Phase 4 - Report Generation (sequential)
 
-6. **report-generator**: Transform the synthesized analysis into a standardized
+6. **deepgrade-report-generator**: Transform the synthesized analysis into a standardized
    audit report with severity-classified findings.
    Pass: The synthesis from Phase 3.
    Output: docs/audit/deepgrade-report.md
@@ -229,7 +229,7 @@ LOW confidence: Agent could not access the module meaningfully. Finding is
 inferred from naming, file paths, or adjacent code. Tag as [REQUIRES REVIEW].
 
 Every subagent must include a confidence level per finding in its output.
-The report-generator groups findings by confidence in the Confidence Summary.
+The deepgrade-report-generator groups findings by confidence in the Confidence Summary.
 
 If NO readiness report exists, default all findings to the standard confidence
 assessment (HIGH if direct evidence, MEDIUM if inferred, LOW if speculative).

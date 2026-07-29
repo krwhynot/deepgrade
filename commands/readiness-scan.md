@@ -47,13 +47,13 @@ Deploy all 9 scanner agents simultaneously. Each agent:
 
 Scanner agents to deploy:
 1. manifest-scanner -> docs/audit/readability/manifest-scan.json (Checks 1.1-1.4)
-2. context-file-scanner -> docs/audit/readability/context-scan.json (Checks 2.1-2.10)
+2. context-scanner -> docs/audit/readability/context-scan.json (Checks 2.1-2.10)
 3. structure-scanner -> docs/audit/readability/structure-scan.json (Checks 3.1-3.8)
-4. entry-point-scanner -> docs/audit/readability/entry-point-scan.json (Checks 4.1-4.5)
+4. entry-scanner -> docs/audit/readability/entry-point-scan.json (Checks 4.1-4.5)
 5. convention-scanner -> docs/audit/readability/convention-scan.json (Checks 5.1-5.7)
-6. feedback-loop-scanner -> docs/audit/readability/feedback-scan.json (Checks 6.1-6.6)
+6. feedback-scanner -> docs/audit/readability/feedback-scan.json (Checks 6.1-6.6)
 7. baseline-scanner -> docs/audit/readability/baseline-scan.json (Checks B.1-B.4)
-8. context-budget-scanner -> docs/audit/readability/context-budget-scan.json (Checks 8.1-8.8)
+8. budget-scanner -> docs/audit/readability/context-budget-scan.json (Checks 8.1-8.8)
 9. database-scanner -> docs/audit/readability/database-scan.json (Checks 9.1-9.8, CONDITIONAL)
 
 ## Phase 3: Synthesis
@@ -103,7 +103,7 @@ After all agents complete:
 9. Generate Phase 2 Focus Priorities (see section below)
 
 ## Phase 4: Report Generation
-1. Deploy report-generator agent with all scan data
+1. Deploy readiness-report-generator agent with all scan data
 2. Write readability-score.json (machine-readable baseline)
 3. Write readability-report.md (human-readable report)
 4. Present results to user with generation offers

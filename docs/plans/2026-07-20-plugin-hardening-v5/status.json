@@ -161,7 +161,21 @@
       "status": "in_progress",
       "started": "2026-07-29",
       "wave": 0,
-      "tickets_complete": ["PHV5-001", "PHV5-002", "PHV5-004", "PHV5-030", "PHV5-031"],
+      "tickets_complete": ["PHV5-001", "PHV5-002", "PHV5-004", "PHV5-010", "PHV5-011", "PHV5-012", "PHV5-030", "PHV5-031"],
+      "findings_closed": ["F01", "F04", "F17", "F18", "F19", "F20A", "F29", "F31"],
+      "wave_1_complete": {
+        "date": "2026-07-29",
+        "findings_closed": ["F29 phantom agents", "F31 dead commands", "F17 name/filename drift", "F01 duplicate agent name"],
+        "f17_note": "The 4.27.0 release renamed agent FILES but never their frontmatter, so every user-facing name advertised in README/GUIDE/help failed to resolve at runtime while the orchestrating commands quietly kept working off the old names. Fixed atomically: frontmatter + all 5 caller lines in one commit.",
+        "f01_note": "Two agents both declared name 'report-generator'; one was permanently shadowed and unreachable. Split with 4 caller references repointed.",
+        "f29_note": "Four templates deployed nonexistent *-generator agents. Rewritten as direct instructions rather than creating agents - new agents are in the approach.md OUT list.",
+        "new_assertions": "5 added to layer1 (agent identity, uniqueness, reverse-reference resolution, phantom-agent sweep, template command sweep)",
+        "assertion_bugs_caught_by_mutation_testing": [
+          "reverse-sweep regex required two hyphens, silently skipping every single-hyphen agent name; the landmine mutation passed until fixed",
+          "\\b anchoring matched inside longer tokens because grep treats '-' as a word boundary, reporting a phantom unresolved 'report-generator'; fixing it then surfaced a genuine leftover self-reference at readiness-report-generator.md:9"
+        ],
+        "suite": "172 pass / 0 fail"
+      },
       "tickets_remaining_wave_0": ["PHV5-003 U7 floor", "PHV5-005 CI matrix"],
       "wave_3_complete": {
         "date": "2026-07-29",

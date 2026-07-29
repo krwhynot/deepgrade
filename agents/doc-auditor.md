@@ -1,5 +1,5 @@
 ---
-name: documentation-auditor
+name: doc-auditor
 description: Use this agent to catalog all existing documentation in a codebase including README files, doc comments, markdown files, and inline comments. Assesses documentation quality, coverage gaps, and identifies business rules linked to code. Works on any stack.
 model: sonnet
 color: yellow

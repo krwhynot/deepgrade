@@ -6,7 +6,7 @@ Generate a BRD for "$1".
 Read `docs/audit/baseline/feature-inventory.json` and identify domains
 matching "$1".
 
-If no baseline exists: "No audit baseline found. Run /audit first."
+If no baseline exists: "No audit baseline found. Run /deepgrade:codebase-audit first."
 
 If "$1" matches a domain name exactly (e.g., "Ordering", "Payments"):
 proceed with that domain.
@@ -54,12 +54,12 @@ verify entry points and database tables, and update confidence in the baseline.
 
 **Step 3: Generate BRD**
 
-Deploy the **brd-generator** agent with:
+Generate the BRD directly, using:
 - The selected domain name
 - The list of feature IDs in this domain
 - Links to any existing PRDs and ADRs for cross-referencing
 
-The agent will:
+Steps:
 1. Write the BRD to `docs/brd/{domain}.md`
 2. Update document-linkage.json for all features in this domain
 3. Update feature-inventory.json linked_docs for all features
@@ -74,7 +74,7 @@ Covers [N] features in the [Domain] domain.
 
 Document chain status:
   [N] features have PRDs (complete chain: BRD -> PRD)
-  [N] features need PRDs (run /create-prd [feature] for each)
+  [N] features need PRDs (run /deepgrade:doc prd [feature] for each)
 
   [1] Generate PRDs for all features missing them
   [2] Done for now

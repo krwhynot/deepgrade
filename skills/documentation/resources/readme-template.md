@@ -6,7 +6,7 @@ Generate a README for "$1".
 Read `docs/audit/baseline/dependency-map.json` and search for projects
 matching "$1".
 
-If no baseline exists: "No audit baseline found. Run /audit first."
+If no baseline exists: "No audit baseline found. Run /deepgrade:codebase-audit first."
 
 If multiple projects match (e.g., "contact" matches contacts and
 contacts.test), present a numbered list:
@@ -39,11 +39,11 @@ README for [Project Name]:
 
 **Step 2: Generate README**
 
-Deploy the **readme-generator** agent with:
+Generate the README directly, using:
 - The project name and path
 - Relevant baseline data
 
-The agent writes `{project-path}/README.md`.
+Write `{project-path}/README.md`.
 
 **Step 3: Confirmation**
 

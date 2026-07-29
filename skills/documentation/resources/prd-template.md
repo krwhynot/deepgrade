@@ -6,7 +6,7 @@ Generate a PRD for "$1".
 Read `docs/audit/baseline/feature-inventory.json` and search for features
 matching "$1" by name, domain, namespace, or keyword.
 
-If no baseline exists: "No audit baseline found. Run /audit first."
+If no baseline exists: "No audit baseline found. Run /deepgrade:codebase-audit first."
 
 If multiple features match, present a numbered list:
 ```
@@ -57,12 +57,12 @@ Validate the JSON after writing.
 
 **Step 3: Generate PRD**
 
-Deploy the **prd-generator** agent with:
+Generate the PRD directly, using:
 - The selected feature ID
 - Whether to reverse-engineer (existing feature) or template (new feature)
 - The verified confidence level
 
-The agent will:
+Steps:
 1. Create `docs/prd/{domain}/` directory
 2. Write the PRD using the standard template
 3. Update document-linkage.json and feature-inventory.json
@@ -78,7 +78,7 @@ PRD created: docs/prd/{domain}/PRD-{name}.md
 
 Note: No BRD exists for the [Domain] domain.
 A BRD defines the business context for this feature.
-  [1] Generate BRD now with /create-brd [domain]
+  [1] Generate BRD now with /deepgrade:doc brd [domain]
   [2] Skip for now
 ```
 
@@ -93,6 +93,6 @@ If no ADR exists for this feature:
 ```
 Note: No ADR exists documenting the architectural decisions for this feature.
 An ADR should document how and why this feature was built the way it is.
-  [1] Generate ADR now with /create-adr [feature topic]
+  [1] Generate ADR now with /deepgrade:doc adr [feature topic]
   [2] Skip for now
 ```

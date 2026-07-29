@@ -584,6 +584,104 @@ else
 fi
 
 # ===========================================================================
+# 10. Agent identity + reverse reference resolution (F17, F01, F29) — PHV5-010/011/012
+#
+# The 4.27.0 release renamed the agent FILES but never their frontmatter, so
+# every user-facing name (deepgrade:context-scanner, etc.) failed to resolve at
+# runtime while the orchestrating commands quietly kept working off the old
+# names. Two agents also shared the name "report-generator", so one was
+# permanently shadowed. These assertions make both classes impossible to
+# reintroduce.
+# ===========================================================================
+echo ""
+echo "--- Agent identity (F17/F01) ---"
+
+# 10a. frontmatter name MUST equal filename, per file.
+#      NOTE: `sed -n '2s/...' agents/*.md` numbers lines CUMULATIVELY across files
+#      and silently reads only the first one — always iterate per file.
+name_drift=0
+for af in agents/*.md; do
+  [ -f "$af" ] || continue
+  abase=$(basename "$af" .md)
+  aname=$(grep -m1 '^name:' "$af" | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//')
+  if [ "$abase" != "$aname" ]; then
+    fail "F17: agents/$abase.md declares name '$aname' (frontmatter must equal filename)"
+    name_drift=$((name_drift + 1))
+  fi
+done
+[ "$name_drift" -eq 0 ] && pass "F17: all agent frontmatter names match their filenames"
+
+# 10b. names must be globally unique — a collision silently shadows one agent
+dup_names=$(for af in agents/*.md; do grep -m1 '^name:' "$af" | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//'; done | sort | uniq -d)
+if [ -n "$dup_names" ]; then
+  fail "F01: duplicate agent name(s), one agent is unreachable: $(echo $dup_names | tr '\n' ' ')"
+else
+  pass "F01: all agent names are unique"
+fi
+
+# 10c. REVERSE SWEEP — every agent name referenced by a command, agent, or skill
+#      must resolve to a real agent. This is the F17 landmine: renaming
+#      frontmatter without moving the caller lines passes 10a and breaks runtime.
+for af in agents/*.md; do grep -m1 '^name:' "$af" | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//'; done | sort -u > /tmp/dg_valid_agents.$$
+unresolved=0
+# Extract MAXIMAL hyphenated tokens, then keep those with an agent-shaped suffix.
+# Do NOT anchor with \b around the suffix: grep treats '-' as a word boundary, so
+# '\breport-generator\b' matches INSIDE 'deepgrade-report-generator' and reports a
+# phantom unresolved name. Leftmost-longest matching on the whole token avoids this.
+for ref in $(grep -rhoE '\b[a-z][a-z-]*[a-z]\b' commands/ agents/ skills/ 2>/dev/null \
+             | grep -E -- '-(scanner|generator|auditor|mapper|assessor|scaffolder)$' | sort -u); do
+  # "ai-readiness-scanner" is a tool-name string inside the readability-score.json
+  # output schema, not an agent invocation. Excluded deliberately.
+  [ "$ref" = "ai-readiness-scanner" ] && continue
+  if ! grep -qxF "$ref" /tmp/dg_valid_agents.$$; then
+    fail "F17/F29: '$ref' is referenced but no agent declares that name"
+    unresolved=$((unresolved + 1))
+  fi
+done
+rm -f /tmp/dg_valid_agents.$$
+[ "$unresolved" -eq 0 ] && pass "F17/F29: every referenced agent name resolves to a real agent"
+
+# ===========================================================================
+# 11. Documentation templates (F29, F31) — PHV5-010
+# ===========================================================================
+echo ""
+echo "--- Documentation templates (F29/F31) ---"
+
+TPL_DIR="skills/documentation/resources"
+if [ ! -d "$TPL_DIR" ]; then
+  fail "F29: $TPL_DIR does not exist"
+else
+  # 11a. No "Deploy the **X** agent" instruction may name a non-existent agent.
+  #      (10c already resolves every agent-shaped token; this catches the
+  #      specific phantom-generator phrasing that shipped in the templates.)
+  phantom=$(grep -rhoE 'Deploy the \*\*[a-z-]+\*\* agent' "$TPL_DIR" 2>/dev/null | head -1)
+  if [ -n "$phantom" ]; then
+    fail "F29: template still instructs '$phantom' — verify that agent exists"
+  else
+    pass "F29: no phantom 'Deploy the **X** agent' instructions in templates"
+  fi
+
+  # 11b. Only namespaced /deepgrade:* commands may appear, and each must resolve.
+  #      Path fragments (docs/audit/...) are excluded by requiring the slash to
+  #      follow whitespace, a quote, or a paren — never a path character.
+  bad_cmd=0
+  for tok in $(grep -rhoE '(^|[[:space:]"'"'"'(])/[a-z][a-z-]*' "$TPL_DIR" 2>/dev/null \
+               | tr -d ' "'"'"'(' | sort -u); do
+    if [ "$tok" != "/deepgrade" ]; then
+      fail "F31: template references dead command '$tok' (only /deepgrade:* is valid)"
+      bad_cmd=$((bad_cmd + 1))
+    fi
+  done
+  for c in $(grep -rhoE '/deepgrade:[a-z-]+' "$TPL_DIR" 2>/dev/null | sed 's|/deepgrade:||' | sort -u); do
+    if [ ! -f "commands/$c.md" ]; then
+      fail "F31: template references /deepgrade:$c but commands/$c.md does not exist"
+      bad_cmd=$((bad_cmd + 1))
+    fi
+  done
+  [ "$bad_cmd" -eq 0 ] && pass "F31: template commands are all namespaced and resolve"
+fi
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="

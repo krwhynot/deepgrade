@@ -1,5 +1,5 @@
 ---
-name: report-generator
+name: deepgrade-report-generator
 description: Use this agent to transform raw audit findings from 5 specialized agents into a standardized DeepGrade report with severity-classified findings that any engineer can act on. Connects findings to business outcomes.
 model: sonnet
 color: blue
@@ -15,7 +15,7 @@ Write output to docs/audit/deepgrade-report.md.
 **Input Files (read ALL of these before writing):**
 - docs/audit/feature-inventory.md (from feature-scanner)
 - docs/audit/dependency-map.md (from dependency-mapper)
-- docs/audit/documentation-audit.md (from documentation-auditor)
+- docs/audit/documentation-audit.md (from doc-auditor)
 - docs/audit/risk-assessment.md (from risk-assessor)
 - docs/audit/integration-scan.md (from integration-scanner)
 - docs/audit/audit-progress.md (from orchestrator, if exists)
@@ -103,7 +103,7 @@ Each finding uses this format:
 [Module count, coupling hotspots from dependency-mapper]
 
 ### Documentation Coverage
-[Coverage %, gaps from documentation-auditor]
+[Coverage %, gaps from doc-auditor]
 
 ### Recommended Documentation Structure
 [What to create first, where to put it, templates to use]
