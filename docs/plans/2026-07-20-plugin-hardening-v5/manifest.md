@@ -1,7 +1,7 @@
 # Plan: Plugin Hardening v5
 
 Created: 2026-07-20
-Status: Phase 3 - Pre-Plan (current approach version and round state are authoritative in `approach.md`'s header and `status.json` — this line is deliberately version-agnostic after going stale twice)
+Status: Phase 5 - Audit (current approach version and round state are authoritative in `approach.md`'s header and `status.json` — this line is deliberately version-agnostic after going stale twice)
 Owner: Kyle (repo owner, `krwhynot`)
 Mode: solo
 Target release: **5.0.0**
@@ -34,7 +34,7 @@ plugin/skill specification, so that every component the plugin advertises actual
 
 | Document | Type | Path | Created |
 |----------|------|------|---------|
-| (none yet) | | | |
+| [Spec: plugin-hardening-v5 (3 views: tickets, leadership, checklist)](../../specs/plugin-hardening-v5.md) | Spec (Phase 4) | docs/specs/plugin-hardening-v5.md | 2026-07-29 |
 
 ## Change Records
 
@@ -54,9 +54,9 @@ plugin/skill specification, so that every component the plugin advertises actual
 |-------|--------|
 | 1. Brainstorm | Complete |
 | 2. Research | Complete — stop rubric passed |
-| 3. Pre-Plan | **Adversarial review PASSED — GO (Codex, perfect score; details in `codex-review.md` and `status.json`).** Scope lock passes external review; owner sign-off to lock and proceed to Phase 4 is the remaining step |
-| 4. Plan | Not Started — unblocked by the Phase 3 GO; owner-directed |
-| 5. Audit | Not Started |
+| 3. Pre-Plan | **Complete (2026-07-29).** Adversarial review PASSED — GO (Codex, perfect score; details in `codex-review.md` and `status.json`); owner signed off; plan directory committed at `0b72995` |
+| 4. Plan | **Complete (2026-07-29)** — spec confirmed at the Phase 4 gate (27 tickets, 9 waves, est. 22–28 working days) |
+| 5. Audit | In Progress (started 2026-07-29) |
 | 6. Build | Not Started |
 | 7. Impact Review | Not Started |
 | 8. Test | Not Started |
