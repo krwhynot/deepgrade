@@ -41,6 +41,7 @@ plugin/skill specification, so that every component the plugin advertises actual
 | CR | Date | Summary |
 |----|------|---------|
 | [CR-1](changes/CR-1.md) | 2026-07-21 | Owner **accepted** the weaker lane-N node-less signal (vendor hook-error notice), conditional on U6 proving its visible form; supplementary-warning and demote-lane-N alternatives declined |
+| [CR-2](changes/CR-2.md) | 2026-07-29 | `.gitattributes` scope extended from `*.sh` to also cover `tests/fixtures/**` — A1's own fresh-clone test proved CRLF corrupts the tab-separated data Layer 3 reads (7/2 in a clone vs 9/0 locally). Same landmine, quieter failure. Owner ratification of the scope extension requested |
 
 ## Codebase Files
 
@@ -57,7 +58,7 @@ plugin/skill specification, so that every component the plugin advertises actual
 | 3. Pre-Plan | **Complete (2026-07-29).** Adversarial review PASSED — GO (Codex, perfect score; details in `codex-review.md` and `status.json`); owner signed off; plan directory committed at `0b72995` |
 | 4. Plan | **Complete (2026-07-29)** — spec confirmed at the Phase 4 gate (33 tickets, 9 waves, est. 28–34 working days incl. buffer) |
 | 5. Audit | **Complete (2026-07-29) — 34/40 GREEN, gap-checked YES, lint 15/15, zero regressions** (v1 30/40 → auto-revised → v2 34/40). Human-review gate is the next step |
-| 6. Build | Not Started |
+| 6. Build | **In Progress — Wave 0 partial: PHV5-001 + PHV5-002 complete** (`c6d3047`, `fe76853`). Suite baseline 115/4 → **156/4**; `validate --strict` passes; 22 sources snapshotted + hashed; clean-clone verified. Remaining in Wave 0: PHV5-003 (U7 floor), PHV5-004 (G0/U6 probe), PHV5-005 (CI) — all need an interactive authenticated session |
 | 7. Impact Review | Not Started |
 | 8. Test | Not Started |
 | 9. Handoff | Not Started |

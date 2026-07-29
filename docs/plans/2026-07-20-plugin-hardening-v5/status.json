@@ -158,7 +158,30 @@
       "residual_risk_accepted": "bus factor 1 across the 28-34 working-day envelope"
     },
     "build": {
-      "status": "not_started"
+      "status": "in_progress",
+      "started": "2026-07-29",
+      "wave": 0,
+      "tickets_complete": ["PHV5-001", "PHV5-002"],
+      "tickets_remaining_wave_0": ["PHV5-003 U7 floor", "PHV5-004 G0/U6 probe", "PHV5-005 CI matrix"],
+      "remaining_need": "interactive authenticated Claude Code session on the owner's host - not autonomously executable",
+      "commits": ["c6d3047 PHV5-001+002", "fe76853 CR-2 fixture line endings"],
+      "baseline_after_wave0_wiring": {
+        "measured": "156 pass / 4 fail",
+        "composition": "L1 84/4, L2 15, L3 9, L4 7, L5 41",
+        "matches_approach_10_1": true,
+        "expected_failures_file": "tests/expected-failures.txt (4 entries, F18/F19, emptied at Wave 3)",
+        "comparator_contract": "exact match verified both locally and from a clean clone"
+      },
+      "verified_this_session": [
+        "A1 falsifying fresh-clone test: 13/13 shell scripts and 6/6 fixture .txt check out LF under core.autocrlf=true",
+        "A2 Layer 5 wired: 41 assertions that had never executed now run; layer-count assertion added; missing interpreter fails rather than skips",
+        "A3 claude plugin validate --strict reproduced FAILING pre-fix on the absent marketplace description, PASSING post-fix; duplicate version key deleted so plugin.json is single-source",
+        "A4 22 sources snapshotted byte-identical, SHA-256 recorded, drift re-measured at 78+222=300 exactly as the plan predicted, all hashes verify from a clean clone"
+      ],
+      "discoveries": [
+        "CR-2: .gitattributes scope insufficient as specified - tests/fixtures/** also needed. Found by A1's own falsifying test; awaits owner ratification",
+        "Windows MAX_PATH: cloning into a deep path fails checkout on the snapshot files (118-char repo-relative path). Not a repo defect; note for CI runner working directories and for the Wave 8 install proofs"
+      ]
     },
     "impact_review": {
       "status": "not_started"
