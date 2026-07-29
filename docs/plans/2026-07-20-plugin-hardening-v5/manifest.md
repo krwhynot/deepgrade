@@ -43,6 +43,7 @@ plugin/skill specification, so that every component the plugin advertises actual
 | CR | Date | Summary |
 |----|------|---------|
 | [CR-1](changes/CR-1.md) | 2026-07-21 | Owner **accepted** the weaker lane-N node-less signal (vendor hook-error notice), conditional on U6 proving its visible form; supplementary-warning and demote-lane-N alternatives declined |
+| [CR-3](changes/CR-3.md) | 2026-07-29 | **PROPOSED — awaiting owner ratification.** Would extend acceptance row A1 from `*.sh` to also cover `*.js`: G0 selected lane N, so the hook guards are now node scripts, and `.gitattributes`'s own rationale ("the hook guards and the test suite are shell scripts") is no longer true of the tree. Severity deliberately marked LOWER than CR-2's — the shipped invocation is the node exec form, so the shebang is decorative and no runtime failure is known; the exposure is direct POSIX execution, Wave 6 determinism, and a policy file asserting a stale rationale |
 | [CR-2](changes/CR-2.md) | 2026-07-29 | **ACCEPTED.** Supersedes acceptance-matrix row A1 on two points: (1) acceptance is the **fresh-clone working-tree check** — the `git ls-files --eol` clause reports `w/lf` with no `.gitattributes` at all and can never fail; (2) scope extends from `*.sh` to also cover `tests/fixtures/**`, since Layer 3 reads tab-separated fixture data where CRLF silently breaks every comparison (7/2 in a clean clone vs 9/0 locally) |
 
 ## Codebase Files

@@ -194,7 +194,7 @@
     "build": {
       "status": "in_progress",
       "started": "2026-07-29",
-      "wave": 2,
+      "wave": 4,
       "tickets_complete": [
         "PHV5-001",
         "PHV5-002",
@@ -314,6 +314,24 @@
           "mcp-research SKILL.md shipped a machine-specific absolute claim ('none of which exist on either Exa server' - 'either' meaning the two connected to the author's machine) in a doc distributed to all users. Rescoped to 'on the Exa servers we were able to inspect'."
         ],
         "assertion_count_note": "The post-audit fix did NOT change the assertion count: the F21 and F27 checks were REPLACED, not added, so layer 1 stayed at 111 and the total at 183. An interim edit of this file claimed '183 -> 185' before measuring; corrected. The added rigor is in WHAT the two assertions check (resolution, not capability; tokenized allowlist, not line regex) and in the mutation count, which went 13 -> 20 with all 20 caught."
+      },
+      "wave_4a_in_progress": {
+        "date": "2026-07-29",
+        "commit": "cf46aab",
+        "scope_done": "1 of 8 scripts: scripts/dg-git-guard.js. INERT - plugin.json still runs the inline hooks, so no behavior change until 4b.",
+        "corpus": "tests/fixtures/hook-corpus.json, 18 rows, is the acceptance authority per the spec ('a mechanism that fails any corpus row fails PHV5-041, whatever its implementation'). Harness: tests/run-hook-corpus.js. Baselines: .sh 10/18, .js 18/18.",
+        "defects_confirmed_by_corpus": [
+          "F25: --force-with-lease, the SAFE form, is DENIED today - the pattern is '--force\b' and '-' is a word boundary, so it matches inside --force-with-lease. Bare -f and bundled short flags were not covered at all.",
+          "F24: reproduced LIVE and twice - the shipping inline guard blocked my own probe command because the shell line contained a trigger string inside a quoted argument. It also denies a read-only grep whose SEARCH PATTERN is a db-deploy string. Fix is the tokenizer: quoted spans removed before matching, POSIX quoting rules.",
+          "Ledger row 1: the database-deploy guard exists ONLY inline; the .sh port has none, and would have sat below `grep -qE 'git\\s+(commit|push)' || exit 0` (dg-git-guard.sh:28), dead code for every non-git deploy. All Layer-1 checks now precede any early exit.",
+          "F22: reset --hard denied at exit 2 with a stderr WARNING; now permissionDecision 'ask' at exit 0.",
+          "F26: no stderr at exit 0; the ask is JSON. Denies keep exit 2 + BLOCKED wording per the acceptance row.",
+          "Ledger row 8: tracker now read tolerantly across session_changes / total_changes_since_audit / total."
+        ],
+        "operational_discovery": "The live guard denies any Bash invocation whose text contains a trigger string, so a harness passing payloads as shell arguments is blocked before it can run - F24 reproduces against its own test suite. Consequence for the rest of Wave 4: the corpus and every mutation harness must live in FILES read from disk, never in command lines. Cost me two blocked attempts before I understood it.",
+        "mutation_tested": "9 mutations, all caught after two ESCAPED on the first run. Both escapes were WEAK CORPUS ROWS, not implementation faults: (a) the cross-field decoy put its danger string in a 'description' key, but a grep for the literal '\"command\":' still finds the right field, so the row could not detect raw-payload extraction - replaced with a sibling object carrying its OWN 'command' key serialized before tool_input; (b) the exemption-position row used a bare '--dry-run' value, which JSON quoting wraps so a whitespace-anchored regex matched it neither in the raw payload nor the skeleton - now embedded in a space-delimited sentence. Neither weakness was visible from reading the rows. The harness asserts WHICH row goes red, not merely that the count dropped.",
+        "remaining_in_4a": "7 scripts: migration-guard (row 2 backslash normalization, inline-only today), session-start (row 10), track-change (rows 7-8), track-test (rows 9, 11), session-stop, subagent-stop (row 4 - the orphaned handler 4b wires, count 7 -> 8), pre-compact. Then PHV5-042 rewrites layer2-hook-simulation.sh: no positional-index extraction, and delete the exit-2 + stderr-WARNING assertion that enshrined F22.",
+        "suite": "183 pass / 0 fail unchanged - the corpus runs as its own harness until PHV5-042 wires it into Layer 2"
       }
     },
     "impact_review": {
@@ -425,6 +443,13 @@
     }
   ],
   "change_records": [
+    {
+      "id": "CR-3",
+      "date": "2026-07-29",
+      "state": "PROPOSED",
+      "summary": "Would extend acceptance row A1 from *.sh to also cover *.js. G0 selected lane N, so the hook guards are node scripts, and .gitattributes' own rationale ('the hook guards and the test suite are shell scripts') is no longer true of the tree; git check-attr reports scripts/dg-git-guard.js as text:unspecified. Severity marked deliberately LOWER than CR-2's: the shipped invocation is the node exec form so the shebang is decorative and no runtime failure is known. Exposure is direct POSIX execution, Wave 6 determinism (PHV5-062 byte-identical regeneration), and a policy file asserting a stale rationale the sweep cannot see.",
+      "file": "changes/CR-3.md"
+    },
     {
       "id": "CR-1",
       "date": "2026-07-21",
