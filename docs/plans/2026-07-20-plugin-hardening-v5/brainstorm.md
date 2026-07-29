@@ -102,7 +102,7 @@ to signal the gap.
 | Role | Name | Notes |
 |------|------|-------|
 | Plan owner | Kyle (repo owner, `krwhynot`) | Sole maintainer; solo mode likely for the Phase 5 review gate |
-| Tech reviewer | TBD | Phase 5 human review gate — waivable in solo mode with documented reason |
+| Tech reviewer | **OpenAI Codex (non-Claude model family), per approach.md §10.4** — owner decision 2026-07-29 | The independent-verification control IS the §10.4 model review on Waves 4/6/7 (pinned SHA, committed `reviews/wave-N-round-M.md`, GO + zero unresolved critical/major, max 2 rounds then owner override recorded as a CR and named in release notes). Precedent: 17 rounds on the scope lock, 40/40. **Solo execution with bus factor 1 over the 28–34 day envelope is an owner-accepted risk**, recorded here rather than mitigated |
 | Business approver | N/A | Open-source developer toolkit; no business sign-off required |
 
 ## Scope Decisions (locked at Phase 1)
