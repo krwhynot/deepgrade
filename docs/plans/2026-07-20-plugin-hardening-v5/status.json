@@ -179,7 +179,7 @@
         "A4 22 sources snapshotted byte-identical, SHA-256 recorded, drift re-measured at 78+222=300 exactly as the plan predicted, all hashes verify from a clean clone"
       ],
       "discoveries": [
-        "CR-2: .gitattributes scope insufficient as specified - tests/fixtures/** also needed. Found by A1's own falsifying test; awaits owner ratification",
+        "CR-2 (ACCEPTED 2026-07-29): supersedes matrix row A1 twice over - acceptance is the fresh-clone working-tree check (git ls-files --eol can never fail, so it was not falsifying), and scope extends from *.sh to also cover tests/fixtures/**. Found by A1's own corrected falsifying test on first execution",
         "Windows MAX_PATH: cloning into a deep path fails checkout on the snapshot files (118-char repo-relative path). Not a repo defect; note for CI runner working directories and for the Wave 8 install proofs"
       ]
     },
@@ -290,6 +290,13 @@
       "date": "2026-07-21",
       "summary": "Owner ACCEPTED the weaker lane-N node-less signal (vendor hook-error notice instead of the round-4 friendly warning), conditional on U6 proving the notice's visible form. Raised by Codex round 8 GAP-5.",
       "file": "changes/CR-1.md"
+    },
+    {
+      "id": "CR-2",
+      "date": "2026-07-29",
+      "state": "ACCEPTED",
+      "summary": "Supersedes acceptance-matrix row A1 on two points: (1) acceptance is the fresh-clone working-tree check - the git ls-files --eol clause reports w/lf for all 14 scripts with no .gitattributes present at all, so it is not falsifying; (2) scope extends from *.sh to also cover tests/fixtures/**, since layer3-fixture-lint.sh reads tab-separated fixture data where a trailing CR silently breaks every string comparison. Raised during Build Wave 0 by A1's own corrected falsifying test on first execution; clean clone showed Layer 3 at 7/2 vs 9/0 locally. The alternative - recording the two failures in expected-failures.txt - was rejected as enshrining a live defect, the R2 anti-pattern.",
+      "file": "changes/CR-2.md"
     }
   ],
   "external_review": {

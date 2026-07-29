@@ -5,9 +5,24 @@ Author: Claude (Build phase, Wave 0) — raised for owner ratification
 Supersedes: acceptance-matrix row **A1**'s stated content (`*.sh text eol=lf`), and the same
 text in `approach.md` §1 ("`.gitattributes` (`*.sh text eol=lf`)") and §9 Wave 0 step (2)
 
-**State: RATIFICATION REQUESTED** — the fix is committed because the ticket's own falsifying
-test proved the specified scope insufficient; the scope *extension* is what needs the owner's
-ratification.
+**State: ACCEPTED**
+
+## Decision
+
+The owner **ratified** this CR on 2026-07-29, accepting both corrections to acceptance-matrix
+row **A1**:
+
+1. **Scope extension** — `.gitattributes` covers `*.sh` **and** `tests/fixtures/**`.
+2. **Falsifying acceptance form** — A1's verification is a **fresh-clone working-tree check**,
+   not `git ls-files --eol`. *(Folded in at ratification: the matrix row still carried the
+   original wording. Audit v2 finding #1 proved `git ls-files --eol` reports `w/lf` for all 14
+   scripts with **no `.gitattributes` present at all** — it is green before and after the fix,
+   so it can never fail. The spec was corrected at the time; this CR now carries the same
+   correction to the authoritative matrix row.)*
+
+The alternative — recording the two fixture failures in `expected-failures.txt` — was
+considered and **rejected** at authoring time and not revisited: it would enshrine a live
+defect as accepted behavior, the exact R2 anti-pattern this plan exists to remove.
 
 ## What Changed
 

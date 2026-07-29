@@ -38,7 +38,9 @@ Inputs: [`brainstorm.md`](brainstorm.md) · [`research/findings.md`](research/fi
 confirmed by *execution*: F18/F19 (the suite fails on them), F24 (fail-open reproduced against a quoted payload),
 F25 (`--force-with-lease` matched by both regexes), F22 (the live hook denied an unrelated read-only command).
 
-**Plus 3 accepted additions:** `.gitattributes` (`*.sh text eol=lf`) against the confirmed `core.autocrlf=true`
+**Plus 3 accepted additions:** `.gitattributes` (`*.sh text eol=lf` — **scope extended to also cover
+`tests/fixtures/**` by [`changes/CR-2.md`](changes/CR-2.md), ACCEPTED 2026-07-29; that CR is authoritative**)
+against the confirmed `core.autocrlf=true`
 landmine; wiring `tests/codex-challenge-test.js` into `run-all.sh` (41 assertions that currently never execute);
 **marketplace manifest conformance** — delete the duplicate `version` (Claude Code reads `plugin.json`'s value
 without warning, so bumping only the marketplace ships nothing) **and add the missing top-level `description`**

@@ -41,7 +41,7 @@ plugin/skill specification, so that every component the plugin advertises actual
 | CR | Date | Summary |
 |----|------|---------|
 | [CR-1](changes/CR-1.md) | 2026-07-21 | Owner **accepted** the weaker lane-N node-less signal (vendor hook-error notice), conditional on U6 proving its visible form; supplementary-warning and demote-lane-N alternatives declined |
-| [CR-2](changes/CR-2.md) | 2026-07-29 | `.gitattributes` scope extended from `*.sh` to also cover `tests/fixtures/**` — A1's own fresh-clone test proved CRLF corrupts the tab-separated data Layer 3 reads (7/2 in a clone vs 9/0 locally). Same landmine, quieter failure. Owner ratification of the scope extension requested |
+| [CR-2](changes/CR-2.md) | 2026-07-29 | **ACCEPTED.** Supersedes acceptance-matrix row A1 on two points: (1) acceptance is the **fresh-clone working-tree check** — the `git ls-files --eol` clause reports `w/lf` with no `.gitattributes` at all and can never fail; (2) scope extends from `*.sh` to also cover `tests/fixtures/**`, since Layer 3 reads tab-separated fixture data where CRLF silently breaks every comparison (7/2 in a clean clone vs 9/0 locally) |
 
 ## Codebase Files
 
