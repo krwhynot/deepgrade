@@ -1,0 +1,28 @@
+# Expected test failures — the ONLY failures CI may tolerate.
+#
+# Created: 2026-07-29 · PHV5-002 (acceptance-matrix row A2, verification class C)
+# Baseline measured at repo HEAD 8b870c9 after wiring Layer 5.
+#
+# CONTRACT (approach.md §10.3): the CI wrapper parses the suite's failure list and passes
+# IFF that list equals exactly the entries below. A NEW failure fails the job. A MISSING
+# expected failure ALSO fails the job — a red that quietly turns green means the assertion
+# was weakened or deleted, which is exactly as interesting as a new break.
+# `continue-on-error` is prohibited.
+#
+# These four are findings F18 (CHANGELOG stale) and F19 (README counts). They are expected
+# to be red until Wave 3 (PHV5-030/031). WHEN WAVE 3 LANDS, THIS FILE IS EMPTIED and CI
+# becomes plainly green — an empty file means "zero failures tolerated".
+#
+# Suite totals at this baseline: 156 passed / 4 failed
+#   Layer 1 Config/Wiring    84 passed / 4 failed  <- all four expected reds live here
+#   Layer 2 Hook Simulation  15 passed / 0 failed
+#   Layer 3 Fixture Lint      9 passed / 0 failed
+#   Layer 4 Behavioral Smoke  7 passed / 0 failed
+#   Layer 5 Codex Challenge  41 passed / 0 failed  <- newly wired; never ran before today
+#
+# Format: one exact failure message per line, '#' comments and blank lines ignored.
+
+Version mismatch: plugin.json=4.31.0 README=4.27.1
+Version mismatch: plugin.json=4.31.0 CHANGELOG=4.29.0
+Version mismatch: README=4.27.1 CHANGELOG=4.29.0
+Command count mismatch: commands/ has 17 files, README says 16

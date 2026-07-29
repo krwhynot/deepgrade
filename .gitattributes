@@ -1,0 +1,20 @@
+# Line-ending policy — PHV5-002 (acceptance-matrix row A1)
+#
+# WHY: the reference development host runs core.autocrlf=true. Without these rules a fresh
+# clone materializes shell scripts with CRLF, and a CRLF shebang line makes the interpreter
+# unresolvable ("/bin/bash^M: bad interpreter"). The hook guards and the test suite are shell
+# scripts, so this is a silent, host-dependent breakage of the plugin's safety layer.
+#
+# VERIFY (falsifying form — `git ls-files --eol` is NOT sufficient; it reports w/lf even with
+# no .gitattributes present, so it passes before and after the fix):
+#   git clone <repo> /tmp/eol-check && file /tmp/eol-check/scripts/*.sh
+#   -> must NOT report "with CRLF line terminators"
+
+# Shell scripts must be LF on every platform, always.
+*.sh text eol=lf
+
+# Wave 0 snapshots are an immutable historical record whose SHA-256 hashes are recorded in
+# snapshots/LEDGER-HEADER.md and are the sole input to the Wave 6 reconciliation. Any line-ending
+# normalization would change their bytes and invalidate every recorded hash. Freeze them: no
+# conversion in either direction.
+docs/plans/2026-07-20-plugin-hardening-v5/snapshots/** -text
