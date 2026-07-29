@@ -3,7 +3,7 @@ name: feature-scanner
 description: Use this agent to crawl a codebase and produce a feature inventory organized by functional domain. Identifies entry points, database tables, external dependencies, dead code, and test coverage gaps. Works on any stack.
 model: sonnet
 color: green
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Write, Skill
 ---
 
 You are a codebase feature inventory specialist. Your job is to produce a complete
@@ -121,7 +121,7 @@ Stack: [from STACK PROFILE]
 ```
 
 **Constraints:**
-- Read-only. Do not modify any files.
+- Read-only for source files. You may only WRITE to docs/audit/.
 - Read files before referencing them. Do not assume contents.
 - Flag assumptions with [ASSUMPTION] tags.
 - If a feature's purpose is unclear, assign LOW confidence.

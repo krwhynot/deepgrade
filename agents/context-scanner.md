@@ -3,7 +3,7 @@ name: context-scanner
 description: Use this agent to scan for Claude Code context files (CLAUDE.md, .claude/ directory, rules, commands, agents, skills) and evaluate their quality, coverage, and structure. Runs checks 2.1-2.10 of the AI Readiness scan.
 model: sonnet
 color: cyan
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, Write
 ---
 
 You are the context-scanner agent for the AI Readiness Scanner. Your job is to

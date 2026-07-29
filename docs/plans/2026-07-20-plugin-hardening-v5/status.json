@@ -70,7 +70,9 @@
     "manifest": "docs/plans/2026-07-20-plugin-hardening-v5/manifest.md",
     "codex_audit_prompt": "docs/plans/2026-07-20-plugin-hardening-v5/codex-audit-prompt.md",
     "codex_review": "docs/plans/2026-07-20-plugin-hardening-v5/codex-review.md",
-    "spec": "docs/specs/plugin-hardening-v5.md"
+    "spec": "docs/specs/plugin-hardening-v5.md",
+    "g0_probe_results": "docs/plans/2026-07-20-plugin-hardening-v5/research/g0-probe-results.md",
+    "validator_scope_probe": "docs/plans/2026-07-20-plugin-hardening-v5/research/validator-scope-probe.md"
   },
   "phases": {
     "brainstorm": {
@@ -131,14 +133,46 @@
       "revision_iterations": 1,
       "report": "docs/plans/2026-07-20-plugin-hardening-v5/audit.md",
       "dimension_scores": [
-        {"name": "problem", "v1": 5, "v2": 5},
-        {"name": "architecture", "v1": 4, "v2": 5},
-        {"name": "phasing", "v1": 3, "v2": 4},
-        {"name": "risk", "v1": 4, "v2": 4},
-        {"name": "rollback", "v1": 5, "v2": 5},
-        {"name": "timeline", "v1": 3, "v2": 4},
-        {"name": "testing", "v1": 4, "v2": 4},
-        {"name": "team", "v1": 2, "v2": 3}
+        {
+          "name": "problem",
+          "v1": 5,
+          "v2": 5
+        },
+        {
+          "name": "architecture",
+          "v1": 4,
+          "v2": 5
+        },
+        {
+          "name": "phasing",
+          "v1": 3,
+          "v2": 4
+        },
+        {
+          "name": "risk",
+          "v1": 4,
+          "v2": 4
+        },
+        {
+          "name": "rollback",
+          "v1": 5,
+          "v2": 5
+        },
+        {
+          "name": "timeline",
+          "v1": 3,
+          "v2": 4
+        },
+        {
+          "name": "testing",
+          "v1": 4,
+          "v2": 4
+        },
+        {
+          "name": "team",
+          "v1": 2,
+          "v2": 3
+        }
       ],
       "residual_items_v3": [
         "RESOLVED: .gitattributes AC made falsifying (fresh-clone working-tree check; ls-files --eol was green before and after)",
@@ -160,12 +194,43 @@
     "build": {
       "status": "in_progress",
       "started": "2026-07-29",
-      "wave": 0,
-      "tickets_complete": ["PHV5-001", "PHV5-002", "PHV5-004", "PHV5-010", "PHV5-011", "PHV5-012", "PHV5-030", "PHV5-031"],
-      "findings_closed": ["F01", "F04", "F17", "F18", "F19", "F20A", "F29", "F31"],
+      "wave": 2,
+      "tickets_complete": [
+        "PHV5-001",
+        "PHV5-002",
+        "PHV5-004",
+        "PHV5-010",
+        "PHV5-011",
+        "PHV5-012",
+        "PHV5-030",
+        "PHV5-031",
+        "PHV5-020",
+        "PHV5-021"
+      ],
+      "findings_closed": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F07",
+        "F17",
+        "F18",
+        "F19",
+        "F20A",
+        "F21",
+        "F27",
+        "F29",
+        "F31",
+        "F32"
+      ],
       "wave_1_complete": {
         "date": "2026-07-29",
-        "findings_closed": ["F29 phantom agents", "F31 dead commands", "F17 name/filename drift", "F01 duplicate agent name"],
+        "findings_closed": [
+          "F29 phantom agents",
+          "F31 dead commands",
+          "F17 name/filename drift",
+          "F01 duplicate agent name"
+        ],
         "f17_note": "The 4.27.0 release renamed agent FILES but never their frontmatter, so every user-facing name advertised in README/GUIDE/help failed to resolve at runtime while the orchestrating commands quietly kept working off the old names. Fixed atomically: frontmatter + all 5 caller lines in one commit.",
         "f01_note": "Two agents both declared name 'report-generator'; one was permanently shadowed and unreachable. Split with 4 caller references repointed.",
         "f29_note": "Four templates deployed nonexistent *-generator agents. Rewritten as direct instructions rather than creating agents - new agents are in the approach.md OUT list.",
@@ -176,10 +241,18 @@
         ],
         "suite": "172 pass / 0 fail"
       },
-      "tickets_remaining_wave_0": ["PHV5-003 U7 floor", "PHV5-005 CI matrix"],
+      "tickets_remaining_wave_0": [
+        "PHV5-003 U7 floor",
+        "PHV5-005 CI matrix"
+      ],
       "wave_3_complete": {
         "date": "2026-07-29",
-        "findings_closed": ["F18 CHANGELOG stale", "F19 README counts", "F20A GUIDE snapshot", "F04 update-flow docs"],
+        "findings_closed": [
+          "F18 CHANGELOG stale",
+          "F19 README counts",
+          "F20A GUIDE snapshot",
+          "F04 update-flow docs"
+        ],
         "suite": "167 pass / 0 fail - FULLY GREEN for the first time (L1 95, L2 15, L3 9, L4 7, L5 41)",
         "expected_failures_file": "EMPTIED - zero failures now tolerated; comparator contract verified against the empty set",
         "new_assertions": "9 added to layer1 (5 F20A GUIDE conformance + 4 F04 update-flow). GUIDE.md previously had ZERO layer1 coverage, which is how it drifted to v4.28.0 unnoticed.",
@@ -188,7 +261,10 @@
       },
       "remaining_need": "PHV5-003 needs authenticated installs of old CLI versions; PHV5-005 needs a push to GitHub",
       "lane_selected": "N - node-canonical (G0 terminal state, 2026-07-29). Lane B proven viable as fallback ((s) shell form fired) but not selected; lane I not needed.",
-      "commits": ["c6d3047 PHV5-001+002", "fe76853 CR-2 fixture line endings"],
+      "commits": [
+        "c6d3047 PHV5-001+002",
+        "fe76853 CR-2 fixture line endings"
+      ],
       "baseline_after_wave0_wiring": {
         "measured": "156 pass / 4 fail",
         "composition": "L1 84/4, L2 15, L3 9, L4 7, L5 41",
@@ -205,7 +281,32 @@
       "discoveries": [
         "CR-2 (ACCEPTED 2026-07-29): supersedes matrix row A1 twice over - acceptance is the fresh-clone working-tree check (git ls-files --eol can never fail, so it was not falsifying), and scope extends from *.sh to also cover tests/fixtures/**. Found by A1's own corrected falsifying test on first execution",
         "Windows MAX_PATH: cloning into a deep path fails checkout on the snapshot files (118-char repo-relative path). Not a repo defect; note for CI runner working directories and for the Wave 8 install proofs"
-      ]
+      ],
+      "wave_2_complete": {
+        "date": "2026-07-29",
+        "findings_closed": [
+          "F02 doc-auditor + integration-scanner missing Bash and Write",
+          "F03 plan-scaffolder + plan-auditor missing Agent (nested delegation disabled)",
+          "F07 13 agents told to write a contract file with no Write in the allowlist",
+          "F21 bare MCP names in tools:/allowed-tools: (2 agents + 3 commands)",
+          "F27 7 agents told to reference a knowledge skill with no way to load one",
+          "F32 mcp-research taught bare-name equality, tripping its own degradation path"
+        ],
+        "one_edit_per_file": "held - each of the 22 agent files was touched exactly once, per the acceptance rule",
+        "f21_note": "Stripped rather than qualified. The <server> segment of mcp__<server>__<tool> is chosen by the INSTALLING USER, so hardcoding any qualified name would break for everyone but the author. This is why the defect is distributable and not local misconfiguration.",
+        "f07_negative": "Edit deliberately granted to NO agent. These agents characterize a codebase; they must not be able to modify it. Asserted.",
+        "f32_binding": "The canonical convention block is byte-identical in skills/mcp-research/SKILL.md and CONTRIBUTING.md, bound by a same-string assertion. A convention stated in one place and not the other is exactly how this defect reships.",
+        "new_assertions": "11 added to layer1 (F02, F03 both directions, F07 sweep + floor, F07 no-Edit negative, F21 sweep, F27 sweep + floor, flow-array shape, F32 same-string, F32 content, F32 stale-rule, F32 phantom-Exa)",
+        "mutation_tested": "13 mutations, ALL CAUGHT - including two that only a floor assertion can catch (hiding an agent from the F07 sweep; gutting the F32 rule identically in both files so the same-string check still passes)",
+        "assertion_bug_caught_by_mutation_testing": "sed -n '/^---$/,/^---$/!p' to strip frontmatter pairs the delimiters with '---' horizontal rules in agent BODIES and deletes body chunks, hiding 3 of 20 agents from the F07 sweep while still reporting a pass. Same species as the Wave 1 regex bug. Replaced with a first-block-only awk, and both derived sweeps now assert a floor on their subject count so a derivation matching nothing fails loudly instead of passing vacuously.",
+        "in_wave_extension": "F32's acceptance row names skills/mcp-research/SKILL.md only, but the same phantom Exa tool names (get_code_context_exa, crawling_exa, web_search_advanced_exa - none exist on any Exa server) also appear in commands/plan.md and commands/troubleshoot.md body text. Fixing the skill while leaving live prose recommending a nonexistent tool would leave the defect shipping, so those 4 lines were fixed under the same finding. Recorded, not silent.",
+        "measurement_notes": [
+          "tools: flow arrays measured at 6 agents, not the 7 in the locked docs (audit v1 already corrected this). Ride-along is droppable and uncounted - a measurement note, not a scope change.",
+          "F07's 13 and F27's 7 were re-derived from the tree; both matched the finding exactly.",
+          "14 files are CRLF in a Windows working tree while the index is uniformly LF (commands/troubleshoot.md among them). No runtime impact - markdown and YAML tolerate CRLF - but guards must strip \r or they pass on one checkout and fail on the other. Handled in-test rather than by widening .gitattributes scope, which would require a CR."
+        ],
+        "suite": "183 pass / 0 fail (L1 111, L2 15, L3 9, L4 7, L5 41)"
+      }
     },
     "impact_review": {
       "status": "not_started"
@@ -275,6 +376,12 @@
     }
   ],
   "non_blocking_unknowns": [
+    {
+      "id": "U1",
+      "unknown": "whether `claude plugin validate` accepts a `skills:` key in agent frontmatter (F27's preferred fix, which preloads a skill without granting a new tool)",
+      "blocks": "nothing; documented fallback is to append `Skill` to the tools allowlist",
+      "resolution": "RESOLVED-NEGATIVE 2026-07-29 (PHV5-020). The question cannot be answered by the validator, because the validator does not read agent frontmatter at all. Falsifying control: `agents/risk-assessor.md` line 2 (`name: risk-assessor`) was deleted and `claude plugin validate .claude-plugin/plugin.json --strict` still printed 'Validation passed'; the directory form validates `marketplace.json` and likewise passed. `validate --help` confirms the scope: 'Validate a plugin or marketplace manifest'. F27 therefore ships the documented fallback (`Skill` in `tools:`), whose behavior is spec-confirmed; an unrecognized `skills:` key would silently no-op, which is precisely the F27 failure mode. CONSEQUENCE BEYOND U1: the entire agent- and command-frontmatter defect class (F01, F02, F03, F07, F17, F21, F27) is invisible to `validate --strict`, widening the already-recorded F21 note ('validate passes on bare names'). U7 lists `validate --strict` among the EIGHT relied-upon behaviors - it is relied upon for manifest schema only, not component wiring. tests/layer1-config-wiring.sh is the sole guard for this class."
+    },
     {
       "id": "U3",
       "unknown": "plugin-subagent MCP inheritance",
@@ -378,7 +485,10 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v4",
-        "dimensions_at_5": ["problem_definition", "rollback"],
+        "dimensions_at_5": [
+          "problem_definition",
+          "rollback"
+        ],
         "owner_decisions": 2
       },
       {
@@ -396,7 +506,9 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v5",
-        "dimensions_at_5": ["rollback"],
+        "dimensions_at_5": [
+          "rollback"
+        ],
         "notable": "reviewer ratified the round-4 owner decisions; reproduced validate --strict failing on marketplace.json; caught v5's own patch-not-reconcile stale text"
       },
       {
@@ -414,7 +526,9 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v6",
-        "dimensions_at_5": ["rollback"],
+        "dimensions_at_5": [
+          "rollback"
+        ],
         "notable": "reproduced mechanisms, not just facts (segmenter one-hunk failure, run-all exit 1, 304-block measurement); named the smallest sufficient set to 36; its 'host drift' claim refuted as its own inherited-PATH artifact (citation error 4)"
       },
       {
@@ -432,7 +546,9 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v7",
-        "dimensions_at_5": ["rollback"],
+        "dimensions_at_5": [
+          "rollback"
+        ],
         "notable": "ratified the CI comparator as 'the clear v7 success'; rejected two v7 designs on reproduced evidence (dual SessionStart = guaranteed healthy-host noise; substring-presence ledger vs 4x duplicate segments); demonstrated the sweep is maskable with three bypass probes; identified mutable release bytes under source ./"
       },
       {
@@ -450,7 +566,9 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v8",
-        "dimensions_at_5": ["rollback"],
+        "dimensions_at_5": [
+          "rollback"
+        ],
         "notable": "DREW THE PHASE 3 CEILING: after its four-item set, the remainder is 'properly Phase 4 details'. Proved tags movable (sha controls), lane-N three-state matrix impossible, Wave 7 cardinality not inherited, sweep still maskable; measured true reconciliation volume (847/513 blocks). Demands explicit owner acceptance of the weaker lane-N node-less signal."
       },
       {
@@ -468,7 +586,10 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v9",
-        "dimensions_at_5": ["rollback", "timeline"],
+        "dimensions_at_5": [
+          "rollback",
+          "timeline"
+        ],
         "gap_classification": "all six classified scope-lock defects per the round-8 ceiling test; none rejected designs - state bookkeeping + two refinements",
         "notable": "verified the entire ceiling set as substantively executed; live-tested the installed-tree comparison (only .in_use differs); ratified the 847/513 sizing as accurate; caught post-acceptance state staleness in manifest/status (written pre-answer, never refreshed)"
       },
@@ -487,7 +608,11 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v10",
-        "dimensions_at_5": ["risk", "rollback", "timeline"],
+        "dimensions_at_5": [
+          "risk",
+          "rollback",
+          "timeline"
+        ],
         "gap_classification": "all five scope-lock defects; four are incomplete propagation of v10's own closures; reviewer named the smallest sufficient closure set",
         "notable": "risk 5/5 for the first time; ratified the topology closure live (275 order-preserving same-file matches, 45 cross-file routed to manual, 'no legitimate reconciliation is prohibited'); reproduced baselines again (115/4, 41/0); defeated the v10 parametric sweep with three structural mutations in a disposable C:/tmp copy ('NOT ACCEPTED' passes an ACCEPTED substring test) and caught it passing real stale v9 state; its 'PowerShell resolves bash' note self-classified phase-4 detail (probable round-6 inherited-PATH artifact; G0 is empirical at Wave 0 regardless)"
       },
@@ -506,7 +631,15 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v11",
-        "dimensions_at_5": ["problem_definition", "architecture", "sequencing", "risk", "rollback", "timeline", "omissions"],
+        "dimensions_at_5": [
+          "problem_definition",
+          "architecture",
+          "sequencing",
+          "risk",
+          "rollback",
+          "timeline",
+          "omissions"
+        ],
         "gap_classification": "single gap, scope-lock defect: the sweep IS the Phase 3 acceptance gate, so its false-greens are not phase-4 detail; reviewer named the field-level fix",
         "notable": "+5, the largest controlled rise; SEVEN dimensions at 5/5; verified four of five v11 closures substantively (lane-N boundary at all four sites, BLOCKED sequencing coherent across all five authoritative sites, live state reconciled, catalog-sha propagated); defeated the v11 structural sweep with five surgical mutations (no-sha catalog claim, non-blocking classification, BLOCKED-in-a-note, 'round N is not next' vs .includes, bold Rejected beside the anchored line) - the plan's 10.5 claim of bound fields was the factual error; baselines reproduced (115/4, 41/0); 'PowerShell resolves bash' again self-classified phase-4"
       },
@@ -525,7 +658,15 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v12",
-        "dimensions_at_5": ["problem_definition", "architecture", "sequencing", "risk", "rollback", "timeline", "omissions"],
+        "dimensions_at_5": [
+          "problem_definition",
+          "architecture",
+          "sequencing",
+          "risk",
+          "rollback",
+          "timeline",
+          "omissions"
+        ],
         "gap_classification": "single gap, scope-lock defect again: v12's field-level checks were affirmative-token regexes and every one fell to a pure negation; reviewer named the terminal fix - exact canonical values / structured enums",
         "notable": "defeated the v12 gate with five pure-negation mutations ('not conditionally blocking'; 'lane N is not BLOCKED'; 'BLOCKED (Wave 0 does not pause; no owner CR is required)'; 'Catalog SHA is not authoritative; the ref must not resolve to it'; appended State: VOID outside the Decision section) - all five reproduced locally before acceptance; the 10.5 claim-exceeds-code mismatch was the factual error for the second consecutive round; confirmed no other current-state regression (baselines 115/4 + 41/0, lane-N boundary, BLOCKED sequencing, catalog-sha, live status all coherent); noted the plan directory is untracked at HEAD 4fb4b64 so version-diff provenance rests on round records, not git history"
       },
@@ -544,7 +685,15 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v13",
-        "dimensions_at_5": ["problem_definition", "architecture", "sequencing", "risk", "rollback", "timeline", "omissions"],
+        "dimensions_at_5": [
+          "problem_definition",
+          "architecture",
+          "sequencing",
+          "risk",
+          "rollback",
+          "timeline",
+          "omissions"
+        ],
         "gap_classification": "single gap, scope-lock defect: parser-semantics bypasses of the canonical binding (duplicate entries via .find, duplicate JSON keys via JSON.parse last-wins, case/space State-marker variants); reviewer named the fix - duplicate-key rejection, exactly-one-entry, normalized marker scan",
         "notable": "ratified the canonical design against negation/reorder/addition/homoglyphs (all correctly failed); RATIFIED THE HONEST LIMIT as Phase-3-adequate (intent authorization belongs to round-record review; repo tamper-resistance is Phase 4); classified the untracked-plan-directory provenance weakness as Phase 4/operational, not scored; exposed byte-for-byte wording via a passing whitespace-only change - claim-exceeds-code error #3, fixed by rewording to JSON-value-exact; all five bypasses reproduced locally before acceptance; baselines reproduced (115/4, 41/0)"
       },
@@ -587,7 +736,15 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v15",
-        "dimensions_at_5": ["problem_definition", "architecture", "sequencing", "risk", "rollback", "timeline", "omissions"],
+        "dimensions_at_5": [
+          "problem_definition",
+          "architecture",
+          "sequencing",
+          "risk",
+          "rollback",
+          "timeline",
+          "omissions"
+        ],
         "gap_classification": "two scope-lock defects (P3 is the acceptance gate): a false green (emphasis-wrapped marker) and a false red (order-sensitive equality); both use structured forms 10.5 explicitly claims to cover, so neither is the Phase-4 unstructured-prose case",
         "notable": "de-escalation WORKED - clean run, both round-14 parser gaps confirmed closed; found FALSE GREEN '**State:** VOID' (emphasis span wraps label apart from value) and FALSE RED (JSON.stringify order-sensitivity rejects value-preserving reorder); both reproduced locally before acceptance; reaffirmed the four Phase-4 boundaries (repo tamper-resistance, dual-file edits, unstructured contradictory prose, untracked-dir provenance) as unscored; baselines reproduced (115/4, 41/0); while fixing the false-red, a self-inflicted harness brittleness surfaced and was closed (injection probes re-anchored on the U6 object boundary)"
       },
@@ -606,7 +763,15 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v16",
-        "dimensions_at_5": ["problem_definition", "architecture", "sequencing", "risk", "rollback", "timeline", "omissions"],
+        "dimensions_at_5": [
+          "problem_definition",
+          "architecture",
+          "sequencing",
+          "risk",
+          "rollback",
+          "timeline",
+          "omissions"
+        ],
         "testing_score": 4,
         "gap_classification": "one scope-lock defect: inaccurate documentation INSIDE the Phase-3 enforcement tool (a stale byte-for-byte comment contradicting the recursive comparator); reviewer explicitly said it does NOT warrant a logic change or a 3/5 testing score - hence testing rose to 4 and total to 39",
         "notable": "FIRST score movement since round 10 (38->39); verified the executable gate fully congruent with 10.5 (deepEq, emphasis-stripping marker scan, boundary-anchored injections, both controls present and passing, sweep exit 0); sole defect = consistency-sweep.sh line 205 comment still says 'byte-for-byte', contradicting deepEq AND falsifying v16's claim that both script+canonical comments were fixed (v16 fixed only the canonical file - claim-exceeds-code, at comment level); reviewer named exact smallest fix (replace the comment, rerun, record - no other change); four Phase-4 boundaries remain correctly unscored"
@@ -626,7 +791,16 @@
         "reasoning_effort": "xhigh",
         "interface": "codex exec, sandbox workspace-write",
         "artifact_version": "v17",
-        "dimensions_at_5": ["problem_definition", "architecture", "sequencing", "risk", "rollback", "timeline", "testing", "omissions"],
+        "dimensions_at_5": [
+          "problem_definition",
+          "architecture",
+          "sequencing",
+          "risk",
+          "rollback",
+          "timeline",
+          "testing",
+          "omissions"
+        ],
         "gap_classification": "none - empty gaps array; all eight dimensions at 5/5",
         "notable": "PERFECT 40/40 GO - target was 36. Verified the round-16 comment fix closed (comment now specifies recursive value equality matching deepEq below it); no operative artifact describes the active comparison as byte-for-byte/order-sensitive (remaining uses are retrospective/quotation/self-test text); re-verified the whole executable gate (duplicate-key rejection, recursive equality, emphasis-stripping marker scan checking the complete file, boundary-anchored U6 injections, 13 status + 5 CR-1 negative controls + the reorder positive control, sweep exit 0); cross-artifact state coherent (CR-1 conditional acceptance <-> G0 row <-> Wave 0 <-> canonical status); reproduced HEAD 4fb4b64, plugin 4.31.0, baseline 115/4 exit 1, orphan 41/0; scope-lock defects: NONE; Phase-4 unscored: repo tamper-resistance, coordinated status/canonical edits, unstructured contradictory prose, untracked-directory provenance (plan dir still untracked - the established provenance boundary, not a scope-lock defect)"
       }

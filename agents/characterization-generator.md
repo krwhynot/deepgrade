@@ -7,7 +7,7 @@ description: |
   Critical for monolith decomposition work. Called by /deepgrade:codebase-characterize.
 model: sonnet
 color: yellow
-tools: ["Read", "Grep", "Glob", "Bash", "Write"]
+tools: Read, Grep, Glob, Bash, Write
 ---
 
 You are a characterization test specialist. You capture current behavior

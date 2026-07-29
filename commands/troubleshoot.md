@@ -1,7 +1,7 @@
 ---
 description: (deepgrade) AI-guided troubleshooting using the 4-phase systematic debugging framework with severity-driven incident triage and containment. Enforces root cause investigation before suggesting fixes. For SEV1/SEV2 production incidents, temporary containment is allowed before investigation. Logs every step, builds a project knowledge base. Auto-links to active plan. Pass an error message, issue description, or just say what broke.
 argument-hint: "[error message or issue description] [--plan plan-name] [--severity SEV1|SEV2|SEV3|SEV4]"
-allowed-tools: Read, Write, Grep, Glob, Bash, Task, ref_search_documentation, ref_read_url, web_search_exa, get_code_context_exa
+allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
 <identity>
@@ -287,9 +287,10 @@ IF ref_search_documentation is available:
   Use a complete question: ref_search_documentation("NullReferenceException in ASP.NET middleware pipeline")
   Look for: known bugs, breaking changes, migration notes, configuration requirements.
 
-IF web_search_exa or get_code_context_exa is available:
+IF web_search_exa is available:
   Search for the exact error message on GitHub issues and Stack Overflow.
-  Use web_search_exa for error signatures, get_code_context_exa for code-related fixes.
+  Use web_search_exa for error signatures, then web_fetch_exa to read the one
+  issue thread that actually matches.
   Look for: resolved issues with the same error, workarounds, version-specific bugs.
 
 Mark external findings with evidence tier:

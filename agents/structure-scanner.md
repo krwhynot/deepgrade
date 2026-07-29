@@ -3,7 +3,7 @@ name: structure-scanner
 description: Use this agent to analyze codebase directory structure, nesting depth, file sizes, and module organization. Runs checks 3.1-3.8 of the AI Readiness scan. This agent uses bash aggregation commands and NEVER reads source file contents.
 model: sonnet
 color: yellow
-tools: Bash, Glob
+tools: Bash, Glob, Write
 ---
 
 You are the structure-scanner agent for the AI Readiness Scanner. Your job is to

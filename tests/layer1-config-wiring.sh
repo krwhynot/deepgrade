@@ -682,6 +682,166 @@ else
 fi
 
 # ===========================================================================
+# 12. Agent tool allowlists (F02, F03, F07, F21, F27) — PHV5-020
+#
+# `claude plugin validate --strict` reads only plugin.json and marketplace.json.
+# Verified 2026-07-29: it passes on an agent file with its `name:` field deleted.
+# The entire agent-frontmatter defect class is therefore invisible to the
+# official validator and has to be guarded here.
+#
+# Every check below DERIVES its subject set from file contents rather than
+# hardcoding a roster, and asserts a floor on that set — a derivation that
+# silently matches nothing would otherwise pass vacuously.
+# ===========================================================================
+echo ""
+echo "--- Agent tool allowlists (F02/F03/F07/F21/F27) ---"
+
+# body_of <file> — everything after the first frontmatter block.
+# Do NOT use `sed -n '/^---$/,/^---$/!p'`: agent bodies contain `---` horizontal
+# rules, which pair with the delimiters and silently delete body chunks. That
+# hid 3 of 20 agents from the F07 sweep while it still reported a pass.
+body_of() { awk 'BEGIN{n=0} /^---\r?$/{n++; next} n>=2' "$1"; }
+tools_of() { grep -m1 '^tools:' "$1" 2>/dev/null | tr -d '\r' | sed 's/^tools:[[:space:]]*//'; }
+has_tool() { echo "$2" | grep -qE "(^|[,[:space:]\"])$1($|[,[:space:]\"])"; }
+
+# --- 12a. F02: the two agents with shell-driven bodies and a contract output.
+f02_bad=0
+for a in doc-auditor integration-scanner; do
+  t=$(tools_of "$AGENTS_DIR/$a.md")
+  for need in Bash Write; do
+    has_tool "$need" "$t" || { fail "F02: $a.md needs $need in tools (has: $t)"; f02_bad=1; }
+  done
+done
+[ "$f02_bad" -eq 0 ] && pass "F02: doc-auditor and integration-scanner both allowlist Bash and Write"
+
+# --- 12b. F03: nested delegation, granted to exactly the two planners.
+f03_bad=0
+for a in plan-scaffolder plan-auditor; do
+  has_tool Agent "$(tools_of "$AGENTS_DIR/$a.md")" \
+    || { fail "F03: $a.md deploys parallel subagents but omits Agent from tools"; f03_bad=1; }
+done
+for f in "$AGENTS_DIR"/*.md; do
+  b=$(basename "$f" .md)
+  case "$b" in plan-scaffolder|plan-auditor) continue ;; esac
+  has_tool Agent "$(tools_of "$f")" \
+    && { fail "F03: $b.md gained Agent as a side effect — only the two planners may nest"; f03_bad=1; }
+done
+[ "$f03_bad" -eq 0 ] && pass "F03: Agent granted to exactly plan-scaffolder and plan-auditor"
+
+# --- 12c. F07: every agent whose body mandates a docs/audit/ output has Write.
+f07_subjects=0
+f07_bad=0
+for f in "$AGENTS_DIR"/*.md; do
+  body_of "$f" | grep -qiE '[Ww]rite[^.]*docs/audit/' || continue
+  f07_subjects=$((f07_subjects + 1))
+  has_tool Write "$(tools_of "$f")" \
+    || { fail "F07: $(basename "$f") is told to write into docs/audit/ but omits Write"; f07_bad=1; }
+done
+if [ "$f07_subjects" -lt 20 ]; then
+  fail "F07: sweep derived only $f07_subjects file-writing agents (expected >= 20) — the derivation is broken, not the code"
+elif [ "$f07_bad" -eq 0 ]; then
+  pass "F07: all $f07_subjects agents that write into docs/audit/ allowlist Write"
+fi
+
+# --- 12d. F07 negative: Edit is never granted. Scanners characterize, never patch.
+edit_granted=$(grep -l '^tools:.*\bEdit\b' "$AGENTS_DIR"/*.md 2>/dev/null | head -1)
+if [ -n "$edit_granted" ]; then
+  fail "F07: $edit_granted grants Edit — audit agents write reports, they do not modify code"
+else
+  pass "F07: no agent grants Edit"
+fi
+
+# --- 12e. F21: bare MCP names never resolve. Validate passes on them, so guard here.
+mcp_bare=$(grep -nE '^(tools|allowed-tools):' "$AGENTS_DIR"/*.md "$COMMANDS_DIR"/*.md 2>/dev/null \
+           | grep -E '(^|[,[:space:]])(ref_[a-z_]+|[a-z_]+_exa|perplexity_[a-z_]+)([,[:space:]]|$)')
+if [ -n "$mcp_bare" ]; then
+  echo "$mcp_bare" | while IFS= read -r line; do
+    fail "F21: bare MCP name in an allowlist — never resolves: $line"
+  done
+  FAIL=$((FAIL + 1))
+else
+  pass "F21: no bare MCP identifiers in any tools:/allowed-tools: list"
+fi
+
+# --- 12f. F27: an agent told to reference a knowledge skill must be able to load one.
+f27_subjects=0
+f27_bad=0
+for f in "$AGENTS_DIR"/*.md; do
+  grep -qE '\b(self-audit-knowledge|deepgrade-knowledge|governance-knowledge|mcp-research|readiness-scoring) skill\b' "$f" || continue
+  f27_subjects=$((f27_subjects + 1))
+  # Either mechanism satisfies the requirement: the Skill tool, or a `skills:`
+  # preload key. U1 (2026-07-29) could not confirm the validator accepts
+  # `skills:` — it does not read agent frontmatter at all — so shipping code
+  # uses the Skill tool, whose behavior is spec-confirmed.
+  if ! has_tool Skill "$(tools_of "$f")" && ! grep -q '^skills:' "$f"; then
+    fail "F27: $(basename "$f") references a knowledge skill but can neither invoke nor preload one"
+    f27_bad=1
+  fi
+done
+if [ "$f27_subjects" -lt 7 ]; then
+  fail "F27: sweep derived only $f27_subjects skill-referencing agents (expected >= 7) — the derivation is broken"
+elif [ "$f27_bad" -eq 0 ]; then
+  pass "F27: all $f27_subjects agents referencing a knowledge skill can load it"
+fi
+
+# --- 12g. Ride-along: tools: uses one shape (comma-separated), not YAML flow arrays.
+flow=$(grep -l '^tools:[[:space:]]*\[' "$AGENTS_DIR"/*.md 2>/dev/null | head -1)
+if [ -n "$flow" ]; then
+  fail "tools: flow-array form still present in $flow — use the comma-separated form"
+else
+  pass "tools: uses the comma-separated form in every agent"
+fi
+
+# ===========================================================================
+# 13. MCP naming convention is stated identically in both homes (F32) — PHV5-021
+# ===========================================================================
+echo ""
+echo "--- MCP naming convention (F32) ---"
+
+MCP_SKILL="skills/mcp-research/SKILL.md"
+extract_convention() {
+  awk '/<!-- CANONICAL-MCP-CONVENTION -->/{f=1; next} /<!-- \/CANONICAL-MCP-CONVENTION -->/{f=0} f' "$1" \
+    | tr -d '\r' | sed 's/[[:space:]]*$//'
+}
+conv_skill=$(extract_convention "$MCP_SKILL")
+conv_contrib=$(extract_convention "CONTRIBUTING.md")
+
+if [ -z "$conv_skill" ]; then
+  fail "F32: no CANONICAL-MCP-CONVENTION block in $MCP_SKILL"
+elif [ -z "$conv_contrib" ]; then
+  fail "F32: no CANONICAL-MCP-CONVENTION block in CONTRIBUTING.md"
+elif [ "$conv_skill" != "$conv_contrib" ]; then
+  fail "F32: the MCP convention differs between $MCP_SKILL and CONTRIBUTING.md — one of them will go stale"
+else
+  pass "F32: the MCP naming convention is byte-identical in the skill and CONTRIBUTING.md"
+fi
+
+# The convention has to actually say the two things that make it correct;
+# an empty or reworded block that no longer mentions suffix matching would
+# otherwise pass 13a purely by being identical in both files.
+conv_ok=1
+echo "$conv_skill" | grep -q 'mcp__<server>__<tool>' || { fail "F32: convention omits the qualified mcp__<server>__<tool> form"; conv_ok=0; }
+echo "$conv_skill" | grep -qi 'suffix' || { fail "F32: convention omits the suffix-match availability rule"; conv_ok=0; }
+[ "$conv_ok" -eq 1 ] && pass "F32: convention states both the qualified form and the suffix-match rule"
+
+# The bare-name-equality rule the skill used to teach must be gone.
+if grep -q "If a tool name" "$MCP_SKILL" && grep -q "doesn't match, the tool is simply unavailable" "$MCP_SKILL"; then
+  fail "F32: $MCP_SKILL still teaches bare-name equality — it triggers its own degradation path"
+else
+  pass "F32: the bare-name-equality rule is gone from $MCP_SKILL"
+fi
+
+# Tool names the skill advertises must not include the three that do not exist
+# on any Exa server, outside the note that documents their removal.
+phantom_exa=$(grep -nE '^\s*[-|].*\b(get_code_context_exa|crawling_exa|web_search_advanced_exa)\b' \
+              "$MCP_SKILL" "$COMMANDS_DIR"/*.md "$AGENTS_DIR"/*.md 2>/dev/null | head -1)
+if [ -n "$phantom_exa" ]; then
+  fail "F32: non-existent Exa tool recommended at $phantom_exa"
+else
+  pass "F32: no non-existent Exa tool names are recommended anywhere"
+fi
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="

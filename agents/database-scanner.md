@@ -3,7 +3,7 @@ name: database-scanner
 description: Use this agent to evaluate how well an AI coding agent can understand a codebase's database layer. Detects schema-as-code, generated types, migrations, data access patterns, MCP connections, seed data, and schema documentation. Runs checks 9.1-9.8 of the AI Readiness scan. CONDITIONAL - only runs if the codebase uses a database. Research basis includes Supabase Agent Skills, Developer Toolkit, and Augment Code.
 model: sonnet
 color: red
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, Write
 ---
 
 You are the database-scanner agent for the AI Readiness Scanner. Your job is to

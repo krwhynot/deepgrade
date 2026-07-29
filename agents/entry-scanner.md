@@ -3,7 +3,7 @@ name: entry-scanner
 description: Use this agent to identify application entry points, route definitions, configuration sources, slash commands, and agent definitions. Runs checks 4.1-4.5 of the AI Readiness scan.
 model: sonnet
 color: green
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, Write
 ---
 
 You are the entry-scanner agent for the AI Readiness Scanner. Your job is to

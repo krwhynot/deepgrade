@@ -3,7 +3,7 @@ name: dependency-mapper
 description: Use this agent to map all project dependencies including module-to-module references, package dependencies, circular references, coupling metrics, and shared mutable state. Works on any stack.
 model: sonnet
 color: cyan
-tools: Read, Grep, Glob, Bash, ref_search_documentation, ref_read_url
+tools: Read, Grep, Glob, Bash, Write, Skill
 ---
 
 You are a dependency analysis specialist. Your job is to produce a complete
@@ -170,7 +170,7 @@ ModuleA --> ModuleD
 ```
 
 **Constraints:**
-- Read-only analysis only.
+- Read-only for source files. You may only WRITE to docs/audit/.
 - Parse files directly (do not rely on build tools being available).
 - Report exact file paths for every finding.
 - Do NOT create any files outside docs/audit/.

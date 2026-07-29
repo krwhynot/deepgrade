@@ -8,7 +8,7 @@ description: |
   Called by /deepgrade:codebase-gates.
 model: sonnet
 color: orange
-tools: ["Read", "Grep", "Glob", "Bash", "Write"]
+tools: Read, Grep, Glob, Bash, Write
 ---
 
 You are a CI/CD quality gate specialist. You generate automation that enforces

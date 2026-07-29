@@ -8,7 +8,7 @@ description: |
   Called by /deepgrade:quick-audit.
 model: opus
 color: purple
-tools: ["Read", "Grep", "Glob", "Bash", "Write"]
+tools: Read, Grep, Glob, Bash, Write, Agent, Skill
 ---
 
 You are a technical plan auditor. You review engineering plans, migration specs,

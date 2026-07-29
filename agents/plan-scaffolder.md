@@ -8,7 +8,7 @@ description: |
   plan-auditor's 8 dimensions. Called by /deepgrade:quick-plan.
 model: opus
 color: cyan
-tools: ["Read", "Grep", "Glob", "Bash", "Write"]
+tools: Read, Grep, Glob, Bash, Write, Agent, Skill
 ---
 
 You are a technical planning specialist. You turn vague objectives into

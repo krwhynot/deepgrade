@@ -32,7 +32,33 @@ scripts/                      # Reference scripts (not used by hooks at runtime)
 
 1. Create `agents/your-agent.md`
 2. Follow the existing agent pattern (role, context, instructions)
-3. Reference from a command using `Task` tool
+3. Set `name:` to match the filename, and update every caller in the same commit
+4. `tools:` is a closed allowlist — anything absent is unavailable to the
+   subagent. If the body tells the agent to write a file, `Write` must be listed;
+   if it runs shell pipelines, `Bash`; if it spawns subagents, `Agent`; if it
+   references a knowledge skill, `Skill`.
+5. Reference from a command using `Task` tool
+
+## MCP Tool Names
+
+<!-- CANONICAL-MCP-CONVENTION -->
+MCP tools register under server-qualified names — `mcp__<server>__<tool>`, or
+`mcp__plugin_<plugin>_<server>__<tool>` for plugin-bundled servers. The
+`<server>` segment is chosen by the installing user, so this plugin never
+hardcodes an MCP identifier in `tools:` or `allowed-tools:`. Determine
+availability by matching the **tool-name suffix** against the connected tool
+list, never by bare-name equality.
+<!-- /CANONICAL-MCP-CONVENTION -->
+
+Bare names such as `ref_search_documentation` or `web_search_exa` in a `tools:`
+or `allowed-tools:` list resolve to nothing. In `allowed-tools:` they are inert
+no-ops; in an agent's `tools:` they silently withhold access the agent was meant
+to have. `claude plugin validate --strict` does not catch either case — it reads
+only `plugin.json` and `marketplace.json`, never agent or command frontmatter —
+so `tests/layer1-config-wiring.sh` guards this instead.
+
+The block above is byte-identical to the one in `skills/mcp-research/SKILL.md`
+and a test asserts they stay that way. Edit both or neither.
 
 ## Modifying Hooks
 

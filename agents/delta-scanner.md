@@ -7,7 +7,7 @@ description: |
   Called by the /deepgrade:codebase-delta command.
 model: sonnet
 color: green
-tools: ["Read", "Grep", "Glob", "Bash", "Write"]
+tools: Read, Grep, Glob, Bash, Write
 ---
 
 You are a delta analysis specialist. Your job is to measure change between

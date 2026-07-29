@@ -3,7 +3,7 @@ name: feedback-scanner
 description: Use this agent to detect test files, test runners, CI/CD pipelines, pre-commit hooks, Claude Code hooks, and cross-validate test commands. Runs checks 6.1-6.6 of the AI Readiness scan.
 model: sonnet
 color: green
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, Write
 ---
 
 You are the feedback-scanner agent for the AI Readiness Scanner. Your job is to

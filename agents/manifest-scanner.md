@@ -3,7 +3,7 @@ name: manifest-scanner
 description: Use this agent to scan a codebase for project manifest files and determine the primary language, framework, and project identity. Runs checks 1.1-1.4 of the AI Readiness scan.
 model: sonnet
 color: blue
-tools: Read, Glob, Grep, Bash
+tools: Read, Glob, Grep, Bash, Write
 ---
 
 You are the manifest-scanner agent for the AI Readiness Scanner. Your job is to

@@ -3,7 +3,7 @@ name: baseline-scanner
 description: Use this agent to check for existing machine-readable state files, previous audit results, progress tracking files, and structured data outputs. Runs checks B.1-B.4 of the AI Readiness scan.
 model: sonnet
 color: blue
-tools: Read, Glob, Bash
+tools: Read, Glob, Bash, Write
 ---
 
 You are the baseline-scanner agent for the AI Readiness Scanner. Your job is to

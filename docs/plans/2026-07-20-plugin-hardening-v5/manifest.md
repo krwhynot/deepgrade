@@ -20,6 +20,8 @@ plugin/skill specification, so that every component the plugin advertises actual
 | [Codebase scan (finding re-verification)](research/codebase-scan.md) | 2 | 2026-07-20 |
 | [Test baseline](research/test-baseline.md) | 2 | 2026-07-20 |
 | [Best practices (5 open questions)](research/best-practices.md) | 2 | 2026-07-20 |
+| [G0 probe results — lane N selected, U6 settled](research/g0-probe-results.md) | 6 (Wave 0) | 2026-07-29 |
+| [Validator scope probe — U1 resolved-negative](research/validator-scope-probe.md) | 6 (Wave 2) | 2026-07-29 |
 | [Approach — SCOPE LOCK (current version and round history in its own header/§11)](approach.md) | 3 | 2026-07-20 |
 | [Acceptance matrix — authoritative item→wave→files→tests](acceptance-matrix.md) | 3 | 2026-07-20 |
 | [Consistency sweep — scripted Phase 3 gate (§10.5)](consistency-sweep.sh) | 3 | 2026-07-21 |
@@ -58,7 +60,7 @@ plugin/skill specification, so that every component the plugin advertises actual
 | 3. Pre-Plan | **Complete (2026-07-29).** Adversarial review PASSED — GO (Codex, perfect score; details in `codex-review.md` and `status.json`); owner signed off; plan directory committed at `0b72995` |
 | 4. Plan | **Complete (2026-07-29)** — spec confirmed at the Phase 4 gate (33 tickets, 9 waves, est. 28–34 working days incl. buffer) |
 | 5. Audit | **Complete (2026-07-29) — 34/40 GREEN, gap-checked YES, lint 15/15, zero regressions** (v1 30/40 → auto-revised → v2 34/40). Human-review gate is the next step |
-| 6. Build | **In Progress — Wave 0 (3 of 5) + Wave 3 COMPLETE.** **G0 RESOLVED → lane N (node-canonical); U6 resolved (notice user-visible, CR-1 stands); G1 = CI_ONLY** — lanes B/I not needed, Wave 4 unblocked. Suite **115/4 → 156/4 → 167 pass / 0 fail (fully green)**; `expected-failures.txt` **emptied**. 22 sources snapshotted + hashed; `validate --strict` passes; clean-clone verified. **Findings closed: 10 of 33** — F01, F04, F17, F18, F19, F20A, F29, F31 (+3 additions). Waves 1 and 3 COMPLETE. Suite **172 pass / 0 fail**. Remaining in Wave 0: PHV5-003 (U7 floor), PHV5-005 (CI matrix) |
+| 6. Build | **In Progress — Wave 0 (3 of 5) + Waves 1, 2, 3 COMPLETE.** **Wave 2 (2026-07-29): F02, F03, F07, F21, F27, F32 closed.** Every agent's `tools:` allowlist now matches what its own body requires; `Edit` deliberately granted to none. **U1 RESOLVED-NEGATIVE** (`research/validator-scope-probe.md`): `claude plugin validate --strict` does not read agent frontmatter at all — it passes on an agent whose `name:` line has been deleted — so the whole agent/command frontmatter defect class (F01, F02, F03, F07, F17, F21, F27) is invisible to it and `tests/layer1-config-wiring.sh` is its sole guard. Suite **115/4 → 156/4 → 167 → 172 → 183 pass / 0 fail**; 11 new assertions this wave, 13/13 mutations caught; `expected-failures.txt` **empty**. Earlier waves: **G0 RESOLVED → lane N (node-canonical); U6 resolved (notice user-visible, CR-1 stands); G1 = CI_ONLY** — lanes B/I not needed, Wave 4 unblocked; 22 sources snapshotted + hashed; clean-clone verified. **Findings closed: 14 of 33** — F01, F02, F03, F04, F07, F17, F18, F19, F20A, F21, F27, F29, F31, F32 — plus all 3 accepted scope additions and the `tools:` ride-along, so **18 of 36 in-scope items**. (Counted against `status.json`'s list; the figure carried here after Wave 1 read "10 of 33", which conflated findings with scope additions.) Remaining in Wave 0: PHV5-003 (U7 floor), PHV5-005 (CI matrix) — both need the owner |
 | 7. Impact Review | Not Started |
 | 8. Test | Not Started |
 | 9. Handoff | Not Started |

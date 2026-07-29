@@ -17,7 +17,7 @@ Pick the RIGHT tool for the task. Do not use all three for the same question.
 |------|-----------|-----|
 | Framework/library API docs | **Ref** (`ref_search_documentation`) | Smart 5K extraction, session dedup, lowest token cost |
 | Read a specific doc page | **Ref** (`ref_read_url`) | Markdown conversion, trajectory-aware dropout |
-| Code examples & patterns | **Exa** (`get_code_context_exa`) | Neural search across GitHub, SO, technical docs |
+| Code examples & patterns | **Exa** (`web_search_exa`) | Neural search across GitHub, SO, technical docs |
 | General web search | **Exa** (`web_search_exa`) | Semantic matching, clean ready-to-use content |
 | Known bugs / GitHub issues | **Exa** (`web_search_exa`) | Matches error signatures semantically |
 | Quick factual lookups | **Perplexity** (`perplexity_search`) | Fast, current, low cost |
@@ -46,7 +46,8 @@ Each MCP tool call adds tokens to the session. Be intentional:
   Perplexity can return much more)
 - **Search before fetch** — use `ref_search_documentation` to find the right
   page, then `ref_read_url` to read it. Don't fetch blindly.
-- **Exa search before get_contents** — filter results first, fetch content second
+- **Exa search before fetch** — use `web_search_exa` to filter results first, then
+  `web_fetch_exa` on the one page worth reading in full
 - **Perplexity search before research** — use the cheapest tier that answers
   the question. Only escalate to `perplexity_research` for complex topics.
 - **Never run all three** for the same question — pick the best fit
@@ -79,10 +80,26 @@ When using MCP tools, classify the evidence quality:
 | Perplexity without citations | **TIER C** | Flag as "[UNVERIFIED — synthesized without primary source]" |
 | No MCP tools available | **TIER C** | Flag as "[UNVERIFIED — based on training data only]" |
 
-## Verified Tool Names (as of 2026-04-03)
+## How to Tell Whether a Tool Is Available
 
-These are the tool names as registered by each MCP server. If a tool name
-doesn't match, the tool is simply unavailable (graceful degradation applies).
+<!-- CANONICAL-MCP-CONVENTION -->
+MCP tools register under server-qualified names — `mcp__<server>__<tool>`, or
+`mcp__plugin_<plugin>_<server>__<tool>` for plugin-bundled servers. The
+`<server>` segment is chosen by the installing user, so this plugin never
+hardcodes an MCP identifier in `tools:` or `allowed-tools:`. Determine
+availability by matching the **tool-name suffix** against the connected tool
+list, never by bare-name equality.
+<!-- /CANONICAL-MCP-CONVENTION -->
+
+The bare names used throughout this skill are suffixes, not identifiers. To
+check for Perplexity's search tool, look for any connected tool whose name ends
+in `__perplexity_search` — it may be registered as `mcp__perplexity__perplexity_search`,
+`mcp__claude_ai_Perplexity__perplexity_search`, or something else entirely. All
+three are the same tool. Comparing against the bare string `perplexity_search`
+matches nothing and wrongly triggers the graceful-degradation path below even
+when the server is connected.
+
+## Tool Name Suffixes (verified 2026-07-29)
 
 **Ref Tools MCP:**
 - `ref_search_documentation` — search docs with a natural language query
@@ -90,15 +107,20 @@ doesn't match, the tool is simply unavailable (graceful degradation applies).
 
 **Exa MCP:**
 - `web_search_exa` — general semantic web search
-- `get_code_context_exa` — code-specific search (GitHub, SO, docs)
-- `crawling_exa` — full page content retrieval
-- `web_search_advanced_exa` — advanced search with filters (optional, must be enabled)
+- `web_fetch_exa` — full page content retrieval
 
 **Perplexity MCP:**
 - `perplexity_search` — fast factual lookup
 - `perplexity_ask` — conversational Q&A (sonar-pro)
 - `perplexity_research` — deep investigation (sonar-deep-research)
 - `perplexity_reason` — analytical reasoning (sonar-reasoning-pro)
+
+Server builds differ in which tools they expose, so treat this list as the set
+worth *looking for*, not a guarantee. Anything absent from the connected tool
+list falls through to graceful degradation. Do not add a tool here without
+observing it on a live connection: earlier revisions advertised
+`get_code_context_exa`, `crawling_exa`, and `web_search_advanced_exa`, none of
+which exist on either Exa server, so every recommendation to use them degraded.
 
 ## When NOT to Use External Search
 

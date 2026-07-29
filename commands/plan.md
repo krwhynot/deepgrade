@@ -1,7 +1,7 @@
 ---
 description: (deepgrade) Start or resume a guided plan. Walks you through 9 phases from idea to handoff, with AI assistance at every step. Produces documents by default; codebase writes require your approval. Pass a plan name to start new or resume existing. Optionally pass source material with 'from'.
 argument-hint: "[plan-name] [from docs/path or 'idea: description']"
-allowed-tools: Read, Write, Grep, Glob, Bash, Task, ref_search_documentation, ref_read_url, web_search_exa, get_code_context_exa, perplexity_search, perplexity_ask
+allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
 <identity>
@@ -300,14 +300,18 @@ Write cleaned data to research/intake/.
 
 TRACK 3 - BEST PRACTICES (Subagent: Sonnet, if external search tools available):
 Objective: Find how others solved similar problems.
-Tools: Read, ref_search_documentation, ref_read_url, web_search_exa, get_code_context_exa, perplexity_ask, WebSearch, WebFetch
+Tools: Read, WebSearch, WebFetch, plus any connected MCP search tool whose name
+ends in `__ref_search_documentation`, `__ref_read_url`, `__web_search_exa`,
+`__web_fetch_exa`, or `__perplexity_ask` (see the mcp-research skill — match by
+suffix, never by bare name)
 Output: docs/plans/{date}-{name}/research/best-practices.md
 
 Search strategy (use in order, stop when sufficient):
 1. Ref: Search framework/library docs for the specific technologies in scope.
    Use ref_search_documentation with a complete question (not keywords).
 2. Exa: Search for code examples of the pattern being considered.
-   Use get_code_context_exa for implementation examples, web_search_exa for general patterns.
+   Use web_search_exa for both implementation examples and general patterns, then
+   web_fetch_exa on the one result worth reading in full.
 3. Perplexity: If Ref + Exa are insufficient, ask a targeted research question.
    Use perplexity_ask for focused answers with citations.
 4. WebSearch/WebFetch: Fallback if MCP tools are not available.
