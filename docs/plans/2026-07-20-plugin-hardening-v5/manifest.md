@@ -26,7 +26,7 @@ plugin/skill specification, so that every component the plugin advertises actual
 | [Confidence brief (10 entries)](confidence.md) | 3+5 | 2026-07-20 |
 | [Codex audit prompt (copy-paste)](codex-audit-prompt.md) | 3 (pre-lock review) | 2026-07-20 |
 | [Codex review report — all rounds, gap logs + provenance (scores in its own header)](codex-review.md) | 3 (pre-lock review) | 2026-07-20 |
-| [Audit](audit.md) | 5 | Pending |
+| [Audit — 34/40 GREEN, gap-checked, 15/15 lint](audit.md) | 5 | 2026-07-29 |
 | [Impact Review](impact-review.md) | 7 | Pending |
 | [Test Plan](test-plan.md) | 8 | Pending |
 
@@ -55,8 +55,8 @@ plugin/skill specification, so that every component the plugin advertises actual
 | 1. Brainstorm | Complete |
 | 2. Research | Complete — stop rubric passed |
 | 3. Pre-Plan | **Complete (2026-07-29).** Adversarial review PASSED — GO (Codex, perfect score; details in `codex-review.md` and `status.json`); owner signed off; plan directory committed at `0b72995` |
-| 4. Plan | **Complete (2026-07-29)** — spec confirmed at the Phase 4 gate (27 tickets, 9 waves, est. 22–28 working days) |
-| 5. Audit | In Progress (started 2026-07-29) |
+| 4. Plan | **Complete (2026-07-29)** — spec confirmed at the Phase 4 gate (33 tickets, 9 waves, est. 28–34 working days incl. buffer) |
+| 5. Audit | **Complete (2026-07-29) — 34/40 GREEN, gap-checked YES, lint 15/15, zero regressions** (v1 30/40 → auto-revised → v2 34/40). Human-review gate is the next step |
 | 6. Build | Not Started |
 | 7. Impact Review | Not Started |
 | 8. Test | Not Started |

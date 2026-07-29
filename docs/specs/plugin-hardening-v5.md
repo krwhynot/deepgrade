@@ -41,7 +41,9 @@ nowhere as authoritative. **Must land before anything touches the sibling** (R11
 drift has already occurred).
 
 **PHV5-002 — Repo conformance batch (A1, A2, A3) + baseline record** · Band: small · Blocks: PHV5-005
-- `.gitattributes` with `*.sh text eol=lf` — AC: `git ls-files --eol -- '*.sh'` reports `w/lf` for every script.
+- `.gitattributes` with `*.sh text eol=lf` — AC: **fresh clone on a `core.autocrlf=true` host yields LF in the
+  working tree for every `*.sh`** (byte-level check). *(Falsifying form required: `git ls-files --eol` reports
+  `w/lf` for all 14 scripts at HEAD **without** `.gitattributes`, so it cannot fail — audit v2 #1.)*
 - Wire `tests/codex-challenge-test.js` into `run-all.sh` as **Layer 5** — AC: totals move **115/4 → 156/4** (§10.1);
   runner fails if any layer script is missing (layer-count assertion).
 - `.claude-plugin/marketplace.json`: delete duplicate `version`, **add missing top-level `description`**
@@ -100,7 +102,11 @@ Per §3.4: strip bare MCP names (`ref_*`/`*_exa`/`perplexity_*`); keep closed `t
 `Bash`+`Write` (`doc-auditor`, `integration-scanner`), `Agent` (`plan-scaffolder`, `plan-auditor` — and **no other**
 agent gains it), `Write` on the 13 agents mandating `docs/audit/` outputs (**no `Edit` anywhere**); every agent
 referencing a knowledge skill preloads via `skills:` or lists `Skill`; normalize `tools:` flow arrays to
-comma-separated. Custom grep guard required — `claude plugin validate` passes on bare names.
+comma-separated — **measured at HEAD: 6 agents carry flow arrays** (`characterization-generator`, `delta-scanner`,
+`plan-scaffolder`, `gate-generator`, `plan-auditor`, `security-scanner`; audit v1 corrected the locked docs'
+"7 affected agents" figure — the ride-along is droppable and uncounted, so this is a measurement note, not a
+scope change; flag for the Wave 2 review record). Custom grep guard required — `claude plugin validate` passes
+on bare names.
 
 **PHV5-021 — F32: `skills/mcp-research/SKILL.md` convention** · Band: small
 Skill states the suffix-match availability rule + qualified `mcp__<server>__<tool>` forms; no bare-name-equality
@@ -133,7 +139,8 @@ tracker keys, §8.4). Per-row falsifying tests (e.g. `supabase db push` denied /
 `DG_STRICT_GIT` default-off negative). Lane B alt: port rows 1–2 into `.sh` set. Lane I alt: consolidated inline
 fixtures + quoting-lint test, **not yet in `plugin.json`**.
 
-**PHV5-041 — 4a: parser contract F24 + F22 + F25 + F26 implementation** · Band: medium (inside 040's lane band)
+**PHV5-041 — 4a: parser contract F24 + F22 + F25 + F26 implementation** · Band: **medium–large** *(re-estimated
+audit v2 #3: the corpus-driven tokenising matcher below is new work over the v1 "extract field + regex" sizing)*
 §3.1.6 exactly: enforce only what is parsed; **never deny on an unparsed payload**; malformed payload under a real
 parser → fail closed; no parser → allow + static JSON `systemMessage` (never stderr on exit 0). Test corpus:
 the F24 reproduction (`git commit -m "wip" && git push --force` → denied via parsed `tool_input.command`),
@@ -143,6 +150,13 @@ exemption-position cases (`--force-with-lease`/`--dry-run` honored only inside t
 denied. F26: all exit-0 output is JSON (settles U4); PreCompact fallback chain locked (§3.1.6).
 Lane-qualified states: lane N = node-present (unit/CI) + node-absent (**local 4c evidence only — never a CI
 assertion**); lanes B/I = jq-only / node-only / neither.
+**Mechanism requirement (audit v1 gap 2 — reproduced live: the current hook denies a read-only `grep` whose
+search *pattern* contains a DB-deploy string):** field extraction alone is not sufficient — the matrix corpus
+requires quoted-text mentions *inside* `tool_input.command` to be **allowed** (e.g. a commit message naming a
+force-push). 4a's matcher must therefore be **corpus-driven, not bare-regex**: strip or tokenize quoted
+substrings before pattern matching (or equivalent), and the acceptance corpus is the falsifier — a mechanism
+that fails any corpus row fails PHV5-041, whatever its implementation. Design freedom stays in 4a; the corpus
+does not.
 
 **PHV5-042 — 4a: Layer 2 rewrite** · Band: medium
 `tests/layer2-hook-simulation.sh`: no positional-index extraction; every guard case runs the lane's unit-coverable
@@ -221,11 +235,17 @@ phase · (c) `${CLAUDE_SKILL_DIR}` resolves · (d) **all nine phase boundaries**
 (f) completeness manifest under the **same §3.3 occurrence/cardinality model** over the 1,528-line command ·
 (g) invocation from an installed copy.
 **PHV5-071 — Activation + recovery + review** · Band: small + medium–large review
-One commit: add skill, delete `commands/plan.md`; §10.4 review before merge; recovery = **single revert** +
-`/reload-plugins`, in-flight plan state needs no migration (proven by fixture (b)). Never leave both surfaces live.
+One commit: add skill, delete `commands/plan.md`, **and update every surface that asserts the command exists —
+in the same commit** *(audit v1 gap 1: deleting the file alone turns the suite red with no owning ticket)*:
+`commands/help.md` (all `/deepgrade:plan` references at `:16`, `:30–:52`, `:185–:189` repointed to the skill
+surface — `tests/layer4-behavioral-smoke.sh:48-54` fails on any help.md command without a file), README
+"Commands (N)" count (`tests/layer1-config-wiring.sh:344-354` compares it to the `commands/` file count), and
+GUIDE command counts. §10.4 review before merge; recovery = **single revert** + `/reload-plugins`, in-flight plan
+state needs no migration (proven by fixture (b)). Never leave both surfaces live.
 
-**Wave 7 go/no-go:** all 7 staging-proof items pass · completeness manifest exact-consumption green · review GO.
-Phases 7–8 of the planning workflow then run against the new skill.
+**Wave 7 go/no-go:** all 7 staging-proof items pass · completeness manifest exact-consumption green ·
+**full suite green after the activation commit (Layers 1–7 — the help.md/count assertions are the tripwire)** ·
+review GO. Phases 7–8 of the planning workflow then run against the new skill.
 
 ### Wave 8 — Release *(risk: HIGH — R7/R14; gated on Waves 1–7)*
 
@@ -286,8 +306,29 @@ condition fails, the plan **pauses for an owner decision** rather than proceedin
 | 8 | Release, rehearsal, publication | 2 d | 28 d | Waves 1–7; G1 for POSIX step only |
 
 **≈ 28 working days ≈ 5–6 calendar weeks** at solo pace, including three independent reviews with remediation and
-budgeted second rounds. Critical path: Wave 0 → 4 → 6 → 7 → 8 (Waves 1/3/5 can interleave). Worst-case lane (I)
-adds ≈ 1 large item, same as lane N (§9.3 lane delta) — lane choice does not move the estimate materially.
+budgeted second rounds. **Solo means serial: the cumulative column IS the schedule.** The "critical path"
+(Wave 0 → 4 → 6 → 7 → 8, ≈ 23 d of it) governs *gating order*, not elapsed time — Waves 1/3/5 interleave for
+freshness, not speed *(audit v1: the two figures describe different things; stated so here to close the apparent
+contradiction)*. Worst-case lane (I) adds ≈ 1 large item, same as lane N (§9.3 lane delta) — lane choice does not
+move the estimate materially.
+
+**Contingency branches** *(audit v1 gap 3 — the base estimate assumed the happy path)*:
+
+| Branch | Trigger | Schedule effect |
+|--------|---------|-----------------|
+| **G0 = BLOCKED** | U6 notice invisible (CR-1 void) | Wave 0 pauses before CI-enable; **Waves 1, 3 and 5 may proceed** (approach.md §7: Waves 0/1/3/5 are unblocked; Wave 2 gates on §3.4, not G0); Wave 4 does not start. Cost = owner-decision latency + small rework; lane B fallback adds no size (§9.3) |
+| Review second rounds | Any §10.4 review returns findings | Already budgeted (small–medium per review, ×3) |
+| Reviewer unavailable / policy-aborts | Round-14 precedent (Codex policy filter) | De-escalated prompt framing (proven fix); after 2 rounds, owner override via CR named in release notes — review cannot deadlock the plan (§10.4 bound) |
+| **Buffer** | Unknown unknowns | +20% ≈ 5–6 d → **realistic envelope 28–34 working days (6–7 calendar weeks)** |
+
+**External dependencies with owners** *(audit v1, LINT-04 — approach.md §7's "External: none" means no vendor
+timeline gates the work; these are operational dependencies, each with a fallback so none can block indefinitely)*:
+
+| Dependency | Gates | Owner | Fallback |
+|-----------|-------|-------|----------|
+| Non-Claude reviewer (Codex CLI) | Waves 4/6/7 GO | Kyle | §10.4: max 2 rounds → owner override CR, named in release notes |
+| GitHub Actions availability | Wave 0 CI gate, standing checks | Kyle (repo `krwhynot/deepgrade`) | Local suite runs remain authoritative interim; CI-enable is Wave 0's *last* step by design |
+| npm retention of old `@anthropic-ai/claude-code` versions | U7 floor discovery | Kyle | If a candidate is unpublished, the floor is the oldest *installable* version — recorded as such, honestly narrower claim |
 
 **Top risks and their controls** (full register: approach.md §5):
 
@@ -313,7 +354,11 @@ Verification command classes (§10.3): **U** suite · **G** grep guard · **C** 
 
 **Wave 0** *(order is mandatory)*
 - [ ] 1. Snapshot 22 sources + hashes + pinned diff count → verify: clean clone lists all 22 [C, U]
-- [ ] 2. `.gitattributes` → verify: `git ls-files --eol -- '*.sh'` all `w/lf` [U, C]
+- [ ] 2. `.gitattributes` → verify by **fresh clone into a temp dir on this `core.autocrlf=true` host**, then
+      assert every `*.sh` is LF in the *working tree* (`file`/byte check, not `ls-files`) [U, C]
+      *(audit v2 #1: `git ls-files --eol` already reports `w/lf` for all 14 scripts at HEAD with no
+      `.gitattributes` — that check is green before AND after the fix, i.e. tautological. The landmine only
+      fires on checkout, so only a fresh clone falsifies it.)*
 - [ ] 3. Wire Layer 5 → verify: `run-all.sh` totals 156/4 [U]
 - [ ] 4. marketplace.json conformance → verify: dual-manifest `validate --strict` passes [U, C]
 - [ ] 5. Commit `tests/expected-failures.txt` (the 4 F18/F19 reds)
@@ -335,6 +380,8 @@ Verification command classes (§10.3): **U** suite · **G** grep guard · **C** 
 - [ ] 4a: F22 ask-JSON · F25 lease · F26 JSON outputs (U4 settled) [U]
 - [ ] 4a: Layer 2 rewritten, no positional indices [U]
 - [ ] 4b: ONE activation commit (~8 files); folder + manifest-key never both present [U, R, I]
+- [ ] 4b: stale-reference sweep — `grep -rn "scripts/dg-.*\.sh"` (lane N: no live reference to the retired `.sh`
+      paths outside snapshots/history) [G]
 - [ ] 4c: Layer 7 — every event + matcher fires via `--plugin-dir` AND installed copy; node-less installed-copy
       case observed; F26 visibility (U5) settled [R, I]
 - [ ] §10.4 review after 4c → committed `reviews/wave-4-round-M.md`, GO [—]
@@ -342,6 +389,7 @@ Verification command classes (§10.3): **U** suite · **G** grep guard · **C** 
 **Wave 5**
 - [ ] F09 (incl. zero-arg negative) · F10 · F11 · F13 · F15 (no `tree`) sweeps green [G, U]
 - [ ] F14 on exactly 3 commands, not `plan` [U] · F08 settings-merge target [G] · F28 · F30 (delete `doc.md`) [U, G]
+- [ ] F30 stale-reference sweep — no `/deepgrade:doc` or `commands/doc.md` string survives anywhere [G]
 
 **Wave 6**
 - [ ] Segmenter + inventory + checker built (shared with Wave 7) → verify: rejects gaps/overlaps/unclaimed [U]
@@ -352,7 +400,9 @@ Verification command classes (§10.3): **U** suite · **G** grep guard · **C** 
 
 **Wave 7**
 - [ ] `skills/plan/` built; SKILL.md < 500 lines; staging proof (a)–(g) all pass in scratch copy [U, G, R, I]
-- [ ] Activation commit; review → GO; recovery rehearsed (single revert + `/reload-plugins`) [B]
+- [ ] Activation commit incl. help.md/README/GUIDE reference updates; **full suite green post-commit** [U]
+- [ ] Stale-reference sweep — no live `commands/plan.md` string outside history/snapshots [G]
+- [ ] Review → GO; recovery rehearsed (single revert + `/reload-plugins`) [B]
 
 **Wave 8**
 - [ ] 5.0.0 bump + CHANGELOG + migration note (all required contents per PHV5-080) [U, G]
@@ -390,6 +440,32 @@ own negative-control pattern, §10.5), happy-path-only coverage (each guard case
 assertions by matrix mandate). Expand/Contract (Methodology 11) is N/A — no database exists in this plugin.
 
 ---
+
+## Traceability — every matrix item → its owning ticket *(added audit v1, LINT-17)*
+
+| Matrix item(s) | Ticket | | Matrix item(s) | Ticket |
+|---|---|---|---|---|
+| G0 probe + U6 + G1 | PHV5-004 | | F09 F10 F11 F13 F15 | PHV5-050 |
+| U7 floor | PHV5-003 | | F14 | PHV5-051 |
+| A4 snapshot (22 sources) | PHV5-001 | | F08 | PHV5-052 |
+| A1 A2 A3 + baseline | PHV5-002 | | F28 F30 | PHV5-053 |
+| CI matrix + comparator | PHV5-005 | | Segmenter/inventory/checker | PHV5-060 |
+| F29 F31 | PHV5-010 | | Reconciliation + F33 F16 | PHV5-061 |
+| F17 | PHV5-011 | | Renderer + dist/ + Layer 6 | PHV5-062 |
+| F01 | PHV5-012 | | Wave 6 review | PHV5-063 |
+| F02 F03 F07 F21 F27 + ride-along | PHV5-020 | | F12 build + staging proof | PHV5-070 |
+| F32 | PHV5-021 | | F12 activation + review | PHV5-071 |
+| F18 F19 | PHV5-030 | | R7 bump + migration note + §9.2 | PHV5-080 |
+| F20A F04 | PHV5-031 | | Final schema gate | PHV5-081 |
+| F05 ledger (11 rows) | PHV5-040 | | Rollback rehearsal | PHV5-082 |
+| F24 F22 F25 F26 | PHV5-041 | | Publication gate | PHV5-083 |
+| Layer 2 rewrite | PHV5-042 | | G1-conditional POSIX run | PHV5-084 |
+| F06 F23 SubagentStop (4b) | PHV5-043 | | P3 consistency sweep | Phase 3 gate (complete; runs per revision) |
+| Runtime proof (4c) | PHV5-044 · Wave 4 review PHV5-045 | | | |
+
+All 33 findings, 3 additions, 1 ride-along, and both gates carry an owning ticket; **F12 is the sole item split
+across two** (PHV5-070 build+staging proof, PHV5-071 activation+review — the §9.1 contract mandates the split,
+since the proof must complete before the command is deleted). Reviews own their wave's GO. **33 tickets total.**
 
 ## Operational Readiness (release)
 
