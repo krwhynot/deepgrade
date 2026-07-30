@@ -209,7 +209,11 @@
         "PHV5-040",
         "PHV5-041",
         "PHV5-042",
-        "PHV5-043"
+        "PHV5-043",
+        "PHV5-050",
+        "PHV5-051",
+        "PHV5-052",
+        "PHV5-053"
       ],
       "findings_closed": [
         "F01",
@@ -228,7 +232,16 @@
         "F27",
         "F29",
         "F31",
-        "F32"
+        "F32",
+        "F08",
+        "F09",
+        "F10",
+        "F11",
+        "F13",
+        "F14",
+        "F15",
+        "F28",
+        "F30"
       ],
       "wave_1_complete": {
         "date": "2026-07-29",
@@ -394,6 +407,26 @@
         "f08_merge_clause_untested": "FOURTH DEFECT, found by generalising W13 rather than by any test. Having fixed W13 I swept the other section-17 guards for the same shape - a bare keyword that unrelated prose could satisfy - and found `grep -qiE merge` for F08's merge requirement. It had NO mutation in the Wave 5 set at all (W12 tested the target path only), and it was satisfied by an unrelated CI-workflow line, \"Merge into existing files\" at gate-generator.md:459. Deleting the load-bearing instructions at :95 and :119-120 would have left it green. Replaced with the two clauses that carry the requirement (\"MERGE, never overwrite\" and \"not drop sibling keys\") and mutation-tested W16/W17 - both CAUGHT - plus a CONTROL, W18, which deletes the unrelated CI line and must leave the guard SILENT. It does. Sensitivity without specificity would have been satisfied by a guard that fails on anything.",
         "debt_mutation_evidence_unreproducible": "No mutation harness is tracked in git in ANY wave - `git ls-files | grep mutat` is empty. Mutation testing has been a scratchpad activity whose RESULT is asserted in status.json, so no wave's mutation evidence can be re-run by a reviewer, or by me after the scratchpad is cleared. Every \"N caught\" claim in this file is therefore testimony, not evidence. Pre-existing convention across all waves rather than a Wave 5 regression, so recorded as debt instead of changed mid-audit.",
         "self_inflicted_during_audit": "I killed a foreground mutation run at the 2-minute tool timeout while it held a mutation, so its restore never ran and commands/plan-export.md sat mutated in the working tree - the SECOND time this session I stranded a mutation by killing its owner. It was caught only because the next run refused to start on a red baseline. The harness now persists the pristine copy to disk before mutating and refuses to run against an already-mutated file, and mutation runs go to the background rather than racing a foreground timeout. Separately, I edited layer1-config-wiring.sh while a run invoking it was in flight; the added assertion passes so it could not have manufactured a false result, but the full suite was re-verified cleanly rather than trusted from an overlapped run."
+      },
+      "wave_5_closeout_2026_07_30": {
+        "why_this_key_exists": "The Wave 5 audit recorded prose and committed fixes, but tickets_complete and findings_closed still said Wave 5 had never happened - PHV5-050..053 and F08/F09/F10/F11/F13/F14/F15/F28/F30 were all absent. Two records of the same wave, disagreeing, and the structured one - the one any tooling reads - was the wrong one. Both lists are now updated.",
+        "rows_unmet_when_i_called_the_wave_closed": [
+          "F30 acceptance row 3, \"no /deepgrade:doc or commands/doc.md string survives anywhere [G]\", had NO GUARD AT ALL. I closed F30 on having deleted the file. THREE references survived. Two are history (CHANGELOG 4.31.0, which genuinely shipped the command; the MCP-005 spec for a shipped feature). The third, skills/documentation/SKILL.md:10, was live product surface and was provenance text I WROTE during the F30 work itself - found by the new guard on its first run.",
+          "F13 clause \"no-arg behavioral smoke against this plan folder\" - no such test existed. F13 was closed on a grep that the guard and the loop name the same directory, which cannot observe that the overview PRODUCES anything. The original defect printed \"No plans found.\" and exited 0.",
+          "F09 clause \"zero-arg case degrades safely - negative test required\" - what existed was a grep that the sentinel guard is PRESENT. That is a different claim from the guard WORKING."
+        ],
+        "coverage_added": "layer1 section 18: the F30 sweep, with a subject-set floor of 10 and two structural, self-expiring exemptions. layer4 B6: extracts and EXECUTES plan-status no-arg block against a real status.json, plus the negative direction with no plans dir. layer4 B7: executes quick-cleanup zero-arg path and asserts it short-circuits at the sentinel.",
+        "f30_cross_wave_dependency_CR_4": "F30 row 3 cannot be satisfied by Wave 5 alone, and that is a spec gap rather than a scope reduction. The CHANGELOG 4.31.0 entry is true history; the correct remedy is a 5.0.0 entry recording the removal, which is explicitly PHV5-080 in Wave 8. The row is therefore sequenced behind Wave 8. CR-4 proposes reading it as scoped to live product surface, with two structural exemptions plus an EXPIRY: once plugin.json reports 5.x the guard requires the CHANGELOG to record the removal, so the exemption cannot outlive its justification. CR-4 is PROPOSED and NOT ratified. F30 is listed closed on rows 1-2 and on all live product surface; row 3 is CONTINGENT on the owner accepting CR-4, and the documented fallback is to hold F30 open until Wave 8 and record row 3 NOT MET in the G1/F23 form.",
+        "mutation_tested": "7 mutations, all CAUGHT - but only after two rounds of fixing my own harness and tests. X1 F13 wrong directory; X2 F09 guard deleted; X3 F09 guard inert; X4 live reference on product surface; X5 banner stripped; X6 reference under an Unreleased heading; X7 version 5.0.0 with no recorded removal, which is the expiry clause.",
+        "x3_a_third_distinct_survival_cause": "X3 escaped the first run and was NEITHER a weak guard NOR an invalid mutant - the two causes recorded from the earlier audit. The mutant was VALID (the sentinel guard genuinely stopped working) and the assertion was CORRECT (the command genuinely still degraded safely). What defeated it was DEFENSE IN DEPTH: the next guard, a directory-existence check, produced an identical observable outcome. An assertion on the OUTCOME is blind to the first layer failing, so layered safety can erode to a single layer with nothing going red. B7 now asserts the MECHANISM - reaching the directory check at all is the failure signal, and it also emits a confusing second message to the user. Generalisable: when a safety property has redundant enforcement, test WHICH layer enforced it, not merely that it held.",
+        "self_inflicted_this_session": [
+          "Killed a foreground mutation run at the 2-minute tool timeout while it held a mutation, so the restore never ran. Second occurrence this plan.",
+          "Started a SECOND harness instance while the first was still running, after matching \"Traceback\" in a partial output file and concluding the run had died. The two raced: instance B read a baseline while instance A had X4 applied, so B reported a red baseline for a defect that was not really in the tree. Fixed with an O_EXCL lockfile, so concurrency is now a loud refusal.",
+          "WORST ONE: instance B snapshotted an ALREADY-MUTATED file as its pristine backup, so restore() - the function whose whole job is undoing damage - would have written the X5 defect back permanently, with the tree looking deliberately edited. Backup-and-restore launders corruption into the baseline unless taking the backup validates the source. Every mutation target now declares a required or forbidden marker and the harness REFUSES to snapshot a dirty tree.",
+          "Verified mcp-research-integration.md was MODIFIED and assumed that was my own banner edit without checking WHAT it was modified to - the \"treating a citation as its referent\" error this plan has now named four times.",
+          "My first precondition marker for README.md was the bare string \"deepgrade:doc\", which is a SUBSTRING of the live \"/deepgrade:documentation\" references, so it would have refused to run on a perfectly clean tree. Same substring-versus-token confusion as the merge and Compress-Archive guards, this time inside the safety check itself. The F30 guard proper uses a word boundary after \"doc\" and is correct, since c-to-u is not a boundary."
+        ],
+        "lesson": "Wave 5 was reported closed twice - once by me, once after an audit - and was not closed either time. The first pass fixed defects without writing the class-U/G assertions the rows demanded. The second wrote assertions for the findings I had already been looking at, and never asked whether every ROW had one. What finally worked was treating the acceptance rows as the authority and asking of each: which committed artifact satisfies this? Three had no answer."
       }
     },
     "impact_review": {

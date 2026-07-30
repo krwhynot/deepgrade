@@ -7,8 +7,8 @@ description: (deepgrade) Generate project documentation (ADR, BRD, PRD, README, 
 
 ## Plan awareness
 
-Carried here from `commands/doc.md`, which this skill replaced in v5.0.0 (F30 — the
-command was a 22-line wrapper that re-dispatched to this file, so the two surfaces
+Carried here from the former `doc` command, which this skill replaced in v5.0.0 (F30 —
+the command was a 22-line wrapper that re-dispatched to this file, so the two surfaces
 could drift and one had to go).
 
 If the request names a plan (`--plan {name}`, or the user says "for plan X"), write

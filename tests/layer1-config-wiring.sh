@@ -1302,6 +1302,85 @@ done
 [ "$f28_orphans" -eq 0 ] && pass "F28: every skill has at least one orchestrator (reverse-reference sweep)"
 
 # ===========================================================================
+# 18. F30 stale-reference sweep
+#
+# The Wave 5 acceptance row is its own line and it is class G: "no `/deepgrade:doc`
+# or `commands/doc.md` string survives anywhere". NO guard existed, and I had marked
+# F30 closed on the strength of having deleted the file. Two references survived.
+#
+# "Anywhere" needs a subject scope, because two of the surviving references are
+# HISTORY and rewriting them would be falsification, not a fix. Both exemptions below
+# are therefore STRUCTURAL and self-expiring — neither is a hardcoded pass, and each
+# fires if the condition that justifies it is removed.
+# ===========================================================================
+echo ""
+echo "--- F30 stale-reference sweep ---"
+
+f30_bad=0
+[ -e "$COMMANDS_DIR/doc.md" ] && { fail "F30: $COMMANDS_DIR/doc.md still exists"; f30_bad=1; }
+
+# Subject set: every tracked .md OUTSIDE this plan's own artifacts. A plan document
+# that says "delete /deepgrade:doc" must be able to name it; product surface must not.
+f30_subjects=$(git ls-files '*.md' 2>/dev/null \
+  | grep -v '^docs/plans/' \
+  | grep -v '^docs/specs/plugin-hardening-v5\.md$')
+f30_count=$(printf '%s\n' "$f30_subjects" | grep -c . || true)
+# Floor, per the recurring-vacuous-pass lesson: if the derivation matches almost
+# nothing, a clean sweep proves nothing.
+if [ "$f30_count" -lt 10 ]; then
+  fail "F30: subject set is only $f30_count files — the derivation collapsed, so a pass here would be vacuous"
+  f30_bad=1
+fi
+
+for f in $f30_subjects; do
+  [ -f "$f" ] || continue
+  grep -qE '/deepgrade:doc\b|commands/doc\.md' "$f" 2>/dev/null || continue
+  case "$f" in
+    "$CHANGELOG")
+      # A changelog's released-version entries are immutable: 4.31.0 genuinely DID ship
+      # /deepgrade:doc. Exempt a hit only when it sits under a `## X.Y.Z (date)` heading.
+      # A hit in an Unreleased section, or in prose outside any release, still fails.
+      f30_live=$(awk '
+        /^## [0-9]+\.[0-9]+\.[0-9]+[[:space:]]*\(/ { rel=1; next }
+        /^## / { rel=0; next }
+        /\/deepgrade:doc|commands\/doc\.md/ { if (!rel) printf "%d ", FNR }
+      ' "$f")
+      if [ -n "$f30_live" ]; then
+        fail "F30: $f references /deepgrade:doc outside a released-version entry (line(s): $f30_live)"
+        f30_bad=1
+      fi
+      ;;
+    docs/specs/mcp-research-integration.md)
+      # Shipped-feature spec. The F30 banner marks the doc.md half as history; the
+      # exemption is conditional on that banner existing and naming F30, so deleting
+      # the banner re-arms this check rather than silently keeping the pass.
+      grep -q 'SUPERSEDED IN PART.*F30' "$f" \
+        || { fail "F30: $f names /deepgrade:doc with no F30 superseded marker"; f30_bad=1; }
+      ;;
+    *)
+      fail "F30: $f still references /deepgrade:doc or commands/doc.md — $(grep -nE '/deepgrade:doc\b|commands/doc\.md' "$f" | head -1 | cut -c1-70)"
+      f30_bad=1
+      ;;
+  esac
+done
+
+# THE CHANGELOG EXEMPTION EXPIRES AT 5.0.0. PHV5-080 (Wave 8) writes the 5.0.0 entry,
+# and until it does, a reader of the 4.31.0 entry is left believing the command exists.
+# That is a genuine cross-wave dependency the spec's row did not capture: F30's sweep
+# cannot be fully satisfied by Wave 5 alone. Rather than narrow the row, this asserts
+# the successor obligation — the moment the version ships as 5.x without a recorded
+# removal, this fails.
+f30_ver=$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' "$PLUGIN_JSON" 2>/dev/null | grep -oE '[0-9][^"]*')
+case "${f30_ver:-0}" in
+  [5-9].*|[1-9][0-9].*)
+    grep -qiE '(remove|delete|drop)[^.]{0,60}(/deepgrade:doc|`doc\.md`)' "$CHANGELOG" \
+      || { fail "F30: version is $f30_ver but $CHANGELOG never records the /deepgrade:doc removal — the 4.31.0 entry now misleads (PHV5-080)"; f30_bad=1; }
+    ;;
+esac
+
+[ "$f30_bad" -eq 0 ] && pass "F30: no live /deepgrade:doc or commands/doc.md reference (history exempted structurally, exemption expires at 5.0.0)"
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="

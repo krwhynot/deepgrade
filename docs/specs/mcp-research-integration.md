@@ -128,6 +128,14 @@ Integrate three specialized MCP search tools (Ref, Exa, Perplexity) into the Dee
 **Rollback:** Revert troubleshoot.md
 
 ### MCP-005: Enhance `skills/documentation/SKILL.md` + `commands/doc.md`
+
+> **SUPERSEDED IN PART (2026-07-30, plugin-hardening-v5 finding F30).** `commands/doc.md` was
+> deleted; `skills/documentation/` carries the whole capability and dispatches via
+> `${CLAUDE_SKILL_DIR}`. The text below is left as written — it is the record of what shipped in
+> 4.31.0 — but the `commands/doc.md` half of this ticket, its `allowed-tools` acceptance criterion,
+> and the `/deepgrade:doc adr test-topic` testing step no longer describe anything that exists.
+> Read them as history. The equivalent check today is invoking the documentation skill.
+
 **Risk:** LOW
 **Files:** `skills/documentation/SKILL.md` (EDIT), `commands/doc.md` (EDIT)
 **Changes:**
