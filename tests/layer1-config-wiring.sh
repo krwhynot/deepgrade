@@ -235,7 +235,9 @@ if [ -f "$README" ]; then
   if [ -n "$readme_version" ]; then
     pass "README.md version: $readme_version"
   else
-    warn "Could not extract version from README.md (no 'Current: vX.Y.Z' pattern)"
+    # A present README whose version marker cannot be read is DRIFT, not "nothing to
+    # check" — spelling the version differently made this assertion vanish silently.
+    fail "Could not extract version from README.md (expected a 'Current: vX.Y.Z' pattern) — the version cross-check cannot run"
   fi
 else
   warn "README.md not found"
@@ -248,7 +250,7 @@ if [ -f "$CHANGELOG" ]; then
   if [ -n "$changelog_version" ]; then
     pass "CHANGELOG.md version: $changelog_version"
   else
-    warn "Could not extract version from CHANGELOG.md"
+    fail "Could not extract a version from CHANGELOG.md (expected a '## X.Y.Z' heading) — the version cross-check cannot run"
   fi
 fi
 
@@ -423,7 +425,8 @@ if [ "$readme_agent_count" -gt 0 ]; then
     fail "Agent count mismatch: agents/ has $agent_count files, README says $readme_agent_count"
   fi
 else
-  warn "Could not extract agent count from README"
+  # Was a warn, so "**twenty-two agents**" silently removed this assertion.
+  fail "Could not extract an agent count from README (expected '**N agents**') — the count cross-check cannot run"
 fi
 
 echo ""
@@ -485,26 +488,30 @@ pj_marker_prefix=""
 
 if [ -f "$README" ]; then
   # Look for /tmp/XX- patterns in README
-  readme_marker_prefix=$(grep -oE "/tmp/[a-z]+-" "$README" | head -1 | sed 's|/tmp/||;s/-$//')
+  # Accepts either a $TMPDIR/dg-* or a legacy /tmp/dg-* spelling; only the prefix matters.
+  readme_marker_prefix=$(grep -ohE '(\$TMPDIR|/tmp)/[a-z]+-' "$README" | head -1 | sed 's|.*/||;s/-$//')
 fi
 
-if [ -f "$PLUGIN_JSON" ]; then
-  # Look for /tmp/XX- patterns in plugin.json
-  pj_marker_prefix=$(grep -oE "/tmp/[a-z]+-" "$PLUGIN_JSON" | head -1 | sed 's|/tmp/||;s/-$//')
-fi
+# The handlers are what write the markers, so compare against THEM. This used to read
+# plugin.json, which stopped containing hooks at 4b — so the check silently degraded to
+# a warn and verified nothing. The handlers build paths as
+# `path.join(tmp, 'dg-<kind>-<session>')` where tmp resolves TMPDIR/TEMP/os.tmpdir(),
+# so the literal string to look for is the `dg-` filename prefix, not a /tmp path.
+pj_marker_prefix=$(grep -ohE "dg-(baseline|build|test)-" scripts/*.js 2>/dev/null \
+                   | head -1 | sed 's/-[a-z]*-$//')
 
 if [ -n "$readme_marker_prefix" ] && [ -n "$pj_marker_prefix" ]; then
   if [ "$readme_marker_prefix" = "$pj_marker_prefix" ]; then
-    pass "Session marker prefix consistent: /tmp/$pj_marker_prefix-*"
+    pass "Session marker prefix consistent between README and scripts/: ${pj_marker_prefix}-*"
   else
-    warn "Session markers: README says /tmp/$readme_marker_prefix-* but plugin.json uses /tmp/$pj_marker_prefix-*"
+    fail "Session markers: README says ${readme_marker_prefix}-* but scripts/ write ${pj_marker_prefix}-*"
   fi
 elif [ -n "$readme_marker_prefix" ]; then
-  warn "Session marker prefix found in README (/tmp/$readme_marker_prefix-*) but not in plugin.json"
+  fail "Session marker prefix ${readme_marker_prefix}-* documented in README but no handler in scripts/ writes it"
 elif [ -n "$pj_marker_prefix" ]; then
-  warn "Session marker prefix found in plugin.json (/tmp/$pj_marker_prefix-*) but not in README"
+  fail "Handlers write ${pj_marker_prefix}-* markers but README documents no session-marker location"
 else
-  warn "Could not extract session marker prefix from either file"
+  fail "Could not extract a session-marker prefix from README or scripts/ — the cross-check cannot run"
 fi
 
 echo ""
@@ -546,7 +553,8 @@ else
   # 8c. Command count in the subtitle must equal the real count
   guide_cmd_count=$(grep -oE '\*\*[0-9]+ Commands\*\*' "$GUIDE" | head -1 | grep -oE '[0-9]+')
   if [ -z "$guide_cmd_count" ]; then
-    warn "F20A: no '**N Commands**' subtitle found in $GUIDE"
+    # Was a warn: "**Seventeen Commands**" made the check disappear rather than fail.
+    fail "F20A: no '**N Commands**' subtitle in $GUIDE — write the count as a numeral so it can be cross-checked against commands/"
   elif [ "$guide_cmd_count" -eq "$cmd_count" ]; then
     pass "F20A: GUIDE command count matches commands/ ($cmd_count)"
   else
@@ -557,7 +565,7 @@ else
   real_skill_count=$(find skills -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
   guide_skill_count=$(grep -oE '\*\*[0-9]+ Skills\*\*' "$GUIDE" | head -1 | grep -oE '[0-9]+')
   if [ -z "$guide_skill_count" ]; then
-    warn "F20A: no '**N Skills**' subtitle found in $GUIDE"
+    fail "F20A: no '**N Skills**' subtitle in $GUIDE — write the count as a numeral so it can be cross-checked against skills/"
   elif [ "$guide_skill_count" -eq "$real_skill_count" ]; then
     pass "F20A: GUIDE skill count matches skills/ ($real_skill_count)"
   else

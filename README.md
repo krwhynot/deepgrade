@@ -152,14 +152,14 @@ The plugin auto-detects your stack. Tested on:
 | Plan documents | `docs/plans/{date}-{name}/` | Yes |
 | Specifications | `docs/specs/` | Yes |
 | ADRs | `docs/adr/` | Yes |
-| Session markers | `/tmp/dg-*` | No (OS-managed) |
+| Session markers | `$TMPDIR/dg-*` (`%TEMP%` on Windows) | No (OS-managed) |
 
 ## Architecture
 
 - **22 agents** - Specialized scanners and generators
 - **6 skills** - Docs, governance, readiness, knowledge, self-audit, MCP research
 - **6 doc templates** - ADR, BRD, PRD, README, release notes, spec
-- **8 reference scripts** - Hook logic reference (not runtime)
+- **8 hook handlers** - `scripts/dg-*.js`, the runtime safety layer (was labelled "reference, not runtime" before 5.0.0, which is now inverted: F06 exists precisely to stop unwired code shipping)
 
 ## Version History
 

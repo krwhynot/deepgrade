@@ -119,6 +119,59 @@ const r5on = run('dg-git-guard.js', { session_id: 's', tool_input: { command: 'g
 check('rows 5-6: active when DG_STRICT_GIT=1', r5on.exit === 2 && /npm run build/.test(r5on.err),
   `exit ${r5on.exit} ${r5on.err}`);
 
+// Row 6: staging-count sanity check. This had NO test — the two rows-5/6 assertions
+// above both assert row 5's build message, so the row shipped untested and F05 was
+// marked closed on "tests for all ELEVEN ledger rows". The behaviour is live: it
+// denies when far more files are staged than were edited this session, which catches
+// an accidental `git add -A` over unrelated work.
+(() => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row6-'));
+  // 1 file edited this session...
+  fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), '{"session_changes":1,"total_changes_since_audit":1}');
+  // ...and a fresh build marker, so the check under test is row 6 and not row 5.
+  fs.writeFileSync(path.join(tmp, 'dg-build-s'), '1');
+
+  // A real repo with many staged files, so `git diff --cached` returns a big number.
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row6repo-'));
+  const git = (...a) => spawnSync('git', a, { cwd: repo, encoding: 'utf8' });
+  git('init', '-q');
+  git('config', 'user.email', 'x@example.com');
+  git('config', 'user.name', 'x');
+  for (let i = 0; i < 20; i++) fs.writeFileSync(path.join(repo, `f${i}.txt`), 'x\n');
+  git('add', '-A');
+  fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({ scripts: { build: 'tsc' } }));
+
+  const r = spawnSync(process.execPath, [S('dg-git-guard.js')], {
+    input: JSON.stringify({ session_id: 's', tool_input: { command: 'git commit -m wip' } }),
+    encoding: 'utf8', cwd: repo,
+    env: { ...process.env, TMPDIR: tmp, TEMP: tmp, DG_STRICT_GIT: '1' },
+  });
+  check('row 6: staging-count check denies 20 staged against 1 edited',
+    r.status === 2 && /Staging check/.test(r.stderr || ''),
+    `exit ${r.status} stderr=${(r.stderr || '').trim().slice(0, 70)}`);
+
+  // Negative: a proportionate staged count must pass. The threshold is edits*2+5, so
+  // 1 edit tolerates up to 7 staged files.
+  const tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row6b-'));
+  fs.writeFileSync(path.join(tmp2, 'dg-baseline-s'), '{"session_changes":1,"total_changes_since_audit":1}');
+  fs.writeFileSync(path.join(tmp2, 'dg-build-s'), '1');
+  const repo2 = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row6repo2-'));
+  const git2 = (...a) => spawnSync('git', a, { cwd: repo2, encoding: 'utf8' });
+  git2('init', '-q');
+  git2('config', 'user.email', 'x@example.com');
+  git2('config', 'user.name', 'x');
+  for (let i = 0; i < 3; i++) fs.writeFileSync(path.join(repo2, `g${i}.txt`), 'x\n');
+  git2('add', '-A');
+  fs.writeFileSync(path.join(repo2, 'package.json'), JSON.stringify({ scripts: { build: 'tsc' } }));
+  const r2 = spawnSync(process.execPath, [S('dg-git-guard.js')], {
+    input: JSON.stringify({ session_id: 's', tool_input: { command: 'git commit -m wip' } }),
+    encoding: 'utf8', cwd: repo2,
+    env: { ...process.env, TMPDIR: tmp2, TEMP: tmp2, DG_STRICT_GIT: '1' },
+  });
+  check('row 6 negative: 3 staged against 1 edited is proportionate and passes',
+    r2.status === 0, `exit ${r2.status} stderr=${(r2.stderr || '').trim().slice(0, 70)}`);
+})();
+
 // A recorded build inside the 120-minute window satisfies it.
 const buildTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-bld-'));
 fs.writeFileSync(path.join(buildTmp, 'dg-build-s'), '1');
