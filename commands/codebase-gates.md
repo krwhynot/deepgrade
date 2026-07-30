@@ -34,7 +34,8 @@ Spawn the gate-generator agent with paths to all audit data files.
 
 The gate-generator now produces 6 outputs (up from 4):
 1. .github/workflows/deepgrade-gate.yml (CI quality gate)
-2. .claude/hooks/hooks.json (Claude Code hooks: risk warnings + baseline nudges)
+2. the `hooks` key of .claude/settings.json (Claude Code hooks: risk warnings + baseline
+   nudges) — MERGED into any existing content, never overwritten
 3. .claude/scripts/check-risk-zone.sh (risk zone checker)
 4. .claude/scripts/baseline-tracker.sh (file change counter + staleness checker)
 5. .pre-commit-config.yaml (pre-commit hooks, if applicable)
@@ -46,7 +47,7 @@ After generation, list what was created organized by layer:
 
 ```
 LAYER 1: Passive Tracking
-  .claude/hooks/hooks.json -> PostToolUse counter (tracks file changes per session)
+  .claude/settings.json (hooks key) -> PostToolUse counter (tracks file changes per session)
   .claude/scripts/baseline-tracker.sh -> Counter script
 
 LAYER 2: Smart Nudges (when these trigger)

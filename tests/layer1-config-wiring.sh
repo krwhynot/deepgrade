@@ -1371,10 +1371,27 @@ fi
 #     key of .claude/settings.json. hooks/hooks.json is the PLUGIN-side location and
 #     is not read from a project directory, so hooks written there never fire.
 f08_bad=0
-if grep -q '\.claude/hooks/hooks\.json' "$AGENTS_DIR/gate-generator.md"; then
-  fail "F08: gate-generator targets .claude/hooks/hooks.json — not read from a project dir, so generated hooks are inert"
+# EVERY component participating in gate generation, not just the agent. The guard searched
+# only agents/gate-generator.md, so the PARENT COMMAND kept promising the inert path at
+# commands/codebase-gates.md:37 and :49 while F08 stayed green (Codex round 3, N5). The
+# command is what the user reads: it deployed the corrected agent and then presented the
+# old path as the result. A finding about a wrong path is not closed while any component
+# still names it.
+#
+# Derived: any command or agent that references the gate generator. A new participant is
+# swept automatically instead of needing to be remembered here.
+f08_components=$(grep -rlE 'gate-generator|codebase-gates' "$AGENTS_DIR" "$COMMANDS_DIR" 2>/dev/null | sort -u)
+f08_comp_count=$(printf '%s\n' "$f08_components" | grep -c . || true)
+if [ "$f08_comp_count" -lt 2 ]; then
+  fail "F08: derived only $f08_comp_count gate-generation component(s) — the derivation collapsed, so a clean sweep would be vacuous"
   f08_bad=1
 fi
+for f in $f08_components; do
+  if grep -q '\.claude/hooks/hooks\.json' "$f"; then
+    fail "F08: $f names .claude/hooks/hooks.json — that is the PLUGIN-side path, never read from a project dir, so hooks written there are inert"
+    f08_bad=1
+  fi
+done
 grep -q '\.claude/settings\.json' "$AGENTS_DIR/gate-generator.md" \
   || { fail "F08: gate-generator must target the hooks key of .claude/settings.json"; f08_bad=1; }
 # A bare `grep -qi merge` was satisfied by the CI-workflow line "Merge into existing
@@ -1402,8 +1419,19 @@ grep -qiE 'not drop sibling keys' "$AGENTS_DIR/gate-generator.md" \
 # cannot prove the agent OBEYS it, because gate-generator's output is produced by a
 # model. That clause is recorded NOT MET by class-G means; PHV5-044's runtime proof is
 # what would settle it.
-if ! grep -qE '^[[:space:]]*(Always[[:space:]]+)?Emit a PowerShell variant' "$AGENTS_DIR/gate-generator.md"; then
-  fail "F08: gate-generator has no sentence-initial 'Emit a PowerShell variant…' instruction — Windows without Git Bash dispatches through PowerShell"
+# PER-LINE, not sentence-initial-only. The strict anchor rejected the legitimate rewrite
+# "For every generated hook, also emit a PowerShell variant." (Codex round 3). A line
+# carrying the instruction counts; a line carrying a negation does not — which keeps
+# "Do not omit Windows support." on its own line harmless while rejecting
+# "Do not emit a PowerShell variant". Comments and fenced examples are excluded so a
+# sample block cannot stand in for an instruction.
+f08_ps=$(awk '/^```/ { inf = !inf; next } inf { next }
+              /^[[:space:]]*(#|>|\|)/ { next }
+              tolower($0) ~ /emit a powershell variant/ &&
+              tolower($0) !~ /(do not|don.t|never|avoid|no need|omit the)[^.]{0,30}emit/ { n++ }
+              END { print n+0 }' "$AGENTS_DIR/gate-generator.md")
+if [ "${f08_ps:-0}" -lt 1 ]; then
+  fail "F08: gate-generator carries no affirmative 'emit a PowerShell variant' instruction outside comments and examples — Windows without Git Bash dispatches through PowerShell"
   f08_bad=1
 fi
 [ "$f08_bad" -eq 0 ] && pass "F08: gate-generator targets settings.json, merges, and carries an affirmative PowerShell-variant imperative (necessary, not sufficient)"

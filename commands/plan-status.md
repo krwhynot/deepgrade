@@ -8,6 +8,9 @@ allowed-tools: Read, Grep, Glob, Bash
 ## If no argument: Show all plans
 
 ```bash
+# dg-test-marker: plan-status-overview
+# Stable selector for tests/layer4 B6. Identifying this block by "first bash block"
+# or by content let an illustrative block become the tested subject. Do not remove.
 PLANS_DIR="docs/plans"
 [ ! -d "$PLANS_DIR" ] && [ -d "plans" ] && PLANS_DIR="plans"
 if [ ! -d "$PLANS_DIR" ]; then

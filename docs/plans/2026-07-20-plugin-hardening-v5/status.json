@@ -210,10 +210,7 @@
         "PHV5-041",
         "PHV5-042",
         "PHV5-043",
-        "PHV5-050",
-        "PHV5-051",
-        "PHV5-052",
-        "PHV5-053"
+        "PHV5-051"
       ],
       "findings_closed": [
         "F01",
@@ -233,15 +230,13 @@
         "F29",
         "F31",
         "F32",
-        "F08",
         "F09",
         "F10",
         "F11",
         "F13",
         "F14",
         "F15",
-        "F28",
-        "F30"
+        "F28"
       ],
       "wave_1_complete": {
         "date": "2026-07-29",
@@ -476,6 +471,22 @@
           "F08 PowerShell variant: instruction presence provable, agent obedience not. Needs PHV5-044.",
           "F15 archive fallback: Codex showed `powershell.exe -Command \"Write-Output Compress-Archive\"` satisfies any command-position grep while creating no archive. Genuinely behavioral; needs a stubbed execution test or PHV5-044.",
           "F30 skill dispatch / plan awareness: same shape as F08."
+        ]
+      },
+      "codex_wave5_round3_2026_07_30": {
+        "provenance_verbatim": "model: gpt-5.6-sol | reasoning effort: xhigh | provider: openai | approval: never | sandbox: workspace-write | codex-cli 0.146.0 | session id: 019fb402-6371-7250-a90e-e85ec5335ce7 | tokens used: 495,315. From the `codex exec` header. 16th consecutive header-pinned round. Reviewed 61cd56b; it CLONED the repo and executed the mutation harness in isolation rather than reading it.",
+        "verdict_quoted": "The structural changes only partly hold. The frontmatter boundary and explicit B6 plan selection are real improvements, and the original F2, F7, and N8 auditability mechanisms are closed. But the other two \"changes of kind\" remain lexical: the imperative accepts examples/comments, and B7 inserts its canary after the directory `if`, allowing a duplicate-anchor variant to pass with the sentinel inert.",
+        "mechanism_vs_instance": "The question this round existed to answer. Only F2, F7 and N8 are MECHANISM CLOSED. Nine of fourteen prior findings are STILL OPEN under a VARIANT rather than the demonstrated input: FOLDER=\"${@:1:1}\" escapes F09; echo '${CLAUDE_PROJECT_DIR}' satisfies F10; `nice tree .` and `builtin tree .` escape F15; \"The deepgrade:mcp-research skill must never be invoked\" counts affirmative because the negation FOLLOWS the token. Three rounds now: I fix the instance, Codex finds the mechanism.",
+        "LIVE_PRODUCT_DEFECT_n5": "The most serious finding, and it is a shipping defect rather than a test weakness. commands/codebase-gates.md named .claude/hooks/hooks.json at :37 and :49 - the PLUGIN-SIDE path a project never reads, which is the entire defect F08 exists to remove. I fixed agents/gate-generator.md and wrote a guard that searched ONLY the agent, so the parent command deployed the corrected agent and then presented the inert path to the user as the result, with F08 green. Fixed, and the sweep now DERIVES every component referencing gate-generator or codebase-gates instead of naming one file.",
+        "my_canary_was_in_the_wrong_place_and_my_own_comment_said_so": "B7 injected the canary with awk `{print} /anchor/{print canary}` - which prints the matched line FIRST, so the canary became the first command INSIDE the `if` body and fired only when the condition was TRUE. It could not detect reaching a guard whose test was false. Line 334 of the file read, verbatim: \"awk prints the canary AFTER the matched line, so move it before the `if`.\" I wrote that note and never acted on it. Codex built a two-guard variant that passed with the sentinel inert. Now printed BEFORE the line, every occurrence instrumented, and exactly one marker required.",
+        "f15_was_directly_testable_and_i_routed_it_to_phv5_044": "I recorded F15's archive fallback as \"not closeable by class-G means, pending PHV5-044\". Wrong twice: it is directly testable, and PHV5-044 is scoped to shipped hook events and would never have exercised it. New test B8 executes the archive branch with `zip` absent and a stubbed powershell.exe, and asserts an archive FILE EXISTS. Falsifying both ways: passes on the real invocation, FAILS on the Write-Output decoy that the grep guard still reports green.",
+        "b8_took_four_attempts_and_every_failure_was_mine": "Worth recording because the last one is the instructive one. (1) An inline `bash -c` reconstruction mangled the script. (2) `ls *.zip *.tar.gz` exits NON-ZERO when either operand is missing, so a successful .zip failed the check. (3) THE STUB ITSELF ACCEPTED THE DECOY: it matched *Compress-Archive*-DestinationPath*, which \"Write-Output Compress-Archive -Path ...\" also satisfies, so B8 passed the exact mutant it exists to catch. A behavioural test is only as discriminating as its test double; the stub had to emulate PowerShell SEMANTICS - Compress-Archive as the COMMAND, not as a word - or it was a slower grep. Had I trusted any of the three red results I would have \"fixed\" a working product.",
+        "harness_oracle_was_too_loose": "Codex N3, all confirmed. run() discarded subprocess status, so a suite that CRASHED returned an empty failure list and read as \"caught\" for a catch case and \"quiet\" for a control. Controls checked only their own tag, so a legitimate edit that broke something else still read OK-QUIET. A red FINAL baseline was printed and ignored. Also: I reported \"27 caught, 5 controls\" to the owner; the list was 26 catch / 6 quiet. All fixed; the count is now derived rather than asserted from memory.",
+        "reopened": "PHV5-050, PHV5-052, PHV5-053 removed from tickets_complete. F08 and F30 removed from findings_closed. F08 is not met end-to-end (the parent command contradicted the agent; fixed now but unverified by an independent round). F30's absolute row still says \"anywhere\" while the allowlist intentionally retains matching strings inside this plan's own directory - the row and the guard do not agree, and the row is what governs. F13 is currently MET at 61cd56b against the named plan at phase build, but instance-only.",
+        "still_open_after_this_pass": [
+          "F30: the row says \"anywhere\" and the guard allowlists this plan's own artifacts. Either the row is reworded by a change record, or the plan's records stop naming the strings. Not something to decide silently - it is the third time F30 has been recorded closed while the row was false.",
+          "F09/F10/F15/F28 guards remain defeatable by variants Codex named (${@:1:1}, quoted literals, `nice tree`, postposed negation). Each is the same ceiling: grep deciding intent.",
+          "F28 loading and F08 agent obedience remain model-behaviour claims. PHV5-044 does NOT cover them - Codex is right that it is scoped to shipped hook events - so dedicated command/agent invocation fixtures are needed, or an honest NOT MET record."
         ]
       }
     },

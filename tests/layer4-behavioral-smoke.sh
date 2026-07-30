@@ -224,17 +224,22 @@ else
         "$B6_TMP/docs/plans/$B6_PLAN_NAME/status.json" 2>/dev/null \
         | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
     touch "$B6_TMP/docs/plans/$B6_PLAN_NAME/brainstorm.md"
-    # Select by CONTENT, not ordinal. "first bash block" let an inserted decoy block
-    # become the tested subject while the real overview loop was broken, and Layer 4
-    # still reported 10/0/0 (Codex N6). The overview is the block that both assigns
-    # PLANS_DIR and loops over it; a decoy would have to be a working overview to match.
+    # Select by a UNIQUE STABLE MARKER, and require exactly one.
+    #
+    # "first bash block" let an inserted decoy become the subject (Codex N6). Matching on
+    # content instead was better but still defeatable: a decoy carrying both fragments was
+    # selected while the real overview was broken (N7). Content-matching is a guess about
+    # which block is executable; a marker is a declaration. Requiring exactly one turns an
+    # ambiguous refactor into a loud failure instead of a silent wrong subject.
+    b6_marked=$(grep -c '^# dg-test-marker: plan-status-overview' "$PS_MD" || true)
     awk '/^```bash/{inb=1; buf=""; next}
          inb && /^```/{
-           if (buf ~ /PLANS_DIR="docs\/plans"/ && buf ~ /for [A-Za-z_]+ in "\$\{?PLANS_DIR\}?"\/\*\//) {
-             printf "%s", buf; exit
-           }
+           if (buf ~ /^# dg-test-marker: plan-status-overview/) { printf "%s", buf; exit }
            inb=0; next }
          inb { buf = buf $0 "\n" }' "$PS_MD" > "$B6_TMP/overview.sh"
+    if [[ "$b6_marked" -ne 1 ]]; then
+        fail "B6: found $b6_marked overview markers in plan-status.md — expected exactly 1; without it the tested subject is a guess"
+    fi
     if [[ ! -s "$B6_TMP/overview.sh" ]]; then
         fail "B6: could not extract the overview block from plan-status.md"
     elif [[ -z "$B6_PLAN_NAME" || -z "$B6_WANT_PHASE" ]]; then
@@ -328,14 +333,24 @@ else
         #
         # A canary emitted immediately before the directory check settles reachability
         # regardless of what anything downstream prints, and needs no coupling to copy.
-        awk '{ print }
-             /^if \[ ! -d "\$FOLDER" \]/ && !done { print "echo __B7_REACHED_DIR_CHECK__"; done=1 }' \
-            "$B7_TMP/inventory.sh" > "$B7_TMP/probe.sh"
-        # awk prints the canary AFTER the matched line, so move it before the `if`.
-        grep -n '__B7_REACHED_DIR_CHECK__' "$B7_TMP/probe.sh" >/dev/null 2>&1 || {
+        # Canary printed BEFORE the matched line. The previous version printed the line
+        # first, so the canary became the first command INSIDE the `if` body and fired
+        # only when the condition was TRUE — it could not detect reaching a guard whose
+        # test was false. My own comment on that line said "move it before the `if`" and
+        # I never did; Codex round 3 (N2) built a two-guard variant that passed with the
+        # sentinel inert. Matching every occurrence, not just the first, for the same
+        # reason: `done=1` left later guards uninstrumented.
+        awk '/^[[:space:]]*if \[+ ! -d "\$FOLDER" \]+/ { print "echo __B7_REACHED_DIR_CHECK__"; n++ }
+             { print }
+             END { exit (n == 0 ? 1 : 0) }' \
+            "$B7_TMP/inventory.sh" > "$B7_TMP/probe.sh" || {
             # Anchor drifted; refuse to report a pass we cannot substantiate.
-            fail "B7: could not instrument the directory check — the canary anchor no longer matches, so reachability is unverified"
+            fail "B7: could not instrument the directory check — the canary anchor matched nothing, so reachability is unverified"
         }
+        # Exactly one instrumented site, so an ambiguous refactor fails loudly rather than
+        # leaving a silent uninstrumented path.
+        b7_marks=$(grep -c '__B7_REACHED_DIR_CHECK__' "$B7_TMP/probe.sh" || true)
+        [ "$b7_marks" -eq 1 ] || fail "B7: instrumented $b7_marks directory guards — expected exactly 1; an uninstrumented guard is an unverified path"
         B7_OUT=$(cd "$B7_TMP" && bash probe.sh 2>&1) && B7_RC=0 || B7_RC=$?
         if [[ $B7_RC -ne 0 ]]; then
             fail "B7: zero-arg path exited $B7_RC — it must degrade cleanly, not error"
@@ -352,6 +367,86 @@ else
         fi
     fi
     rm -rf "$B7_TMP"
+    fi
+fi
+
+echo ""
+
+# -----------------------------------------------
+# Test B8: the archive fallback must actually CREATE an archive (F15)
+#
+# Codex demonstrated that `powershell.exe -Command "Write-Output Compress-Archive"`
+# satisfies any command-position grep while creating nothing — the guard proved a cmdlet
+# NAME appeared next to `powershell`, which is not the property F15 cares about. I had
+# recorded this clause as "not closeable by class-G means, pending PHV5-044". That was
+# wrong twice over: it IS directly testable, and PHV5-044 is scoped to shipped hook
+# events and would never have exercised it.
+#
+# The branch is executed with `zip` and `powershell.exe` stubbed onto PATH, and the test
+# asserts an archive FILE EXISTS afterwards. A fallback that prints the cmdlet's name now
+# fails; one that invokes it passes.
+# -----------------------------------------------
+echo "--- B8: plan-export archive fallback creates an archive (F15, executed) ---"
+PE_MD="$PLUGIN_ROOT/commands/plan-export.md"
+if [[ ! -f "$PE_MD" ]]; then
+    fail "B8: commands/plan-export.md is missing"
+else
+    B8_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/dg-b8-XXXXXX") || B8_TMP=""
+    if [[ -z "$B8_TMP" || ! -d "$B8_TMP" ]]; then
+        fail "B8: could not create a temp dir"
+    else
+        mkdir -p "$B8_TMP/bin" "$B8_TMP/work/plans"
+        echo "content" > "$B8_TMP/work/plans/file.md"
+        # Stub PowerShell: honours Compress-Archive by creating the destination, and does
+        # nothing for anything else. This is what makes "Write-Output Compress-Archive"
+        # distinguishable from a real invocation.
+        # The stub emulates PowerShell's SEMANTICS, not its vocabulary. Compress-Archive
+        # must be the COMMAND, i.e. the first token of the -Command string. My first stub
+        # matched `*Compress-Archive*-DestinationPath*`, which
+        # `Write-Output Compress-Archive -Path ...` also satisfies — so B8 passed the exact
+        # decoy it exists to catch. Real PowerShell would print that and create nothing.
+        # A behavioural test whose stub accepts decoys is just a slower grep.
+        cat > "$B8_TMP/bin/powershell.exe" <<'B8PS'
+#!/usr/bin/env bash
+cmd=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -Command|-command|-c) shift; cmd="$1"; break ;;
+    *) shift ;;
+  esac
+done
+# First token of the command string decides what runs.
+set -- $cmd
+[ "$1" = "Compress-Archive" ] || exit 0
+dest=$(printf '%s\n' "$cmd" | sed -n "s/.*-DestinationPath[[:space:]]*'\{0,1\}\([^' ]*\).*/\1/p")
+[ -n "$dest" ] && printf 'stub-archive\n' > "$dest"
+B8PS
+        chmod +x "$B8_TMP/bin/powershell.exe"
+        # No `zip` on PATH, so the PowerShell branch is the one taken.
+        awk '/^```bash/{inb=1; buf=""; next}
+             inb && /^```/{ if (buf ~ /Compress-Archive/) { printf "%s", buf; exit } inb=0; next }
+             inb { buf = buf $0 "\n" }' "$PE_MD" > "$B8_TMP/archive.sh"
+        if [[ ! -s "$B8_TMP/archive.sh" ]]; then
+            fail "B8: could not extract the archive block from plan-export.md"
+        else
+            # Run the extracted block AS A FILE with env supplied, not reassembled inside
+            # `bash -c`. The inline form mangled the script and reported a failure that
+            # was mine, not the product's — the fallback creates the archive correctly.
+            # Drop only the two lines that move the result outside this sandbox.
+            sed 's/^mv .*//; s/^echo "Export complete.*//' "$B8_TMP/archive.sh" > "$B8_TMP/run.sh"
+            B8_OUT=$(cd "$B8_TMP/work" && PATH="$B8_TMP/bin:/usr/bin:/bin" \
+                EXPORT_DIR="." PLAN_NAME="smoke" bash "$B8_TMP/run.sh" 2>&1) || true
+            # Count matches instead of `ls a b`, which exits NON-ZERO when EITHER operand
+            # is missing — so a successful .zip still failed because no .tar.gz existed.
+            # My third self-inflicted red on this one test.
+            b8_archives=$(find "$B8_TMP/work" -maxdepth 1 \( -name '*.zip' -o -name '*.tar.gz' \) 2>/dev/null | grep -c . || true)
+            if [ "$b8_archives" -gt 0 ]; then
+                pass "B8: the archive fallback produced an archive file (not merely named the cmdlet)"
+            else
+                fail "B8: the archive branch ran but created NO archive — a fallback that only names Compress-Archive is inert on stock Windows: $(head -c 160 <<<"$B8_OUT")"
+            fi
+        fi
+        rm -rf "$B8_TMP"
     fi
 fi
 

@@ -22,6 +22,7 @@ atexit.register(lambda: os.path.exists(LOCK) and os.unlink(LOCK))
 
 FILES = ['commands/quick-cleanup.md', 'commands/plan-status.md', 'commands/plan-export.md',
          'commands/readiness-generate.md', 'commands/plan.md', 'commands/help.md',
+         'commands/codebase-gates.md',
          'agents/gate-generator.md', 'skills/documentation/SKILL.md',
          'skills/mcp-research/SKILL.md', 'README.md', 'CHANGELOG.md',
          'docs/specs/mcp-research-integration.md']
@@ -51,14 +52,35 @@ def restore():
         io.open(f, 'w', encoding='utf-8', newline='').write(s)
 
 def run(script):
+    """Returns (fail_lines, crashed). A TAG-ONLY ORACLE IS NOT ENOUGH.
+
+    The previous version returned only lines starting with [FAIL] and discarded the
+    subprocess status entirely, so a suite that crashed mid-run — set -u, a syntax
+    error, an unlabelled abort — produced an empty list and read as CLEAN. A mutation
+    that broke the harness rather than tripping the guard therefore counted as
+    'caught' for a catch case, and as 'quiet' for a control (Codex round 3, N3).
+    """
     r = subprocess.run(['bash', script], capture_output=True, text=True,
                        encoding='utf-8', errors='replace')
-    return [l for l in (r.stdout or '').splitlines() if l.startswith('[FAIL]')]
+    out = r.stdout or ''
+    fails = [l for l in out.splitlines() if l.startswith('[FAIL]')]
+    # A suite that neither printed a Results line nor exited cleanly did not run to
+    # completion, whatever it printed.
+    completed = 'Results:' in out
+    crashed = (not completed) or (r.returncode != 0 and not fails)
+    return fails, crashed
 
 def l1(): return run('tests/layer1-config-wiring.sh')
 def l4(): return run('tests/layer4-behavioral-smoke.sh')
 
 def patch(f, old, new, count=1):
+    # REFUSE to mutate a file that was never backed up. V1 targeted
+    # commands/codebase-gates.md, which was absent from FILES, so restore() could not undo
+    # it and the mutant was left in the working tree — reintroducing the live shipping
+    # defect the mutation was written to detect. Caught only by the new red-final-baseline
+    # check. A harness that can edit outside its backup set is a corruption tool.
+    if f not in BAK:
+        raise AssertionError('%s is not in FILES; refusing to mutate a file with no backup' % f)
     s = io.open(f, encoding='utf-8', newline='').read()
     # EOL-AWARE. This tree has mixed line endings (core.autocrlf=true on the reference
     # host), and a multi-line anchor written with '\n' silently matches nothing in a CRLF
@@ -73,8 +95,18 @@ def patch(f, old, new, count=1):
     io.open(f, 'w', encoding='utf-8', newline='').write(s.replace(old, new, count))
     return True
 
+def append_prose(f, text):
+    """Append a plain prose line — NOT a fenced block. Used by controls, which must be
+    edits a maintainer would plausibly make."""
+    assert f in BAK, '%s is not in FILES; refusing to mutate a file with no backup' % f
+    s = io.open(f, encoding='utf-8', newline='').read()
+    nl = '\r\n' if '\r\n' in s else '\n'
+    io.open(f, 'w', encoding='utf-8', newline='').write(s + nl + text + nl)
+    return True
+
 def append_block(f, body):
     """Append a fenced bash block to a command file."""
+    assert f in BAK, '%s is not in FILES; refusing to mutate a file with no backup' % f
     s = io.open(f, encoding='utf-8', newline='').read()
     nl = '\r\n' if '\r\n' in s else '\n'
     io.open(f, 'w', encoding='utf-8', newline='').write(
@@ -180,8 +212,12 @@ MUTS = [
                 'echo "No source folder given. Usage: /deepgrade:quick-cleanup <folder>"\n  :')
           and patch('commands/quick-cleanup.md', 'echo "Not a directory: $FOLDER"', 'echo ""'), 'catch'),
  # --- Controls: must stay SILENT ---
+ # Was a BAD CONTROL: replacing '## ' produced an EMPTY heading and demoted the original
+ # heading text to prose (Codex round 3). A control has to be an edit a maintainer would
+ # actually make, or "the guard stayed quiet" says nothing about legitimate work.
  ('Z1  control: prose about a "directory tree" (not a command)', l1, 'F15',
-  lambda: patch('commands/readiness-generate.md', '## ', '## \nThe directory tree is deep.\n'), 'quiet'),
+  lambda: append_prose('commands/readiness-generate.md',
+                       'The directory tree is deep, so prefer a bounded find.'), 'quiet'),
  ('Z2  control: reword an unrelated CI merge line', l1, 'F08',
   lambda: patch('agents/gate-generator.md', 'Merge into existing files.', 'Combine with existing files.'), 'quiet'),
  # Over-strictness controls. A guard that fires on a LEGITIMATE edit gets weakened by
@@ -195,11 +231,33 @@ MUTS = [
   lambda: patch('commands/quick-cleanup.md',
                 'No source folder given. Usage: /deepgrade:quick-cleanup <folder>',
                 'No source folder supplied. Usage: /deepgrade:quick-cleanup <folder>'), 'quiet'),
+ ('Z6  control: legitimate rewrite "For every generated hook, also emit..."', l1, 'F08',
+  lambda: patch('agents/gate-generator.md',
+                'Emit a PowerShell variant of every generated hook command alongside the POSIX one.',
+                'For every generated hook, also emit a PowerShell variant alongside the POSIX one.'), 'quiet'),
+ # --- Round 3 (Codex): the live product defect, the behavioural archive test, and the
+ #     canary/marker fixes. Each is a variant Codex demonstrated, not a re-run.
+ ('V1  the PARENT COMMAND names the inert plugin-side hooks path', l1, 'F08',
+  lambda: patch('commands/codebase-gates.md',
+                'the `hooks` key of .claude/settings.json',
+                '.claude/hooks/hooks.json'), 'catch'),
+ ('V2  archive fallback only NAMES the cmdlet (Write-Output decoy)', l4, 'B8',
+  lambda: patch('commands/plan-export.md', '"Compress-Archive -Path',
+                '"Write-Output Compress-Archive -Path'), 'catch'),
+ ('V3  B6 overview marker deleted', l4, 'B6',
+  lambda: patch('commands/plan-status.md', '# dg-test-marker: plan-status-overview', '# overview'), 'catch'),
+ ('V4  a SECOND directory guard leaves a path uninstrumented', l4, 'B7',
+  lambda: patch('commands/quick-cleanup.md',
+                'if [ ! -d "$FOLDER" ]; then',
+                'if [ ! -d "$FOLDER" ]; then\n  :\nfi\nif [ ! -d "$FOLDER" ]; then'), 'catch'),
 ]
 
-base1, base4 = l1(), l4()
-if base1 or base4:
-    print('BASELINE NOT GREEN:'); [print('  ' + b) for b in base1 + base4]
+(base1, c1), (base4, c4) = l1(), l4()
+if base1 or base4 or c1 or c4:
+    print('BASELINE NOT GREEN:')
+    [print('  ' + b) for b in base1 + base4]
+    if c1 or c4:
+        print('  a suite did not run to completion (crash/abort)')
     restore(); sys.exit(1)
 print('baseline green (layer1 + layer4)\n')
 
@@ -208,23 +266,35 @@ for label, layer, tag, apply, expect in MUTS:
     if not apply():
         print('  NO-OP    %s  <-- anchor drifted' % label); bad = 1; restore(); continue
     try:
-        r = layer()
+        r, crashed = layer()
     finally:
         restore()
     hit = any(tag in l for l in r)
-    if expect == 'catch':
+    if crashed:
+        # A suite that aborted proves nothing either way. Previously this surfaced as an
+        # empty failure list — i.e. 'caught' for a catch case and 'quiet' for a control.
+        print('  CRASHED  %s  <-- suite did not complete; result is not evidence' % label)
+        bad = 1
+    elif expect == 'catch':
         if hit:
             print('  CAUGHT   %s' % label)
         else:
             print('  ESCAPED  %s   (%d other failures)' % (label, len(r))); bad = 1
     else:
-        if hit:
-            print('  BAD      %s  <-- fired on a legitimate change' % label); bad = 1
+        # A control must produce NO failures at all, not merely none carrying its own tag.
+        # Tag-only checking let a legitimate edit break something else and still read quiet.
+        if r:
+            print('  BAD      %s  <-- legitimate change caused %d failure(s): %s'
+                  % (label, len(r), r[0][:70])); bad = 1
         else:
             print('  OK-QUIET %s' % label)
 
 restore()
-a1, a4 = l1(), l4()
+(a1, _), (a4, _) = l1(), l4()
+if a1 or a4:
+    # A red FINAL baseline means the tree was left dirty. This was printed and ignored.
+    print('RESTORE FAILED: the tree is not clean after the run')
+    bad = 1
 print('\nrestored: %d + %d failures' % (len(a1), len(a4)))
 print('SOME ESCAPED' if bad else 'ALL WAVE 5c MUTATIONS CAUGHT, CONTROLS QUIET')
 sys.exit(bad)
