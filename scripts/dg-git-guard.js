@@ -26,48 +26,83 @@ function ask(msg) {
 function allow() { process.exit(OK); }
 
 // ---------------------------------------------------------------------------
-// Tokenizer. THE central mechanism, and the reason a bare regex cannot pass.
+// Shell-style word splitting. THE central mechanism.
 //
-// Quoted text inside a command is data, not an instruction: `git commit -m "do
-// not git push --force"` must be ALLOWED. So the contents of every quoted span
-// are removed before any pattern is applied, leaving a skeleton that preserves
-// the command's structure. Discovered while writing the corpus: the live inline
-// guard denies a read-only `grep 'supabase db push'`, and it denied this file's
-// own test harness for containing the strings.
+// The first implementation of this guard DELETED the contents of quoted spans.
+// That fixed the false positives (a commit message naming a force-push) and
+// opened five bypasses, because a shell does not delete quoted text — it strips
+// the quote CHARACTERS and keeps the content as part of the surrounding word.
+// `git push "--force"` is an ordinary working command; span-deletion turned it
+// into `git push ""` and allowed it, which the old bare-regex guard had caught.
+// Found by an adversarial probe, not by the corpus: all 18 corpus rows quoted
+// PROSE, none quoted a FLAG.
 //
-// Rules follow POSIX sh: single quotes are literal (no escapes inside), double
-// quotes honour a backslash escape, and a backslash outside quotes escapes one
-// character.
+// So: split into words the way sh does — quotes contribute their content and
+// vanish as delimiters, adjacent segments join into one word — and match on word
+// SEQUENCES rather than on substrings. Both properties then hold at once:
+//
+//   git commit -m "no git push --force"  -> [git, commit, -m, "no git push --force"]
+//        the message is ONE word, so the sequence [git, push] is absent -> allow
+//   git push "--force"                   -> [git, push, --force]        -> deny
+//   git push --fo''rce                   -> [git, push, --force]        -> deny
+//   grep -rn 'supabase db push' docs/    -> [grep, -rn, "supabase db push", docs/]
+//        one word again -> allow
+//
+// Commands are also split into SEGMENTS on ; && || | ( ), so a flag in one
+// command cannot satisfy a guard aimed at another (`git reset --soft && tar --hard`).
+//
+// Known and accepted limit: UNQUOTED prose is indistinguishable from an
+// invocation without full shell semantics, so `echo git push --force` is denied.
+// The old guard denied it too. Over-blocking a benign `echo` is the correct side
+// to err on for a security control; under-blocking is not.
 // ---------------------------------------------------------------------------
-function skeleton(cmd) {
-  let out = '';
+function segments(cmd) {
+  const segs = [[]];
+  let word = '';
+  let started = false;   // distinguishes an empty quoted word from no word at all
   let i = 0;
+  const endWord = () => { if (started) { segs[segs.length - 1].push(word); word = ''; started = false; } };
+  const endSeg = () => { endWord(); if (segs[segs.length - 1].length) segs.push([]); };
+
   while (i < cmd.length) {
-    const ch = cmd[i];
-    if (ch === '\\') { i += 2; continue; }          // escaped char outside quotes: drop both
-    if (ch === "'") {
-      const end = cmd.indexOf("'", i + 1);
-      out += "''";
-      if (end === -1) return out;                    // unterminated: nothing further is enforceable
-      i = end + 1;
+    const c = cmd[i];
+    if (c === '\\') {                      // escapes the next character
+      if (i + 1 < cmd.length) { word += cmd[i + 1]; started = true; i += 2; } else i++;
       continue;
     }
-    if (ch === '"') {
+    if (c === "'") {                       // literal, no escapes inside
       i++;
-      while (i < cmd.length && cmd[i] !== '"') { i += cmd[i] === '\\' ? 2 : 1; }
-      out += '""';
-      if (i >= cmd.length) return out;               // unterminated
-      i++;
+      while (i < cmd.length && cmd[i] !== "'") { word += cmd[i]; i++; }
+      started = true; i++;
       continue;
     }
-    out += ch;
-    i++;
+    if (c === '"') {                       // honours backslash escapes
+      i++;
+      while (i < cmd.length && cmd[i] !== '"') {
+        if (cmd[i] === '\\' && i + 1 < cmd.length) { word += cmd[i + 1]; i += 2; }
+        else { word += cmd[i]; i++; }
+      }
+      started = true; i++;
+      continue;
+    }
+    if (/\s/.test(c)) { endWord(); i++; continue; }
+    if (c === ';' || c === '(' || c === ')' || c === '\n') { endSeg(); i++; continue; }
+    if (c === '&' || c === '|') { endSeg(); while (i < cmd.length && (cmd[i] === '&' || cmd[i] === '|')) i++; continue; }
+    word += c; started = true; i++;
   }
-  return out;
+  endWord();
+  return segs.filter((s) => s.length);
 }
 
-function words(skel) {
-  return skel.split(/[\s;|&()]+/).filter(Boolean);
+// Consecutive-word match. `[git, push]` must appear adjacently, which is what
+// makes a quoted multi-word string unable to satisfy it.
+function hasSeq(words, seq) {
+  outer:
+  for (let i = 0; i + seq.length <= words.length; i++) {
+    for (let j = 0; j < seq.length; j++) if (words[i + j] !== seq[j]) continue outer;
+    return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -90,12 +125,12 @@ const command = payload && payload.tool_input && typeof payload.tool_input.comma
   : '';
 if (!command.trim()) allow();
 
-const skel = skeleton(command);
-const toks = words(skel);
-const has = (re) => re.test(skel);
+const segs = segments(command);
 
 // ---------------------------------------------------------------------------
-// LAYER 1 — blocking checks. ALL of them run before any early exit.
+// LAYER 1 — blocking checks, evaluated PER SEGMENT so a flag belonging to one
+// command cannot satisfy a guard aimed at another. ALL of them run before any
+// early exit.
 //
 // Ledger row 1 exists only in the inline implementation today, and the .sh port
 // placed the database guard BELOW `grep -qE 'git\s+(commit|push)' || exit 0`
@@ -105,30 +140,40 @@ const has = (re) => re.test(skel);
 
 // Row 1: database deploy to a remote environment.
 const DB_DEPLOY = [
-  /\bsupabase\s+db\s+push\b/,
-  /\bprisma\s+migrate\s+deploy\b/,
-  /\bdotnet\s+ef\s+database\s+update\b/,
-  /\bflyway\s+(migrate|clean)\b/,
-  /\brails\s+db:migrate\b/,
+  ['supabase', 'db', 'push'],
+  ['prisma', 'migrate', 'deploy'],
+  ['dotnet', 'ef', 'database', 'update'],
+  ['flyway', 'migrate'],
+  ['flyway', 'clean'],
+  ['rails', 'db:migrate'],
 ];
-// Exemptions count ONLY inside the command field, and only outside quotes.
-const DB_EXEMPT = /(^|\s)(--local|--dry-run|--dry)(\s|$)|RAILS_ENV=(test|development)/;
-if (DB_DEPLOY.some((re) => re.test(skel)) && !DB_EXEMPT.test(skel)) {
+const isExempt = (w) => w === '--local' || w === '--dry-run' || w === '--dry'
+  || /^RAILS_ENV=(test|development)$/.test(w);
+
+for (const words of segs) {
+  if (!DB_DEPLOY.some((seq) => hasSeq(words, seq))) continue;
+  // Exemptions count only within the SAME segment as the deploy itself.
+  if (words.some(isExempt)) continue;
   deny('Direct database deploy to a remote environment. Validate with --dry-run, or deploy via CI/CD.');
 }
 
 // F25: force push. `--force-with-lease` is the SAFE form and must survive.
 // A /--force\b/ pattern matches inside `--force-with-lease` because '-' is a
-// word boundary — that was the defect. Match whole tokens instead.
-if (has(/\bgit\s+push\b/)) {
-  const forced = toks.some((t) => t === '--force' || /^-[A-Za-z]*f[A-Za-z]*$/.test(t));
-  if (forced) deny('Force push is not allowed. Use --force-with-lease if you must overwrite a remote branch.');
+// word boundary — that was the original defect. Whole-word equality avoids it,
+// and word splitting means a quoted flag still counts as that word.
+const isForceFlag = (w) => w === '--force' || /^-[A-Za-z]*f[A-Za-z]*$/.test(w);
+for (const words of segs) {
+  if (hasSeq(words, ['git', 'push']) && words.some(isForceFlag)) {
+    deny('Force push is not allowed. Use --force-with-lease if you must overwrite a remote branch.');
+  }
 }
 
 // F22: destructive but legitimate — ASK, never deny, and never stderr on exit 0.
-if (has(/\bgit\s+reset\s+(--hard|--merge\s+--hard)\b/) || toks.includes('--hard')) {
-  if (has(/\bgit\s+reset\b/)) {
-    ask('git reset --hard discards every uncommitted change in the working tree. Confirm this is intended.');
+// `--hard` must be in the same segment as `git reset`, so `git reset --soft &&
+// tar --hard` does not prompt.
+for (const words of segs) {
+  if (hasSeq(words, ['git', 'reset']) && words.includes('--hard')) {
+    ask('A hard reset discards every uncommitted change in the working tree. Confirm this is intended.');
   }
 }
 
@@ -137,7 +182,8 @@ if (has(/\bgit\s+reset\s+(--hard|--merge\s+--hard)\b/) || toks.includes('--hard'
 // ship documented as opt-in rather than advertised as active.
 // ---------------------------------------------------------------------------
 if (process.env.DG_STRICT_GIT !== '1') allow();
-if (!has(/\bgit\s+(commit|push)\b/)) allow();
+const isCommitOrPush = segs.some((w) => hasSeq(w, ['git', 'commit']) || hasSeq(w, ['git', 'push']));
+if (!isCommitOrPush) allow();
 
 const fs = require('fs');
 const os = require('os');
@@ -163,7 +209,7 @@ function trackerCount(file) {
 }
 
 // Row 6: staging-count sanity check.
-if (has(/\bgit\s+commit\b/)) {
+if (segs.some((w) => hasSeq(w, ['git', 'commit']))) {
   let staged = 0;
   try {
     staged = execFileSync('git', ['diff', '--cached', '--name-only'], { encoding: 'utf8' })

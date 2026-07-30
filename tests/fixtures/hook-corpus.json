@@ -81,6 +81,42 @@
       "why": "Nothing to enforce means nothing to deny — never deny on an absent field.",
       "payload": { "session_id": "s", "tool_input": {} } },
 
+    { "id": "bypass-quoted-flag-double", "want_exit": 2, "want_decision": "deny",
+      "why": "ADVERSARIAL. `git push \"--force\"` is an ordinary working command. The first tokenizer DELETED quoted spans, turning this into `git push \"\"` and allowing it — a regression, since the old bare-regex guard caught it. Every one of the original 18 rows quoted PROSE; none quoted a FLAG, so none could detect this. Word splitting keeps the content and matches word sequences.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git push \"--force\"" } } },
+
+    { "id": "bypass-quoted-flag-single", "want_exit": 2, "want_decision": "deny",
+      "why": "ADVERSARIAL. Same evasion with single quotes.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git push '--force'" } } },
+
+    { "id": "bypass-flag-split-by-quotes", "want_exit": 2, "want_decision": "deny",
+      "why": "ADVERSARIAL. `--fo''rce` is one word to a shell. Span deletion produced `--fo''rce` as a token and missed it; word splitting joins the segments back into `--force`.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git push --fo''rce" } } },
+
+    { "id": "bypass-quoted-subcommand", "want_exit": 2, "want_decision": "deny",
+      "why": "ADVERSARIAL. `git \"push\" --force` — the OLD guard missed this too, so it is a genuine improvement rather than a restored regression.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git \"push\" --force" } } },
+
+    { "id": "bypass-quoted-db-verb", "want_exit": 2, "want_decision": "deny",
+      "why": "ADVERSARIAL. `supabase db \"push\"` deploys. Missed by both the old regex guard and the span-deleting tokenizer.",
+      "payload": { "session_id": "s", "tool_input": { "command": "supabase db \"push\"" } } },
+
+    { "id": "bypass-quoted-short-flag", "want_exit": 2, "want_decision": "deny",
+      "why": "ADVERSARIAL. `git push \"-f\"` — quoted short flag.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git push \"-f\" origin main" } } },
+
+    { "id": "bypass-quoted-hard-reset-ask", "want_exit": 0, "want_decision": "ask",
+      "why": "ADVERSARIAL, and a reminder that 'not denied' is not 'not handled'. A quoted `\"--hard\"` must still reach F22's ask. The bypass probe initially scored this as an escape because it treated exit != 2 as unhandled, which is wrong for the ask case.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git reset \"--hard\"" } } },
+
+    { "id": "segment-isolation-no-false-ask", "want_exit": 0, "want_decision": null,
+      "why": "NEGATIVE for the per-segment fix: `--hard` belongs to a different command than `git reset`, so it must not trigger the ask. The pre-fix implementation scanned the whole command for the token and would have prompted.",
+      "payload": { "session_id": "s", "tool_input": { "command": "git reset --soft HEAD~1 && tar --hard -cf out.tar ." } } },
+
+    { "id": "exemption-wrong-segment-deny", "want_exit": 2, "want_decision": "deny",
+      "why": "An exemption token must be honoured only in the SAME segment as the deploy it exempts. Here `--dry-run` belongs to a separate `echo`, so the deploy still runs and must be denied. Added after mutation M8 (honour exemptions from any segment) escaped: the existing exemption row tests cross-FIELD placement, which is a different thing from cross-SEGMENT.",
+      "payload": { "session_id": "s", "tool_input": { "command": "supabase db push && echo --dry-run" } } },
+
     { "id": "F24-escaped-quote-allow", "want_exit": 0, "want_decision": null,
       "why": "The '\"command\":\"[^\"]*\"' grep truncates at the first quote, so an escaped quote inside the command silently changes what gets matched.",
       "payload": { "session_id": "s", "tool_input": { "command": "echo \"a \\\" quote then git push --force\"" } } }

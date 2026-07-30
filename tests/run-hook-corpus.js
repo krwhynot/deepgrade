@@ -49,6 +49,15 @@ for (const c of corpus.cases) {
       const got = parsed.hookSpecificOutput && parsed.hookSpecificOutput.permissionDecision;
       if (got !== c.want_decision) problems.push(`permissionDecision '${got}', want '${c.want_decision}'`);
     }
+    // An ALLOW row must be SILENT. `want_decision: null` used to mean "do not
+    // check", which made every allow row unable to detect a spurious prompt —
+    // mutation M3 removed per-segment isolation, producing an unwanted `ask`, and
+    // no row went red. "Allow" and "quietly ask the user" are different outcomes
+    // and the corpus has to tell them apart.
+    if (parsed && !c.want_decision) {
+      const got = parsed.hookSpecificOutput && parsed.hookSpecificOutput.permissionDecision;
+      problems.push(`expected a silent allow but got permissionDecision '${got}'`);
+    }
   } else if (exit === 0 && c.want_decision) {
     problems.push(`want permissionDecision '${c.want_decision}' but nothing was emitted`);
   }

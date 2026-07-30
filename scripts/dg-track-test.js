@@ -24,21 +24,38 @@ const command = payload && payload.tool_input && typeof payload.tool_input.comma
   : '';
 if (!command.trim()) quiet();
 
-// Same tokenizer as dg-git-guard.js. Duplicated deliberately: F06's reverse sweep
-// requires every file in scripts/ to be referenced by the hook config, so a shared
-// module would fail it.
-function skeleton(cmd) {
-  let out = '', i = 0;
+// Same word splitter as dg-git-guard.js. Duplicated deliberately: F06's reverse
+// sweep requires every file in scripts/ to be referenced by the hook config, so a
+// shared module would fail it.
+//
+// This replaced a span-deleting tokenizer that an adversarial probe showed could be
+// bypassed by quoting (`git push "--force"`). Here the stakes are inverted — this
+// is an informational tracker, so a false marker is the failure that matters, not a
+// missed one. A word containing whitespace can only have come from quoting, so it
+// is data and is dropped before matching; `npm "test"` still counts, and
+// `git commit -m "ran npm test earlier"` correctly does not.
+function words(cmd) {
+  const out = [];
+  let word = '', started = false, i = 0;
+  const end = () => { if (started) { out.push(word); word = ''; started = false; } };
   while (i < cmd.length) {
-    const ch = cmd[i];
-    if (ch === '\\') { i += 2; continue; }
-    if (ch === "'") { const e = cmd.indexOf("'", i + 1); out += "''"; if (e === -1) return out; i = e + 1; continue; }
-    if (ch === '"') { i++; while (i < cmd.length && cmd[i] !== '"') { i += cmd[i] === '\\' ? 2 : 1; } out += '""'; if (i >= cmd.length) return out; i++; continue; }
-    out += ch; i++;
+    const c = cmd[i];
+    if (c === '\\') { if (i + 1 < cmd.length) { word += cmd[i + 1]; started = true; i += 2; } else i++; continue; }
+    if (c === "'") { i++; while (i < cmd.length && cmd[i] !== "'") { word += cmd[i]; i++; } started = true; i++; continue; }
+    if (c === '"') {
+      i++;
+      while (i < cmd.length && cmd[i] !== '"') {
+        if (cmd[i] === '\\' && i + 1 < cmd.length) { word += cmd[i + 1]; i += 2; } else { word += cmd[i]; i++; }
+      }
+      started = true; i++; continue;
+    }
+    if (/[\s;|&()]/.test(c)) { end(); i++; continue; }
+    word += c; started = true; i++;
   }
+  end();
   return out;
 }
-const skel = skeleton(command);
+const skel = words(command).filter((w) => !/\s/.test(w)).join(' ');
 
 const TEST_PATTERNS = [
   /\b(npm|pnpm|yarn|bun)\s+(run\s+)?test\b/,
