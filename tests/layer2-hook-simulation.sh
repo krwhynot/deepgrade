@@ -209,13 +209,22 @@ else
   assert_fail "Blocks force push (exit 2)" "exit=$HOOK_EXIT stderr='$HOOK_STDERR'"
 fi
 
-# Test 5: SHOULD BLOCK — hard reset
-run_hook "$HOOK_PRE_BASH" '{"tool_input": {"command": "git reset --hard HEAD~1"}}'
-if [ "$HOOK_EXIT" -eq 2 ] && assert_stderr_contains "WARNING"; then
-  assert_pass "Blocks hard reset (exit 2)"
-else
-  assert_fail "Blocks hard reset (exit 2)" "exit=$HOOK_EXIT stderr='$HOOK_STDERR'"
-fi
+# Test 5 DELETED — PHV5-042. It asserted `exit 2` plus stderr "WARNING" for
+# `git reset --hard`, which is the F22 DEFECT, not the requirement. F22's
+# acceptance row is `permissionDecision:"ask"` JSON at exit 0, so this assertion
+# would have FAILED the moment the bug was fixed — a test defending a defect.
+#
+# Deliberately deleted rather than rewritten to the correct expectation. This file
+# exercises the INLINE hooks in plugin.json, which are still live during 4a and
+# still have the defect; a correct assertion here would turn the suite red with no
+# owning ticket, and re-adding an expected-failures entry to paper over it is the
+# anti-pattern that file's header warns against.
+#
+# The correct behaviour IS asserted — against lane N's implementation, which is
+# where F22 is actually fixed: tests/fixtures/hook-corpus.json row
+# `F22-reset-hard-ask`, run by tests/run-hook-corpus.js. Coverage moved, it did
+# not disappear. 4b deletes the inline hooks and this file's remaining inline
+# cases along with them.
 
 # Test 6: SHOULD ALLOW — normal git push
 run_hook "$HOOK_PRE_BASH" '{"tool_input": {"command": "git push origin main"}}'

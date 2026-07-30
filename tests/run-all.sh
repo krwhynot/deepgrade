@@ -105,7 +105,7 @@ OVERALL_EXIT=0
 for layer in $RUN_LAYERS; do
     case $layer in
         1) run_layer 1 "Config/Wiring" "$SCRIPT_DIR/layer1-config-wiring.sh" || OVERALL_EXIT=1 ;;
-        2) run_layer 2 "Hook Simulation" "$SCRIPT_DIR/layer2-hook-simulation.sh" || OVERALL_EXIT=1 ;;
+        2) run_layer 2 "Hook Simulation" "$SCRIPT_DIR/layer2-hook-suite.sh" || OVERALL_EXIT=1 ;;
         3) run_layer 3 "Fixture Lint" "$SCRIPT_DIR/layer3-fixture-lint.sh" || OVERALL_EXIT=1 ;;
         4) run_layer 4 "Behavioral Smoke" "$SCRIPT_DIR/layer4-behavioral-smoke.sh" || OVERALL_EXIT=1 ;;
         5) run_layer 5 "Codex Challenge Parser" "$SCRIPT_DIR/codex-challenge-test.js" node || OVERALL_EXIT=1 ;;
