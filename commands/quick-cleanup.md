@@ -216,12 +216,21 @@ except Exception as e:
 
 **Word (.docx):**
 ```bash
-pandoc "$FILE" -t markdown 2>/dev/null || [ -z "$PY" ] && echo "SKIPPED: no pandoc and no python interpreter for $FILE" >&2 || "$PY" -c "
+# Explicit branching, not a || && || chain: with equal precedence and left-to-right
+# grouping, `a || b && c || d` runs c whenever (a || b) is true — so a SUCCESSFUL
+# pandoc printed the "no pandoc" error.
+if pandoc "$FILE" -t markdown 2>/dev/null; then
+  :
+elif [ -n "$PY" ]; then
+  "$PY" -c "
 from docx import Document
 doc = Document('$FILE')
 for p in doc.paragraphs:
     print(p.text)
 " 2>/dev/null
+else
+  echo "SKIPPED: no pandoc and no python interpreter for $FILE" >&2
+fi
 ```
 
 **Excel/CSV:** Extract as markdown tables.

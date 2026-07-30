@@ -83,7 +83,7 @@ category scores, critical gate status, and generation offers.
 
 ## Artifacts Available for Generation
 
-Run `/ai-readiness-generate [number]` to create any of these:
+Run `/deepgrade:readiness-generate [number]` to create any of these:
 
 **CRITICAL (blocks Phase 2):**
 [numbered list with estimated score impact]
@@ -119,8 +119,8 @@ Run `/ai-readiness-generate [number]` to create any of these:
 2. [Second most impactful]
 3. [Third most impactful]
 
-Run `/ai-readiness-generate all-critical` to generate all critical missing artifacts.
-Run `/ai-readiness-scan` again after making changes to measure improvement.
+Run `/deepgrade:readiness-generate all-critical` to generate all critical missing artifacts.
+Run `/deepgrade:readiness-scan` again after making changes to measure improvement.
 Target: 80% (B-) with all critical gates passing to unlock Phase 2.
 ```
 

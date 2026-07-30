@@ -1143,6 +1143,165 @@ else
 fi
 
 # ===========================================================================
+# 17. Wave 5 — command hygiene (F08, F09, F10, F11, F13, F14, F15, F28)
+#
+# WHY THIS EXISTS: Wave 5 shipped with ZERO assertions. Every one of its acceptance
+# rows is class U or G — a unit test or a grep guard — and I verified all nine
+# findings by running greps at the terminal and then marked them closed. That is
+# closing against my own summary rather than against the rows, which is precisely the
+# failure this plan has spent two waves correcting. A manual grep protects the commit
+# it was run in and nothing after it.
+# ===========================================================================
+echo ""
+echo "--- Wave 5 command hygiene (F08-F28) ---"
+
+# --- F09: `$1` is never set in a command body (it is not a shell script), and `$0`
+#     in bash is the SHELL NAME, so an unsubstituted `$0` degrades to operating on
+#     "bash" rather than failing.
+f09_bad=0
+for f in "$COMMANDS_DIR"/*.md; do
+  # Only inside fenced bash blocks; prose may legitimately discuss $1.
+  # Comments are stripped before matching. On its first run this guard flagged its own
+  # explanatory comments — the lines that say "do NOT write $1" — in both files it
+  # checks. A false positive, and a reminder that a guard needs a control run too.
+  if awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$f" | sed 's/#.*$//' | grep -qE '(^|[^\\$])\$1\b'; then
+    fail "F09: $(basename "$f") uses \$1 inside a bash block — a command body is not a shell script, so \$1 is never set"
+    f09_bad=1
+  fi
+  if awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$f" | grep -qE '^[A-Z_]+="\$0"'; then
+    fail "F09: $(basename "$f") assigns \$0 — in bash that is the shell name, so an unsubstituted value silently becomes 'bash'"
+    f09_bad=1
+  fi
+done
+[ "$f09_bad" -eq 0 ] && pass "F09: no command body relies on \$1 or \$0 inside a bash block"
+
+# --- F09 positive: the zero-argument case must degrade safely, which means a
+#     sentinel plus a guard rather than an unchecked substitution.
+if grep -q '<source-folder>' "$COMMANDS_DIR/quick-cleanup.md" \
+   && grep -qE 'if \[ "\$FOLDER" = "<source-folder>" \]' "$COMMANDS_DIR/quick-cleanup.md"; then
+  pass "F09: quick-cleanup guards the unsubstituted sentinel (zero-arg degrades safely)"
+else
+  fail "F09: quick-cleanup has no sentinel guard — the zero-argument case must not fall through"
+fi
+
+# --- F10: ${PROJECT_ROOT} is not a Claude Code variable.
+if grep -rn '\${PROJECT_ROOT}' "$COMMANDS_DIR"/*.md >/dev/null 2>&1; then
+  fail "F10: \${PROJECT_ROOT} is not a Claude Code variable — use \${CLAUDE_PROJECT_DIR}"
+else
+  pass "F10: no command uses the non-existent \${PROJECT_ROOT}"
+fi
+
+# --- F11: the /ai-readiness-* commands do not exist under the plugin namespace.
+#     Scoped to commands/ AND agents/: the acceptance row named only
+#     readiness-generate.md, but the readiness REPORT AGENT emits these strings to
+#     users, so fixing the row's file alone leaves the defect shipping.
+f11_hits=$(grep -rn '/ai-readiness-' "$COMMANDS_DIR"/*.md "$AGENTS_DIR"/*.md 2>/dev/null)
+if [ -n "$f11_hits" ]; then
+  echo "$f11_hits" | while IFS= read -r l; do
+    echo "[FAIL] F11: dead command name — $(echo "$l" | cut -c1-100)"
+  done
+  fail "F11: /ai-readiness-* references survive (see above); the real commands are /deepgrade:readiness-*"
+else
+  pass "F11: no /ai-readiness-* references in commands/ or agents/"
+fi
+if grep -q '^argument-hint:' "$COMMANDS_DIR/readiness-generate.md"; then
+  pass "F11: readiness-generate declares argument-hint"
+else
+  fail "F11: readiness-generate is missing argument-hint"
+fi
+
+# --- F13: the guard must test the directory the loop actually reads. It tested
+#     `plans` while iterating `docs/plans/*/`, so on a normal layout the no-argument
+#     overview printed "No plans found." and exited.
+if grep -qE '^\s*if \[ ! -d "\$PLANS_DIR" \]' "$COMMANDS_DIR/plan-status.md" \
+   && grep -qE 'PLANS_DIR="docs/plans"' "$COMMANDS_DIR/plan-status.md"; then
+  pass "F13: plan-status guards the same directory it iterates"
+else
+  fail "F13: plan-status's existence guard and its loop must reference the same directory"
+fi
+
+# --- F14: model-invocability, both directions.
+f14_bad=0
+for c in codebase-gates plan-export readiness-generate; do
+  grep -q '^disable-model-invocation: true' "$COMMANDS_DIR/$c.md" \
+    || { fail "F14: $c.md must set disable-model-invocation: true"; f14_bad=1; }
+done
+# Negative, per the §3.8 discovery-path decision: `plan` must stay model-invocable.
+grep -q '^disable-model-invocation' "$COMMANDS_DIR/plan.md" \
+  && { fail "F14: plan.md must NOT disable model invocation (§3.8 discovery path)"; f14_bad=1; }
+[ "$f14_bad" -eq 0 ] && pass "F14: disable-model-invocation on exactly the three side-effectful commands, not on plan"
+
+# --- F15: host-tool portability.
+f15_bad=0
+if grep -rnE '(^|[^a-z-])tree +-' "$COMMANDS_DIR"/*.md >/dev/null 2>&1; then
+  fail "F15: \`tree\` is not present in stock Git Bash"; f15_bad=1
+fi
+if grep -rn 'python3 -c' "$COMMANDS_DIR"/*.md >/dev/null 2>&1; then
+  fail "F15: a bare \`python3 -c\` has no fallback — python3 is absent on many Windows hosts, python on many Linux ones"; f15_bad=1
+fi
+if grep -rnE '^\s*(EXPORT_DIR|STAGING)="?/tmp/' "$COMMANDS_DIR"/*.md >/dev/null 2>&1; then
+  fail "F15: bare /tmp staging — use \${TMPDIR:-\${TEMP:-/tmp}} so Windows hosts and concurrent runs work"; f15_bad=1
+fi
+if grep -q 'zip -' "$COMMANDS_DIR/plan-export.md" \
+   && ! grep -qE 'powershell[^|]*Compress-Archive' "$COMMANDS_DIR/plan-export.md"; then
+  # Requires an actual INVOCATION, not the string anywhere in the file: the first
+  # version accepted `grep -q 'Compress-Archive'`, which the explanatory comment on
+  # the line above satisfies on its own.
+  # Mutation history, because the first reading was wrong: W11 "escaped" twice, but
+  # not because of that weakness. The mutation replaced only the FIRST occurrence of
+  # the cmdlet name, which is the comment — so it deleted a comment, left the
+  # invocation intact, and a green guard was the correct answer. An invalid mutant,
+  # not a surviving defect. Re-anchored on the invocation three ways (delete the
+  # line, swap the cmdlet, replace the branch with `false`): caught on all three.
+  fail "F15: plan-export uses \`zip\` with no PowerShell Compress-Archive invocation — stock Windows has no zip"; f15_bad=1
+fi
+[ "$f15_bad" -eq 0 ] && pass "F15: no tree, no unguarded python3, no bare /tmp staging, zip has a fallback"
+
+# --- F08: gate-generator writes hooks for a PROJECT, so the target is the `hooks`
+#     key of .claude/settings.json. hooks/hooks.json is the PLUGIN-side location and
+#     is not read from a project directory, so hooks written there never fire.
+f08_bad=0
+if grep -q '\.claude/hooks/hooks\.json' "$AGENTS_DIR/gate-generator.md"; then
+  fail "F08: gate-generator targets .claude/hooks/hooks.json — not read from a project dir, so generated hooks are inert"
+  f08_bad=1
+fi
+grep -q '\.claude/settings\.json' "$AGENTS_DIR/gate-generator.md" \
+  || { fail "F08: gate-generator must target the hooks key of .claude/settings.json"; f08_bad=1; }
+# A bare `grep -qi merge` was satisfied by the CI-workflow line "Merge into existing
+# files" — unrelated prose kept the settings.json requirement's own guard green. Both
+# load-bearing clauses are required instead: never-overwrite, and keep the siblings.
+grep -qiE 'MERGE, never overwrite' "$AGENTS_DIR/gate-generator.md" \
+  || { fail "F08: gate-generator must instruct MERGE, never overwrite — settings.json also holds permissions and MCP config"; f08_bad=1; }
+grep -qiE 'not drop sibling keys' "$AGENTS_DIR/gate-generator.md" \
+  || { fail "F08: gate-generator must instruct preserving sibling keys — a hooks-only write destroys permissions and MCP config"; f08_bad=1; }
+# Requires the INSTRUCTION, not the word. Mutation W13 deleted "PowerShell variant of
+# every generated hook" and a bare `grep -qi powershell` stayed green, because the
+# sentence explaining *why* still mentioned PowerShell.
+grep -qiE 'PowerShell variant' "$AGENTS_DIR/gate-generator.md" \
+  || { fail "F08: gate-generator must instruct emitting a PowerShell variant — Windows without Git Bash dispatches through it"; f08_bad=1; }
+[ "$f08_bad" -eq 0 ] && pass "F08: gate-generator targets settings.json, merges, and emits a PowerShell variant"
+
+# --- F28: "Auto-invoked" is a claim a skill cannot make about itself, and the
+#     reverse sweep is the half that mattered: three of the five knowledge skills
+#     were referenced by NOTHING, so they shipped and could never load.
+if grep -rn 'Auto-invoked' "$SKILLS_DIR"/*/SKILL.md >/dev/null 2>&1; then
+  fail "F28: 'Auto-invoked' phrasing survives — a skill loads on description match, so the description must carry trigger terms"
+else
+  pass "F28: no skill asserts its own auto-invocation"
+fi
+f28_orphans=0
+for d in "$SKILLS_DIR"/*/; do
+  sk=$(basename "$d")
+  # Every skill needs at least one orchestrator outside its own directory.
+  if ! grep -rl "deepgrade:$sk\|$sk skill" "$AGENTS_DIR" "$COMMANDS_DIR" "$SKILLS_DIR"/*/SKILL.md 2>/dev/null \
+       | grep -qv "$SKILLS_DIR/$sk/"; then
+    fail "F28: skill '$sk' is referenced by no orchestrator — it ships and can never load"
+    f28_orphans=1
+  fi
+done
+[ "$f28_orphans" -eq 0 ] && pass "F28: every skill has at least one orchestrator (reverse-reference sweep)"
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="
