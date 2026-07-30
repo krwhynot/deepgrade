@@ -1,5 +1,60 @@
 # Changelog
 
+## 5.0.0 (2026-07-30)
+
+A hardening pass across the plugin's configuration, hooks, and command surface. No new
+user-facing features — this release fixes defects found by a structured audit and verifies
+the fixes actually work, including with a runtime check that confirms the safety hooks fire
+in a live session rather than just looking correctly configured on disk.
+
+### Fixed
+- `/deepgrade:codebase-gates` told users their generated hooks were written to
+  `.claude/hooks/hooks.json` — a location Claude Code never reads from a project. The feature
+  silently did nothing. Hooks are now correctly targeted at the `hooks` key of
+  `.claude/settings.json`, merged rather than overwritten.
+- `/deepgrade:plan-status` with no argument reported "No plans found." on a normal project
+  layout, because its existence check and its listing loop referenced different directories.
+- `/deepgrade:quick-cleanup`'s Word-document fallback printed a "no pandoc and no python
+  interpreter" error on a **successful** conversion, due to a shell operator-precedence bug.
+- `/deepgrade:plan-export`'s Windows fallback (no `zip` on stock Windows) is now verified to
+  actually create an archive, not merely to mention the right PowerShell cmdlet.
+- `/deepgrade:readiness-generate` no longer shells out to `tree`, which is absent from Git
+  Bash; several commands' temp-file handling is now portable across Windows and Linux.
+- Removed dead `/ai-readiness-*` command references left over from an earlier rename; the
+  real commands are `/deepgrade:readiness-*`.
+- Several skills carried thin or absent trigger descriptions and could not reliably load;
+  descriptions now carry concrete trigger phrasing.
+- The `mcp-research` skill was referenced only in prose ("see the mcp-research skill") with
+  no resolvable link; now referenced by its namespaced name.
+- The former `doc` command (superseded by the `documentation` skill) is fully retired: no
+  command file, no live references to it anywhere in the plugin's product surface.
+- Hooks are now proven to fire at runtime (not just correctly declared): file-change
+  tracking, test-run detection, and subagent-completion logging were each verified by
+  actually triggering them in a live session, not by reading configuration.
+
+### Removed
+- `docs/troubleshooting-techniques/` — nine files duplicating content from a standalone
+  sibling skill bundle, referenced by nothing in this plugin (no command, agent, skill, or
+  test loaded it). Removing the orphaned copy eliminates the duplication permanently; the
+  content is preserved in git history.
+
+### Known gaps
+A small number of internal consistency checks for this release are text-based and were
+found to be an unreliable way to verify certain claims — specifically, whether an
+*instruction* is followed (e.g., "the agent must emit a PowerShell variant") as opposed to
+whether a *string* is present or absent. Where our verification could not distinguish a real
+instruction from an example, a decoy, or a negation, we are recording that honestly rather
+than shipping a check that looked green without meaning much. This affects a handful of
+internal acceptance criteria, not shipped behavior we have reason to believe is broken; each
+underlying product change was independently verified by reading the actual file. Tightening
+these into genuine runtime tests is ongoing.
+
+### Deferred to 5.1.0
+- Converting the 1,528-line `/deepgrade:plan` command into a skill (better survival across
+  context compaction in long planning sessions). This is an improvement to a command that
+  works today, not a fix, and is being done separately with its own staging and rollback
+  proof.
+
 ## 4.31.0 (2026-04-03)
 
 ### Added
