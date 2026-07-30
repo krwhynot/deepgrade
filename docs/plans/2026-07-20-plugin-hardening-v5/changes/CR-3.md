@@ -108,6 +108,35 @@ git clone <repo> /tmp/eol-check-js && file /tmp/eol-check-js/scripts/*.js
 Plus a guard asserting the header rationale names both extensions, so the sentence cannot go
 stale again the way it just did.
 
+### Acceptance — EXECUTED, both directions
+
+Control at `HEAD` before the fix is quoted under "Severity" above: both `.js` files came out
+**with CRLF line terminators**. After the fix, at `ff3edbb`:
+
+```
+$ git -c core.autocrlf=true clone -q . /c/t/b
+$ file /c/t/b/scripts/*.js /c/t/b/tests/*.js /c/t/b/scripts/dg-git-guard.sh
+scripts/dg-git-guard.js:       Node.js script executable, Unicode text, UTF-8 text
+tests/codex-challenge-test.js: Node.js script executable, Unicode text, UTF-8 text
+tests/run-hook-corpus.js:      Node.js script executable, Unicode text, UTF-8 text
+scripts/dg-git-guard.sh:       Bourne-Again shell script, ASCII text executable
+```
+
+No CRLF on any of them. The check is falsifying in both directions: it failed before the change
+and passes after, on the same command.
+
+The clone was then exercised rather than merely inspected, since "the bytes look right" is a
+weaker claim than "it runs":
+
+```
+$ cd /c/t/b && bash tests/run-all.sh      -> Layers failed: 0 / Status: ALL PASSED
+$ cd /c/t/b && node tests/run-hook-corpus.js scripts/dg-git-guard.js
+                                          -> 18/18 corpus rows pass
+```
+
+Note the second command runs through `tests/run-hook-corpus.js`, one of the files that was
+CRLF-materialized by the control.
+
 ## Decision
 
 **ACCEPTED** by the owner on 2026-07-29. Applied as proposed:
