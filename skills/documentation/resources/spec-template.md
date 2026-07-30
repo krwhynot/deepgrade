@@ -200,9 +200,9 @@ After generating the spec:
 Spec created: docs/specs/SPEC-{NNN}-{topic}.md
 
 Document chain:
-  - Related ADRs: [list or "None - consider /deepgrade:doc adr {topic}"]
-  - Related PRDs: [list or "None - consider /deepgrade:doc prd {feature}"]
-  - Related BRDs: [list or "None - consider /deepgrade:doc brd {domain}"]
+  - Related ADRs: [list or "None - consider /deepgrade:documentation adr {topic}"]
+  - Related PRDs: [list or "None - consider /deepgrade:documentation prd {feature}"]
+  - Related BRDs: [list or "None - consider /deepgrade:documentation brd {domain}"]
 
 Suggested next step:
   Run /deepgrade:quick-audit docs/specs/SPEC-{NNN}-{topic}.md

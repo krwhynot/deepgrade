@@ -1524,7 +1524,7 @@ On resume, check freshness of all completed phases and report any staleness.
 <valid_commands>
 Only suggest these commands (all verified to exist as command files):
 /deepgrade:plan, /deepgrade:plan-status, /deepgrade:quick-audit,
-/deepgrade:quick-plan, /deepgrade:quick-cleanup, /deepgrade:doc,
+/deepgrade:quick-plan, /deepgrade:quick-cleanup, /deepgrade:documentation,
 /deepgrade:codebase-characterize, /deepgrade:readiness-scan,
 /deepgrade:codebase-audit, /deepgrade:codebase-delta,
 /deepgrade:codebase-security, /deepgrade:codebase-gates,

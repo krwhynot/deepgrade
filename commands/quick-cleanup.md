@@ -373,8 +373,8 @@ One-page overview of everything that was in the source folder.
 ## Next Steps
 Recommended toolkit commands to run with this cleaned data:
 - `/deepgrade:quick-plan "{topic} integration"` (if implementation needed)
-- `/deepgrade:doc spec {topic}` (if a technical spec is needed)
-- `/deepgrade:doc adr {topic}` (if an architectural decision is needed)
+- `/deepgrade:documentation spec {topic}` (if a technical spec is needed)
+- `/deepgrade:documentation adr {topic}` (if an architectural decision is needed)
 ```
 
 ### File 2: reference-data.json (always created)
@@ -445,8 +445,8 @@ If this is all you needed, you're done. Your cleaned data is ready for reference
 If you want to continue building on this data:
   /deepgrade:plan {name}         Resume the plan from Phase 3 (Pre-Plan)
   /deepgrade:quick-plan "{topic}" Create a spec directly from this data
-  /deepgrade:doc spec {topic}    Create a technical specification
-  /deepgrade:doc adr {topic}     Document an architectural decision
+  /deepgrade:documentation spec {topic}    Create a technical specification
+  /deepgrade:documentation adr {topic}     Document an architectural decision
 ```
 </workflow>
 

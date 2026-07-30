@@ -78,7 +78,7 @@ PRD created: docs/prd/{domain}/PRD-{name}.md
 
 Note: No BRD exists for the [Domain] domain.
 A BRD defines the business context for this feature.
-  [1] Generate BRD now with /deepgrade:doc brd [domain]
+  [1] Generate BRD now with /deepgrade:documentation brd [domain]
   [2] Skip for now
 ```
 
@@ -93,6 +93,6 @@ If no ADR exists for this feature:
 ```
 Note: No ADR exists documenting the architectural decisions for this feature.
 An ADR should document how and why this feature was built the way it is.
-  [1] Generate ADR now with /deepgrade:doc adr [feature topic]
+  [1] Generate ADR now with /deepgrade:documentation adr [feature topic]
   [2] Skip for now
 ```

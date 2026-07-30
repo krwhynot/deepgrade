@@ -526,7 +526,7 @@ Security layers:
 
 <valid_commands>
 /deepgrade:plan, /deepgrade:plan-status, /deepgrade:codex-challenge, /deepgrade:troubleshoot,
-/deepgrade:quick-plan, /deepgrade:quick-audit, /deepgrade:quick-cleanup, /deepgrade:doc,
+/deepgrade:quick-plan, /deepgrade:quick-audit, /deepgrade:quick-cleanup, /deepgrade:documentation,
 /deepgrade:readiness-scan, /deepgrade:readiness-generate, /deepgrade:codebase-audit,
 /deepgrade:codebase-security, /deepgrade:codebase-delta, /deepgrade:codebase-gates,
 /deepgrade:codebase-characterize, /deepgrade:help

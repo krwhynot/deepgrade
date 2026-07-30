@@ -2,7 +2,7 @@
 
 # DeepGrade Knowledge Guide v4.31.0
 
-**17 Commands** &nbsp;&bull;&nbsp; **22 Agents** &nbsp;&bull;&nbsp; **6 Skills** &nbsp;&bull;&nbsp; **8 Safety Hooks** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
+**16 Commands** &nbsp;&bull;&nbsp; **22 Agents** &nbsp;&bull;&nbsp; **6 Skills** &nbsp;&bull;&nbsp; **8 Safety Hooks** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDE4Yy00LjQxIDAtOC0zLjU5LTgtOHMzLjU5LTggOC04IDggMy41OSA4IDgtMy41OSA4LTggOHoiLz48L3N2Zz4=)](https://github.com/krwhynot/deepgrade)
 [![Version](https://img.shields.io/badge/v4.31.0-stable-2ECC71?style=for-the-badge)](#)
@@ -91,7 +91,7 @@ graph LR
     CG["/codebase-gates"] --> GOV
     CS["/codebase-security"] --> GOV
     CC["/codebase-characterize"] --> GOV
-    DOC["/doc"] --> TEMPLATES["6 Doc Templates"]
+    DOC["documentation<br/>skill"] --> TEMPLATES["6 Doc Templates"]
 
     style RS fill:#E8F0FE,stroke:#4A90D9,color:#2C3E50
     style CA fill:#FEF5E7,stroke:#F39C12,color:#2C3E50
@@ -330,15 +330,15 @@ The key pattern: **commands are managers, agents are specialists.** A command re
 
 ---
 
-### `/deepgrade:doc`
+### `/deepgrade:documentation`
 **What it does:** Routes to 6 document templates (ADR, BRD, PRD, README, Release Notes, Spec). If audit data exists, documents are richer and auto-linked.
 **When to use it:** Whenever you need to create a project document. If unsure which type, just describe what you need.
 **What it produces:** Files in `docs/adr/`, `docs/brd/`, `docs/prd/`, `docs/specs/`, or project root (README).
 **Example:**
 ```
-/deepgrade:doc adr credential rotation
-/deepgrade:doc spec pricing engine extraction
-/deepgrade:doc release-notes v2.5.0
+/deepgrade:documentation adr credential rotation
+/deepgrade:documentation spec pricing engine extraction
+/deepgrade:documentation release-notes v2.5.0
 ```
 
 ---
@@ -507,7 +507,7 @@ Skills are persistent knowledge that loads automatically when relevant. They are
 
 **self-audit-knowledge** -- Contains the LLM epistemic transparency framework: claim verification tiers (A = tool-verified, B = code-reading, C = pattern inference), evidence basis formatting, failure mode flags (`[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`, `[DEAD-CODE-UNCERTAIN]`), category-based cascade risk classification (CASCADE/COVERAGE/CONTAINED), and report confidence thresholds. Loads during codebase audits, plan audits, and report generation.
 
-**documentation** -- The dispatch hub for document generation. Contains routing logic (first word = subcommand), 6 template references, smart suggestions when audit data exists, and document chain enforcement (a PRD triggers a check for a related BRD, etc.). Loads when you use `/deepgrade:doc`.
+**documentation** -- The dispatch hub for document generation. Contains routing logic (first word = subcommand), 6 template references, smart suggestions when audit data exists, and document chain enforcement (a PRD triggers a check for a related BRD, etc.). Loads when you ask for a document, or invoke `/deepgrade:documentation` directly.
 
 ### The 6 Document Templates
 

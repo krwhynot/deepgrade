@@ -81,7 +81,7 @@ Same pattern applies: `/deepgrade:quick-audit` = audit one file without the work
 
 | Command | What It Does |
 |---------|-------------|
-| `/deepgrade:doc` | Generate any document: ADR, BRD, PRD, README, release notes, spec. |
+| `/deepgrade:documentation` | Generate any document: ADR, BRD, PRD, README, release notes, spec. |
 
 ### Utility
 
@@ -193,7 +193,7 @@ All artifacts go to `docs/plans/{date}-{name}/`. Check progress with `/deepgrade
 - `/deepgrade:quick-plan [objective]` to generate a plan directly
 - `/deepgrade:quick-audit [file]` to audit any spec or plan
 - `/deepgrade:quick-cleanup [folder]` to clean up messy docs
-- `/deepgrade:doc [type] [topic]` to generate a specific document
+- `/deepgrade:documentation [type] [topic]` to generate a specific document
 - `/deepgrade:codebase-characterize [module]` to generate golden master tests
 
 **Note on gating:** The readiness scan uses two tiers of gates:

@@ -380,15 +380,20 @@ else
   fail "Command count mismatch: commands/ has $cmd_count files, README says $readme_cmd_count"
 fi
 
-# 5c. Every command listed in help.md should have a corresponding file in commands/
+# 5c. Every `/deepgrade:X` in help.md must RESOLVE — to a command file OR to a skill.
+#     A skill is a user-addressable surface too (`plugin:skill`), so requiring
+#     commands/X.md would have been wrong once F30 replaced commands/doc.md with the
+#     documentation skill. The assertion is widened to both surfaces, NOT relaxed:
+#     a name resolving to neither still fails, which is what the mutation below proves.
 if [ -f "$HELP_MD" ]; then
-  # Extract command names from help.md (pattern: /deepgrade:command-name)
   help_commands=$(grep -oE '/deepgrade:[a-z][-a-z0-9]*' "$HELP_MD" | sed 's|/deepgrade:||' | sort -u)
   for hcmd in $help_commands; do
     if [ -f "$COMMANDS_DIR/$hcmd.md" ]; then
-      pass "help.md command '$hcmd' has file: commands/$hcmd.md"
+      pass "help.md '$hcmd' resolves to commands/$hcmd.md"
+    elif [ -f "$SKILLS_DIR/$hcmd/SKILL.md" ]; then
+      pass "help.md '$hcmd' resolves to the $hcmd skill"
     else
-      fail "help.md references command '$hcmd' but commands/$hcmd.md not found"
+      fail "help.md references /deepgrade:$hcmd but neither commands/$hcmd.md nor $SKILLS_DIR/$hcmd/SKILL.md exists"
     fi
   done
 else
@@ -699,13 +704,15 @@ else
       bad_cmd=$((bad_cmd + 1))
     fi
   done
+  # Resolve against commands AND skills — see 5c. F30 pointed these templates at the
+  # documentation skill, which is addressable but has no commands/ file.
   for c in $(grep -rhoE '/deepgrade:[a-z-]+' "$TPL_DIR" 2>/dev/null | sed 's|/deepgrade:||' | sort -u); do
-    if [ ! -f "commands/$c.md" ]; then
-      fail "F31: template references /deepgrade:$c but commands/$c.md does not exist"
+    if [ ! -f "commands/$c.md" ] && [ ! -f "$SKILLS_DIR/$c/SKILL.md" ]; then
+      fail "F31: template references /deepgrade:$c but it resolves to neither a command nor a skill"
       bad_cmd=$((bad_cmd + 1))
     fi
   done
-  [ "$bad_cmd" -eq 0 ] && pass "F31: template commands are all namespaced and resolve"
+  [ "$bad_cmd" -eq 0 ] && pass "F31: every template reference is namespaced and resolves"
 fi
 
 # ===========================================================================

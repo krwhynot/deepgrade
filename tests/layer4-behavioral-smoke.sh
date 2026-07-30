@@ -47,12 +47,17 @@ if [[ -f "$HELP_FILE" ]]; then
     MISSING_REFS=0
     while IFS= read -r CMD_NAME; do
         [[ -z "$CMD_NAME" ]] && continue
-        if [[ ! -f "$PLUGIN_ROOT/commands/$CMD_NAME.md" ]]; then
-            fail "B1: help.md references /deepgrade:$CMD_NAME but commands/$CMD_NAME.md does not exist"
+        # Resolve against BOTH user-addressable surfaces. F30 replaced
+        # commands/doc.md with the documentation skill, and a skill is addressed the
+        # same way (`/plugin:name`), so a command-only check would reject a working
+        # reference. Widened, not relaxed — an unresolvable name still fails.
+        if [[ ! -f "$PLUGIN_ROOT/commands/$CMD_NAME.md" ]] \
+           && [[ ! -f "$PLUGIN_ROOT/skills/$CMD_NAME/SKILL.md" ]]; then
+            fail "B1: help.md references /deepgrade:$CMD_NAME but it resolves to neither a command nor a skill"
             MISSING_REFS=$((MISSING_REFS + 1))
         fi
     done < <(grep -o '/deepgrade:[a-z-]*' "$HELP_FILE" | sed 's|/deepgrade:||' | sort -u)
-    [[ $MISSING_REFS -eq 0 ]] && pass "B1: All commands in help.md have corresponding command files"
+    [[ $MISSING_REFS -eq 0 ]] && pass "B1: every /deepgrade: reference in help.md resolves to a command or a skill"
 else
     fail "B1: help.md does not exist"
 fi

@@ -421,7 +421,7 @@ Vanilla Claude Code reads the CLAUDE.md and handles everything.
 
 <valid_commands>
 /deepgrade:plan, /deepgrade:plan-status, /deepgrade:plan-export, /deepgrade:troubleshoot, /deepgrade:quick-plan,
-/deepgrade:quick-audit, /deepgrade:quick-cleanup, /deepgrade:doc, /deepgrade:readiness-scan,
+/deepgrade:quick-audit, /deepgrade:quick-cleanup, /deepgrade:documentation, /deepgrade:readiness-scan,
 /deepgrade:readiness-generate, /deepgrade:codebase-audit, /deepgrade:codebase-security,
 /deepgrade:codebase-delta, /deepgrade:codebase-gates, /deepgrade:codebase-characterize, /deepgrade:help
 </valid_commands>

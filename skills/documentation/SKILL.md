@@ -5,6 +5,30 @@ description: (deepgrade) Generate project documentation (ADR, BRD, PRD, README, 
 
 # Documentation Generator
 
+## Plan awareness
+
+Carried here from `commands/doc.md`, which this skill replaced in v5.0.0 (F30 — the
+command was a 22-line wrapper that re-dispatched to this file, so the two surfaces
+could drift and one had to go).
+
+If the request names a plan (`--plan {name}`, or the user says "for plan X"), write
+the document to its standard `docs/` location (`docs/adr/`, `docs/prd/`,
+`docs/specs/`, …) **and** add a link to it in
+`docs/plans/{date}-{name}/manifest.md`. The plan folder is a homebase that indexes
+documents; it is not where they live.
+
+With no plan named, use the standard locations only.
+
+## Resolving template paths
+
+Templates live beside this file. Read them via `${CLAUDE_SKILL_DIR}/resources/<name>`
+— an installed plugin does not sit at a path this file can assume, and a relative
+read from the session's working directory resolves into the *user's project*, not
+the plugin. The table below uses repo-relative links for human readability; at
+runtime, anchor on `${CLAUDE_SKILL_DIR}`.
+
+## Dispatch
+
 Unified entry point for all document generation workflows. Part of the DeepGrade
 Developer Toolkit. Works standalone or powered by Phase 2 audit data when available.
 
@@ -152,7 +176,7 @@ as files in the plugin's commands/ directory. The valid commands are:
 | Cleanup docs | `/deepgrade:quick-cleanup [folder]` |
 | Create plan | `/deepgrade:quick-plan [objective]` |
 | Audit plan | `/deepgrade:quick-audit [file]` |
-| Create document | `/deepgrade:doc [adr\|brd\|prd\|readme\|release-notes\|spec] [topic]` |
+| Create document | `/deepgrade:documentation [adr\|brd\|prd\|readme\|release-notes\|spec] [topic]` |
 | Readiness scan | `/deepgrade:readiness-scan` |
 | DeepGrade audit | `/deepgrade:codebase-audit` |
 | Delta scan | `/deepgrade:codebase-delta` |

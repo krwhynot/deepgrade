@@ -74,7 +74,7 @@ Covers [N] features in the [Domain] domain.
 
 Document chain status:
   [N] features have PRDs (complete chain: BRD -> PRD)
-  [N] features need PRDs (run /deepgrade:doc prd [feature] for each)
+  [N] features need PRDs (run /deepgrade:documentation prd [feature] for each)
 
   [1] Generate PRDs for all features missing them
   [2] Done for now

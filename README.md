@@ -43,7 +43,7 @@ claude
 /deepgrade:help
 ```
 
-## Commands (17)
+## Commands (16)
 
 ### Planning
 
@@ -76,7 +76,7 @@ claude
 
 | Command | Description |
 | ------- | ----------- |
-| `/deepgrade:doc` | Generate specs, PRDs, BRDs, ADRs, READMEs |
+| `/deepgrade:documentation` | Generate specs, PRDs, BRDs, ADRs, READMEs |
 | `/deepgrade:quick-cleanup` | Identify and fix common codebase issues |
 | `/deepgrade:troubleshoot` | 4-phase debugging framework with incident triage and containment |
 | `/deepgrade:help` | Show all commands and usage |
