@@ -2,7 +2,7 @@
 
 **Raised:** 2026-07-29, during Wave 4a (PHV5-040/041), commit `cf46aab`
 **Raised by:** Claude (optimizer), self-reported on introducing the first `.js` hook
-**State: PROPOSED — awaiting owner ratification**
+**State: ACCEPTED** — owner ratified 2026-07-29 ("ratify CR-3"). Applied in the same commit as this record.
 **Supersedes:** nothing yet. Would extend acceptance-matrix row **A1**, as CR-2 did.
 
 ## What changed underneath the locked row
@@ -41,11 +41,38 @@ Add to `.gitattributes`:
 …and correct the header sentence to say "the hook guards and the test suite are executable
 scripts (`.sh` and `.js`)".
 
-## Severity — deliberately not overstated
+## Severity — revised UPWARD after measurement
 
-**Lower than CR-2's.** Lane N wires the **node exec form** (`node scripts/dg-git-guard.js`), so
-the shebang is decorative and node itself parses CRLF without complaint. There is no known
-runtime failure on the shipped invocation path. The exposure is:
+The PROPOSED text called this "no known runtime failure" and rated it below CR-2. **The
+falsifying control run at ratification time contradicts that in one respect and must be recorded
+rather than left as originally written.**
+
+Control: clone `HEAD` (before this CR) with `core.autocrlf=true`, the reference host's setting:
+
+```
+$ git -c core.autocrlf=true clone -q . /c/t/a
+$ file /c/t/a/scripts/dg-git-guard.js /c/t/a/tests/codex-challenge-test.js /c/t/a/scripts/dg-git-guard.sh
+scripts/dg-git-guard.js:       Node.js script executable, Unicode text, UTF-8 text, with CRLF line terminators
+tests/codex-challenge-test.js: Node.js script executable, Unicode text, UTF-8 text, with CRLF line terminators
+scripts/dg-git-guard.sh:       Bourne-Again shell script, ASCII text executable
+```
+
+Two things the proposal understated:
+
+1. `file` reports both as **"script executable"** — they carry a shebang and the exec bit, so
+   they are not merely data that node happens to read. Direct execution on POSIX is a supported
+   shape for them, and it fails with `env: 'node\r': No such file or directory`.
+2. **`tests/codex-challenge-test.js` was uncovered too**, and it runs Layer 5's 41 assertions —
+   a third of the suite. The proposal framed the exposure as being about hook guards only. A
+   CRLF-broken test runner on a fresh POSIX clone takes out Layer 5, which is precisely the
+   "silent, host-dependent breakage" the A1 rationale describes.
+
+The `.sh` beside them is clean, which is the whole point: the policy protected the old file class
+and silently stopped at the new one.
+
+Severity is therefore **comparable to CR-2's**, not below it. What remains true from the proposal
+is that the *shipped hook invocation path* (`node scripts/dg-*.js`, per lane N) is unaffected,
+because node tolerates CRLF. The exposure is everything else:
 
 1. Anyone who marks a guard executable and runs it directly on POSIX hits
    `/usr/bin/env: 'node\r': No such file or directory` — the exact failure A1 exists to prevent.
@@ -83,6 +110,25 @@ stale again the way it just did.
 
 ## Decision
 
-_Pending._ If declined, the exposure above is accepted as-is and this record stands as the
-disclosure; `scripts/*.js` stays `text: unspecified` and Wave 6's determinism check must not
-assume otherwise.
+**ACCEPTED** by the owner on 2026-07-29. Applied as proposed:
+
+- `.gitattributes` gains `*.js text eol=lf`, with a comment recording why lane N makes it
+  necessary and that the shipped exec form is not itself the failure path.
+- The header rationale now reads "executable scripts — `.sh` AND `.js`" and carries a note that
+  it named only shell scripts until this CR.
+- `git add --renormalize .` run; all three tracked `.js` files now report `attr/text eol=lf`.
+
+Guarded two ways in `tests/layer1-config-wiring.sh` §14:
+
+1. Every tracked `*.sh`, `*.js` and `tests/fixtures/*` must carry `eol=lf` **as an attribute**,
+   read via `git check-attr` — not via `git ls-files --eol`, which reports `w/lf` with no
+   `.gitattributes` present at all and so can never fail (the CR-2 lesson). Subjects are derived
+   from the tracked tree with a floor of 15, so a new script class cannot silently fall outside
+   the policy the way `.js` just did.
+2. The header rationale must name both extensions, so it cannot drift from the tree again.
+
+**Scope note — what was NOT extended.** Only `*.js` was added. `*.py`, `*.ps1` and other
+interpreters remain uncovered because no tracked file uses them today; guard §14's derived-subject
+floor is what surfaces the next such class, and adding one is another CR. The
+`snapshots/** -text` freeze is untouched: those bytes back recorded SHA-256 hashes and normalizing
+them would invalidate the Wave 6 reconciliation inputs.

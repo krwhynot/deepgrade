@@ -890,6 +890,56 @@ else
 fi
 
 # ===========================================================================
+# 14. Line-ending policy covers every executable script (A1 + CR-2 + CR-3)
+#
+# `git ls-files --eol` is NOT usable here: it reports w/lf with no .gitattributes
+# present at all, so it can never fail (that is what CR-2 corrected). Assert the
+# ATTRIBUTE instead, via git check-attr, which reads the policy rather than the
+# current checkout. The falsifying acceptance test remains the fresh-clone
+# `file` check recorded in CR-2/CR-3.
+#
+# Subjects are DERIVED from the tracked tree, so a newly added script is covered
+# the moment it is committed — the failure mode CR-3 exists to close was a new
+# file class silently falling outside the policy.
+# ===========================================================================
+echo ""
+echo "--- Line-ending policy (A1/CR-2/CR-3) ---"
+
+eol_subjects=0
+eol_bad=0
+for f in $(git ls-files '*.sh' '*.js' 'tests/fixtures/*' 2>/dev/null); do
+  eol_subjects=$((eol_subjects + 1))
+  attr=$(git check-attr eol -- "$f" 2>/dev/null | sed 's/.*: //')
+  if [ "$attr" != "lf" ]; then
+    fail "A1/CR-3: $f is an executable script or fixture but its eol attribute is '$attr', not 'lf'"
+    eol_bad=1
+  fi
+done
+if [ "$eol_subjects" -lt 15 ]; then
+  fail "A1/CR-3: derived only $eol_subjects policy subjects (expected >= 15) — the derivation is broken, not the policy"
+elif [ "$eol_bad" -eq 0 ]; then
+  pass "A1/CR-3: all $eol_subjects shell scripts, node scripts and fixtures carry eol=lf"
+fi
+
+# The rationale at the top of .gitattributes must name both extensions. It said
+# "the hook guards and the test suite are shell scripts" while lane N shipped the
+# guards as .js — a policy file asserting something no longer true of the tree,
+# which is exactly the drift class the consistency sweep guards elsewhere.
+if [ ! -f .gitattributes ]; then
+  fail "A1: .gitattributes is missing entirely"
+else
+  head_txt=$(sed -n '1,20p' .gitattributes | tr -d '\r')
+  rationale_ok=1
+  echo "$head_txt" | grep -q '`\.sh`' || { echo "$head_txt" | grep -q '\.sh' || rationale_ok=0; }
+  echo "$head_txt" | grep -q '\.js' || rationale_ok=0
+  if [ "$rationale_ok" -eq 1 ]; then
+    pass "A1/CR-3: the .gitattributes rationale names both .sh and .js"
+  else
+    fail "A1/CR-3: the .gitattributes rationale does not name both .sh and .js — it will drift from the tree again"
+  fi
+fi
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="
