@@ -38,6 +38,6 @@ Every full-featured command uses: `Read, Write, Grep, Glob, Bash, Task`
 3. **troubleshoot.md:194-203** — Step 0 KB check (add Step 0.2 for external doc lookup)
 4. **agents/integration-scanner.md** — After finding API endpoints, validate against external docs
 5. **agents/dependency-mapper.md** — After finding packages, check deprecation via docs
-6. **commands/doc.md** — Enrich template generation with framework examples
+6. **the documentation command** — Enrich template generation with framework examples
 7. **commands/quick-plan.md** — Ground recommendations with best practices lookup
 8. **commands/readiness-generate.md** — Offer recommended .mcp.json for research tools

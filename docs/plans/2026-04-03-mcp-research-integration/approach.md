@@ -8,7 +8,7 @@ Date: 2026-04-03
 2. Enhance `commands/plan.md` — Phase 2 Track 3 + Phase 3 confidence brief
 3. Enhance `commands/troubleshoot.md` — add Step 0.2 external doc/issue lookup
 4. Enhance `skills/documentation/SKILL.md` — external enrichment section
-5. Enhance `commands/doc.md` — add MCP tools to allowed-tools
+5. Enhance the documentation command — add MCP tools to allowed-tools
 6. Enhance `agents/integration-scanner.md` — API validation against external docs
 7. Enhance `agents/dependency-mapper.md` — deprecation checking via docs
 8. Extend `commands/readiness-generate.md` — offer research MCP .mcp.json generation

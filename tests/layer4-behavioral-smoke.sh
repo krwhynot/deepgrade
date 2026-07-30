@@ -203,8 +203,19 @@ else
     # 2026-01-01-smoke fixture, which tests the code against data shaped the way I
     # expected rather than against the real thing (Codex F5). Copy the actual plan
     # folder's status.json instead, so a schema drift in the live file is visible here.
-    B6_REAL_PLAN=$(ls -d "$PLUGIN_ROOT"/docs/plans/*/ 2>/dev/null | head -1)
-    B6_PLAN_NAME=$(basename "${B6_REAL_PLAN%/}")
+    # NAMED explicitly. `ls | head -1` picked whichever plan sorted first — the April
+    # research plan at phase 'handoff', not the plan under active work (Codex N6). The
+    # row says "against THIS plan folder", so guessing by sort order cannot satisfy it,
+    # and the guess silently drifts every time a plan is added.
+    B6_WANT_PLAN="2026-07-20-plugin-hardening-v5"
+    B6_REAL_PLAN="$PLUGIN_ROOT/docs/plans/$B6_WANT_PLAN"
+    B6_PLAN_NAME="$B6_WANT_PLAN"
+    if [[ ! -d "$B6_REAL_PLAN" ]]; then
+        # Do not fall back to another plan: silently testing a different subject is the
+        # defect this replaced. Fail loudly and name what is missing.
+        fail "B6: the named plan folder docs/plans/$B6_WANT_PLAN is absent — the row requires this plan, not whichever sorts first"
+        B6_REAL_PLAN=""
+    fi
     mkdir -p "$B6_TMP/docs/plans/$B6_PLAN_NAME/research"
     if [[ -f "$B6_REAL_PLAN/status.json" ]]; then
         cp "$B6_REAL_PLAN/status.json" "$B6_TMP/docs/plans/$B6_PLAN_NAME/status.json"
@@ -213,9 +224,17 @@ else
         "$B6_TMP/docs/plans/$B6_PLAN_NAME/status.json" 2>/dev/null \
         | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
     touch "$B6_TMP/docs/plans/$B6_PLAN_NAME/brainstorm.md"
-    # First fenced bash block = the no-argument overview.
-    awk '/^```bash/{n++; if(n==1){inb=1; next}} inb && /^```/{inb=0} inb' "$PS_MD" \
-        > "$B6_TMP/overview.sh"
+    # Select by CONTENT, not ordinal. "first bash block" let an inserted decoy block
+    # become the tested subject while the real overview loop was broken, and Layer 4
+    # still reported 10/0/0 (Codex N6). The overview is the block that both assigns
+    # PLANS_DIR and loops over it; a decoy would have to be a working overview to match.
+    awk '/^```bash/{inb=1; buf=""; next}
+         inb && /^```/{
+           if (buf ~ /PLANS_DIR="docs\/plans"/ && buf ~ /for [A-Za-z_]+ in "\$\{?PLANS_DIR\}?"\/\*\//) {
+             printf "%s", buf; exit
+           }
+           inb=0; next }
+         inb { buf = buf $0 "\n" }' "$PS_MD" > "$B6_TMP/overview.sh"
     if [[ ! -s "$B6_TMP/overview.sh" ]]; then
         fail "B6: could not extract the overview block from plan-status.md"
     elif [[ -z "$B6_PLAN_NAME" || -z "$B6_WANT_PHASE" ]]; then
@@ -275,9 +294,12 @@ else
     if [[ -z "$B7_TMP" || ! -d "$B7_TMP" ]]; then
         fail "B7: could not create a temp dir"
     else
-    # The inventory block: the one that opens with the FOLDER assignment.
+    # Content-selected on TWO markers, so a decoy block containing only the assignment
+    # cannot become the subject (Codex N7).
     awk '/^```bash/{inb=1; buf=""; next}
-         inb && /^```/{ if (buf ~ /FOLDER="<source-folder>"/) { printf "%s", buf; exit } inb=0; next }
+         inb && /^```/{
+           if (buf ~ /FOLDER="<source-folder>"/ && buf ~ /Source Inventory/) { printf "%s", buf; exit }
+           inb=0; next }
          inb { buf = buf $0 "\n" }' "$QC_MD" > "$B7_TMP/inventory.sh"
     if [[ ! -s "$B7_TMP/inventory.sh" ]]; then
         fail "B7: could not extract the inventory block from quick-cleanup.md"
@@ -297,15 +319,36 @@ else
         #
         # Exact-match on the whole output has neither weakness: any extra line fails,
         # whatever it says, and no downstream wording is referenced at all.
-        B7_OUT=$(cd "$B7_TMP" && bash inventory.sh 2>&1) && B7_RC=0 || B7_RC=$?
-        B7_WANT='No source folder given. Usage: /deepgrade:quick-cleanup <folder>'
-        B7_LINES=$(printf '%s\n' "$B7_OUT" | grep -c . || true)
+        # REACHABILITY CANARY, instrumented directly rather than inferred from output.
+        #
+        # Exact whole-output matching still had both faults Codex named (N7): with the
+        # sentinel inert AND the directory guard emitting only a blank line, command
+        # substitution strips trailing newlines and the outputs compare equal — a false
+        # PASS; and any legitimate rewording of the usage sentence failed it.
+        #
+        # A canary emitted immediately before the directory check settles reachability
+        # regardless of what anything downstream prints, and needs no coupling to copy.
+        awk '{ print }
+             /^if \[ ! -d "\$FOLDER" \]/ && !done { print "echo __B7_REACHED_DIR_CHECK__"; done=1 }' \
+            "$B7_TMP/inventory.sh" > "$B7_TMP/probe.sh"
+        # awk prints the canary AFTER the matched line, so move it before the `if`.
+        grep -n '__B7_REACHED_DIR_CHECK__' "$B7_TMP/probe.sh" >/dev/null 2>&1 || {
+            # Anchor drifted; refuse to report a pass we cannot substantiate.
+            fail "B7: could not instrument the directory check — the canary anchor no longer matches, so reachability is unverified"
+        }
+        B7_OUT=$(cd "$B7_TMP" && bash probe.sh 2>&1) && B7_RC=0 || B7_RC=$?
         if [[ $B7_RC -ne 0 ]]; then
             fail "B7: zero-arg path exited $B7_RC — it must degrade cleanly, not error"
-        elif [[ "$B7_OUT" != "$B7_WANT" ]]; then
-            fail "B7: zero-arg output is not EXACTLY the usage line ($B7_LINES line(s)) — extra output means the sentinel did not short-circuit: $(head -c 160 <<<"$B7_OUT")"
+        elif grep -q '__B7_REACHED_DIR_CHECK__' <<<"$B7_OUT"; then
+            fail "B7: execution REACHED the directory check — the sentinel guard did not short-circuit (canary fired)"
+        elif grep -q 'Source Inventory' <<<"$B7_OUT"; then
+            fail "B7: zero-arg path ran the inventory — the guard is present but inert"
+        elif ! grep -qiE 'source folder|usage' <<<"$B7_OUT"; then
+            # Semantic, not literal: the user must be told what to do. Asserting the exact
+            # sentence made a harmless copy edit fail the suite (Codex Q3).
+            fail "B7: zero-arg path printed no usage guidance: $(head -c 160 <<<"$B7_OUT")"
         else
-            pass "B7: zero-arg path emits exactly the usage line and exits 0 (complete-output match)"
+            pass "B7: zero-arg path short-circuits at the sentinel (canary never reached) and prints usage"
         fi
     fi
     rm -rf "$B7_TMP"

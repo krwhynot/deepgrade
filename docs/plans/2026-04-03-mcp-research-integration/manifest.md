@@ -25,7 +25,7 @@ Owner: Kyle
 | skills/mcp-research/SKILL.md | NEW skill | MCP-001 | 2026-04-03 |
 | commands/plan.md | EDIT frontmatter + Track 3 + URL verify | MCP-003 | 2026-04-03 |
 | commands/troubleshoot.md | EDIT frontmatter + Step 0.2 | MCP-004 | 2026-04-03 |
-| commands/doc.md | EDIT frontmatter | MCP-005 | 2026-04-03 |
+| documentation command (since deleted, F30) | EDIT frontmatter | MCP-005 | 2026-04-03 |
 | skills/documentation/SKILL.md | EDIT + enrichment section | MCP-005 | 2026-04-03 |
 | agents/integration-scanner.md | EDIT frontmatter + API validation | MCP-006 | 2026-04-03 |
 | agents/dependency-mapper.md | EDIT frontmatter + deprecation check | MCP-007 | 2026-04-03 |
