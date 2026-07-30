@@ -846,7 +846,7 @@ The beauty of this arrangement is redundancy. An AI agent that somehow bypasses 
 
 ### Layer 1: Plugin Hooks
 
-Plugin hooks are the first line of defense. They fire automatically at specific points in the Claude Code lifecycle and require zero human attention. They are defined inline in [`plugin.json`](.claude-plugin/plugin.json) and execute as bash commands.
+Plugin hooks are the first line of defense. They fire automatically at specific points in the Claude Code lifecycle and require zero human attention. They are declared in [`hooks/hooks.json`](hooks/hooks.json) and execute as Node scripts under [`scripts/`](scripts/), one file per handler.
 
 ```mermaid
 graph TD
@@ -884,11 +884,11 @@ graph TD
 
 Seven hooks run as part of Layer 1:
 
-**Force push guard** ([`plugin.json` PreToolUse:Bash](.claude-plugin/plugin.json)). Blocks `git push --force`. Force pushes rewrite shared history and can destroy other people's work. Use `--force-with-lease` if you truly need it (the guard does not block that).
+**Force push guard** ([`scripts/dg-git-guard.js`](scripts/dg-git-guard.js), PreToolUse:Bash). Blocks `git push --force` and the bare `-f` form. Force pushes rewrite shared history and can destroy other people's work. Use `--force-with-lease` if you truly need it — the guard genuinely does not block that, which was untrue before v5.0.0: the old pattern matched `--force` inside `--force-with-lease`, so the safe form was denied and the short form was not.
 
-**Hard reset guard** ([`plugin.json` PreToolUse:Bash](.claude-plugin/plugin.json)). Blocks `git reset --hard`. A hard reset permanently discards all uncommitted changes. If Claude has been editing files for 30 minutes and you hard-reset, all that work vanishes. The guard forces you to think twice.
+**Hard reset guard** ([`scripts/dg-git-guard.js`](scripts/dg-git-guard.js), PreToolUse:Bash). Prompts for confirmation on `git reset --hard` rather than blocking it. A hard reset permanently discards all uncommitted changes, but it is also a legitimate operation, so the guard asks instead of refusing. Before v5.0.0 it denied outright, and the explanation was written to a channel that is never displayed.
 
-**Migration guard** ([`plugin.json` PreToolUse:Write|Edit](.claude-plugin/plugin.json)). Blocks edits to existing migration files. Modifying an applied migration can corrupt databases. The correct action is always to create a new migration. New migration files are allowed; only edits to existing ones trigger the guard.
+**Migration guard** ([`scripts/dg-migration-guard.js`](scripts/dg-migration-guard.js), PreToolUse:Write|Edit). Blocks edits to existing migration files. Modifying an applied migration can corrupt databases. The correct action is always to create a new migration. New migration files are allowed; only edits to existing ones trigger the guard.
 
 **DB deploy guard** ([`plugin.json` PreToolUse:Bash](.claude-plugin/plugin.json)). Blocks direct database deploy commands (`supabase db push`, `prisma migrate deploy`, `dotnet ef database update`, `flyway migrate`, `rails db:migrate`) unless the command includes `--dry-run`, `--local`, `RAILS_ENV=test`, or `RAILS_ENV=development`. As [Supabase: Managing Environments](https://supabase.com/docs/deployment/managing-environments) puts it: "Use a CI/CD pipeline rather than deploying from your local machine."
 
@@ -942,9 +942,13 @@ Layer 3 is where a human stays in the loop. The [`/deepgrade:plan`](commands/pla
 
 **Phase 8 (Test)** has a hard readiness gate. All critical path tests must pass, no open P0/P1 defects, characterization baselines captured for refactored code, audit score at GREEN or YELLOW with gap-checked = YES, and rollback plan validated. If any condition fails, the plan stays in Test. There is no override.
 
-### The Zero-Dependency Principle
+### The Single-Dependency Principle
 
-Every hook runs using tools built into Claude Code (Read, Write, Grep, Glob, Bash) plus standard POSIX utilities (`grep`, `sed`, `stat`, `date`, `wc`). The only optional dependency is `jq` for JSON parsing, and every hook that uses `jq` has a `grep`+`sed` fallback path.
+As of v5.0.0 the hooks declare exactly one dependency: **Node.js 18 or later**, which Claude Code itself already requires. There is no `jq`, no POSIX utility chain, and no fallback ladder.
+
+That is a deliberate reversal of the earlier zero-dependency design, and it is worth being precise about why. The old hooks avoided dependencies by parsing JSON with `grep` and `sed`. That is not a parser, and the difference is not academic — it produced a guard that could not distinguish a command from text mentioning one, so it blocked a read-only `grep` whose search pattern named a deployment, and blocked commit messages that merely referred to a force push. Availability was traded for correctness in a security control, which is the wrong trade.
+
+Node gives real `JSON.parse`, so a named field can be extracted rather than guessed at. The cost is honest and stated: on a host without Node the guards cannot spawn at all, which Claude Code reports as a hook error. Absent and loud, never silently degraded.
 
 ```text
   ┌──────────────────────────────────┐
@@ -972,9 +976,9 @@ Every hook runs using tools built into Claude Code (Read, Write, Grep, Glob, Bas
          └────────────────┘
 ```
 
-On session start, the plugin checks for `jq` and warns if it is not found: "[DeepGrade] WARNING: jq not installed. Safety hooks will use fallback parsing. Install jq for best reliability." The guards still work without `jq`. They just use simpler pattern matching that handles the flat JSON structures hooks actually receive.
+`jq` is no longer consulted, and the SessionStart warning about it is gone. Nothing falls back to pattern matching, because the fallback was the defect.
 
-This design is intentional. Requiring external tools creates installation friction and platform-specific failure modes. A security guard that fails to install is worse than no guard at all because it creates a false sense of safety.
+The concern that motivated the old design still stands: a security guard that fails to install is worse than no guard, because it creates a false sense of safety. v5.0.0 answers it differently. Rather than degrade quietly to a weaker parser, a host that cannot run the guards produces a visible hook error on every guarded event. You are told the safety layer is absent instead of being left to assume it is working.
 
 On Windows, where Claude Code runs in Git Bash, `jq` installed via `winget` lands in `$LOCALAPPDATA/Microsoft/WinGet/Links/`, a path Git Bash does not include by default. Every hook starts with `export PATH="$PATH:$LOCALAPPDATA/Microsoft/WinGet/Links:/usr/local/bin"` to ensure `jq` is discoverable regardless of installation method.
 
@@ -1812,18 +1816,22 @@ Source: [scripts/dg-git-guard.sh](https://github.com/krwhynot/deepgrade/blob/mai
 
 ### The grep+sed Pattern Up Close
 
-When jq is not available, every hook falls back to the same extraction pattern. It looks ugly but it is battle-tested on flat JSON payloads.
+This section previously documented a `jq`-then-`grep`+`sed` fallback ladder as the design. **That pattern was removed in v5.0.0 and is recorded here as a defect, not a technique**, because it reads as reasonable and is not.
 
 ```bash
-# jq path (preferred)
+# REMOVED in v5.0.0 — do not reintroduce this shape.
 COMMAND=$(echo "$INPUT" | jq -r ".tool_input.command // empty" 2>/dev/null)
-
-# grep+sed fallback (if jq returned empty or failed)
 [ -z "$COMMAND" ] && \
   COMMAND=$(echo "$INPUT" | grep -o '"command":"[^"]*"' | head -1 | sed 's/"command":"//;s/"$//')
 ```
 
-The `// empty` in the jq expression is important. Without it, jq returns the string `"null"` for missing fields, which would pass the `-z` check and skip the fallback. With `// empty`, jq returns an actual empty string, triggering the grep+sed path correctly.
+Three failures, all of them silent:
+
+1. **It is not field-scoped.** `grep -o '"command":"..."'` takes the first key of that name anywhere in the payload, so a sibling object carrying its own `command` wins over the real `tool_input.command`.
+2. **It truncates at the first quote.** `[^"]*` stops at any escaped quote inside the command, so what gets matched is a prefix of what will actually run.
+3. **It cannot tell a command from text.** Nothing distinguishes an instruction from a quoted mention of one, which over-blocks (a commit message naming a force push) and under-blocks (an exemption token appearing outside the command field suppressing a real denial).
+
+The replacement parses the payload with `JSON.parse`, reads the named field only, and splits the command into shell words so quoted text contributes data rather than structure. See [`scripts/dg-git-guard.js`](scripts/dg-git-guard.js) and the acceptance corpus at [`tests/fixtures/hook-corpus.json`](tests/fixtures/hook-corpus.json), which encodes each of these three failures as a test.
 
 The `head -1` in the grep path handles the case where `"command"` appears multiple times in the JSON (it can, in nested structures). We always take the first match, which corresponds to the top-level field.
 

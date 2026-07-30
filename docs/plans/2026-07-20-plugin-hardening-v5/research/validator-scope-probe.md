@@ -132,6 +132,44 @@ plus that every referenced and preloaded skill exists on disk.
 **Rule this yields:** when a finding's fix text contains a conjunction, each clause is a separate
 acceptance criterion. Closing on one is closing on none.
 
+## CORRECTION (2026-07-29, PHV5-043) — the scope is wider than this document said
+
+The heading above and the original Probe 3 conclusion said the validator reads "manifests, not
+components." **That is too strong and is corrected here rather than quietly amended.** Creating
+`hooks/hooks.json` in 4b made a third surface observable, and the validator checks it:
+
+```
+$ claude plugin validate .claude-plugin/plugin.json --strict
+Validating plugin manifest: ...\.claude-plugin\plugin.json
+Validating hooks: ...\hooks\hooks.json
+✘ Found 1 error:
+  ❯ hooks: Invalid input: expected record, received undefined
+```
+
+Two falsifying controls confirm it validates structurally, not merely parses:
+
+| Mutation to `hooks/hooks.json` | Result |
+|---|---|
+| rename `PreCompact` to `NotARealEvent` | `❯ hooks.NotARealEvent: Invalid key in record` |
+| delete `type` from a handler | `❯ hooks.Stop.0.hooks.0.type: Invalid input` |
+| (unmutated) | `✔ Validation passed` |
+
+It caught a real error during 4b: the event map must be wrapped in a top-level `hooks` key, which
+this plan had nowhere recorded. So the validator earned its place for this file class.
+
+**Why the original conclusion was reached and why it was still wrong.** The probes were run when
+the repo had no `hooks/` folder at all — every hook was inline in `plugin.json`. Absence of a
+surface was read as absence of coverage for it. The correct statement is narrower:
+
+> `claude plugin validate --strict` validates `plugin.json`, `marketplace.json`, **and
+> `hooks/hooks.json`**. It does **not** read `agents/*.md`, `commands/*.md`, or `skills/*/SKILL.md`
+> frontmatter.
+
+Probe 2's control still stands unchanged — an agent file with its `name:` line deleted validates
+clean — so every conclusion below about the *agent-frontmatter* defect class is unaffected. What
+changes is that "components" was the wrong word for the boundary; the boundary is "declared
+JSON config" versus "markdown frontmatter".
+
 ## Consequence beyond U1
 
 The plan already recorded, for F21 alone, that "`claude plugin validate` passes despite

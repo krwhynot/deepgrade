@@ -81,20 +81,22 @@ claude
 | `/deepgrade:troubleshoot` | 4-phase debugging framework with incident triage and containment |
 | `/deepgrade:help` | Show all commands and usage |
 
-## Safety Hooks (7)
+## Safety Hooks (8)
 
-The plugin includes 7 inline safety hooks that activate
-automatically. Some hooks guard multiple behaviors.
+The plugin includes 8 safety hooks that activate automatically. They are declared
+in `hooks/hooks.json` and run as Node scripts from `scripts/`, one file per handler.
+**Requires Node.js 18 or later** — the same runtime Claude Code itself needs.
 
 | Hook | Event | What It Does |
 | ---- | ----- | ------------ |
-| Active Plan Display | SessionStart | Shows current plan name |
+| Active Plan Display | SessionStart | Reports the active plan, its phase, and audit staleness |
 | Migration Guard | PreToolUse Write/Edit | Blocks edits to existing migrations |
-| Git + DB Guard | PreToolUse Bash | Blocks force push, hard reset, and direct DB deploys |
-| Change Tracker | PostToolUse Write/Edit | Counts file changes |
+| Git + DB Guard | PreToolUse Bash | Blocks force push and direct DB deploys; asks before a hard reset |
+| Change Tracker | PostToolUse Write/Edit | Counts file changes, nudges when an audit is stale |
 | Test/Build Tracker | PostToolUse Bash | Records test and build runs |
-| Session Summary | Stop | Reports file change count |
-| Plan Context | PreCompact | Preserves plan name on compact |
+| Session Summary | Stop | Reports file change count and warns if no tests ran |
+| Subagent Log | SubagentStop | Logs subagent completions to the active plan |
+| Plan Context | PreCompact | Preserves plan name and phase on compact |
 
 ### Database Deploy Guard
 

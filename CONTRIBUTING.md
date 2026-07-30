@@ -54,8 +54,11 @@ Bare names such as `ref_search_documentation` or `web_search_exa` in a `tools:`
 or `allowed-tools:` list resolve to nothing. In `allowed-tools:` they are inert
 no-ops; in an agent's `tools:` they silently withhold access the agent was meant
 to have. `claude plugin validate --strict` does not catch either case — it reads
-only `plugin.json` and `marketplace.json`, never agent or command frontmatter —
-so `tests/layer1-config-wiring.sh` guards this instead.
+`plugin.json`, `marketplace.json` and `hooks/hooks.json`, but never agent, command
+or skill frontmatter — so `tests/layer1-config-wiring.sh` guards this instead.
+The boundary is declared JSON config versus markdown frontmatter, not "manifests
+versus components": a broken `hooks/hooks.json` fails validation, while an agent
+file missing its `name:` passes clean.
 
 The same rule applies to **skill** names, which are not MCP tools but fail the
 same way: plugin skills address as `plugin:skill`, so an agent that says
@@ -68,15 +71,29 @@ and a test asserts they stay that way. Edit both or neither.
 
 ## Modifying Hooks
 
-Hooks are inline in `.claude-plugin/plugin.json`. Each hook uses:
-- jq for JSON parsing (primary)
-- grep+sed as fallback (when jq unavailable)
-- Windows PATH preamble for jq discovery
+Hooks are declared in `hooks/hooks.json` and implemented as one Node script per
+handler under `scripts/`. Requires Node.js 18+.
+
+**Never add a `hooks` key back to `.claude-plugin/plugin.json`.** With both a
+`hooks/` folder and a manifest `hooks` key present, Claude Code silently ignores
+the **folder** — so an inline key does not merely duplicate config, it disables
+every shipped handler while looking correct. `layer1` asserts the key's absence.
+
+Each handler:
+- parses stdin with `JSON.parse` and reads the **named** field it needs
+- splits commands into shell words before matching, so quoted text is data
+  (`git commit -m "no git push --force"` must be allowed; `git push "--force"`
+  must not)
+- emits JSON on exit 0 — **never stderr on exit 0**, which is not surfaced
+- denies with exit 2, asks with `permissionDecision: "ask"` at exit 0
 
 When editing hooks:
-- Test with AND without jq installed
-- Security guards must never fail-open
-- Stop hooks must use exit 0 (never exit 2, causes infinite loop)
+- add the case to `tests/fixtures/hook-corpus.json` first; it is the acceptance
+  authority, and a change that fails a row fails regardless of how it is written
+- security guards must never fail open; informational hooks must never fail closed
+- Stop hooks must use exit 0 (never exit 2, causes an infinite loop)
+- every file in `scripts/` must be referenced by `hooks/hooks.json`, and every
+  reference must resolve — `layer1` sweeps both directions
 
 ## Versioning
 

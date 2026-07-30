@@ -205,19 +205,30 @@
         "PHV5-030",
         "PHV5-031",
         "PHV5-020",
-        "PHV5-021"
+        "PHV5-021",
+        "PHV5-040",
+        "PHV5-041",
+        "PHV5-042",
+        "PHV5-043"
       ],
       "findings_closed": [
         "F01",
         "F02",
         "F03",
         "F04",
+        "F05",
+        "F06",
         "F07",
         "F17",
         "F18",
         "F19",
         "F20A",
         "F21",
+        "F22",
+        "F23",
+        "F24",
+        "F25",
+        "F26",
         "F27",
         "F29",
         "F31",
@@ -344,7 +355,21 @@
         "phv5_042_status": "SUBSTANTIALLY done, NOT complete. Done: Layer 2 is now a dispatcher (tests/layer2-hook-suite.sh) covering the live inline hooks AND lane N's corpus + ledger rows; the exit-2 + stderr-WARNING assertion for git reset --hard is DELETED (it enshrined F22 - it would have failed the moment the bug was fixed). Deleted rather than rewritten to the correct expectation, because this file exercises the INLINE hooks which still have the defect during 4a; a correct assertion there would turn the suite red with no owning ticket, and re-adding an expected-failures entry is the anti-pattern that file's header warns against. The correct behavior IS asserted against lane N (corpus row F22-reset-hard-ask) - coverage moved, it did not disappear. NOT done: the 'no positional-index extraction' clause still applies to layer2-hook-simulation.sh, which greps because the inline hooks it tests do; 4b deletes both together. Layers 6 and 7 deliberately NOT used - reserved by the locked test_layer_numbering decision.",
         "dispatcher_control": "Verified the dispatcher is not a silent pass-through: breaking one ledger assertion makes it exit 1, and restoring makes it exit 0.",
         "adversarial_audit": "AUDIT 2026-07-29, adversarial lens, run against cf46aab..b213668. FINDING: the tokenizer shipped in cf46aab was the right IDEA with the wrong MECHANISM, and it introduced a SECURITY REGRESSION. It deleted the contents of quoted spans; a shell does not delete quoted text, it strips the quote CHARACTERS and keeps the content as part of the surrounding word. So `git push \"--force\"` - an ordinary working command - became `git push \"\"` and was ALLOWED, while the old bare-regex guard had denied it. Probe result: 10 bypasses, 5 of them regressions versus the old guard (quoted long flag in either quote style, flag split by empty quotes, flag split mid-word, quoted short flag). The other 5 were pre-existing holes the old guard also missed (quoted subcommand, quoted command word, quoted db verb, quoted db middle word, quoted hard-reset flag). WHY THE CORPUS MISSED IT: all 18 rows quoted PROSE (a commit message, a grep pattern); not one quoted a FLAG. The 9 mutations were all aimed at the same assumption. A test suite cannot find a defect class it does not represent, and mutation testing only proves the rows respond to the mutations you thought of. FIX: shell-style word splitting - quotes contribute content and vanish as delimiters, adjacent segments join into one word - plus matching on word SEQUENCES rather than substrings, evaluated PER SEGMENT (split on ; && || | parens). Both properties then hold together: a quoted multi-word message cannot supply the adjacent words `git` `push`, while a quoted flag still is that word. Result: 0 bypasses, 0 regressions, and 4 cases now caught that the OLD guard also missed - strictly better than both prior implementations. The per-segment change also removed a false positive the first version had: `git reset --soft && tar --hard` no longer prompts. ALSO FOUND: two leftover has() calls in the DG_STRICT_GIT section referencing a helper the rewrite removed, which would have thrown at runtime. Reachable only with DG_STRICT_GIT=1, so the corpus (env unset) never executes that path - the ledger rows-5/6 test is what caught it. Concrete argument for testing the opt-in path."
-      }
+      },
+      "wave_4b_complete": {
+        "date": "2026-07-29",
+        "atomicity": "hooks/hooks.json created and the inline `hooks` key DELETED in the same commit. Not stylistic: with both a hooks/ folder and a manifest hooks key present, Claude Code v2.1.140+ silently ignores the FOLDER, so a surviving inline key would disable every shipped handler while looking correct. layer1 asserts the key's ABSENCE, which is a negative check rather than a comparison for exactly that reason.",
+        "handler_count": "7 -> 8. SubagentStop wired (ledger row 4 / F06) - the handler had existed in scripts/ since before this plan and was referenced by nothing, so it had never once fired.",
+        "f06_reverse_sweep": "All 8 .sh handlers DELETED. Under lane N they were referenced by nothing, and F06's acceptance is bidirectional: every file in scripts/ referenced by the config AND every reference resolving. Asserted both ways with a floor, so dead code cannot ship to installers again.",
+        "exec_form": "Every handler uses the vendor-documented node exec form (separate command + args array, ${CLAUDE_PLUGIN_ROOT}-anchored), not a shell string. Asserted, because a shell string would reintroduce the quoting fragility 4a removed.",
+        "phv5_042_completed_here": "The 'no positional-index extraction' clause is now satisfied - not by rewriting layer2-hook-simulation.sh but by DELETING it along with the inline hooks it exercised. Both the handlers and the extraction technique are gone, so the file had no subject left. The dispatcher now fails if that file reappears undispatched, because an undispatched test file reads as coverage.",
+        "doc_conformance_9_2": "All rows applied, including FOUR assigned to 4a that were NOT done when I reported 4a complete - an honest correction, not a re-scoping: METHODOLOGY.md:849 (hooks 'defined inline'), :944-950 (the Zero-Dependency Principle, now the Single-Dependency Principle - node 18+), :972-978 (jq warning and 'guards still work without jq'), :889 ('does not block --force-with-lease', which F25 finally makes true), :1815-1826 (the grep+sed fallback ladder, now recorded as a DEFECT with its three silent failure modes rather than as a technique). Plus 4b's own rows: GUIDE.md:5 ('Zero Dependencies' -> 'Requires Node.js 18+', 7 -> 8 hooks) and README.md:84 (7 -> 8, plus the SubagentStop row and the node requirement).",
+        "validator_scope_correction": "PHV5-043 disproved part of the U1 record. `claude plugin validate --strict` DOES read hooks/hooks.json - it printed 'Validating hooks: ...' and rejected the file until the event map was wrapped in a top-level `hooks` key, a requirement recorded nowhere in this plan. Two falsifying controls confirm structural validation, not mere parsing: renaming an event to NotARealEvent gives 'hooks.NotARealEvent: Invalid key in record', and deleting a handler's `type` gives 'hooks.Stop.0.hooks.0.type: Invalid input'. The earlier conclusion ('reads only plugin.json and marketplace.json') was reached when the repo had no hooks/ folder at all, so absence of a surface was read as absence of coverage. CORRECTED STATEMENT: validate checks plugin.json, marketplace.json AND hooks/hooks.json, but never agents/commands/skills frontmatter. The boundary is declared JSON config vs markdown frontmatter. Probe 2's control (an agent missing its name: line validates clean) is unaffected, so every conclusion about the agent-frontmatter defect class stands.",
+        "rollback": "Single revert of this commit plus /reload-plugins restores the previous inline hooks, per the 4b rollback contract. Nothing else has to be undone because activation is one commit.",
+        "not_yet_proven": "4b activates; it does not prove runtime behavior. The installed marketplace copy is still the OLD inline configuration, so this session is still running the old guards - which is why they were still blocking commit messages during 4b. PHV5-044 (4c, Layer 7) is the runtime proof: every shipped event and matcher observed firing via --plugin-dir AND from an installed copy, including the node-less installed-copy case (lane N: vendor hook-error notice only, per CR-1). U4 (which output key surfaces per event) and U5 (whether PreCompact can surface a message at all) are settled there, not here.",
+        "suite": "236 -> 227 pass / 0 fail (L1 118, L2.1 corpus 27, L2.2 ledger 25, L3 9, L4 7, L5 41). The DROP is deliberate: layer2-hook-simulation.sh's 14 inline assertions were deleted with their subject, while layer1 gained 5 net."
+      },
+      "candidate_findings_note": "CAND-2 extended: `claude plugin details` counts EVENTS where the docs count HANDLERS. It now reports 'Hooks (6)' for 8 handlers across 6 events (it reported 5 for 7 handlers before). Same taxonomy mismatch as its 'Skills (23)', which folds the 17 commands in with the 6 knowledge skills. Cosmetic, but anyone reconciling docs against that output will read the correct numbers as wrong."
     },
     "impact_review": {
       "status": "not_started"

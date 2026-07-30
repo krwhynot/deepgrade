@@ -107,8 +107,10 @@ else
   fail "plugin.json is not valid JSON"
 fi
 
-# 1c. Required fields
-for field in name version description hooks; do
+# 1c. Required fields. `hooks` is deliberately NOT in this list any more — PHV5-043
+#     moved the hooks to hooks/hooks.json and its presence here is now a DEFECT,
+#     asserted negatively in 1e.
+for field in name version description; do
   if json_has_key "$PLUGIN_JSON" "$field"; then
     pass "plugin.json has required field: $field"
   else
@@ -116,15 +118,31 @@ for field in name version description hooks; do
   fi
 done
 
-# 1d. Hook event types
-EXPECTED_EVENTS="SessionStart PreToolUse PostToolUse Stop PreCompact"
-for event in $EXPECTED_EVENTS; do
-  if grep -q "\"$event\"" "$PLUGIN_JSON"; then
-    pass "plugin.json hooks has event type: $event"
-  else
-    fail "plugin.json hooks missing event type: $event"
-  fi
-done
+# 1d. Hook event types, now sourced from the hooks folder.
+HOOKS_JSON="hooks/hooks.json"
+EXPECTED_EVENTS="SessionStart PreToolUse PostToolUse Stop SubagentStop PreCompact"
+if [ ! -f "$HOOKS_JSON" ]; then
+  fail "$HOOKS_JSON is missing — lane N declares every handler there"
+else
+  for event in $EXPECTED_EVENTS; do
+    if grep -q "\"$event\"" "$HOOKS_JSON"; then
+      pass "hooks.json has event type: $event"
+    else
+      fail "hooks.json missing event type: $event"
+    fi
+  done
+fi
+
+# 1e. ATOMICITY (PHV5-043). With BOTH a hooks/ folder and a manifest `hooks` key
+#     present, Claude Code v2.1.140+ silently ignores the FOLDER. So an inline key
+#     surviving alongside hooks/hooks.json does not merely duplicate config — it
+#     disables everything in the folder while looking correct. This is why 4b had
+#     to be one commit, and why the check is a negative rather than a comparison.
+if json_has_key "$PLUGIN_JSON" "hooks"; then
+  fail "plugin.json still has an inline 'hooks' key — with hooks/ also present the FOLDER is silently ignored and none of the shipped handlers run"
+else
+  pass "plugin.json has no inline 'hooks' key (hooks/ is the single source)"
+fi
 
 echo ""
 
@@ -259,14 +277,23 @@ echo ""
 # ===========================================================================
 echo "--- Hook Count Consistency ---"
 
-# 4a. Count hooks in plugin.json (count "type": "command" entries)
+# 4a. Count handlers in hooks/hooks.json. Counted from the FOLDER, not the manifest
+#     — PHV5-043 moved them, and counting the manifest would now always yield 0 and
+#     pass vacuously against a README that also said 0.
 pj_hook_count=0
-if $has_jq; then
-  pj_hook_count=$(jq '[.hooks[][] | .hooks[]? | select(.type == "command")] | length' "$PLUGIN_JSON" 2>/dev/null)
-else
-  pj_hook_count=$(grep -c '"type"[[:space:]]*:[[:space:]]*"command"' "$PLUGIN_JSON")
+if [ -f "hooks/hooks.json" ]; then
+  if $has_jq; then
+    pj_hook_count=$(jq '[.hooks[][] | .hooks[]? | select(.type == "command")] | length' "hooks/hooks.json" 2>/dev/null)
+  else
+    pj_hook_count=$(grep -c '"type"[[:space:]]*:[[:space:]]*"command"' "hooks/hooks.json")
+  fi
 fi
 pj_hook_count=${pj_hook_count:-0}
+# Floor: the count must be non-zero, or every downstream comparison is trivially
+# satisfied by three matching zeros.
+if [ "$pj_hook_count" -eq 0 ]; then
+  fail "hook count derived as 0 from hooks/hooks.json — the derivation is broken, not the config"
+fi
 
 # 4b. Extract number from README heading "Safety Hooks (N)"
 readme_hook_heading=0
@@ -936,6 +963,74 @@ else
     pass "A1/CR-3: the .gitattributes rationale names both .sh and .js"
   else
     fail "A1/CR-3: the .gitattributes rationale does not name both .sh and .js — it will drift from the tree again"
+  fi
+fi
+
+# ===========================================================================
+# 15. Hook wiring under lane N (F06, PHV5-043)
+#
+# F06's acceptance is bidirectional: every file in scripts/ must be referenced by
+# the hook config, AND every reference must resolve. One direction alone permits
+# either dead code shipping to installers or a hook pointing at nothing.
+# ===========================================================================
+echo ""
+echo "--- Hook wiring, lane N (F06) ---"
+
+if [ ! -f "hooks/hooks.json" ]; then
+  fail "F06: hooks/hooks.json missing — cannot verify wiring"
+else
+  # Referenced basenames, extracted from the exec-form args.
+  refs=$(grep -oE '\$\{CLAUDE_PLUGIN_ROOT\}/scripts/[A-Za-z0-9._-]+' hooks/hooks.json \
+         | sed 's|.*/||' | sort -u)
+  ref_count=$(echo "$refs" | grep -c . || true)
+
+  if [ "$ref_count" -lt 8 ]; then
+    fail "F06: only $ref_count script references found in hooks.json (expected >= 8) — the extraction is broken"
+  else
+    pass "F06: hooks.json references $ref_count handler scripts"
+  fi
+
+  # Forward: every reference resolves to a real file.
+  missing=0
+  for r in $refs; do
+    [ -f "scripts/$r" ] || { fail "F06: hooks.json references scripts/$r which does not exist"; missing=1; }
+  done
+  [ "$missing" -eq 0 ] && pass "F06: every referenced handler script exists"
+
+  # Reverse: nothing in scripts/ is unreferenced. This is the direction that stops
+  # dead code shipping — the .sh set was orphaned in exactly this way before 4b.
+  orphan=0
+  for f in scripts/*; do
+    [ -e "$f" ] || continue
+    b=$(basename "$f")
+    echo "$refs" | grep -qxF "$b" || { fail "F06: scripts/$b is not referenced by hooks.json — unwired code must not ship"; orphan=1; }
+  done
+  [ "$orphan" -eq 0 ] && pass "F06: no orphaned files in scripts/ (reverse sweep)"
+
+  # Ledger row 4 / F06: the SubagentStop handler existed but was wired to nothing.
+  if grep -q '"SubagentStop"' hooks/hooks.json; then
+    pass "F06: SubagentStop is wired (ledger row 4)"
+  else
+    fail "F06: SubagentStop entry missing — the handler ships but never fires"
+  fi
+
+  # Lane N is the node EXEC form: separate command + args. A shell-string form
+  # would reintroduce the quoting fragility the inline hooks had, and the
+  # vendor-documented portability argument rests on `node` being a real binary.
+  if $has_jq; then
+    nonexec=$(jq -r '[.hooks[][] | .hooks[]? | select(.command != "node" or (.args | type) != "array")] | length' hooks/hooks.json 2>/dev/null)
+    if [ "${nonexec:-1}" -eq 0 ]; then
+      pass "F23/lane N: every handler uses the node exec form (command + args array)"
+    else
+      fail "F23/lane N: $nonexec handler(s) are not the node exec form — shell strings reintroduce the quoting fragility 4a removed"
+    fi
+  else
+    if grep -q '"command"[[:space:]]*:[[:space:]]*"node"' hooks/hooks.json \
+       && ! grep -qE '"command"[[:space:]]*:[[:space:]]*"(bash|sh|cmd|powershell|pwsh)' hooks/hooks.json; then
+      pass "F23/lane N: node exec form in use (grep check — jq unavailable)"
+    else
+      fail "F23/lane N: hooks.json does not consistently use the node exec form"
+    fi
   fi
 fi
 
