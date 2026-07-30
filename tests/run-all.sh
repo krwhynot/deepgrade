@@ -118,6 +118,58 @@ if [[ $LAYERS_RUN -ne $EXPECTED_LAYERS ]]; then
     OVERALL_EXIT=1
 fi
 
+# ---------------------------------------------------------------------------
+# expected-failures.txt comparator.
+#
+# That file declares a contract — "the CI wrapper parses the suite's failure list
+# and passes IFF that list equals exactly the entries below" — and NOTHING read it.
+# A grep of the whole repository found no consumer: the contract was documentation,
+# not enforcement, so the header's own warning against re-adding entries was
+# unbacked. The file has been empty since Wave 3, which is exactly when a tolerated
+# failure would slip in unnoticed.
+#
+# Enforced here rather than in CI because CI does not exist yet (PHV5-005). When it
+# does, it inherits this because it runs this script.
+# ---------------------------------------------------------------------------
+EXPECTED_FAILURES_FILE="$SCRIPT_DIR/expected-failures.txt"
+if [[ -f "$EXPECTED_FAILURES_FILE" ]]; then
+    ef_entries=$(grep -vE '^[[:space:]]*(#|$)' "$EXPECTED_FAILURES_FILE" | grep -c . || true)
+    if [[ "$ef_entries" -ne 0 ]]; then
+        echo ""
+        echo ">>> EXPECTED-FAILURES CONTRACT VIOLATED <<<"
+        echo "    $EXPECTED_FAILURES_FILE holds $ef_entries tolerated failure(s):"
+        grep -vE '^[[:space:]]*(#|$)' "$EXPECTED_FAILURES_FILE" | sed 's/^/      /'
+        echo ""
+        echo "    Zero failures are tolerated. A genuine defect belongs in a fix, not in"
+        echo "    this file — recording one here enshrines it as correct behaviour, which"
+        echo "    is the anti-pattern that made the pre-existing suite untrustworthy."
+        echo "    If a red build genuinely must ship, say so in the commit, not here."
+        OVERALL_EXIT=1
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# Plan consistency sweep, when a plan directory is present.
+#
+# The sweep is the plan's own acceptance gate and it was wired to nothing — not this
+# script, not CI. It passed only because it was run by hand, which is not a gate. Run
+# it here so it cannot silently stop being enforced while a plan is active; it is
+# skipped (not failed) once no plan directory exists, so an archived plan does not
+# hold the suite hostage.
+# ---------------------------------------------------------------------------
+for sweep in "$SCRIPT_DIR"/../docs/plans/*/consistency-sweep.sh; do
+    [[ -f "$sweep" ]] || continue
+    echo ""
+    echo "--- Plan consistency sweep: $(basename "$(dirname "$sweep")") ---"
+    if bash "$sweep" >/dev/null 2>&1; then
+        echo "    sweep PASS"
+    else
+        echo ">>> PLAN CONSISTENCY SWEEP FAILED — run it directly for the reconciliation list:"
+        echo "    bash ${sweep#"$SCRIPT_DIR"/../}"
+        OVERALL_EXIT=1
+    fi
+done
+
 echo ""
 echo "============================================"
 echo "  FINAL SUMMARY"

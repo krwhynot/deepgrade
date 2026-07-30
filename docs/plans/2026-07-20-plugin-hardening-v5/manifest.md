@@ -21,7 +21,9 @@ plugin/skill specification, so that every component the plugin advertises actual
 | [Test baseline](research/test-baseline.md) | 2 | 2026-07-20 |
 | [Best practices (5 open questions)](research/best-practices.md) | 2 | 2026-07-20 |
 | [G0 probe results — lane N selected, U6 settled](research/g0-probe-results.md) | 6 (Wave 0) | 2026-07-29 |
-| [Validator scope probe — U1 resolved-negative](research/validator-scope-probe.md) | 6 (Wave 2) | 2026-07-29 |
+| [Validator scope probe — U1, later superseded by the Codex audit](research/validator-scope-probe.md) | 6 (Wave 2) | 2026-07-29 |
+| [Hook adversarial review — 6 confirmed defects incl. an arbitrary write](research/hook-adversarial-review.md) | 6 (Wave 4) | 2026-07-29 |
+| [Codex setup-audit prompt (scoped to Claude Code setup conformance)](codex-setup-audit-prompt.md) | 6 | 2026-07-29 |
 | [Approach — SCOPE LOCK (current version and round history in its own header/§11)](approach.md) | 3 | 2026-07-20 |
 | [Acceptance matrix — authoritative item→wave→files→tests](acceptance-matrix.md) | 3 | 2026-07-20 |
 | [Consistency sweep — scripted Phase 3 gate (§10.5)](consistency-sweep.sh) | 3 | 2026-07-21 |
