@@ -3,7 +3,7 @@ name: gate-generator
 description: |
   Use this agent to generate CI quality gates, Claude Code hooks, and
   pre-commit hooks that enforce DeepGrade audit findings. Creates
-  GitHub Actions workflows, .claude/hooks/hooks.json, and pre-commit configs
+  GitHub Actions workflows, the hooks key of .claude/settings.json, and pre-commit configs
   that warn when HIGH-risk modules are modified without test updates.
   Called by /deepgrade:codebase-gates.
 model: sonnet
@@ -24,7 +24,7 @@ checks that run on every PR and every Claude Code file write.
 <objective>
 Read the Phase 2 audit outputs and generate up to 6 files:
 1. .github/workflows/deepgrade-gate.yml (CI quality gate)
-2. .claude/hooks/hooks.json (Claude Code real-time warnings + baseline nudges)
+2. .claude/settings.json `hooks` key (Claude Code real-time warnings + baseline nudges)
 3. .claude/scripts/check-risk-zone.sh (risk zone checker)
 4. .claude/scripts/baseline-tracker.sh (file change counter + staleness checker)
 5. .pre-commit-config.yaml (pre-commit hooks, if not already present)
@@ -57,7 +57,7 @@ ls .gitlab-ci.yml 2>/dev/null
 ls Jenkinsfile 2>/dev/null
 
 # Check for existing hooks
-ls .claude/hooks/hooks.json 2>/dev/null
+ls .claude/settings.json 2>/dev/null
 ls .pre-commit-config.yaml 2>/dev/null
 ls .husky/ 2>/dev/null
 
@@ -85,7 +85,17 @@ Do not use placeholder paths. Every check must reference real files.
 
 ## Step 4: Generate Claude Code Hooks
 
-Create or merge into .claude/hooks/hooks.json:
+Create or merge into the `hooks` key of **`.claude/settings.json`**.
+
+This is a PROJECT, not a plugin. `hooks/hooks.json` is the plugin-side location and
+is not read from a project directory, so hooks written there are silently inert —
+no error, no warning, they simply never fire. Project hooks live in the `hooks`
+key of `.claude/settings.json`.
+
+MERGE, never overwrite. `.claude/settings.json` also holds permissions, MCP
+configuration and other project settings; replacing the file to add a hook
+destroys all of it. Read the existing file, add to the `hooks` key, and write it
+back whole. If the file does not exist, create it containing only the `hooks` key.
 
 The hooks should include TWO categories:
 
@@ -106,10 +116,15 @@ g) PreToolUse on Write|Edit: check if the file is in a do-not-touch zone.
    If yes, warn the user and offer override with reason logging.
    This is a GUARD RAIL, not a wall. The user can always override.
 
-If .claude/hooks/hooks.json already exists, MERGE your new hooks into the
-existing file. Do not overwrite existing hooks.
+If `.claude/settings.json` already exists, MERGE your new hooks into its `hooks`
+key. Do not overwrite existing hooks, and do not drop sibling keys.
 
-Format:
+Emit a PowerShell variant of every generated hook command alongside the POSIX one.
+Windows hosts without Git Bash dispatch hooks through PowerShell, where a bash
+command cannot run — a hook that only exists in bash form is silently dead there.
+Select with the `shell` field rather than assuming a default.
+
+Format (the `hooks` key of `.claude/settings.json`):
 ```json
 {
   "hooks": {

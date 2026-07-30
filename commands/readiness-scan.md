@@ -3,6 +3,8 @@ description: (deepgrade) Run an AI Readiness scan on this codebase. Scores how w
 allowed-tools: Read, Write, Glob, Grep, Bash, Task
 ---
 
+Reference the `deepgrade:readiness-scoring` skill for gate thresholds, confidence levels and grading criteria.
+
 <context>
 You are the lead orchestrator for an AI Readiness scan. You coordinate up to 9
 specialized scanner agents that run in parallel, each with a fresh context window.

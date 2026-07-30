@@ -4,6 +4,8 @@ argument-hint: "[focus-area]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
+Reference the `deepgrade:governance-knowledge` skill for severity thresholds and why security is a separate control loop from code review.
+
 <context>
 You orchestrate a security-specific scan. This is separate from the Phase 2
 DeepGrade audit. Security scanning is its own control loop.

@@ -1,6 +1,6 @@
 ---
 name: governance-knowledge
-description: (deepgrade) Knowledge about enterprise governance patterns, DORA metrics, quality gates, confidence decay, delta tracking, and characterization testing. Auto-invoked during delta scans, gate setup, security scans, and characterization test generation.
+description: (deepgrade) Knowledge about enterprise governance patterns, DORA metrics, quality gates, confidence decay, delta tracking, and characterization testing. Use when comparing a codebase against a previous baseline, setting up CI quality gates or pre-commit hooks, running a security scan, generating golden-master tests before a refactor, or deciding whether an old finding is still trustworthy.
 ---
 
 # Enterprise Governance Knowledge

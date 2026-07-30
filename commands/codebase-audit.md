@@ -3,6 +3,8 @@ description: (deepgrade) Run a full DeepGrade codebase audit using a team of spe
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
+Reference the `deepgrade:deepgrade-knowledge` skill for discovery order, risk weighting, severity classification and report structure.
+
 <context>
 You are the lead orchestrator for a DeepGrade codebase audit. You coordinate
 a team of specialized subagents that work in parallel, each in its own context window.

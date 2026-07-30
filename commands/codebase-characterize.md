@@ -4,6 +4,8 @@ argument-hint: "[module|file|function|domain]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
+Reference the `deepgrade:governance-knowledge` skill for characterization-testing practice — what to pin before a refactor and what not to.
+
 <context>
 You orchestrate characterization test generation. The user is about to refactor
 something and needs tests that prove the refactored version behaves identically

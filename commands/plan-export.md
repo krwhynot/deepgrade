@@ -2,6 +2,7 @@
 description: (deepgrade) Export a plan as a self-contained zip package that another developer can use with vanilla Claude Code (no plugin required). Copies all referenced documents, redacts secrets, includes a CLAUDE.md that auto-bootstraps context, and verifies codebase compatibility on the receiving end. The developer unzips into their project root and Claude immediately understands the plan.
 argument-hint: "[plan-name]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
+disable-model-invocation: true
 ---
 
 <identity>
@@ -25,11 +26,19 @@ Everything else must be discoverable from that CLAUDE.md.
 Parse $ARGUMENTS to find the plan folder:
 
 ```bash
-# Find the plan folder
-if [ -d "docs/plans/$1" ]; then
-  PLAN_DIR="docs/plans/$1"
-elif ls -d docs/plans/*-$1 2>/dev/null | head -1 > /dev/null 2>&1; then
-  PLAN_DIR=$(ls -d docs/plans/*-$1 2>/dev/null | head -1)
+# PLAN_ARG comes from $ARGUMENTS, substituted by Claude before this block runs.
+# Never $1: a command body is not a shell script.
+PLAN_ARG="<plan-name>"
+if [ "$PLAN_ARG" = "<plan-name>" ] || [ -z "$PLAN_ARG" ]; then
+  echo "No plan name given. Available plans:"
+  ls -d docs/plans/*/ 2>/dev/null | while read d; do basename "$d"; done
+  exit 0
+fi
+
+if [ -d "docs/plans/$PLAN_ARG" ]; then
+  PLAN_DIR="docs/plans/$PLAN_ARG"
+elif ls -d docs/plans/*-"$PLAN_ARG" 2>/dev/null | head -1 > /dev/null 2>&1; then
+  PLAN_DIR=$(ls -d docs/plans/*-"$PLAN_ARG" 2>/dev/null | head -1)
 else
   echo "Plan not found. Available plans:"
   ls -d docs/plans/*/ 2>/dev/null | while read d; do basename "$d"; done
@@ -46,7 +55,7 @@ Read manifest.md and status.json to understand what's in the plan.
 ## Step 2: Create Export Staging Directory
 
 ```bash
-EXPORT_DIR="/tmp/tp-export-${PLAN_NAME}"
+EXPORT_DIR="${TMPDIR:-${TEMP:-/tmp}}/dg-export-${PLAN_NAME}-$$"
 rm -rf "$EXPORT_DIR"
 mkdir -p "$EXPORT_DIR/plans/${PLAN_NAME}"
 mkdir -p "$EXPORT_DIR/plans/${PLAN_NAME}/referenced-docs"
@@ -127,7 +136,7 @@ line numbers) and create a verification checklist:
 ```bash
 # Extract all file paths referenced in plan documents
 grep -rhoP '[A-Za-z0-9_./]+\.(cs|vb|ts|tsx|js|jsx|config|json|md|sql)' \
-  "$EXPORT_DIR/plans/${PLAN_NAME}/" 2>/dev/null | sort -u > /tmp/referenced-files.txt
+  "$EXPORT_DIR/plans/${PLAN_NAME}/" 2>/dev/null | sort -u > "$EXPORT_DIR/referenced-files.txt"
 ```
 
 Write `docs/plans/{name}/codebase-verification.md`:
@@ -336,12 +345,27 @@ If the codebase verification shows missing or moved files:
 ## Step 8: Create the Zip
 
 ```bash
-cd /tmp/tp-export-${PLAN_NAME}
+cd "$EXPORT_DIR" || exit 1
 ZIP_NAME="${PLAN_NAME}-export.zip"
-zip -r "$ZIP_NAME" docs/plans/
+DEST="${CLAUDE_PROJECT_DIR:-$OLDPWD}/${ZIP_NAME}"
 
-# Move to project root for easy access
-mv "$ZIP_NAME" "${PROJECT_ROOT}/${ZIP_NAME}"
+# Archive the staging layout that actually exists here (plans/<name>), not
+# docs/plans/ — the previous version zipped a path absent from the staging dir.
+if command -v zip >/dev/null 2>&1; then
+  zip -rq "$ZIP_NAME" plans/
+elif command -v powershell.exe >/dev/null 2>&1; then
+  # Stock Windows has no zip; Compress-Archive ships with PowerShell.
+  powershell.exe -NoProfile -Command "Compress-Archive -Path 'plans' -DestinationPath '$ZIP_NAME' -Force" || exit 1
+elif command -v tar >/dev/null 2>&1; then
+  ZIP_NAME="${PLAN_NAME}-export.tar.gz"
+  DEST="${CLAUDE_PROJECT_DIR:-$OLDPWD}/${ZIP_NAME}"
+  tar -czf "$ZIP_NAME" plans/
+else
+  echo "No archiver available (need zip, PowerShell, or tar). Staging dir left at: $EXPORT_DIR"
+  exit 1
+fi
+
+mv "$ZIP_NAME" "$DEST"
 echo ""
 echo "Export complete: ${ZIP_NAME}"
 ```

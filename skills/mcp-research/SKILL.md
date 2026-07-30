@@ -1,6 +1,6 @@
 ---
 name: mcp-research
-description: (deepgrade) Knowledge about when and how to use external MCP search tools (Ref, Exa, Perplexity) for documentation lookup, best practices search, code example discovery, and deep research. Auto-invoked when agents need external research, documentation lookup, framework docs, web research, or MCP search guidance. Teaches tool selection heuristics, token budget rules, and graceful degradation patterns.
+description: (deepgrade) Knowledge about when and how to use external MCP search tools (Ref, Exa, Perplexity) for documentation lookup, best practices search, code example discovery, and deep research. Use when looking up framework or library documentation, searching for how others solved a problem, finding code examples, checking whether an MCP search tool is available, or deciding which search tool fits a question. Teaches tool selection heuristics, token budget rules, suffix-matching for server-qualified tool names, and graceful degradation patterns.
 ---
 
 # MCP Research Tool Selection Guide

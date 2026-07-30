@@ -86,11 +86,25 @@ LATEST_PLAN=$(ls -td docs/plans/*/ 2>/dev/null | head -1)
 if [ -n "$LATEST_PLAN" ]; then
   PLAN_NAME=$(basename "$LATEST_PLAN")
   if [ -f "$LATEST_PLAN/status.json" ]; then
-    PHASE=$(python3 -c "
-import json
-with open('${LATEST_PLAN}/status.json') as f:
+    # Interpreter name differs by host (python3 on most Linux, python on many
+    # Windows installs), so resolve it, then fall back to grep. The path is passed
+    # as argv rather than interpolated into the source, which a path containing a
+    # quote used to break.
+    PY=""
+    command -v python3 >/dev/null 2>&1 && PY=python3
+    [ -z "$PY" ] && command -v python >/dev/null 2>&1 && PY=python
+    if [ -n "$PY" ]; then
+      PHASE=$("$PY" -c "
+import json, sys
+with open(sys.argv[1]) as f:
   print(json.load(f).get('current_phase', 'unknown'))
-" 2>/dev/null)
+" "${LATEST_PLAN}/status.json" 2>/dev/null)
+    fi
+    if [ -z "$PHASE" ]; then
+      PHASE=$(grep -o '"current_phase"[[:space:]]*:[[:space:]]*"[^"]*"' "${LATEST_PLAN}/status.json" 2>/dev/null \
+              | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+    fi
+    [ -z "$PHASE" ] && PHASE="unknown"
   fi
 fi
 ```

@@ -3,6 +3,8 @@ description: (deepgrade) Re-measure the codebase against previous audit baseline
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
+Reference the `deepgrade:governance-knowledge` skill for DORA metrics, confidence decay and how to judge whether an old finding still holds.
+
 <context>
 You are the orchestrator for a delta scan. This is a quick comparison against
 previous audit baselines, NOT a full Phase 1 or Phase 2 scan.

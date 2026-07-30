@@ -1,6 +1,6 @@
 ---
 name: deepgrade-knowledge
-description: (deepgrade) Knowledge about the DeepGrade methodology for codebase audit and documentation. Covers enterprise best practices for discovery, risk assessment, and report generation. Auto-invoked during DeepGrade audits.
+description: (deepgrade) Knowledge about the DeepGrade methodology for codebase audit and documentation. Covers enterprise best practices for discovery, risk assessment, and report generation. Use when auditing a codebase, assessing module risk, classifying finding severity, writing an audit report, or deciding phase boundaries for remediation work.
 ---
 
 # DeepGrade Methodology

@@ -1,7 +1,11 @@
 ---
-description: (deepgrade) Generate missing AI readability artifacts based on the latest scan results. Creates CLAUDE.md, slash commands, agent definitions, rules files, and other artifacts that improve the codebase's AI readiness score. Usage - /ai-readiness-generate [number] for specific artifact, /ai-readiness-generate all-critical for all critical, /ai-readiness-generate all for everything.
+description: (deepgrade) Generate missing AI readability artifacts based on the latest scan results. Creates CLAUDE.md, slash commands, agent definitions, rules files, and other artifacts that improve the codebase's AI readiness score. Usage - /deepgrade:readiness-generate [number] for a specific artifact, all-critical for every critical one, all for everything.
+argument-hint: "[number|all-critical|all]"
 allowed-tools: Read, Write, Glob, Grep, Bash, Task
+disable-model-invocation: true
 ---
+
+Reference the `deepgrade:readiness-scoring` skill for which checks a generated artifact actually moves, and by how much.
 
 <context>
 You are the artifact generator for the AI Readiness Scanner. You read the latest
@@ -9,7 +13,7 @@ scan results from docs/audit/readability/readability-score.json and generate
 missing artifacts that would improve the codebase's readability score.
 
 You MUST read scan results before generating anything. If no scan results exist,
-tell the user to run /ai-readiness-scan first.
+tell the user to run /deepgrade:readiness-scan first.
 </context>
 
 <workflow>
@@ -34,7 +38,7 @@ Every generated file MUST include <!-- AI-GENERATED: Review and customize --> ma
 After generation, show:
 - What was created (file paths)
 - Estimated score impact
-- Reminder to run /ai-readiness-scan to verify improvement
+- Reminder to run /deepgrade:readiness-scan to verify improvement
 </workflow>
 
 <templates>
@@ -58,7 +62,8 @@ See @README.md for project overview and setup instructions.
 
 To generate, you MUST first analyze the codebase:
 1. Read the manifest file to get tech stack, scripts, dependencies
-2. Run `tree -d -L 2` to understand directory structure
+2. List top-level directories with `find . -maxdepth 2 -type d -not -path "*/.*"`
+   (`tree` is not present in stock Git Bash, so it cannot be relied on)
 3. Grep for common patterns (error handling, data access, routing)
 4. Grep for security-sensitive paths (payment, auth, crypto, generated)
 
@@ -450,5 +455,5 @@ If .env.example already exists, APPEND missing variables. Do not overwrite.
 - CLAUDE.md must stay under 150 lines. Push details to .claude/rules/.
 - Do not include code style rules in CLAUDE.md (use linter config instead).
 - Do not embed code examples in CLAUDE.md (use file:line references instead).
-- After generating, remind user to re-scan with /ai-readiness-scan.
+- After generating, remind user to re-scan with /deepgrade:readiness-scan.
 </constraints>

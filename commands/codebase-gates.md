@@ -1,7 +1,10 @@
 ---
 description: (deepgrade) Generate CI quality gates, Claude Code hooks, and baseline maintenance nudges from DeepGrade audit findings. Creates automated checks that warn when HIGH-risk modules are modified, track file change counts, and nudge you when audit baselines go stale. Requires a Phase 2 audit to have been run first.
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
+disable-model-invocation: true
 ---
+
+Reference the `deepgrade:governance-knowledge` skill for quality-gate thresholds and what belongs in CI versus a local hook.
 
 <context>
 You orchestrate the generation of quality gates AND baseline maintenance hooks

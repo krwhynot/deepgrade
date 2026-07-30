@@ -8,23 +8,38 @@ allowed-tools: Read, Grep, Glob, Bash
 ## If no argument: Show all plans
 
 ```bash
-if [ ! -d "plans" ]; then
-  echo "No plans found."
+PLANS_DIR="docs/plans"
+[ ! -d "$PLANS_DIR" ] && [ -d "plans" ] && PLANS_DIR="plans"
+if [ ! -d "$PLANS_DIR" ]; then
+  echo "No plans found. Start one with /deepgrade:plan <name>."
   exit 0
 fi
 
-for d in docs/plans/*/; do
+for d in "$PLANS_DIR"/*/; do
   [ ! -d "$d" ] && continue
   NAME=$(basename "$d")
 
   # Read status.json if it exists
   if [ -f "$d/status.json" ]; then
-    PHASE=$(python3 -c "
-import json
-with open('$d/status.json') as f:
-  s = json.load(f)
-  print(s.get('current_phase', 'unknown'))
-" 2>/dev/null)
+    # Interpreter name differs by host: Windows python.org installs ship
+    # `python` only, most Linux distros ship `python3` only. Try both, then fall
+    # back to grep so a missing interpreter degrades to a slightly weaker read
+    # rather than an empty phase.
+    PY=""
+    command -v python3 >/dev/null 2>&1 && PY=python3
+    [ -z "$PY" ] && command -v python >/dev/null 2>&1 && PY=python
+    if [ -n "$PY" ]; then
+      PHASE=$("$PY" -c "
+import json, sys
+with open(sys.argv[1]) as f:
+  print(json.load(f).get('current_phase', 'unknown'))
+" "$d/status.json" 2>/dev/null)
+    fi
+    if [ -z "$PHASE" ]; then
+      PHASE=$(grep -o '"current_phase"[[:space:]]*:[[:space:]]*"[^"]*"' "$d/status.json" 2>/dev/null \
+              | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+    fi
+    [ -z "$PHASE" ] && PHASE="unknown"
   else
     PHASE="no status"
   fi

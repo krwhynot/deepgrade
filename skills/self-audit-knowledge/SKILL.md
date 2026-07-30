@@ -1,6 +1,6 @@
 ---
 name: self-audit-knowledge
-description: (deepgrade) Knowledge about LLM epistemic transparency, claim verification tiers, failure mode flags, cascade risk classification, and evidence basis formatting. Auto-invoked during codebase audits, plan audits, and report generation.
+description: (deepgrade) Knowledge about LLM epistemic transparency, claim verification tiers, failure mode flags, cascade risk classification, and evidence basis formatting. Use when stating how confident a finding is, labelling a claim as verified or unverified, flagging an assumption, assessing whether one wrong conclusion invalidates others, or writing the evidence basis for an audit or plan review.
 ---
 
 # LLM Self-Audit Framework

@@ -70,7 +70,19 @@ I'll create a plan folder for this cleanup: docs/plans/2026-03-08-worldpay-canad
 ## Step 1: Quick Inventory
 
 ```bash
-FOLDER="$1"
+# The folder comes from $ARGUMENTS and is substituted by Claude before this block
+# runs. Do NOT write $1 — a command body is not a shell script, so $1 is never set.
+# Do NOT write $0 either: in bash that is the shell name, so an unsubstituted $0
+# degrades to inventorying "bash" instead of failing.
+FOLDER="<source-folder>"
+if [ "$FOLDER" = "<source-folder>" ] || [ -z "$FOLDER" ]; then
+  echo "No source folder given. Usage: /deepgrade:quick-cleanup <folder>"
+  exit 0
+fi
+if [ ! -d "$FOLDER" ]; then
+  echo "Not a directory: $FOLDER"
+  exit 0
+fi
 echo "=== Source Inventory ==="
 find "$FOLDER" -type f | while read f; do
   SIZE=$(du -h "$f" | cut -f1)
@@ -168,13 +180,26 @@ Read all files and extract raw text. Use the appropriate tool per file type:
 
 **Markdown/Text:** Read directly.
 
+Each converter below resolves the interpreter first. `python3` does not exist on
+many Windows hosts and `python` does not exist on many Linux hosts, so neither
+name alone is portable; when no interpreter is present the converter says so
+instead of failing silently and reporting an empty document.
+
+```bash
+# Resolve once, reuse in every converter below.
+PY=""
+command -v python3 >/dev/null 2>&1 && PY=python3
+[ -z "$PY" ] && command -v python >/dev/null 2>&1 && PY=python
+```
+
 **PDF:**
 ```bash
 # Try pdftotext (most reliable)
 pdftotext "$FILE" - 2>/dev/null
 
 # Fallback: python PyPDF2
-python3 -c "
+[ -z "$PY" ] && echo "SKIPPED: no python interpreter for PDF extraction of $FILE" >&2
+[ -n "$PY" ] && "$PY" -c "
 import sys
 try:
     from PyPDF2 import PdfReader
@@ -191,7 +216,7 @@ except Exception as e:
 
 **Word (.docx):**
 ```bash
-pandoc "$FILE" -t markdown 2>/dev/null || python3 -c "
+pandoc "$FILE" -t markdown 2>/dev/null || [ -z "$PY" ] && echo "SKIPPED: no pandoc and no python interpreter for $FILE" >&2 || "$PY" -c "
 from docx import Document
 doc = Document('$FILE')
 for p in doc.paragraphs:
@@ -201,7 +226,8 @@ for p in doc.paragraphs:
 
 **Excel/CSV:** Extract as markdown tables.
 ```bash
-python3 -c "
+[ -z "$PY" ] && echo "SKIPPED: no python interpreter for CSV extraction of $FILE" >&2
+[ -n "$PY" ] && "$PY" -c "
 import csv, sys
 with open('$FILE') as f:
     reader = csv.reader(f)
