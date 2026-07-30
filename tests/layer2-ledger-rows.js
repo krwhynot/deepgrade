@@ -82,6 +82,25 @@ const newFile = path.join(scratch, 'db', 'migrations', '9999_brand_new.sql');
 const r3neg = run('dg-migration-guard.js', { tool_input: { file_path: newFile } }, { cwd: scratch });
 check('row 3 negative: a NEW migration is never blocked', r3neg.exit === 0, `exit ${r3neg.exit}`);
 
+// The three positives above plus that negative are ALL satisfied by "deny iff the
+// file exists", because every positive fixture is an existing file inside a
+// migration directory and the negative is a path that was never created. Proven by
+// mutation: deleting MIGRATION_DIRS and the whole IS_MIGRATION filename block left
+// 25/25 passing. These two negatives are what force the directory and filename
+// logic to exist — both files EXIST, so existsSync alone cannot discriminate them.
+const existsOutsideDir = path.join(scratch, 'src', '20240101_init.sql');
+fs.mkdirSync(path.dirname(existsOutsideDir), { recursive: true });
+fs.writeFileSync(existsOutsideDir, 'select 1;\n');
+const rOut = run('dg-migration-guard.js', { tool_input: { file_path: existsOutsideDir } }, { cwd: scratch });
+check('row 3 negative: an EXISTING migration-shaped file outside a migration dir is allowed',
+  rOut.exit === 0, `exit ${rOut.exit} — the directory check is doing no work`);
+
+const existsWrongShape = path.join(scratch, 'db', 'migrations', 'README.md');
+fs.writeFileSync(existsWrongShape, '# notes\n');
+const rShape = run('dg-migration-guard.js', { tool_input: { file_path: existsWrongShape } }, { cwd: scratch });
+check('row 3 negative: an EXISTING non-migration file inside a migration dir is allowed',
+  rShape.exit === 0, `exit ${rShape.exit} — the filename-shape check is doing no work`);
+
 // ---------------------------------------------------------------------------
 console.log('\n--- Ledger rows 5-6: opt-in, DG_STRICT_GIT default OFF (F05c) ---');
 // Row 5 only has something to say where a build command is DETECTABLE. The first
@@ -216,16 +235,52 @@ function runEmitting(script, payload) {
 let f26 = true;
 for (const [script, payload] of f26Cases) {
   const r = runEmitting(script, payload);
-  // Proving the case is not vacuous: these two must have produced output.
-  if ((script === 'dg-session-stop.js' || script === 'dg-track-change.js') && !r.out && !r.err) {
+  // Proving the case is not vacuous. This floor originally covered only two of the
+  // five handlers, so `dg-subagent-stop.js` and `dg-pre-compact.js` could be
+  // replaced with `process.exit(0)` and the whole suite stayed green — both
+  // assertions naming them are satisfied by emitting nothing at all. Every handler
+  // that has something to say under this fixture must now say it.
+  //
+  // Two exclusions, both because the handler is covered more strictly elsewhere
+  // rather than because it is allowed to do nothing:
+  //   dg-session-start.js  — row 10 asserts the phase and status it reports
+  //   dg-subagent-stop.js  — its output channel is a LOG FILE, not stdout, so
+  //                          emitting nothing here is correct. Its real effect is
+  //                          asserted separately below (row 4 log append).
+  const FILE_CHANNEL = script === 'dg-subagent-stop.js';
+  if (script !== 'dg-session-start.js' && !FILE_CHANNEL && !r.out && !r.err) {
     f26 = false;
-    console.log(`        ${script} produced NO output — this F26 case is vacuous, fix the fixture`);
+    console.log(`        ${script} produced NO output at all — this F26 case is vacuous (a no-op handler would pass it)`);
   }
   if (r.exit !== 0) { f26 = false; console.log(`        ${script} exited ${r.exit}, informational hooks must exit 0`); }
   if (r.err) { f26 = false; console.log(`        ${script} wrote to stderr at exit 0: ${r.err.slice(0, 60)}`); }
   if (r.out) { try { JSON.parse(r.out); } catch { f26 = false; console.log(`        ${script} exit-0 stdout is not JSON: ${r.out.slice(0, 60)}`); } }
 }
 check('F26: all informational handlers exit 0, JSON-only, no stderr', f26);
+
+// Ledger row 4: dg-subagent-stop.js writes to a log rather than to stdout, so the
+// F26 loop above cannot detect a no-op version of it. Assert the actual effect.
+// Without this, replacing the file with `process.exit(0)` left the whole suite green.
+(() => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-sub-'));
+  const dir = path.join(root, 'docs', 'plans', '2026-01-01-demo', 'troubleshooting');
+  fs.mkdirSync(dir, { recursive: true });
+  const log = path.join(dir, 'subagent-log.txt');
+  const r = run('dg-subagent-stop.js', { session_id: 's', reason: 'unit-probe' }, { cwd: root });
+  const wrote = fs.existsSync(log) ? fs.readFileSync(log, 'utf8') : '';
+  check('row 4: dg-subagent-stop appends the stop reason to the plan log',
+    r.exit === 0 && /unit-probe/.test(wrote), `exit ${r.exit}, log=${JSON.stringify(wrote.slice(0, 60))}`);
+
+  // Negative: no troubleshooting/ directory means the plan has not opted in, and the
+  // handler must NOT create one. A stop hook silently making directories in someone
+  // else's repo is a surprise.
+  const root2 = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-sub2-'));
+  fs.mkdirSync(path.join(root2, 'docs', 'plans', '2026-01-01-demo'), { recursive: true });
+  const r2 = run('dg-subagent-stop.js', { session_id: 's', reason: 'x' }, { cwd: root2 });
+  check('row 4 negative: no troubleshooting/ dir means no log and no directory created',
+    r2.exit === 0 && !fs.existsSync(path.join(root2, 'docs', 'plans', '2026-01-01-demo', 'troubleshooting')),
+    `exit ${r2.exit}`);
+})();
 
 // Malformed input must never make an informational hook fail loudly.
 let openFail = true;

@@ -40,6 +40,27 @@ for (const c of corpus.cases) {
   const problems = [];
   if (exit !== c.want_exit) problems.push(`exit ${exit}, want ${c.want_exit}`);
 
+  // A DENY row previously checked only the exit code. `want_decision: "deny"` was
+  // dead on all 15 of them, because the decision comparison below lives inside
+  // `if (exit === 0)`. Proven by mutation: making deny() print
+  // {"permissionDecision":"allow"} to stdout and NOTHING to stderr, still exiting 2,
+  // left every row passing. The corpus could not tell "denied with a surfaced
+  // reason" from "exited 2 while announcing allow".
+  if (c.want_exit === 2) {
+    if (!err) {
+      problems.push('exit 2 but stderr is empty — the denial reason is never surfaced to the user');
+    } else if (!/BLOCKED/.test(err)) {
+      problems.push(`exit 2 but stderr lacks the "BLOCKED" wording the F22 acceptance row requires: ${err.slice(0, 60)}`);
+    }
+    if (out) {
+      let announced = null;
+      try { announced = JSON.parse(out).hookSpecificOutput.permissionDecision; } catch { /* not JSON */ }
+      if (announced && announced !== 'deny') {
+        problems.push(`exit 2 while announcing permissionDecision '${announced}' on stdout — contradictory`);
+      }
+    }
+  }
+
   // F26: every exit-0 emission must be JSON, and stderr must stay empty on exit 0.
   if (exit === 0 && err) problems.push(`stderr on exit 0: ${err.slice(0, 60)}`);
   if (exit === 0 && out) {

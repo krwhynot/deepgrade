@@ -735,7 +735,28 @@ echo "--- Agent tool allowlists (F02/F03/F07/F21/F27) ---"
 # rules, which pair with the delimiters and silently delete body chunks. That
 # hid 3 of 20 agents from the F07 sweep while it still reported a pass.
 body_of() { awk 'BEGIN{n=0} /^---\r?$/{n++; next} n>=2' "$1"; }
-tools_of() { grep -m1 '^tools:' "$1" 2>/dev/null | tr -d '\r' | sed 's/^tools:[[:space:]]*//'; }
+# tools_of <file> — the COMPLETE tools: value, however it is spelled in YAML.
+#
+# `grep -m1 '^tools:'` read only the first PHYSICAL line, which a valid folded
+# multi-line scalar defeats entirely:
+#
+#     tools: "Read, Grep, Glob, Bash, Write, Skill,
+#       Edit, mcp__acme__scan"
+#
+# YAML folds that to one value granting Edit AND a hardcoded MCP identifier, while
+# the Edit ban, the MCP ban and the flow-array ban all reported PASS. The bans
+# tokenised correctly — they were just handed one line of a two-line value.
+#
+# Collect the tools: line plus every following more-indented continuation line,
+# stopping at the next top-level key or the closing frontmatter delimiter.
+tools_of() {
+  awk '
+    /^---\r?$/ { if (++d == 2) exit; next }
+    /^tools:/  { collecting = 1; sub(/^tools:[[:space:]]*/, ""); printf "%s ", $0; next }
+    collecting && /^[[:space:]]+[^[:space:]]/ { sub(/^[[:space:]]+/, ""); printf "%s ", $0; next }
+    collecting { collecting = 0 }
+  ' "$1" 2>/dev/null | tr -d '\r'
+}
 has_tool() { echo "$2" | grep -qE "(^|[,[:space:]\"])$1($|[,[:space:]\"])"; }
 
 # --- 12a. F02: the two agents with shell-driven bodies and a contract output.
@@ -778,12 +799,14 @@ elif [ "$f07_bad" -eq 0 ]; then
 fi
 
 # --- 12d. F07 negative: Edit is never granted. Scanners characterize, never patch.
-edit_granted=$(grep -l '^tools:.*\bEdit\b' "$AGENTS_DIR"/*.md 2>/dev/null | head -1)
-if [ -n "$edit_granted" ]; then
-  fail "F07: $edit_granted grants Edit — audit agents write reports, they do not modify code"
-else
-  pass "F07: no agent grants Edit"
-fi
+#      Reads the FULL folded value via tools_of, not `grep '^tools:.*Edit'` — a
+#      continuation line hid `Edit` from the line-based form completely.
+edit_bad=0
+for f in "$AGENTS_DIR"/*.md; do
+  has_tool Edit "$(tools_of "$f")" \
+    && { fail "F07: $(basename "$f") grants Edit — audit agents write reports, they do not modify code"; edit_bad=1; }
+done
+[ "$edit_bad" -eq 0 ] && pass "F07: no agent grants Edit"
 
 # --- 12e. F21: no MCP identifier of any shape belongs in an allowlist.
 #      Validate passes on bare names, so this is the only guard.
@@ -796,24 +819,39 @@ fi
 #      qualified mcp__server__tool as a "bare name", which is the wrong
 #      diagnosis; and its fail() calls ran inside a piped `while`, i.e. a
 #      subshell, so every violation past the first was lost from the tally.
+#      Reads the FULL folded value per file, so a continuation line cannot hide an
+#      identifier the way it hid `Edit` from 12d.
+allow_of() {
+  awk '
+    /^---\r?$/ { if (++d == 2) exit; next }
+    /^(tools|allowed-tools):/ { collecting = 1; sub(/^[a-z-]+:[[:space:]]*/, ""); printf "%s ", $0; next }
+    collecting && /^[[:space:]]+[^[:space:]]/ { sub(/^[[:space:]]+/, ""); printf "%s ", $0; next }
+    collecting { collecting = 0 }
+  ' "$1" 2>/dev/null | tr -d '\r'
+}
 mcp_bad=0
-while IFS= read -r line; do
-  file=${line%%:*}; rest=${line#*:}; body=${rest#*:}
-  # strip the key, then split on commas and YAML flow-array punctuation
-  for tok in $(echo "${body#*:}" | tr -d '\r' | tr ',[]"'"'" ' \n' | tr -s ' '); do
+mcp_subjects=0
+for f in "$AGENTS_DIR"/*.md "$COMMANDS_DIR"/*.md; do
+  [ -e "$f" ] || continue
+  val=$(allow_of "$f")
+  [ -z "$val" ] && continue
+  mcp_subjects=$((mcp_subjects + 1))
+  for tok in $(echo "$val" | tr ',[]"'"'" ' \n' | tr -s ' '); do
     case "$tok" in
       mcp__*)
-        fail "F21: $file hardcodes the MCP identifier '$tok' — the <server> segment is chosen by the installing user, so this resolves only on the author's machine"
+        fail "F21: $(basename "$f") hardcodes the MCP identifier '$tok' — the <server> segment is chosen by the installing user, so this resolves only on the author's machine"
         mcp_bad=$((mcp_bad + 1)) ;;
       ref_*|*_exa|perplexity_*)
-        fail "F21: $file lists the bare MCP name '$tok' — bare names never resolve to a tool"
+        fail "F21: $(basename "$f") lists the bare MCP name '$tok' — bare names never resolve to a tool"
         mcp_bad=$((mcp_bad + 1)) ;;
     esac
   done
-done <<EOF
-$(grep -nE '^(tools|allowed-tools):' "$AGENTS_DIR"/*.md "$COMMANDS_DIR"/*.md 2>/dev/null)
-EOF
-[ "$mcp_bad" -eq 0 ] && pass "F21: no MCP identifier, bare or qualified, appears in any tools:/allowed-tools: list"
+done
+if [ "$mcp_subjects" -lt 30 ]; then
+  fail "F21: derived only $mcp_subjects allowlists (expected >= 30) — the derivation is broken, not the config"
+elif [ "$mcp_bad" -eq 0 ]; then
+  pass "F21: no MCP identifier, bare or qualified, in any of $mcp_subjects tools:/allowed-tools: lists"
+fi
 
 # --- 12f. F27: an agent told to reference a knowledge skill must be able to load
 #      it AND must name it in a form that resolves. Checking only the first is a
