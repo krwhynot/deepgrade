@@ -302,8 +302,8 @@ TRACK 3 - BEST PRACTICES (Subagent: Sonnet, if external search tools available):
 Objective: Find how others solved similar problems.
 Tools: Read, WebSearch, WebFetch, plus any connected MCP search tool whose name
 ends in `__ref_search_documentation`, `__ref_read_url`, `__web_search_exa`,
-`__web_fetch_exa`, or `__perplexity_ask` (see the mcp-research skill — match by
-suffix, never by bare name)
+`__web_fetch_exa`, or `__perplexity_ask` (see the `deepgrade:mcp-research` skill —
+match by suffix, never by bare name)
 Output: docs/plans/{date}-{name}/research/best-practices.md
 
 Search strategy (use in order, stop when sufficient):

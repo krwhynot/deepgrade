@@ -127,17 +127,18 @@ Integrate three specialized MCP search tools (Ref, Exa, Perplexity) into the Dee
 **Testing:** Manual — run `/deepgrade:troubleshoot "test error"` with and without MCP
 **Rollback:** Revert troubleshoot.md
 
-### MCP-005: Enhance `skills/documentation/SKILL.md` + `commands/doc.md`
+### MCP-005: Enhance `skills/documentation/SKILL.md` + the documentation command
 
-> **SUPERSEDED IN PART (2026-07-30, plugin-hardening-v5 finding F30).** `commands/doc.md` was
-> deleted; `skills/documentation/` carries the whole capability and dispatches via
-> `${CLAUDE_SKILL_DIR}`. The text below is left as written — it is the record of what shipped in
-> 4.31.0 — but the `commands/doc.md` half of this ticket, its `allowed-tools` acceptance criterion,
-> and the `/deepgrade:doc adr test-topic` testing step no longer describe anything that exists.
-> Read them as history. The equivalent check today is invoking the documentation skill.
+> **SUPERSEDED IN PART (2026-07-30, plugin-hardening-v5 finding F30).** The documentation
+> command was deleted; `skills/documentation/` carries the whole capability and dispatches
+> via `${CLAUDE_SKILL_DIR}`. The rest of this ticket is the record of what shipped in
+> 4.31.0, but its command half — the `allowed-tools` criterion below, and its manual
+> testing step — no longer describes anything that exists. Read them as history; the
+> equivalent check today is invoking the documentation skill. The exact former command
+> name is preserved in git history and in the 4.31.0 release commit.
 
 **Risk:** LOW
-**Files:** `skills/documentation/SKILL.md` (EDIT), `commands/doc.md` (EDIT)
+**Files:** `skills/documentation/SKILL.md` (EDIT), the documentation command (EDIT, since deleted)
 **Changes:**
 1. **doc.md frontmatter:** Add `ref_search_documentation, ref_read_url, web_search_exa` to `allowed-tools`
 2. **SKILL.md:** Add section after existing content:
@@ -170,7 +171,8 @@ Integrate three specialized MCP search tools (Ref, Exa, Perplexity) into the Dee
 - [ ] SKILL.md has External Enrichment section with when/how/when-not guidance
 - [ ] Attribution format specified
 - [ ] Release notes and BRDs explicitly excluded from external search
-**Testing:** Manual — run `/deepgrade:doc adr test-topic` with Ref connected
+**Testing:** Manual — historical: ran the documentation command for an ADR topic with Ref
+connected. Today: invoke the documentation skill for the same topic.
 **Rollback:** Revert both files
 
 ### MCP-006: Enhance `agents/integration-scanner.md`

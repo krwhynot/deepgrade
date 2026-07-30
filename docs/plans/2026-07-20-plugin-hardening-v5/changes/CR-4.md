@@ -2,9 +2,33 @@
 
 **Raised:** 2026-07-30, during the Wave 5 close-out audit, commit `b55ebc0`
 **Raised by:** Claude (optimizer), self-reported on discovering the row had no guard at all
-**State: PROPOSED** — needs owner ratification. The guard described below is IMPLEMENTED, so the
-tree and this record agree; what is NOT settled is whether the owner accepts the reading.
-**Affects:** Wave 5 acceptance row 3, verbatim:
+
+**State: WITHDRAWN** — 2026-07-30, before ratification, superseded by a better option this record
+failed to consider. **No owner decision is needed.** Independent review (Codex `gpt-5.6-sol` @
+`xhigh`, session `019fb22d`) rejected the proposal on two grounds, both correct:
+
+1. **It found a concrete bypass in every exemption and in the expiry clause** — a fenced
+   `## 9.9.9 (` heading hid a following hit; `SUPERSEDED IN PART.*F30` anywhere in a file exempted
+   every hit in that whole file including newly added live instructions; multi-line version JSON
+   parsed as empty and skipped the expiry entirely; and the removal regex matched
+   "Do not remove `/deepgrade:doc`" while rejecting "`/deepgrade:doc` was removed".
+2. **The row did not need narrowing at all.** Rewording the two historical documents *truthfully* —
+   "The documentation command and skill", which is accurate for 4.31.0 — satisfies the absolute row
+   with no exemption, no expiry machinery, and no cross-wave dependency. Git history and the 4.31.0
+   release commit preserve the exact former spelling, so nothing is lost.
+
+Applied instead: both documents reworded, all exemption logic deleted from
+`tests/layer1-config-wiring.sh` §18, and the row enforced literally across every tracked `*.md`
+outside this plan's own artifacts. F30 is closed on the row as written.
+
+**The reasoning error worth keeping.** The argument below is internally coherent and reaches the
+wrong conclusion, because it treats "rewriting the changelog" and "keeping the exact string" as the
+only two options and then reasons carefully about the resulting dilemma. A third option — *keep the
+entry true but stop naming a deleted command* — was never enumerated, so the analysis of
+alternatives could not find it. Framing a decision as a dilemma is itself a claim that needs
+checking; an exemption plus a change record is a strong signal that the option set is too small.
+
+**Affects (historical):** Wave 5 acceptance row 3, verbatim:
 
 > - [ ] F30 stale-reference sweep — no `/deepgrade:doc` or `commands/doc.md` string survives anywhere [G]
 

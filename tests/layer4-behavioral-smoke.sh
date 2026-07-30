@@ -193,42 +193,66 @@ PS_MD="$PLUGIN_ROOT/commands/plan-status.md"
 if [[ ! -f "$PS_MD" ]]; then
     fail "B6: commands/plan-status.md is missing"
 else
-    B6_TMP="${TMPDIR:-${TEMP:-/tmp}}/dg-b6-$$"
-    mkdir -p "$B6_TMP/docs/plans/2026-01-01-smoke/research"
-    cat > "$B6_TMP/docs/plans/2026-01-01-smoke/status.json" <<'B6JSON'
-{ "plan_name": "smoke", "current_phase": "build" }
-B6JSON
-    touch "$B6_TMP/docs/plans/2026-01-01-smoke/brainstorm.md"
+    # mktemp -d, not a predictable dg-b6-$$: PIDs recycle, and cleanup is `rm -rf`, so a
+    # stale directory at the reused name would have its contents deleted (Codex F7).
+    B6_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/dg-b6-XXXXXX") || B6_TMP=""
+    if [[ -z "$B6_TMP" || ! -d "$B6_TMP" ]]; then
+        fail "B6: could not create a temp dir"
+    else
+    # THE ROW SAYS "against this plan folder". The first version built a synthetic
+    # 2026-01-01-smoke fixture, which tests the code against data shaped the way I
+    # expected rather than against the real thing (Codex F5). Copy the actual plan
+    # folder's status.json instead, so a schema drift in the live file is visible here.
+    B6_REAL_PLAN=$(ls -d "$PLUGIN_ROOT"/docs/plans/*/ 2>/dev/null | head -1)
+    B6_PLAN_NAME=$(basename "${B6_REAL_PLAN%/}")
+    mkdir -p "$B6_TMP/docs/plans/$B6_PLAN_NAME/research"
+    if [[ -f "$B6_REAL_PLAN/status.json" ]]; then
+        cp "$B6_REAL_PLAN/status.json" "$B6_TMP/docs/plans/$B6_PLAN_NAME/status.json"
+    fi
+    B6_WANT_PHASE=$(grep -o '"current_phase"[[:space:]]*:[[:space:]]*"[^"]*"' \
+        "$B6_TMP/docs/plans/$B6_PLAN_NAME/status.json" 2>/dev/null \
+        | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+    touch "$B6_TMP/docs/plans/$B6_PLAN_NAME/brainstorm.md"
     # First fenced bash block = the no-argument overview.
     awk '/^```bash/{n++; if(n==1){inb=1; next}} inb && /^```/{inb=0} inb' "$PS_MD" \
         > "$B6_TMP/overview.sh"
     if [[ ! -s "$B6_TMP/overview.sh" ]]; then
         fail "B6: could not extract the overview block from plan-status.md"
+    elif [[ -z "$B6_PLAN_NAME" || -z "$B6_WANT_PHASE" ]]; then
+        fail "B6: could not read a plan name and current_phase from the live plan folder — fixture derivation collapsed, so a pass would be vacuous"
     else
         B6_OUT=$(cd "$B6_TMP" && bash overview.sh 2>&1) && B6_RC=0 || B6_RC=$?
-        if grep -q 'No plans found' <<<"$B6_OUT"; then
+        # EXIT STATUS IS GATED FIRST. The previous version computed B6_RC and only ever
+        # printed it in a failure message, so appending `false` to the block left B6
+        # PASSING (Codex F5, demonstrated).
+        if [[ $B6_RC -ne 0 ]]; then
+            fail "B6: no-arg overview exited $B6_RC — it must succeed: $(head -c 120 <<<"$B6_OUT")"
+        elif grep -q 'No plans found' <<<"$B6_OUT"; then
             fail "B6: no-arg overview printed 'No plans found.' with docs/plans/ present — the F13 defect, live"
-        elif ! grep -q '2026-01-01-smoke' <<<"$B6_OUT"; then
-            fail "B6: no-arg overview did not name the plan it found (rc=$B6_RC): $(head -c 120 <<<"$B6_OUT")"
-        elif ! grep -q 'build' <<<"$B6_OUT"; then
-            fail "B6: no-arg overview found the plan but not its current_phase — the status.json read is broken"
+        elif ! grep -qF "$B6_PLAN_NAME" <<<"$B6_OUT"; then
+            fail "B6: no-arg overview did not name the plan it found: $(head -c 120 <<<"$B6_OUT")"
+        elif ! grep -qF "$B6_WANT_PHASE" <<<"$B6_OUT"; then
+            fail "B6: overview found the plan but not its phase '$B6_WANT_PHASE' — the status.json read is broken"
         else
-            pass "B6: no-arg overview lists the plan and reads its phase (executed, not grepped)"
+            pass "B6: no-arg overview lists the live plan '$B6_PLAN_NAME' and reads phase '$B6_WANT_PHASE' (executed, rc gated)"
         fi
-        # Negative direction: with NO plans dir at all, the guard must fire. This is
-        # what makes the check falsifying rather than merely satisfied.
-        B6_EMPTY="${TMPDIR:-${TEMP:-/tmp}}/dg-b6e-$$"
-        mkdir -p "$B6_EMPTY"
+        # Negative direction: with NO plans dir at all, the guard must fire AND exit 0.
+        B6_EMPTY=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/dg-b6e-XXXXXX")
         cp "$B6_TMP/overview.sh" "$B6_EMPTY/"
-        B6_OUT2=$(cd "$B6_EMPTY" && bash overview.sh 2>&1) || true
-        if grep -q 'No plans found' <<<"$B6_OUT2"; then
-            pass "B6 negative: with no plans directory the overview says so and exits cleanly"
+        B6_OUT2=$(cd "$B6_EMPTY" && bash overview.sh 2>&1) && B6_RC2=0 || B6_RC2=$?
+        if [[ $B6_RC2 -ne 0 ]]; then
+            # `|| true` discarded this, so changing the block's `exit 0` to `exit 7` left
+            # the negative case PASSING (Codex F5, demonstrated).
+            fail "B6 negative: no-plans path exited $B6_RC2 — it must degrade cleanly with status 0"
+        elif grep -q 'No plans found' <<<"$B6_OUT2"; then
+            pass "B6 negative: with no plans directory the overview says so and exits 0"
         else
-            fail "B6 negative: with no plans directory the overview should print 'No plans found.', got: $(head -c 120 <<<"$B6_OUT2")"
+            fail "B6 negative: expected 'No plans found.', got: $(head -c 120 <<<"$B6_OUT2")"
         fi
         rm -rf "$B6_EMPTY"
     fi
     rm -rf "$B6_TMP"
+    fi
 fi
 
 echo ""
@@ -247,8 +271,10 @@ QC_MD="$PLUGIN_ROOT/commands/quick-cleanup.md"
 if [[ ! -f "$QC_MD" ]]; then
     fail "B7: commands/quick-cleanup.md is missing"
 else
-    B7_TMP="${TMPDIR:-${TEMP:-/tmp}}/dg-b7-$$"
-    mkdir -p "$B7_TMP"
+    B7_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/dg-b7-XXXXXX") || B7_TMP=""
+    if [[ -z "$B7_TMP" || ! -d "$B7_TMP" ]]; then
+        fail "B7: could not create a temp dir"
+    else
     # The inventory block: the one that opens with the FOLDER assignment.
     awk '/^```bash/{inb=1; buf=""; next}
          inb && /^```/{ if (buf ~ /FOLDER="<source-folder>"/) { printf "%s", buf; exit } inb=0; next }
@@ -256,30 +282,34 @@ else
     if [[ ! -s "$B7_TMP/inventory.sh" ]]; then
         fail "B7: could not extract the inventory block from quick-cleanup.md"
     else
-        # A canary the block must never reach: if the sentinel guard fails to exit,
-        # execution continues into the inventory and `find` runs on "<source-folder>".
+        # ASSERT THE COMPLETE OUTPUT, which is the actual lesson from mutation X3.
+        #
+        # X3 neutered the sentinel guard's `exit 0`. The first assertion here looked for
+        # the usage message and for the absence of one later marker, and passed — I
+        # recorded that as "defense in depth made the outcome identical, so outcome-level
+        # testing cannot see it". Codex (gpt-5.6-sol @ xhigh) refuted that: the outputs
+        # differ by a whole line. X3 survived because the assertion IGNORED the extra
+        # output, not because the outcomes were indistinguishable.
+        #
+        # My replacement was worse in a subtler way — it asserted a specific downstream
+        # string ("not a directory") was absent, so rewording that unrelated message to
+        # "Invalid folder" made it pass with the guard still inert.
+        #
+        # Exact-match on the whole output has neither weakness: any extra line fails,
+        # whatever it says, and no downstream wording is referenced at all.
         B7_OUT=$(cd "$B7_TMP" && bash inventory.sh 2>&1) && B7_RC=0 || B7_RC=$?
+        B7_WANT='No source folder given. Usage: /deepgrade:quick-cleanup <folder>'
+        B7_LINES=$(printf '%s\n' "$B7_OUT" | grep -c . || true)
         if [[ $B7_RC -ne 0 ]]; then
             fail "B7: zero-arg path exited $B7_RC — it must degrade cleanly, not error"
-        elif ! grep -qi 'no source folder given' <<<"$B7_OUT"; then
-            fail "B7: zero-arg path did not print the usage message: $(head -c 120 <<<"$B7_OUT")"
-        elif grep -q 'Source Inventory' <<<"$B7_OUT"; then
-            fail "B7: zero-arg path fell THROUGH the sentinel guard into the inventory — the guard is present but inert"
-        elif grep -qi 'not a directory' <<<"$B7_OUT"; then
-            # Pins the MECHANISM, not just the outcome. Mutation X3 replaced the
-            # sentinel guard's `exit 0` with a no-op and this test still passed: the
-            # NEXT guard (`[ ! -d "$FOLDER" ]`) caught the fall-through, so the
-            # inventory never ran and safe degradation survived. The outcome was
-            # identical while the guard under test had stopped working — an assertion
-            # on the outcome alone cannot distinguish those. Reaching the directory
-            # check at all means the sentinel did not short-circuit, and it also emits
-            # a confusing second message ("Not a directory: <source-folder>").
-            fail "B7: zero-arg path reached the directory check — the sentinel guard did not short-circuit, and the user sees two messages"
+        elif [[ "$B7_OUT" != "$B7_WANT" ]]; then
+            fail "B7: zero-arg output is not EXACTLY the usage line ($B7_LINES line(s)) — extra output means the sentinel did not short-circuit: $(head -c 160 <<<"$B7_OUT")"
         else
-            pass "B7: zero-arg path prints usage only, exits 0, and short-circuits at the sentinel"
+            pass "B7: zero-arg path emits exactly the usage line and exits 0 (complete-output match)"
         fi
     fi
     rm -rf "$B7_TMP"
+    fi
 fi
 
 echo ""

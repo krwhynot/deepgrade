@@ -1164,11 +1164,18 @@ for f in "$COMMANDS_DIR"/*.md; do
   # Comments are stripped before matching. On its first run this guard flagged its own
   # explanatory comments — the lines that say "do NOT write $1" — in both files it
   # checks. A false positive, and a reminder that a guard needs a control run too.
-  if awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$f" | sed 's/#.*$//' | grep -qE '(^|[^\\$])\$1\b'; then
+  # Drop FULL-LINE comments only. `sed 's/#.*$//'` also truncated at a QUOTED '#', so
+  # `printf "#"; echo "$1"` became `printf "` and the live $1 vanished (Codex F3). Every
+  # legitimate mention of $1/$0 in these files is a whole-line comment — verified across
+  # commands/ — so dropping only those keeps the false positive fixed without the hole.
+  if awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$f" \
+       | grep -v '^[[:space:]]*#' | grep -qE '(^|[^\\$])\$1\b'; then
     fail "F09: $(basename "$f") uses \$1 inside a bash block — a command body is not a shell script, so \$1 is never set"
     f09_bad=1
   fi
-  if awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$f" | grep -qE '^[A-Z_]+="\$0"'; then
+  # Leading whitespace allowed: the column-zero anchor missed an indented assignment.
+  if awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$f" \
+       | grep -v '^[[:space:]]*#' | grep -qE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*="\$0"'; then
     fail "F09: $(basename "$f") assigns \$0 — in bash that is the shell name, so an unsubstituted value silently becomes 'bash'"
     f09_bad=1
   fi
@@ -1204,58 +1211,85 @@ if [ -n "$f11_hits" ]; then
 else
   pass "F11: no /ai-readiness-* references in commands/ or agents/"
 fi
-if grep -q '^argument-hint:' "$COMMANDS_DIR/readiness-generate.md"; then
-  pass "F11: readiness-generate declares argument-hint"
+# A DECLARATION needs a value. `^argument-hint:` alone matched an empty key, which is
+# not a declaration of anything (Codex F3).
+if grep -qE '^argument-hint:[[:space:]]*[^[:space:]]' "$COMMANDS_DIR/readiness-generate.md"; then
+  pass "F11: readiness-generate declares a non-empty argument-hint"
 else
-  fail "F11: readiness-generate is missing argument-hint"
+  fail "F11: readiness-generate has no argument-hint value — an empty key declares nothing"
 fi
 
 # --- F13: the guard must test the directory the loop actually reads. It tested
 #     `plans` while iterating `docs/plans/*/`, so on a normal layout the no-argument
 #     overview printed "No plans found." and exited.
-if grep -qE '^\s*if \[ ! -d "\$PLANS_DIR" \]' "$COMMANDS_DIR/plan-status.md" \
-   && grep -qE 'PLANS_DIR="docs/plans"' "$COMMANDS_DIR/plan-status.md"; then
-  pass "F13: plan-status guards the same directory it iterates"
-else
-  fail "F13: plan-status's existence guard and its loop must reference the same directory"
-fi
+#
+# Bound to the LOOP, not to two strings coexisting. The previous form passed a file that
+# assigned and guarded `docs/plans` but iterated a hardcoded `plans/*/` (Codex F3) — the
+# original defect, undetected. The loop must iterate the guarded VARIABLE.
+f13_bad=0
+grep -qE '^[[:space:]]*if \[ ! -d "\$PLANS_DIR" \]' "$COMMANDS_DIR/plan-status.md" \
+  || { fail "F13: plan-status has no existence guard on \$PLANS_DIR"; f13_bad=1; }
+grep -qE 'PLANS_DIR="docs/plans"' "$COMMANDS_DIR/plan-status.md" \
+  || { fail "F13: plan-status must default PLANS_DIR to docs/plans"; f13_bad=1; }
+grep -qE '^[[:space:]]*for [A-Za-z_]+ in "\$PLANS_DIR"/\*/' "$COMMANDS_DIR/plan-status.md" \
+  || { fail "F13: plan-status's loop must iterate \"\$PLANS_DIR\"/*/ — a hardcoded path can diverge from the guard, which is the original defect"; f13_bad=1; }
+[ "$f13_bad" -eq 0 ] && pass "F13: plan-status guards \$PLANS_DIR and its loop iterates that same variable"
 
-# --- F14: model-invocability, both directions.
+# --- F14: model-invocability. EXACT SET, both directions.
 f14_bad=0
-for c in codebase-gates plan-export readiness-generate; do
-  grep -q '^disable-model-invocation: true' "$COMMANDS_DIR/$c.md" \
-    || { fail "F14: $c.md must set disable-model-invocation: true"; f14_bad=1; }
-done
+f14_expected="codebase-gates plan-export readiness-generate"
+# Derive the actual set rather than only checking the three named. The previous form
+# passed a FOURTH command silently adding the flag (Codex F3), so it could not enforce
+# "exactly" — which is what the row says.
+f14_actual=$(grep -lE '^disable-model-invocation:[[:space:]]*true' "$COMMANDS_DIR"/*.md 2>/dev/null \
+  | while IFS= read -r p; do basename "$p" .md; done | sort | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+f14_want=$(printf '%s\n' $f14_expected | sort | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+if [ "$f14_actual" != "$f14_want" ]; then
+  fail "F14: disable-model-invocation set is [$f14_actual], expected exactly [$f14_want]"
+  f14_bad=1
+fi
 # Negative, per the §3.8 discovery-path decision: `plan` must stay model-invocable.
 grep -q '^disable-model-invocation' "$COMMANDS_DIR/plan.md" \
   && { fail "F14: plan.md must NOT disable model invocation (§3.8 discovery path)"; f14_bad=1; }
-[ "$f14_bad" -eq 0 ] && pass "F14: disable-model-invocation on exactly the three side-effectful commands, not on plan"
+[ "$f14_bad" -eq 0 ] && pass "F14: disable-model-invocation on exactly [$f14_want], not on plan"
 
 # --- F15: host-tool portability.
 f15_bad=0
-if grep -rnE '(^|[^a-z-])tree +-' "$COMMANDS_DIR"/*.md >/dev/null 2>&1; then
-  fail "F15: \`tree\` is not present in stock Git Bash"; f15_bad=1
-fi
+# `tree` in COMMAND POSITION inside a bash block, with or without options: the previous
+# regex required a following `-`, so a bare `tree .` walked straight through (Codex F3).
+# Scoped to fenced bash blocks and to the start of a command so prose about a "directory
+# tree" and words like `subtree` do not trip it.
+for f in "$COMMANDS_DIR"/*.md; do
+  if awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$f" \
+       | grep -v '^[[:space:]]*#' \
+       | grep -qE '(^|[|;&(]|&&|\|\|)[[:space:]]*tree([[:space:]]|$)'; then
+    fail "F15: $(basename "$f") invokes \`tree\`, which is not present in stock Git Bash"; f15_bad=1
+  fi
+done
 if grep -rn 'python3 -c' "$COMMANDS_DIR"/*.md >/dev/null 2>&1; then
   fail "F15: a bare \`python3 -c\` has no fallback — python3 is absent on many Windows hosts, python on many Linux ones"; f15_bad=1
 fi
 if grep -rnE '^\s*(EXPORT_DIR|STAGING)="?/tmp/' "$COMMANDS_DIR"/*.md >/dev/null 2>&1; then
   fail "F15: bare /tmp staging — use \${TMPDIR:-\${TEMP:-/tmp}} so Windows hosts and concurrent runs work"; f15_bad=1
 fi
-if grep -q 'zip -' "$COMMANDS_DIR/plan-export.md" \
-   && ! grep -qE 'powershell[^|]*Compress-Archive' "$COMMANDS_DIR/plan-export.md"; then
-  # Requires an actual INVOCATION, not the string anywhere in the file: the first
-  # version accepted `grep -q 'Compress-Archive'`, which the explanatory comment on
-  # the line above satisfies on its own.
-  # Mutation history, because the first reading was wrong: W11 "escaped" twice, but
-  # not because of that weakness. The mutation replaced only the FIRST occurrence of
-  # the cmdlet name, which is the comment — so it deleted a comment, left the
-  # invocation intact, and a green guard was the correct answer. An invalid mutant,
-  # not a surviving defect. Re-anchored on the invocation three ways (delete the
-  # line, swap the cmdlet, replace the branch with `false`): caught on all three.
-  fail "F15: plan-export uses \`zip\` with no PowerShell Compress-Archive invocation — stock Windows has no zip"; f15_bad=1
+if grep -q 'zip -' "$COMMANDS_DIR/plan-export.md"; then
+  # Requires a real invocation on a NON-COMMENT line. Three iterations to get here:
+  #   1. `grep -q 'Compress-Archive'` — satisfied by the explanatory comment alone.
+  #   2. `powershell[^|]*Compress-Archive` — still satisfied by a single COMMENT line
+  #      containing both words (Codex F3). Tightened to command position, comments dropped.
+  # Mutation history, because my first reading was wrong: W11 "escaped" twice, but not
+  # from that weakness. The mutation replaced only the FIRST occurrence of the cmdlet
+  # name, which is the comment — so it deleted a comment, left the invocation intact,
+  # and a green guard was correct. An invalid mutant, not a surviving defect. Re-anchored
+  # on the invocation three ways (delete the line, swap the cmdlet, replace the branch
+  # with `false`): caught on all three.
+  if ! awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$COMMANDS_DIR/plan-export.md" \
+        | grep -v '^[[:space:]]*#' \
+        | grep -qE '(^|[|;&(]|&&|\|\|)[[:space:]]*powershell[^|]*Compress-Archive'; then
+    fail "F15: plan-export uses \`zip\` with no PowerShell Compress-Archive invocation — stock Windows has no zip"; f15_bad=1
+  fi
 fi
-[ "$f15_bad" -eq 0 ] && pass "F15: no tree, no unguarded python3, no bare /tmp staging, zip has a fallback"
+[ "$f15_bad" -eq 0 ] && pass "F15: no tree, no unguarded python3, no bare /tmp staging, zip has a real PowerShell fallback"
 
 # --- F08: gate-generator writes hooks for a PROJECT, so the target is the `hooks`
 #     key of .claude/settings.json. hooks/hooks.json is the PLUGIN-side location and
@@ -1277,9 +1311,17 @@ grep -qiE 'not drop sibling keys' "$AGENTS_DIR/gate-generator.md" \
 # Requires the INSTRUCTION, not the word. Mutation W13 deleted "PowerShell variant of
 # every generated hook" and a bare `grep -qi powershell` stayed green, because the
 # sentence explaining *why* still mentioned PowerShell.
-grep -qiE 'PowerShell variant' "$AGENTS_DIR/gate-generator.md" \
-  || { fail "F08: gate-generator must instruct emitting a PowerShell variant — Windows without Git Bash dispatches through it"; f08_bad=1; }
-[ "$f08_bad" -eq 0 ] && pass "F08: gate-generator targets settings.json, merges, and emits a PowerShell variant"
+#
+# And matching the phrase alone is NEGATION-BLIND: "Do not emit a PowerShell variant"
+# satisfied it (Codex F3). An instruction guard has to reject the inverted instruction,
+# so count affirmative occurrences only.
+f08_ps_all=$(grep -ciE 'PowerShell variant' "$AGENTS_DIR/gate-generator.md" || true)
+f08_ps_neg=$(grep -ciE '(do not|don'"'"'t|never|avoid|no need to)[^.]{0,40}PowerShell variant' "$AGENTS_DIR/gate-generator.md" || true)
+if [ "$f08_ps_all" -le "$f08_ps_neg" ]; then
+  fail "F08: gate-generator has no AFFIRMATIVE PowerShell-variant instruction ($f08_ps_all mention(s), $f08_ps_neg negated) — Windows without Git Bash dispatches through it"
+  f08_bad=1
+fi
+[ "$f08_bad" -eq 0 ] && pass "F08: gate-generator targets settings.json, merges, and affirmatively requires a PowerShell variant"
 
 # --- F28: "Auto-invoked" is a claim a skill cannot make about itself, and the
 #     reverse sweep is the half that mattered: three of the five knowledge skills
@@ -1292,26 +1334,83 @@ fi
 f28_orphans=0
 for d in "$SKILLS_DIR"/*/; do
   sk=$(basename "$d")
-  # Every skill needs at least one orchestrator outside its own directory.
-  if ! grep -rl "deepgrade:$sk\|$sk skill" "$AGENTS_DIR" "$COMMANDS_DIR" "$SKILLS_DIR"/*/SKILL.md 2>/dev/null \
+  # Every skill needs at least one orchestrator outside its own directory, and the
+  # reference must be the NAMESPACED name. The `$sk skill` alternative accepted mere
+  # prose — "the mcp-research skill" in a sentence counted as wiring (Codex F3) — which
+  # is the same class of defect F28 exists to remove. Namespaced form only; a skill name
+  # is also required to be a whole token, so `documentation` cannot be satisfied by
+  # `documentation-extras`.
+  if ! grep -rlE "deepgrade:$sk([^A-Za-z0-9_-]|\$)" "$AGENTS_DIR" "$COMMANDS_DIR" "$SKILLS_DIR"/*/SKILL.md 2>/dev/null \
        | grep -qv "$SKILLS_DIR/$sk/"; then
-    fail "F28: skill '$sk' is referenced by no orchestrator — it ships and can never load"
+    fail "F28: skill '$sk' has no namespaced reference (deepgrade:$sk) from any orchestrator — it ships and can never load"
     f28_orphans=1
   fi
 done
-[ "$f28_orphans" -eq 0 ] && pass "F28: every skill has at least one orchestrator (reverse-reference sweep)"
+[ "$f28_orphans" -eq 0 ] && pass "F28: every skill has a namespaced reference from an orchestrator (reverse sweep)"
+
+# --- Clauses that had a correct product implementation but NO falsifying assertion, so
+#     the fix could be reverted with the suite still green (Codex F4). Each is a separate
+#     conjunct of a Wave 5 row; a clause buried mid-sentence still counts.
+
+# F10 positive: naming the right variable is only half the row — it must be USED.
+if grep -qE '\$\{CLAUDE_PROJECT_DIR:-\$OLDPWD\}' "$COMMANDS_DIR/plan-export.md"; then
+  pass "F10: plan-export resolves the destination through \${CLAUDE_PROJECT_DIR}"
+else
+  fail "F10: plan-export must resolve its destination through \${CLAUDE_PROJECT_DIR} — the absence of \${PROJECT_ROOT} alone does not make the path correct"
+fi
+
+# F28 positive: a skill loads on DESCRIPTION MATCH, so removing the trigger terms silently
+# unloads it. The negative ("Auto-invoked" absent) cannot see that.
+f28_desc_bad=0
+for d in "$SKILLS_DIR"/*/; do
+  sk=$(basename "$d")
+  desc=$(awk '/^---\r?$/ { if (++n == 2) exit; next }
+              /^description:/ { sub(/^description:[[:space:]]*/, ""); print; exit }' \
+         "$d/SKILL.md" 2>/dev/null | tr -d '\r')
+  # 40 chars is not a style rule: a description short enough to fit under it cannot carry
+  # the "use when …" trigger phrasing the loader matches against.
+  if [ "${#desc}" -lt 40 ]; then
+    fail "F28: skill '$sk' description is ${#desc} chars — too thin to carry trigger terms, so it will not load on match"
+    f28_desc_bad=1
+  # "Triggers on - create adr, create brd, …" is trigger phrasing too, and richer than
+  # "use when". The first version of this regex rejected it — a false positive in a guard
+  # written in the same pass that fixed six others. A guard needs a control run as much as
+  # the code it guards, and this one got its control from a real subject.
+  elif ! printf '%s' "$desc" | grep -qiE 'use (when|when the|for|this)|invoke when|triggers? on|when (you|stating|writing|auditing|the)'; then
+    fail "F28: skill '$sk' description carries no trigger phrasing (\"use when …\") — nothing for the loader to match"
+    f28_desc_bad=1
+  fi
+done
+[ "$f28_desc_bad" -eq 0 ] && pass "F28: every skill description carries trigger phrasing the loader can match"
+
+# F30 positive: doc.md was deleted BECAUSE the skill carries the capability. If the skill
+# loses its dispatch or plan awareness, the deletion becomes a regression rather than a
+# de-duplication, and every existing F30 assertion stays green.
+f30_skill="$SKILLS_DIR/documentation/SKILL.md"
+f30_pos=0
+grep -q 'CLAUDE_SKILL_DIR' "$f30_skill" 2>/dev/null \
+  || { fail "F30: documentation skill lost its \${CLAUDE_SKILL_DIR} dispatch — it absorbed the deleted command's job and cannot do it"; f30_pos=1; }
+grep -qE '^## Plan awareness' "$f30_skill" 2>/dev/null \
+  || { fail "F30: documentation skill lost its Plan awareness section — plan-scoped output was part of what the deleted command did"; f30_pos=1; }
+[ "$f30_pos" -eq 0 ] && pass "F30: documentation skill retains the dispatch and plan awareness it absorbed from the deleted command"
 
 # ===========================================================================
-# 18. F30 stale-reference sweep
+# 18. F30 stale-reference sweep — enforced LITERALLY, no exemptions.
 #
-# The Wave 5 acceptance row is its own line and it is class G: "no `/deepgrade:doc`
-# or `commands/doc.md` string survives anywhere". NO guard existed, and I had marked
-# F30 closed on the strength of having deleted the file. Two references survived.
+# The acceptance row is class G and absolute: "no `/deepgrade:doc` or `commands/doc.md`
+# string survives anywhere". No guard existed; I had closed F30 on having deleted the
+# file, and three references survived.
 #
-# "Anywhere" needs a subject scope, because two of the surviving references are
-# HISTORY and rewriting them would be falsification, not a fix. Both exemptions below
-# are therefore STRUCTURAL and self-expiring — neither is a hardcoded pass, and each
-# fires if the condition that justifies it is removed.
+# The first version of this guard exempted two historical documents (a CHANGELOG release
+# entry, a shipped-feature spec) on the reasoning that rewriting them would falsify a
+# record, and paired that with an unratified change record. Codex review (gpt-5.6-sol
+# @ xhigh, 2026-07-30) found a concrete bypass in every one of those exemptions AND the
+# better option I had missed: reword the two documents TRUTHFULLY. "The documentation
+# command and skill" is accurate for 4.31.0, git history preserves the exact former
+# spelling, and the row is then satisfiable with no exemption at all.
+#
+# So there is nothing to bypass here now. Every exemption mechanism is deleted, CR-4 is
+# withdrawn, and the rule is the row.
 # ===========================================================================
 echo ""
 echo "--- F30 stale-reference sweep ---"
@@ -1319,66 +1418,34 @@ echo "--- F30 stale-reference sweep ---"
 f30_bad=0
 [ -e "$COMMANDS_DIR/doc.md" ] && { fail "F30: $COMMANDS_DIR/doc.md still exists"; f30_bad=1; }
 
-# Subject set: every tracked .md OUTSIDE this plan's own artifacts. A plan document
-# that says "delete /deepgrade:doc" must be able to name it; product surface must not.
-f30_subjects=$(git ls-files '*.md' 2>/dev/null \
-  | grep -v '^docs/plans/' \
-  | grep -v '^docs/specs/plugin-hardening-v5\.md$')
-f30_count=$(printf '%s\n' "$f30_subjects" | grep -c . || true)
-# Floor, per the recurring-vacuous-pass lesson: if the derivation matches almost
-# nothing, a clean sweep proves nothing.
+# Subject set: every tracked .md outside this plan's own artifacts. A plan document
+# recording "delete /deepgrade:doc" must be able to name it; nothing else may.
+f30_count=0
+f30_hits=0
+# NUL-delimited: `for f in $subjects` word-splits, so a tracked path containing a space
+# would be counted toward the floor and then silently skipped during inspection
+# (Codex F2). -z/IFS= is immune to that.
+while IFS= read -r -d '' f; do
+  case "$f" in
+    docs/plans/*|docs/specs/plugin-hardening-v5.md) continue ;;
+  esac
+  [ -f "$f" ] || continue
+  f30_count=$((f30_count + 1))
+  if grep -qE '/deepgrade:doc\b|commands/doc\.md' "$f" 2>/dev/null; then
+    fail "F30: $f references a deleted command — $(grep -nE '/deepgrade:doc\b|commands/doc\.md' "$f" | head -1 | cut -c1-70)"
+    f30_hits=$((f30_hits + 1))
+    f30_bad=1
+  fi
+done < <(git ls-files -z '*.md' 2>/dev/null)
+
+# Floor, per the recurring vacuous-pass lesson: a derivation that collapses to nothing
+# would otherwise sweep clean and prove nothing.
 if [ "$f30_count" -lt 10 ]; then
   fail "F30: subject set is only $f30_count files — the derivation collapsed, so a pass here would be vacuous"
   f30_bad=1
 fi
 
-for f in $f30_subjects; do
-  [ -f "$f" ] || continue
-  grep -qE '/deepgrade:doc\b|commands/doc\.md' "$f" 2>/dev/null || continue
-  case "$f" in
-    "$CHANGELOG")
-      # A changelog's released-version entries are immutable: 4.31.0 genuinely DID ship
-      # /deepgrade:doc. Exempt a hit only when it sits under a `## X.Y.Z (date)` heading.
-      # A hit in an Unreleased section, or in prose outside any release, still fails.
-      f30_live=$(awk '
-        /^## [0-9]+\.[0-9]+\.[0-9]+[[:space:]]*\(/ { rel=1; next }
-        /^## / { rel=0; next }
-        /\/deepgrade:doc|commands\/doc\.md/ { if (!rel) printf "%d ", FNR }
-      ' "$f")
-      if [ -n "$f30_live" ]; then
-        fail "F30: $f references /deepgrade:doc outside a released-version entry (line(s): $f30_live)"
-        f30_bad=1
-      fi
-      ;;
-    docs/specs/mcp-research-integration.md)
-      # Shipped-feature spec. The F30 banner marks the doc.md half as history; the
-      # exemption is conditional on that banner existing and naming F30, so deleting
-      # the banner re-arms this check rather than silently keeping the pass.
-      grep -q 'SUPERSEDED IN PART.*F30' "$f" \
-        || { fail "F30: $f names /deepgrade:doc with no F30 superseded marker"; f30_bad=1; }
-      ;;
-    *)
-      fail "F30: $f still references /deepgrade:doc or commands/doc.md — $(grep -nE '/deepgrade:doc\b|commands/doc\.md' "$f" | head -1 | cut -c1-70)"
-      f30_bad=1
-      ;;
-  esac
-done
-
-# THE CHANGELOG EXEMPTION EXPIRES AT 5.0.0. PHV5-080 (Wave 8) writes the 5.0.0 entry,
-# and until it does, a reader of the 4.31.0 entry is left believing the command exists.
-# That is a genuine cross-wave dependency the spec's row did not capture: F30's sweep
-# cannot be fully satisfied by Wave 5 alone. Rather than narrow the row, this asserts
-# the successor obligation — the moment the version ships as 5.x without a recorded
-# removal, this fails.
-f30_ver=$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' "$PLUGIN_JSON" 2>/dev/null | grep -oE '[0-9][^"]*')
-case "${f30_ver:-0}" in
-  [5-9].*|[1-9][0-9].*)
-    grep -qiE '(remove|delete|drop)[^.]{0,60}(/deepgrade:doc|`doc\.md`)' "$CHANGELOG" \
-      || { fail "F30: version is $f30_ver but $CHANGELOG never records the /deepgrade:doc removal — the 4.31.0 entry now misleads (PHV5-080)"; f30_bad=1; }
-    ;;
-esac
-
-[ "$f30_bad" -eq 0 ] && pass "F30: no live /deepgrade:doc or commands/doc.md reference (history exempted structurally, exemption expires at 5.0.0)"
+[ "$f30_bad" -eq 0 ] && pass "F30: neither stale string survives in any of $f30_count tracked files (row enforced literally, no exemptions)"
 
 # ===========================================================================
 # RESULTS SUMMARY

@@ -11,7 +11,7 @@
 - `/deepgrade:plan`: tiered Ref → Exa → Perplexity search in Phase 2 Track 3, plus URL verification
   for HIGH-impact confidence entries
 - `/deepgrade:troubleshoot`: Step 0.2 external documentation and issue lookup (Ref + Exa)
-- `/deepgrade:doc` and the documentation skill: external enrichment for specs, ADRs, and READMEs
+- The documentation command and skill: external enrichment for specs, ADRs, and READMEs
 - `integration-scanner`: API validation against external documentation via Ref
 - `dependency-mapper`: deprecation checking via Ref documentation
 
