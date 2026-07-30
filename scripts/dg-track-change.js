@@ -30,7 +30,17 @@ const filePath = payload && payload.tool_input && typeof payload.tool_input.file
   : '';
 if (!filePath.trim()) quiet();
 
-const sessionId = (payload && typeof payload.session_id === 'string' && payload.session_id) || 'default';
+
+// A session id is interpolated into a filename, so it is validated before use.
+// Unvalidated, `session_id: "../../../../../../x/y"` wrote this handler's JSON OVER a
+// file outside TMPDIR (confirmed by probe). path.join consumes the first `..` against
+// the `dg-<name>-..` component, which is why a shallow test looks safe.
+function safeSessionId(v) {
+  return (typeof v === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(v) && v !== '.' && v !== '..')
+    ? v : 'default';
+}
+
+const sessionId = safeSessionId(payload && payload.session_id);
 const tmp = process.env.TMPDIR || process.env.TEMP || os.tmpdir();
 const tracker = path.join(tmp, `dg-baseline-${sessionId}`);
 const threshold = Number(process.env.DG_CHANGE_THRESHOLD || 15);

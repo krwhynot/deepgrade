@@ -4,14 +4,24 @@
 // Contract: approach.md 3.1.6. Enforce ONLY what is parsed.
 //   - real parser present (this is node, so always): extract the NAMED field
 //     tool_input.command, enforce, and fail CLOSED on a payload JSON.parse rejects
-//   - never deny on the basis of an unparsed blob
+//   - never DENY on the basis of something unparsed. `ask` is not a deny, so a
+//     construct this cannot evaluate becomes a prompt rather than a silent allow
 //   - deny  -> exit 2 + "BLOCKED" on stderr (stderr IS surfaced on exit 2)
 //   - ask   -> exit 0 + JSON permissionDecision "ask"   (F22)
 //   - allow -> exit 0, silent
 //   - never stderr on exit 0                             (F26)
 //
-// Acceptance is tests/fixtures/hook-corpus.json. That corpus is the falsifier:
-// a matcher that fails any row fails PHV5-041 regardless of how it is written.
+// Acceptance is tests/fixtures/hook-corpus.json. A matcher that fails any row fails
+// PHV5-041 regardless of how it is written.
+//
+// REVISION HISTORY, because two of these were regressions I introduced:
+//   cf46aab  deleted quoted spans -> `git push "--force"` was ALLOWED while the old
+//            bare-regex guard denied it. Fixed at bcf691c by word splitting.
+//   bcf691c  word splitting, but matched command words by strict ADJACENCY, so any
+//            global option between them slipped through (`git -c x=y push --force`),
+//            and `\n` never ended a segment because /\s/ caught it first.
+//   this     command-position matching that tolerates global options, `\n` as a real
+//            separator, `+refspec` force pushes, and ask-on-unparseable.
 'use strict';
 
 const DENY = 2, OK = 0;
@@ -26,35 +36,17 @@ function ask(msg) {
 function allow() { process.exit(OK); }
 
 // ---------------------------------------------------------------------------
-// Shell-style word splitting. THE central mechanism.
+// Shell-style word splitting.
 //
-// The first implementation of this guard DELETED the contents of quoted spans.
-// That fixed the false positives (a commit message naming a force-push) and
-// opened five bypasses, because a shell does not delete quoted text — it strips
-// the quote CHARACTERS and keeps the content as part of the surrounding word.
-// `git push "--force"` is an ordinary working command; span-deletion turned it
-// into `git push ""` and allowed it, which the old bare-regex guard had caught.
-// Found by an adversarial probe, not by the corpus: all 18 corpus rows quoted
-// PROSE, none quoted a FLAG.
+// Quotes contribute their CONTENT and vanish as delimiters; adjacent segments join
+// into one word. That is what a shell does, and it is why `git push "--force"` must
+// still be caught while `git commit -m "no git push --force"` must not: in the
+// second case the message is a single word, so the command words are not adjacent.
 //
-// So: split into words the way sh does — quotes contribute their content and
-// vanish as delimiters, adjacent segments join into one word — and match on word
-// SEQUENCES rather than on substrings. Both properties then hold at once:
-//
-//   git commit -m "no git push --force"  -> [git, commit, -m, "no git push --force"]
-//        the message is ONE word, so the sequence [git, push] is absent -> allow
-//   git push "--force"                   -> [git, push, --force]        -> deny
-//   git push --fo''rce                   -> [git, push, --force]        -> deny
-//   grep -rn 'supabase db push' docs/    -> [grep, -rn, "supabase db push", docs/]
-//        one word again -> allow
-//
-// Commands are also split into SEGMENTS on ; && || | ( ), so a flag in one
-// command cannot satisfy a guard aimed at another (`git reset --soft && tar --hard`).
-//
-// Known and accepted limit: UNQUOTED prose is indistinguishable from an
-// invocation without full shell semantics, so `echo git push --force` is denied.
-// The old guard denied it too. Over-blocking a benign `echo` is the correct side
-// to err on for a security control; under-blocking is not.
+// Segments split on ; && || | ( ) and NEWLINE. The newline case is load-bearing and
+// was previously dead code — `/\s/.test(c)` matched it first, so a multi-line command
+// was one segment. That both laundered exemptions across commands and produced false
+// denials (a benign push followed by `grep -f` looked like a force push).
 // ---------------------------------------------------------------------------
 function segments(cmd) {
   const segs = [[]];
@@ -66,17 +58,22 @@ function segments(cmd) {
 
   while (i < cmd.length) {
     const c = cmd[i];
-    if (c === '\\') {                      // escapes the next character
+    if (c === '\\') {
+      // A backslash before a newline is a LINE CONTINUATION: it joins the lines and
+      // contributes nothing. Previously the newline was appended to the next word,
+      // producing "\n--force", which matched no flag and no sequence.
+      if (cmd[i + 1] === '\n') { i += 2; continue; }
+      if (cmd[i + 1] === '\r' && cmd[i + 2] === '\n') { i += 3; continue; }
       if (i + 1 < cmd.length) { word += cmd[i + 1]; started = true; i += 2; } else i++;
       continue;
     }
-    if (c === "'") {                       // literal, no escapes inside
+    if (c === "'") {
       i++;
       while (i < cmd.length && cmd[i] !== "'") { word += cmd[i]; i++; }
       started = true; i++;
       continue;
     }
-    if (c === '"') {                       // honours backslash escapes
+    if (c === '"') {
       i++;
       while (i < cmd.length && cmd[i] !== '"') {
         if (cmd[i] === '\\' && i + 1 < cmd.length) { word += cmd[i + 1]; i += 2; }
@@ -85,41 +82,71 @@ function segments(cmd) {
       started = true; i++;
       continue;
     }
-    if (/\s/.test(c)) { endWord(); i++; continue; }
-    if (c === ';' || c === '(' || c === ')' || c === '\n') { endSeg(); i++; continue; }
+    // NEWLINE FIRST. It is whitespace, so the generic test below would swallow it.
+    if (c === '\n' || c === '\r') { endSeg(); i++; continue; }
+    if (c === ';' || c === '(' || c === ')') { endSeg(); i++; continue; }
     if (c === '&' || c === '|') { endSeg(); while (i < cmd.length && (cmd[i] === '&' || cmd[i] === '|')) i++; continue; }
+    if (/\s/.test(c)) { endWord(); i++; continue; }
     word += c; started = true; i++;
   }
   endWord();
   return segs.filter((s) => s.length);
 }
 
-// Consecutive-word match. `[git, push]` must appear adjacently, which is what
-// makes a quoted multi-word string unable to satisfy it.
-function hasSeq(words, seq) {
-  outer:
-  for (let i = 0; i + seq.length <= words.length; i++) {
-    for (let j = 0; j < seq.length; j++) if (words[i + j] !== seq[j]) continue outer;
-    return true;
+// `/usr/bin/git`, `git.exe` and `git` are the same program.
+function basename(w) {
+  return w.replace(/\\/g, '/').split('/').pop().replace(/\.(exe|cmd|bat|ps1)$/i, '');
+}
+
+const WRAPPERS = new Set(['sudo', 'env', 'command', 'nohup', 'time', 'timeout', 'npx', 'bunx', 'winpty', 'stdbuf']);
+
+// Match a command and its subcommand words at a COMMAND POSITION, tolerating leading
+// environment assignments, wrappers, and global options with their values.
+//
+// Strict adjacency was the bug: `git -c core.pager=cat push --force`,
+// `git --no-pager push --force`, `git -C . push --force`,
+// `supabase --workdir . db push` and `dotnet ef --project X database update` all
+// evaded every rule at once.
+function hasCommandSeq(words, seq) {
+  let i = 0;
+  while (i < words.length) {
+    const w = words[i];
+    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(w)) { i++; continue; }   // FOO=bar prefix
+    if (WRAPPERS.has(basename(w))) { i++; continue; }
+    break;
   }
-  return false;
+  if (i >= words.length || basename(words[i]) !== seq[0]) return false;
+
+  let j = i + 1;
+  for (let k = 1; k < seq.length; k++) {
+    // Skip option tokens, and a token that is the VALUE of the option before it.
+    while (j < words.length && words[j] !== seq[k]) {
+      const prev = words[j - 1];
+      const isOption = words[j].startsWith('-');
+      const isOptionValue = prev && prev.startsWith('-') && !prev.includes('=');
+      if (!isOption && !isOptionValue) break;
+      j++;
+    }
+    if (j >= words.length || words[j] !== seq[k]) return false;
+    j++;
+  }
+  return true;
 }
 
 // ---------------------------------------------------------------------------
-// Read the payload. A malformed payload under a real parser is a true anomaly,
-// not a quoting artifact, so it fails closed (F24 acceptance row).
+// Read the payload. A malformed payload under a real parser is a true anomaly, not a
+// quoting artifact, so it fails closed (F24 acceptance row).
 // ---------------------------------------------------------------------------
 let raw = '';
 try { raw = require('fs').readFileSync(0, 'utf8'); } catch { raw = ''; }
-
-if (raw.trim() === '') allow();                      // nothing to enforce
+if (raw.trim() === '') allow();
 
 let payload;
 try { payload = JSON.parse(raw); }
 catch { deny('hook payload is not valid JSON — refusing to guess at its contents.'); }
 
-// Enforce only the NAMED field. A danger string in `description` or `content`
-// is not a command (F24 cross-field decoys).
+// Enforce only the NAMED field. A danger string in `description` or `content` is not
+// a command (F24 cross-field decoys).
 const command = payload && payload.tool_input && typeof payload.tool_input.command === 'string'
   ? payload.tool_input.command
   : '';
@@ -128,17 +155,12 @@ if (!command.trim()) allow();
 const segs = segments(command);
 
 // ---------------------------------------------------------------------------
-// LAYER 1 — blocking checks, evaluated PER SEGMENT so a flag belonging to one
-// command cannot satisfy a guard aimed at another. ALL of them run before any
-// early exit.
-//
-// Ledger row 1 exists only in the inline implementation today, and the .sh port
-// placed the database guard BELOW `grep -qE 'git\s+(commit|push)' || exit 0`
-// (dg-git-guard.sh:28), which makes it dead code for every non-git deploy —
-// precisely the commands it is meant to stop. Order is load-bearing here.
+// LAYER 1 — blocking checks, PER SEGMENT so a flag belonging to one command cannot
+// satisfy a guard aimed at another. ALL of them run before any early exit: the .sh
+// port placed the database guard below `grep -qE 'git\s+(commit|push)' || exit 0`,
+// which is dead code for every non-git deploy. Order is load-bearing.
 // ---------------------------------------------------------------------------
 
-// Row 1: database deploy to a remote environment.
 const DB_DEPLOY = [
   ['supabase', 'db', 'push'],
   ['prisma', 'migrate', 'deploy'],
@@ -146,53 +168,107 @@ const DB_DEPLOY = [
   ['flyway', 'migrate'],
   ['flyway', 'clean'],
   ['rails', 'db:migrate'],
+  ['rake', 'db:migrate'],          // the classic Rails form, previously absent
 ];
 const isExempt = (w) => w === '--local' || w === '--dry-run' || w === '--dry'
   || /^RAILS_ENV=(test|development)$/.test(w);
 
 for (const words of segs) {
-  if (!DB_DEPLOY.some((seq) => hasSeq(words, seq))) continue;
-  // Exemptions count only within the SAME segment as the deploy itself.
-  if (words.some(isExempt)) continue;
+  if (!DB_DEPLOY.some((seq) => hasCommandSeq(words, seq))) continue;
+  if (words.some(isExempt)) continue;   // exemptions count only within the same segment
   deny('Direct database deploy to a remote environment. Validate with --dry-run, or deploy via CI/CD.');
 }
 
-// F25: force push. `--force-with-lease` is the SAFE form and must survive.
-// A /--force\b/ pattern matches inside `--force-with-lease` because '-' is a
-// word boundary — that was the original defect. Whole-word equality avoids it,
-// and word splitting means a quoted flag still counts as that word.
-const isForceFlag = (w) => w === '--force' || /^-[A-Za-z]*f[A-Za-z]*$/.test(w);
+// F25 + H5. `--force-with-lease` is the SAFE form and must survive: whole-word
+// equality avoids the `/--force\b/` trap, where '-' is a word boundary. `-4f` and
+// `-6f` are real bundles (`-4`/`-6` are git's address-family flags), so digits count.
+// A leading '+' on a refspec is a force push with no flag at all to find.
+const isForceFlag = (w) => w === '--force' || /^-[A-Za-z0-9]*f[A-Za-z0-9]*$/.test(w);
+const isForceRefspec = (w) => /^\+[A-Za-z0-9._/^~-]+(:[A-Za-z0-9._/^~-]+)?$/.test(w);
 for (const words of segs) {
-  if (hasSeq(words, ['git', 'push']) && words.some(isForceFlag)) {
+  if (!hasCommandSeq(words, ['git', 'push'])) continue;
+  if (words.some(isForceFlag)) {
     deny('Force push is not allowed. Use --force-with-lease if you must overwrite a remote branch.');
+  }
+  if (words.some(isForceRefspec)) {
+    deny('A leading "+" on a refspec is a force push. Use --force-with-lease, or push without the "+".');
   }
 }
 
-// F22: destructive but legitimate — ASK, never deny, and never stderr on exit 0.
-// `--hard` must be in the same segment as `git reset`, so `git reset --soft &&
-// tar --hard` does not prompt.
+// F22: destructive but legitimate — ASK, never deny, never stderr on exit 0.
 for (const words of segs) {
-  if (hasSeq(words, ['git', 'reset']) && words.includes('--hard')) {
+  if (hasCommandSeq(words, ['git', 'reset']) && words.includes('--hard')) {
     ask('A hard reset discards every uncommitted change in the working tree. Confirm this is intended.');
   }
 }
 
 // ---------------------------------------------------------------------------
-// Ledger rows 5-6 — opt-in only. F05(c): DG_STRICT_GIT defaults OFF, so these
-// ship documented as opt-in rather than advertised as active.
+// Constructs this cannot evaluate -> ASK, not allow.
+//
+// A shell expands things a static matcher cannot see: `git push $'--force'`,
+// `git${IFS}push${IFS}--force`, `F=--force; git push $F`, `bash -c "git push --force"`.
+// No amount of tokenizer work reaches these, so the honest response is to stop
+// pretending. 3.1.6 forbids DENYING on something unparsed; asking is permitted and is
+// what F22 already uses for "destructive but legitimate".
+//
+// Scoped deliberately to segments that mention a guarded program or run a nested
+// shell, so an everyday `echo $HOME` does not prompt.
+// ---------------------------------------------------------------------------
+const GUARDED = new Set(['git', 'supabase', 'prisma', 'dotnet', 'flyway', 'rails', 'rake']);
+const NESTED_SHELL = new Set(['bash', 'sh', 'zsh', 'dash', 'eval', 'xargs', 'source']);
+
+// A word carrying an expansion or a substitution is not a clean program name:
+// `git${IFS}push${IFS}--force` is ONE word, and in `echo \`git push --force\`` the
+// word is "`git". Both slipped past a basename-equality test, so when a word contains
+// `$` or a backtick, look for a guarded name as a SUBSTRING.
+const wordMentionsGuarded = (w) => {
+  if (GUARDED.has(basename(w))) return true;
+  if (/[$`]/.test(w)) { for (const g of GUARDED) if (w.includes(g)) return true; }
+  return false;
+};
+
+for (const words of segs) {
+  const mentionsGuarded = words.some(wordMentionsGuarded);
+  const nested = words.some((w) => NESTED_SHELL.has(basename(w)));
+  if (!mentionsGuarded && !nested) continue;
+
+  // An unexpanded parameter or command substitution: the real argv is unknowable here.
+  const unexpanded = words.some((w) => /[$`]/.test(w));
+  // A nested shell carries its whole program inside one word.
+  const nestedProgram = nested && words.some((w) => /\s/.test(w) || GUARDED.has(basename(w)));
+
+  if (unexpanded || nestedProgram) {
+    ask('This command contains a shell construct the guard cannot evaluate '
+      + '(a variable, a substitution, or a nested shell), so its real effect is unknown. '
+      + 'Confirm it does not force-push or deploy to a remote database.');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ledger rows 5-6 — opt-in only. F05(c): DG_STRICT_GIT defaults OFF, so these ship
+// documented as opt-in rather than advertised as active.
 // ---------------------------------------------------------------------------
 if (process.env.DG_STRICT_GIT !== '1') allow();
-const isCommitOrPush = segs.some((w) => hasSeq(w, ['git', 'commit']) || hasSeq(w, ['git', 'push']));
+const isCommitOrPush = segs.some((w) => hasCommandSeq(w, ['git', 'commit']) || hasCommandSeq(w, ['git', 'push']));
 if (!isCommitOrPush) allow();
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const sessionId = (payload && typeof payload.session_id === 'string' && payload.session_id) || 'default';
+
+// A session id is interpolated into a filename, so it is validated before use.
+// Unvalidated, `session_id: "../../../../../../x/y"` wrote tracker JSON OVER a file
+// outside TMPDIR — confirmed by probe. path.join eats the first `..` against the
+// `dg-baseline-..` component, which is why a shallow test looks safe.
+function safeSessionId(v) {
+  return (typeof v === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(v) && v !== '.' && v !== '..')
+    ? v : 'default';
+}
+const sessionId = safeSessionId(payload && payload.session_id);
 const tmp = process.env.TMPDIR || process.env.TEMP || os.tmpdir();
 
-// Row 8: read BOTH tracker key names. The inline implementation wrote `total`,
+// Ledger row 8: read BOTH tracker key names. The inline implementation wrote `total`,
 // the script wrote `total_changes_since_audit`; a single-key read silently sees 0.
 function trackerCount(file) {
   let txt = '';
@@ -209,10 +285,14 @@ function trackerCount(file) {
 }
 
 // Row 6: staging-count sanity check.
-if (segs.some((w) => hasSeq(w, ['git', 'commit']))) {
+if (segs.some((w) => hasCommandSeq(w, ['git', 'commit']))) {
   let staged = 0;
   try {
-    staged = execFileSync('git', ['diff', '--cached', '--name-only'], { encoding: 'utf8' })
+    // stdio: stderr must be IGNORED, not inherited. Node's default inherits it, so a
+    // git error (e.g. cwd is not a repository) emitted 7kB on stderr at exit 0 —
+    // violating this file's own F26 rule.
+    staged = execFileSync('git', ['diff', '--cached', '--name-only'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
       .split('\n').filter(Boolean).length;
   } catch { staged = 0; }
   const edits = trackerCount(path.join(tmp, `dg-baseline-${sessionId}`));

@@ -34,10 +34,11 @@ if (!command.trim()) quiet();
 // missed one. A word containing whitespace can only have come from quoting, so it
 // is data and is dropped before matching; `npm "test"` still counts, and
 // `git commit -m "ran npm test earlier"` correctly does not.
-function words(cmd) {
-  const out = [];
+function segments(cmd) {
+  const segs = [[]];
   let word = '', started = false, i = 0;
-  const end = () => { if (started) { out.push(word); word = ''; started = false; } };
+  const end = () => { if (started) { segs[segs.length - 1].push(word); word = ''; started = false; } };
+  const endSeg = () => { end(); if (segs[segs.length - 1].length) segs.push([]); };
   while (i < cmd.length) {
     const c = cmd[i];
     if (c === '\\') { if (i + 1 < cmd.length) { word += cmd[i + 1]; started = true; i += 2; } else i++; continue; }
@@ -49,13 +50,41 @@ function words(cmd) {
       }
       started = true; i++; continue;
     }
-    if (/[\s;|&()]/.test(c)) { end(); i++; continue; }
+    if (/[;|&()\n\r]/.test(c)) { endSeg(); i++; continue; }
+    if (/\s/.test(c)) { end(); i++; continue; }
     word += c; started = true; i++;
   }
   end();
-  return out;
+  return segs.filter((s) => s.length);
 }
-const skel = words(command).filter((w) => !/\s/.test(w)).join(' ');
+// Match PER SEGMENT and at a command position. The previous version joined every
+// segment's words into one string, so a pattern could match across two unrelated
+// commands (`echo npm && test -f dist/index.js` forged a test marker) — the very
+// isolation the git guard was fixed to preserve. Bare-word patterns also fired on
+// commands that merely NAMED a tool (`grep -rn tsc src/`, `cat make.log`), and a
+// forged build marker satisfies the DG_STRICT_GIT build gate.
+const READERS = new Set(['grep', 'egrep', 'rg', 'cat', 'less', 'more', 'head', 'tail', 'ls',
+                         'find', 'echo', 'printf', 'wc', 'stat', 'file', 'test', 'diff', 'sed', 'awk']);
+const WRAPPERS = new Set(['sudo', 'env', 'command', 'nohup', 'time', 'timeout', 'winpty', 'stdbuf']);
+
+function commandLine(seg) {
+  // Drop leading env assignments and wrappers, then reject the segment outright if the
+  // program is a reader — nothing a reader does is a test or build run.
+  let i = 0;
+  while (i < seg.length) {
+    const w = seg[i];
+    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(w)) { i++; continue; }
+    if (WRAPPERS.has(w)) { i++; continue; }
+    break;
+  }
+  if (i >= seg.length) return '';
+  const prog = seg[i].replace(/\\/g, '/').split('/').pop().replace(/\.(exe|cmd|bat)$/i, '');
+  if (READERS.has(prog)) return '';
+  // Words containing whitespace came from quoting and are data, not structure.
+  return [prog].concat(seg.slice(i + 1).filter((w) => !/\s/.test(w))).join(' ');
+}
+
+const skel = segments(command).map(commandLine).filter(Boolean);
 
 const TEST_PATTERNS = [
   /\b(npm|pnpm|yarn|bun)\s+(run\s+)?test\b/,
@@ -93,7 +122,17 @@ const BUILD_PATTERNS = [
   /\bmake\b/,
 ];
 
-const sessionId = (payload && typeof payload.session_id === 'string' && payload.session_id) || 'default';
+
+// A session id is interpolated into a filename, so it is validated before use.
+// Unvalidated, `session_id: "../../../../../../x/y"` wrote this handler's JSON OVER a
+// file outside TMPDIR (confirmed by probe). path.join consumes the first `..` against
+// the `dg-<name>-..` component, which is why a shallow test looks safe.
+function safeSessionId(v) {
+  return (typeof v === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(v) && v !== '.' && v !== '..')
+    ? v : 'default';
+}
+
+const sessionId = safeSessionId(payload && payload.session_id);
 const tmp = process.env.TMPDIR || process.env.TEMP || os.tmpdir();
 
 function mark(kind) {
@@ -101,7 +140,7 @@ function mark(kind) {
   catch { /* fail open */ }
 }
 
-if (TEST_PATTERNS.some((re) => re.test(skel))) mark('test');
-if (BUILD_PATTERNS.some((re) => re.test(skel))) mark('build');
+if (skel.some((line) => TEST_PATTERNS.some((re) => re.test(line)))) mark('test');
+if (skel.some((line) => BUILD_PATTERNS.some((re) => re.test(line)))) mark('build');
 
 quiet();
