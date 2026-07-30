@@ -704,9 +704,13 @@ else
   # 11b. Only namespaced /deepgrade:* commands may appear, and each must resolve.
   #      Path fragments (docs/audit/...) are excluded by requiring the slash to
   #      follow whitespace, a quote, or a paren — never a path character.
+  #
+  #      BACKTICK included (Codex round 4, N7): the boundary class omitted it, so
+  #      "Run `/audit` first." — the way a dead command is MOST likely to be written in
+  #      Markdown, as inline code — passed the sweep with Layer 1 at 139/0. Reproduced.
   bad_cmd=0
-  for tok in $(grep -rhoE '(^|[[:space:]"'"'"'(])/[a-z][a-z-]*' "$TPL_DIR" 2>/dev/null \
-               | tr -d ' "'"'"'(' | sort -u); do
+  for tok in $(grep -rhoE '(^|[[:space:]"'"'"'(`])/[a-z][a-z-]*' "$TPL_DIR" 2>/dev/null \
+               | tr -d ' "'"'"'(`' | sort -u); do
     if [ "$tok" != "/deepgrade" ]; then
       fail "F31: template references dead command '$tok' (only /deepgrade:* is valid)"
       bad_cmd=$((bad_cmd + 1))

@@ -3,7 +3,7 @@
 # Plus controls that must stay silent.
 #
 # Lock + per-file preconditions, both earned the hard way earlier today.
-import io, os, subprocess, sys, atexit
+import io, os, re, subprocess, sys, atexit
 
 # Repo-relative: this harness is tracked, so it must not carry an absolute path from
 # whichever machine happened to write it.
@@ -19,6 +19,7 @@ try:
 except FileExistsError:
     print('REFUSING: %s exists — another instance holds the lock.' % LOCK); sys.exit(3)
 atexit.register(lambda: os.path.exists(LOCK) and os.unlink(LOCK))
+
 
 FILES = ['commands/quick-cleanup.md', 'commands/plan-status.md', 'commands/plan-export.md',
          'commands/readiness-generate.md', 'commands/plan.md', 'commands/help.md',
@@ -44,12 +45,55 @@ if _bad:
     print('REFUSING — tree not pristine:'); [print('  ' + b) for b in _bad]; sys.exit(4)
 
 for f, s in BAK.items():
-    io.open(os.path.join(SCRATCH, os.path.basename(f) + '.pristine'), 'w',
+    # Keyed by FULL PATH: basename collided — skills/documentation/SKILL.md and
+    # skills/mcp-research/SKILL.md both wrote SKILL.md.pristine (Codex round 4, N5).
+    io.open(os.path.join(SCRATCH, 'dgmut-' + f.replace('/', '__') + '.pristine'), 'w',
             encoding='utf-8', newline='').write(s)
 
+# RESTORE ON TERMINATION, not just on the happy path.
+#
+# A run killed mid-mutation left `skills/mcp-research/SKILL.md` carrying mutant W6 in the
+# working tree: atexit removed the lock and nothing put the file back. Every earlier
+# safeguard here addressed a DIFFERENT stranding cause (foreground timeout, concurrent
+# instance, un-backed-up target, failed restore) — this is the termination path, which
+# Codex round 4 N5 named and which then happened.
+#
+# atexit fires on a normal exit and on an unhandled exception; the signal handlers cover
+# SIGINT/SIGTERM. SIGKILL cannot be caught, which is why the per-file preconditions at
+# startup remain the real backstop: the next run refuses a dirty tree rather than
+# snapshotting the damage.
+def _emergency_restore():
+    try:
+        for _f, _s in BAK.items():
+            if io.open(_f, encoding='utf-8', newline='').read() != _s:
+                io.open(_f, 'w', encoding='utf-8', newline='').write(_s)
+                print('emergency restore: %s' % _f)
+    except Exception as _e:
+        print('EMERGENCY RESTORE FAILED: %s — check `git status` before committing' % _e)
+
+import signal
+def _on_signal(signum, _frame):
+    print('\nsignal %d received — restoring before exit' % signum)
+    _emergency_restore()
+    os.path.exists(LOCK) and os.unlink(LOCK)
+    sys.exit(130)
+for _sig in (signal.SIGINT, signal.SIGTERM):
+    try:
+        signal.signal(_sig, _on_signal)
+    except (ValueError, AttributeError, OSError):
+        pass  # not all platforms/contexts allow every handler
+
 def restore():
+    """Restore AND verify. Previously wrote the bytes back and assumed success; a partial
+    or failed write was invisible until the final baseline happened to go red."""
+    bad = []
     for f, s in BAK.items():
         io.open(f, 'w', encoding='utf-8', newline='').write(s)
+        if io.open(f, encoding='utf-8', newline='').read() != s:
+            bad.append(f)
+    if bad:
+        print('RESTORE BYTE-MISMATCH: ' + ', '.join(bad))
+    return not bad
 
 def run(script):
     """Returns (fail_lines, crashed). A TAG-ONLY ORACLE IS NOT ENOUGH.
@@ -60,13 +104,17 @@ def run(script):
     that broke the harness rather than tripping the guard therefore counted as
     'caught' for a catch case, and as 'quiet' for a control (Codex round 3, N3).
     """
-    r = subprocess.run(['bash', script], capture_output=True, text=True,
-                       encoding='utf-8', errors='replace')
+    try:
+        # TIMEOUT: a hung suite previously blocked the run indefinitely (Codex round 4, N5).
+        r = subprocess.run(['bash', script], capture_output=True, text=True,
+                           encoding='utf-8', errors='replace', timeout=600)
+    except subprocess.TimeoutExpired:
+        return [], True
     out = r.stdout or ''
     fails = [l for l in out.splitlines() if l.startswith('[FAIL]')]
-    # A suite that neither printed a Results line nor exited cleanly did not run to
-    # completion, whatever it printed.
-    completed = 'Results:' in out
+    # ANCHORED completion record. An unanchored 'Results:' substring could be produced by
+    # any line of output, including a mutation's own text.
+    completed = any(re.match(r'^Results: \d+ passed', l) for l in out.splitlines())
     crashed = (not completed) or (r.returncode != 0 and not fails)
     return fails, crashed
 
@@ -149,8 +197,10 @@ MUTS = [
                 'description:', 'description: MCP stuff\nx-old-description:'), 'catch'),
  ('Y12 documentation skill loses CLAUDE_SKILL_DIR dispatch', l1, 'F30',
   lambda: patch('skills/documentation/SKILL.md', 'CLAUDE_SKILL_DIR', 'NOPE_DIR', 99), 'catch'),
- ('Y13 documentation skill loses Plan awareness', l1, 'F30',
-  lambda: patch('skills/documentation/SKILL.md', '## Plan awareness', '## Notes'), 'catch'),
+ # Y13 REMOVED (Codex round 4, N4): it renamed the '## Plan awareness' heading while every
+ # line of plan-aware behaviour survived, so "caught" only ever meant "the heading changed".
+ # The clause it was meant to protect is a model-behaviour claim, now recorded NOT MET by
+ # class-G means rather than defended by a heading check.
  # --- Codex F1/F2: the row, now literal ---
  ('Y14 stale reference reappears on product surface', l1, 'F30',
   lambda: patch('README.md', '\n## ', '\n\nRun `/deepgrade:doc adr topic`.\n\n## '), 'catch'),
@@ -203,7 +253,10 @@ MUTS = [
  ('W6  description states it should NOT load', l1, 'F28',
   lambda: patch('skills/mcp-research/SKILL.md', 'description: ',
                 'description: Do not use when writing any code; this skill has no supported trigger. '), 'catch'),
- ('W7  B6: decoy bash block precedes the real overview', l4, 'B6',
+ # NOT a legitimate-edit control (Codex round 4, N4): inserting a bogus executable block into a
+ # runtime command is adversarial. Kept as an adversarial negative — B6 must ignore it — but it
+ # must not be counted among the controls that prove specificity against real maintenance.
+ ('W7  adversarial: decoy block precedes the real overview (B6 must ignore)', l4, 'B6',
   lambda: patch('commands/plan-status.md', '```bash',
                 '```bash\nPLANS_DIR="docs/plans"\necho decoy\n```\n\n```bash'), 'quiet'),
  ('W8  B7: sentinel inert AND downstream guard emits only a blank line', l4, 'B7',
@@ -244,9 +297,14 @@ MUTS = [
  ('V2  archive fallback only NAMES the cmdlet (Write-Output decoy)', l4, 'B8',
   lambda: patch('commands/plan-export.md', '"Compress-Archive -Path',
                 '"Write-Output Compress-Archive -Path'), 'catch'),
- ('V3  B6 overview marker deleted', l4, 'B6',
+ # Relabelled: removes the TEST MARKER, not a product behaviour. It legitimately proves B6
+ # fails closed when its subject cannot be identified — worth testing — but it is not evidence
+ # about plan-status itself. Naming it accurately stops it padding a defect count.
+ ('V3  B6 fails closed when its selection marker is absent (not a product defect)', l4, 'B6',
   lambda: patch('commands/plan-status.md', '# dg-test-marker: plan-status-overview', '# overview'), 'catch'),
- ('V4  a SECOND directory guard leaves a path uninstrumented', l4, 'B7',
+ # Relabelled for the same reason as V3: a duplicated guard is not a defect, it is an
+ # AMBIGUITY. B7 must refuse to certify reachability when it cannot tell which guard runs.
+ ('V4  B7 fails closed on an ambiguous duplicated guard (not a product defect)', l4, 'B7',
   lambda: patch('commands/quick-cleanup.md',
                 'if [ ! -d "$FOLDER" ]; then',
                 'if [ ! -d "$FOLDER" ]; then\n  :\nfi\nif [ ! -d "$FOLDER" ]; then'), 'catch'),

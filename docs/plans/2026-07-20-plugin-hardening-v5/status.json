@@ -198,8 +198,6 @@
       "tickets_complete": [
         "PHV5-001",
         "PHV5-002",
-        "PHV5-004",
-        "PHV5-010",
         "PHV5-011",
         "PHV5-012",
         "PHV5-030",
@@ -228,15 +226,10 @@
         "F25",
         "F27",
         "F29",
-        "F31",
         "F32",
-        "F09",
-        "F10",
         "F11",
         "F13",
-        "F14",
-        "F15",
-        "F28"
+        "F14"
       ],
       "wave_1_complete": {
         "date": "2026-07-29",
@@ -487,6 +480,23 @@
           "F30: the row says \"anywhere\" and the guard allowlists this plan's own artifacts. Either the row is reworded by a change record, or the plan's records stop naming the strings. Not something to decide silently - it is the third time F30 has been recorded closed while the row was false.",
           "F09/F10/F15/F28 guards remain defeatable by variants Codex named (${@:1:1}, quoted literals, `nice tree`, postposed negation). Each is the same ceiling: grep deciding intent.",
           "F28 loading and F08 agent obedience remain model-behaviour claims. PHV5-044 does NOT cover them - Codex is right that it is scoped to shipped hook events - so dedicated command/agent invocation fixtures are needed, or an honest NOT MET record."
+        ]
+      },
+      "codex_wave5_round4_2026_07_30": {
+        "provenance_verbatim": "model: gpt-5.6-sol | reasoning effort: xhigh | provider: openai | approval: never | sandbox: workspace-write | codex-cli 0.146.0 | session id: 019fb495-4b29-7ff1-a813-430ed5d67bae | tokens used: 472,980 | transcript 42,326 lines. Reviewed b5ce204; cloned the repo at the exact commit and executed every suite and the mutation harness. 17th consecutive header-pinned round.",
+        "verdict_quoted": "NO-GO on mechanism closure. At b5ce204, seven Round-3 variants still pass unchanged. The two newly caught instances - F08 fenced example and F15 Write-Output decoy - both fall to new variants. The changes are improving individual assertions, but Wave 5 is still not converging through regex mutation alone.",
+        "nine_variants_zero_mechanism_closed": "The question this round existed to answer. Seven of nine round-3 variants pass UNCHANGED: FOLDER=\"${@:1:1}\" (F09), echo '${CLAUDE_PROJECT_DIR}' with real expansions removed (F10), `nice tree .` and `builtin tree .` (F15), postposed \"must never be invoked\" (F28), fm_get on a no-frontmatter file with body horizontal rules, argument-hint: # TODO, argument-hint: \"\". The two I did catch fall to countervariants: F08 to a four-space-indented code block, F15 to `Compress-Archive -WhatIf`, which real PowerShell executes while creating nothing.",
+        "seven_more_wrongly_closed": "F09, F10, F15, F28, F31 removed from findings_closed; PHV5-004 and PHV5-010 removed from tickets_complete. Each acceptance row's prohibited state was reproduced with the guard green. F31 verified independently here: a BACKTICKED `/audit` - the way a dead command is most likely to be written in Markdown - escaped because the boundary character class omitted the backtick. Fixed. Codex also confirmed nothing was WRONGLY reopened last round.",
+        "f11_is_a_SPEC_gap_not_a_false_closure": "Worth separating from the seven. F11 stays closed because its written row only requires argument-hint to be PRESENT, and the product satisfies that literally. But `# TODO` and `\"\"` show the row does not require a usable value. The row is too weak, not the ledger wrong. Tighten the row before claiming the stronger \"non-empty usable hint\" property.",
+        "n6_two_records_of_G1_disagreed": "status.json recorded G1 \"unresolved\" while research/g0-probe-results.md recorded CI_ONLY, so a consumer reading structured state and one reading the evidence artifact reported different terminal states - and PHV5-004 requires exactly one. Structured record now bound to the artifact. The artifact header separately says U6 \"NOT SETTLED\" while a later section settles it; that contradiction is still open.",
+        "my_harness_overstated_itself_again": "I reported 31 catch mutants; there are 30. THREE are invalid: Y13 renames a heading while the plan-awareness content remains, V3 only deletes a test-marker comment, V4 only adds a redundant no-op guard before the real one. W7 is a useful adversarial decoy but not a plausible maintainer edit, so counting it as a legitimate-edit control was wrong. Codex also defeated B7 directly: matching guard in an UNUSED FUNCTION, sentinel inert, live guard rewritten as `test ! -d` - Layer 4 stayed 11/0 while B7 claimed the sentinel short-circuited.",
+        "THE_STRATEGIC_ANSWER": "I asked whether this is converging. It is not, and the reviewer said so plainly: \"The static-regex approach is not converging at reasonable cost for behavioral and intent-bearing clauses. Each round is mostly moving the accepted spelling.\" The split it gave: STATIC checks only for parser-level structure - exact frontmatter types via a YAML parser, registries and reference resolution, prohibited executable tokens via Markdown/shell parsing, exact set membership, occurrence ledgers. RUNTIME tests for F09 argument rendering, F10 destination resolution, F15 real archive production and payload, F08 generated settings output, B7 early-exit, F28 orchestration traces. And where runtime observation is unavailable or disproportionate - model-intent claims especially - record the row NOT MET by class-G means, because that is more truthful than another green lexical assertion. Four rounds and 31 findings say the same thing: I keep buying a greener suite at the price of a weaker claim.",
+        "f30_adjudication_a_third_option_again": "I framed F30 as erase-the-strings versus keep-the-allowlist. Codex named neither: ratify a change record replacing \"the strings survive nowhere\" with TWO enforceable requirements - (1) SEMANTIC ABSENCE: no registered command, live product surface, template, agent or skill reference RESOLVES to the deleted command; (2) OCCURRENCE-ADDRESSED PROVENANCE: every intentional historical mention enumerated by exact file and content hash, with the guard failing on an unregistered occurrence OR a stale ledger entry. That keeps truthful records, removes the self-contradiction, and stops a broad exempted directory becoming a hiding place. This is the SECOND time a dilemma I posed had an unconsidered third option (CR-4 was the first). Drafted as CR-6; F30 stays open until ratified and implemented.",
+        "still_open": [
+          "F09/F10/F15/F28/F31 and PHV5-004/PHV5-010 reopened; F08/F30 and PHV5-050/052/053 already were.",
+          "B8 does not validate an archive - it counts a filename. `-WhatIf` passes; a real archive is never opened. Needs real PowerShell on Windows CI plus payload assertion.",
+          "B7 canary is syntax instrumentation, not flow evidence. Needs the zero-argument boundary tested directly rather than inferring reachability from one spelling of a downstream guard.",
+          "Harness gaps: no subprocess timeout, unanchored \"Results:\" completion check, final crash flags discarded, apply() outside the restore try/finally, basename collision in scratch backups (both SKILL.md), no byte-comparison after restore."
         ]
       }
     },
@@ -1015,12 +1025,14 @@
     {
       "id": "G1",
       "claim": "a POSIX host is available for runtime-dispatch proof",
-      "status": "unresolved (demoted to optional in v5)",
+      "status": "CI_ONLY (terminal; set 2026-07-30 from research/g0-probe-results.md)",
       "blocks": "the POSIX runtime-dispatch claim only - suite+schema POSIX claim is standing via Ubuntu CI",
       "terminal_states": [
         "POSIX_RUNTIME_VERIFIED",
         "CI_ONLY (default)"
-      ]
+      ],
+      "terminal_state": "CI_ONLY",
+      "reconciled": "Codex round 4 N6: this said \"unresolved\" while the evidence artifact recorded CI_ONLY, so structured and artifact consumers disagreed. PHV5-004 requires exactly ONE recorded terminal state."
     }
   ],
   "candidate_findings": [
