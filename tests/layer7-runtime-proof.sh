@@ -99,12 +99,36 @@ else
 fi
 
 # PostToolUse:Bash -> dg-track-test.js writes a test marker for a recognised runner.
+#
+# THE RUNNER MUST EXIST ON THE HOST. This probe originally asked the nested session to run
+# `pytest --version`, and reported FAIL on a host with no pytest installed — so it was
+# testing "will Claude run a tool that is absent", not "does the hook fire". The handler
+# was correct all along: fed a pytest payload directly it writes the marker.
+#
+# A runtime probe whose subject may not exist produces a false defect report, which is
+# worse than no probe: it sends you debugging a working component. Preconditioned on the
+# runner being present, and FAILS rather than skips if none is — per the Wave 0 rule that
+# a missing prerequisite must never silently no-op.
 echo "  driving PostToolUse:Bash ..."
-nested "Run exactly this shell command and nothing else: pytest --version" >/dev/null
-if ls "$HOOKTMP"/dg-test-* >/dev/null 2>&1; then
-  pass "PostToolUse:Bash fired — test marker written for a recognised runner"
+if command -v python >/dev/null 2>&1 && python -m unittest --help >/dev/null 2>&1; then
+  TEST_CMD="python -m unittest --help"
+elif command -v pytest >/dev/null 2>&1; then
+  TEST_CMD="pytest --version"
+elif command -v npx >/dev/null 2>&1; then
+  TEST_CMD="npx --version"   # not a runner; only reached if neither python nor pytest exist
+  TEST_CMD=""
 else
-  fail "PostToolUse:Bash produced NO test marker. Either the handler did not run, or the runner list missed 'pytest'."
+  TEST_CMD=""
+fi
+if [ -z "$TEST_CMD" ]; then
+  fail "PostToolUse:Bash: no recognised test runner present on this host, so the hook cannot be exercised — install python or pytest and re-run"
+else
+  nested "Run exactly this shell command and nothing else: $TEST_CMD" >/dev/null
+  if ls "$HOOKTMP"/dg-test-* >/dev/null 2>&1; then
+    pass "PostToolUse:Bash fired — test marker written for '$TEST_CMD'"
+  else
+    fail "PostToolUse:Bash produced NO test marker for '$TEST_CMD' — the runner exists, so the handler or the wiring is at fault"
+  fi
 fi
 
 # PreToolUse:Bash deny. The nested session should be PREVENTED from running it, so
