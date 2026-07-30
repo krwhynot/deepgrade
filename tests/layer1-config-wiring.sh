@@ -1022,9 +1022,30 @@ fi
 echo ""
 echo "--- Line-ending policy (A1/CR-2/CR-3) ---"
 
+# DERIVED BY CLASS, not by a hardcoded extension list.
+#
+# The comment above claimed "a newly added script is covered the moment it is committed",
+# and the code below enumerated '*.sh' '*.js' 'tests/fixtures/*'. Those are not the same
+# claim: it derived FILES WITHIN KNOWN EXTENSIONS, so a new script CLASS still fell
+# outside silently — precisely the failure CR-3 was ratified to close. Demonstrated by
+# committing tests/mutation/wave5-guards.py, the first tracked .py: it landed with
+# `eol: unspecified` and this section stayed green.
+#
+# Now: known extensions UNION anything carrying a shebang, whatever it is called. A new
+# interpreter cannot be introduced without becoming a subject here.
 eol_subjects=0
 eol_bad=0
-for f in $(git ls-files '*.sh' '*.js' 'tests/fixtures/*' 2>/dev/null); do
+eol_known=$(git ls-files '*.sh' '*.js' '*.py' '*.ps1' 'tests/fixtures/*' 2>/dev/null)
+# FIRST LINE ONLY, in one batched pass.
+#   - `head -c2` per file spawned a subprocess per tracked path and blew a two-minute budget.
+#   - `grep -lIm1 '^#!'` was fast but WRONG: it matches a `#!` line anywhere in the file, so
+#     agents/gate-generator.md — which contains a shebang inside a fenced example — was
+#     classified as an executable script. A shebang is only a shebang on line 1.
+# `nextfile` stops after the first record of each file, so this reads one line per path.
+eol_shebang=$(git ls-files -z 2>/dev/null \
+  | xargs -0 awk 'FNR==1 && /^#!/ { print FILENAME } { nextfile }' 2>/dev/null)
+eol_list=$(printf '%s\n%s\n' "$eol_known" "$eol_shebang" | grep -v '^$' | sort -u)
+for f in $eol_list; do
   eol_subjects=$((eol_subjects + 1))
   attr=$(git check-attr eol -- "$f" 2>/dev/null | sed 's/.*: //')
   if [ "$attr" != "lf" ]; then
@@ -1047,8 +1068,15 @@ if [ ! -f .gitattributes ]; then
 else
   head_txt=$(sed -n '1,20p' .gitattributes | tr -d '\r')
   rationale_ok=1
-  echo "$head_txt" | grep -q '`\.sh`' || { echo "$head_txt" | grep -q '\.sh' || rationale_ok=0; }
-  echo "$head_txt" | grep -q '\.js' || rationale_ok=0
+  # Every covered class must be NAMED in the rationale. CR-3 asserted the sentence could not
+  # drift again, then CR-5 found it naming .sh and .js while the policy had to cover .py.
+  # Derived from the policy file itself, so adding a class without naming it fails here.
+  for _cls in $(grep -oE '^\*\.[a-z0-9]+ text eol=lf' .gitattributes | sed 's/^\*\.//; s/ .*//'); do
+    echo "$head_txt" | grep -q "\.$_cls" || {
+      fail "A1/CR-5: .gitattributes covers *.$_cls but its rationale never names it — the sentence has drifted from the policy again"
+      rationale_ok=0
+    }
+  done
   if [ "$rationale_ok" -eq 1 ]; then
     pass "A1/CR-3: the .gitattributes rationale names both .sh and .js"
   else

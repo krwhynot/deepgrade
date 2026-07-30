@@ -3,8 +3,8 @@
 # WHY: the reference development host runs core.autocrlf=true. Without these rules a fresh
 # clone materializes executable scripts with CRLF, and a CRLF shebang line makes the interpreter
 # unresolvable ("/bin/bash^M: bad interpreter", "env: 'node\r': No such file or directory").
-# The hook guards and the test suite are executable scripts — `.sh` AND `.js` — so this is a
-# silent, host-dependent breakage of the plugin's safety layer.
+# The hook guards and the test suite are executable scripts — `.sh`, `.js` AND `.py` — so this
+# is a silent, host-dependent breakage of the plugin's safety layer.
 #
 # That sentence named only shell scripts until CR-3 (2026-07-29). G0 selected lane N, which
 # ships the guards as node scripts, and the policy silently stopped covering the files it exists
@@ -25,6 +25,14 @@
 # determinism check (PHV5-062: clean clone -> regenerate -> byte-identical) must not be
 # host-dependent. Covered on the same reasoning as *.sh rather than waiting for a failure.
 *.js text eol=lf
+
+# Python, same requirement (CR-5). `tests/mutation/wave5-guards.py` is the tracked mutation
+# harness — the evidence behind every "N mutations caught" claim in this plan. It landed
+# OUTSIDE this policy and Layer 1 stayed green, because §14 enumerated extensions while its
+# own comment claimed it derived script classes from the tree. That is the same gap CR-3 was
+# ratified to close, reproduced one class later. §14 now derives by shebang as well as by
+# extension, so the next interpreter cannot arrive unnoticed.
+*.py text eol=lf
 
 # Test fixtures are DATA READ BY those shell scripts — tab-separated files compared with
 # `cut -f2` / `grep -qxF`. A trailing \r makes every string comparison fail silently: no
