@@ -21,7 +21,7 @@ DeepGrade gives your codebase a letter grade. Think of it like a building inspec
 It is a Claude Code plugin -- a package of commands, agents, skills, and safety hooks that extend what Claude can do inside your project. You type a slash command like `/deepgrade:readiness-scan`, and behind the scenes a team of specialized AI agents fans out across your codebase, measures 52 different things, and comes back with a composite grade from A+ to F. The grade tells you how well an AI assistant (or a new team member) can read, navigate, and safely modify your project.
 
 > [!TIP]
-> **Zero setup required.** DeepGrade works on React/TypeScript, C#/.NET, Python, Rust, and Go codebases with no configuration. It has zero required dependencies -- everything runs inside Claude Code's built-in bash and tool system. Install `jq` for better JSON parsing reliability, or let it fall back to `grep` and `sed`.
+> **No configuration required.** DeepGrade works on React/TypeScript, C#/.NET, Python, Rust, and Go codebases out of the box. It needs one runtime: **Node.js 18+**, which Claude Code itself already requires, so in practice there is nothing extra to install. `jq` is no longer used at all.
 
 ---
 
@@ -811,7 +811,8 @@ your-project/
    ```
    You should see the full command listing.
 
-5. **(Optional but recommended) Install jq** for best JSON parsing reliability:
+5. **Confirm Node.js 18+ is available** — the hook handlers need it (`node --version`).
+   Older instructions here recommended installing `jq`; it is no longer used:
    ```bash
    # Windows
    winget install jqlang.jq
@@ -855,11 +856,11 @@ version bump in `plugin.json`, nothing propagates** — the version is the cache
 
 ## Section 11: Architecture Decisions
 
-**Why inline hooks instead of external scripts.**
-The `scripts/` directory contains reference implementations of every hook, but the hooks that actually run are inline in `plugin.json`. This is because Claude Code's plugin system loads hooks from the manifest directly. External script references using `CLAUDE_PLUGIN_ROOT` had a known bug (#24529) that caused path resolution failures. Inline hooks are self-contained and always work.
+**Why external scripts instead of inline hooks (reversed in 5.0.0).**
+Hooks are declared in `hooks/hooks.json` and run as one Node script per handler under `scripts/`. Until 5.0.0 the opposite was true and this section argued for it: hooks were embedded in `plugin.json`, and `scripts/` held unwired "reference implementations". That arrangement had two problems. The two copies drifted — the database-deploy guard existed only inline and the wider migration coverage only in the scripts, so either direction of consolidation would have deleted working guards. And a shell command embedded in JSON needs three layers of quoting, which is how a guard ended up matching quoted text as if it were a command. One file per handler, invoked by the documented `node` exec form, removes both problems.
 
-**Why jq + grep/sed fallback instead of one or the other.**
-`jq` handles JSON correctly -- escaped quotes, nested objects, unicode. But `jq` is not installed everywhere, and requiring it would mean the plugin has a hard dependency. The `grep`+`sed` fallback handles the simple cases (flat JSON with string values) that hooks actually need to parse. Every hook tries `jq` first, then falls back. This gives you reliability when `jq` is available and portability when it is not.
+**Why one dependency instead of a fallback ladder (reversed in 5.0.0).**
+This section used to explain why `jq`-then-`grep`+`sed` was the right trade. It was not. `grep` and `sed` are not a JSON parser: they cannot tell which field a value came from, they truncate at the first escaped quote, and they cannot distinguish an instruction from text quoting one. The result was a guard that blocked a read-only search whose pattern named a deployment, and allowed an exemption token that appeared in an unrelated field. Availability was being traded against correctness in a security control, which is the wrong direction. Node gives real `JSON.parse`, so a named field can be read instead of guessed at, and the cost is stated openly: on a host without Node the guards do not run and Claude Code says so.
 
 **Why /tmp/ for session markers.**
 Session markers (change counts, test timestamps, build timestamps) are ephemeral data that should not pollute the project directory or be committed to git. `/tmp/` is OS-managed, automatically cleaned up on reboot, and session-isolated via the `{session_id}` suffix. Multiple Claude Code sessions on the same project do not interfere with each other.
@@ -867,8 +868,8 @@ Session markers (change counts, test timestamps, build timestamps) are ephemeral
 **Why docs/ for output files.**
 All committed output goes under `docs/`. This keeps audit data, plans, specs, and ADRs out of the source code tree. It follows the common convention of `docs/` as the documentation root. Teams can `.gitignore` the entire `docs/audit/` directory if they do not want audit data in their repo.
 
-**Why the plugin has zero required dependencies.**
-Every hook, command, and agent runs using tools built into Claude Code (Read, Write, Grep, Glob, Bash) plus standard POSIX utilities (`grep`, `sed`, `stat`, `date`, `wc`). Requiring external tools would create installation friction and platform-specific failure modes. The only optional dependency is `jq`, and even that has a fallback.
+**Why the plugin has exactly one required dependency.**
+Commands, agents and skills run on tools built into Claude Code (Read, Write, Grep, Glob, Bash). The eight hook handlers additionally require **Node.js 18+**, which Claude Code itself already needs — so it adds no install step in practice. The concern that motivated the old zero-dependency claim still stands: a safety guard that fails to install is worse than no guard, because it creates a false sense of safety. 5.0.0 answers it differently. Rather than degrade silently to a weaker parser, a host that cannot run the guards produces a visible hook error on every guarded event, so you are told the safety layer is absent instead of assuming it is working.
 
 > [!CAUTION]
 > **Why Stop hooks must use exit 0.**
@@ -898,15 +899,15 @@ On Windows, `jq` installed via `winget` lands in `$LOCALAPPDATA/Microsoft/WinGet
 
 **grep** -- A standard POSIX command-line tool for searching text with regular expressions. Used as the fallback JSON parser when `jq` is not installed.
 
-**Hook** -- A shell command that Claude Code runs automatically at a specific lifecycle event. Defined inline in `plugin.json` under the `hooks` key. Hooks can block actions (exit 2), warn (stderr), or silently track data (exit 0).
+**Hook** -- A command Claude Code runs automatically at a specific lifecycle event. Declared in `hooks/hooks.json` and implemented as one Node script per handler under `scripts/`. Hooks can block actions (exit 2), warn (stderr), or silently track data (exit 0).
 
-**jq** -- A command-line JSON processor. The preferred parser for hook scripts because it handles JSON correctly. Optional -- all hooks fall back to `grep`+`sed` if `jq` is missing.
+**jq** -- A command-line JSON processor. Used by hook handlers **before 5.0.0**, with a `grep`+`sed` fallback when it was absent. No longer used at all: the handlers parse payloads with Node's `JSON.parse`, and the fallback was removed because `grep` and `sed` cannot tell a command from text that merely mentions one.
 
 **Marketplace** -- Claude Code's system for discovering and installing plugins. You add a directory as a marketplace source, then install plugins from it.
 
 **Matcher** -- The pattern in a hook definition that determines which tool triggers the hook. For example, `"Write|Edit"` matches both the Write and Edit tools. `"Bash"` matches only Bash commands. `"*"` matches everything.
 
-**plugin.json** -- The plugin manifest file at `.claude-plugin/plugin.json`. Contains the plugin name, version, description, author, and all inline hook definitions. This is the single source of truth for the plugin's runtime behavior.
+**plugin.json** -- The plugin manifest at `.claude-plugin/plugin.json`. Contains the plugin name, version, description and author. It deliberately holds **no** `hooks` key: with both a manifest `hooks` key and a `hooks/` folder present, Claude Code silently ignores the folder, so a stray key here would disable every shipped handler while looking correct.
 
 **PostToolUse** -- A hook event that fires after a tool has finished executing. Used for tracking (counting changes, recording test/build timestamps). PostToolUse hooks cannot block actions because the action has already happened.
 

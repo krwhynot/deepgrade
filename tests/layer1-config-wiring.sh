@@ -1080,6 +1080,61 @@ else
 fi
 
 # ===========================================================================
+# 16. Documentation conformance (approach.md §9.2, class G)
+#
+# The §9.2 acceptance row is class G — "each row's claim is true of the shipped lane
+# at release (grep per row)" — and NO SUCH GUARD EXISTED. I marked the row applied
+# after editing the specific line numbers the table cited, and every other instance
+# of the same claims survived: README asserted "Requires Node.js 18 or later" on one
+# line and "Required: None. All hooks use jq with grep+sed fallback" 28 lines later,
+# in a file I had edited in that same commit.
+#
+# So these assert the CLAIM, not a line number. A citation in an audit is a sample.
+# ===========================================================================
+echo ""
+echo "--- Documentation conformance (§9.2) ---"
+
+# Files a user reads. Plan documents and the CHANGELOG are excluded: the CHANGELOG
+# describes 4.x truthfully in the past tense, and plan docs are a historical record.
+DOC_FILES="README.md GUIDE.md METHODOLOGY.md CONTRIBUTING.md"
+
+# claim_absent <label> <extended-regex> — the claim must appear NOWHERE, except on a
+# line that explicitly marks it as removed, historical, or a defect.
+claim_absent() {
+  local label=$1 re=$2 hits
+  hits=$(grep -rniE "$re" $DOC_FILES 2>/dev/null \
+         | grep -viE 'no longer|removed in|was removed|reversed in|until 5\.0\.0|earlier revision|previously|used to|old design|defect|not used at all|deleted in')
+  if [ -n "$hits" ]; then
+    fail "§9.2: $label — still asserted as current: $(echo "$hits" | head -1 | cut -c1-110)"
+    return 1
+  fi
+  pass "§9.2: $label"
+}
+
+conf_bad=0
+claim_absent "no doc claims zero/no required dependencies" \
+  '(zero|no) required dependenc|zero-dependency (plugin|design is)|dependencies: *none|\*\*required:\*\* *none' || conf_bad=1
+claim_absent "no doc presents a jq/grep+sed fallback ladder as current" \
+  'falls? back to (grep|`grep`)|jq with grep|grep\+sed fallback|tries `?jq`? first|jq is optional' || conf_bad=1
+claim_absent "no doc says hooks are inline in plugin.json" \
+  'hooks are (defined |declared )?inline|inline hook definitions|inline in .?plugin\.json' || conf_bad=1
+claim_absent "no doc references a deleted .sh handler" \
+  'scripts/dg-[a-z-]+\.sh' || conf_bad=1
+claim_absent "no doc claims the force-push guard permits --force-with-lease is untrue" \
+  'does not block .?--force-with-lease.? \(untrue\)' || conf_bad=1
+
+# The positive half: the Node requirement must be stated where a user will see it.
+node_stated=0
+for f in README.md GUIDE.md; do
+  grep -qiE 'node(\.js)? ?(18|>= ?18)' "$f" && node_stated=$((node_stated + 1))
+done
+if [ "$node_stated" -ge 2 ]; then
+  pass "§9.2: the Node.js 18+ requirement is stated in both README and GUIDE"
+else
+  fail "§9.2: the Node.js 18+ requirement is missing from $((2 - node_stated)) of README/GUIDE — a hard runtime requirement must be discoverable"
+fi
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="

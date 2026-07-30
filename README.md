@@ -113,27 +113,24 @@ Supports:
 
 ## Dependencies
 
-**Required:** None. All hooks use jq with grep+sed fallback.
-
-**Recommended:**
-[jq](https://jqlang.github.io/jq/) for best JSON parsing
-reliability.
+**Required:** [Node.js](https://nodejs.org/) 18 or later — the same runtime Claude
+Code itself needs, so if Claude Code runs, this does too.
 
 ```bash
-# Windows
-winget install jqlang.jq
-# Then copy to Git Bash path:
-cp "$LOCALAPPDATA/Microsoft/WinGet/Links/jq.exe" ~/bin/jq.exe
-
-# Mac
-brew install jq
-
-# Linux
-sudo apt install jq
+node --version   # must print v18.0.0 or higher
 ```
 
-If jq is not installed, the plugin warns on session start and
-falls back to grep+sed parsing. All guards remain functional.
+**Not required:** `jq`. Versions before 5.0.0 parsed hook payloads with `jq`, falling
+back to `grep`+`sed` when it was absent. That fallback is gone, and its removal was
+the point rather than a side effect: `grep` and `sed` are not a JSON parser, so the
+guards could not distinguish a command from text that merely mentioned one. They
+blocked a read-only `grep` whose search pattern named a deployment, and blocked commit
+messages that referred to a force push.
+
+**What happens without Node.** The hooks cannot start, and Claude Code reports a hook
+error on each guarded event. That is deliberate: the previous design degraded quietly
+to a weaker parser, so you could not tell a working safety layer from a broken one.
+Absent and loud beats present and wrong.
 
 ## Supported Stacks
 

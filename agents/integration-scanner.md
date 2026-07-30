@@ -2,7 +2,7 @@
 name: integration-scanner
 description: Use this agent to identify all external integration touchpoints in a codebase including payment processors, APIs, hardware drivers, authentication providers, and database connections. Flags security concerns. Works on any stack.
 model: sonnet
-color: magenta
+color: pink
 tools: Read, Grep, Glob, Bash, Write, Skill
 skills: ["deepgrade:self-audit-knowledge"]
 ---

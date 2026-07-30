@@ -2,7 +2,7 @@
 name: convention-scanner
 description: Use this agent to detect linter/formatter configs, type safety settings, pattern consistency, .gitignore quality, CLAUDE.md convention language, do-not-touch zones, and MCP configuration. Runs checks 5.1-5.7 of the AI Readiness scan.
 model: sonnet
-color: magenta
+color: purple
 tools: Read, Glob, Grep, Bash, Write
 ---
 

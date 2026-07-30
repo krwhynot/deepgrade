@@ -1697,7 +1697,7 @@ This conditional escalation avoids the overhead of multi-agent mode for simple b
 
 ---
 
-## 11. The Zero-Dependency Principle
+## 11. The Dependency Decision (reversed in 5.0.0)
 
 ### Why Dependencies Are the Enemy
 
@@ -1763,56 +1763,79 @@ Source: [`.claude-plugin/plugin.json`](https://github.com/krwhynot/deepgrade/blo
 
 ### The Five Design Rules
 
-These emerged from the four failures above. They are non-negotiable in any future hook development.
+These emerged from the failures above, and from the six defects an adversarial review found in the 5.0.0 rewrite itself. They are non-negotiable in any future hook development. Rules 2, 3 and 5 replace the pre-5.0.0 guidance that recommended jq-then-grep+sed; the example that settles rule 3 is that `git push "--force"` must be denied while a commit message mentioning it must not.
 
 ```text
-  ┌─────────────────────────────────────────────────────────────────┐
-  │              THE FIVE RULES OF HOOK DESIGN                      │
-  ├─────────────────────────────────────────────────────────────────┤
+  ┌─────────────────────────────────────────────────────────────┐
+  │          THE SIX RULES OF HOOK DESIGN (5.0.0)                   │
+  ├─────────────────────────────────────────────────────────────┤
   │                                                                 │
-  │  1. NEVER FAIL OPEN                                             │
-  │     If the guard can't parse its input, BLOCK, don't allow.     │
-  │     Exception: non-matching inputs (exit 0 is correct).         │
+  │  1. A BLOCKING GUARD NEVER DENIES ON AN UNPARSED PAYLOAD        │
+  │     Malformed under a real parser: fail closed. A construct the │
+  │     guard cannot EVALUATE (a variable, a substitution, a nested │
+  │     shell): return "ask" - not allow, not deny. Informational   │
+  │     hooks fail OPEN, always. A tracker that blocks work costs   │
+  │     more than one that miscounts.                               │
   │                                                                 │
-  │  2. JQ FIRST, GREP+SED SECOND                                  │
-  │     Try jq with the PATH preamble. If jq is unavailable or     │
-  │     returns empty, fall back to grep+sed extraction.            │
+  │  2. PARSE, DO NOT PATTERN-MATCH                                 │
+  │     JSON.parse the payload and read the NAMED field. Never grep │
+  │     the raw blob: it cannot tell which field a value came from, │
+  │     and it truncates at the first escaped quote.                │
   │                                                                 │
-  │  3. WARN ON STARTUP IF JQ MISSING                               │
-  │     The SessionStart hook checks for jq and prints a warning    │
-  │     to stderr if it's not found. The user sees it once per      │
-  │     session, not once per hook invocation.                      │
+  │  3. SPLIT INTO SHELL WORDS, MATCH WORD SEQUENCES                │
+  │     Quotes contribute content and vanish as delimiters, so a    │
+  │     quoted flag is still that flag while a commit message that  │
+  │     merely mentions one is not a command. Match at a COMMAND    │
+  │     POSITION, skipping global options - adjacency alone is      │
+  │     defeated by `git -c core.pager=cat push`.                   │
   │                                                                 │
   │  4. STOP HOOKS MUST EXIT 0                                      │
-  │     On the Stop event, exit 2 causes Claude Code to retry the   │
-  │     stop, creating an infinite loop. Stop hooks can warn but    │
-  │     must ALWAYS exit 0.                                         │
+  │     On the Stop event, exit 2 makes Claude Code retry the stop, │
+  │     creating an infinite loop. Stop hooks may warn but must     │
+  │     ALWAYS exit 0.                                              │
   │                                                                 │
-  │  5. ALL INPUT COMES FROM STDIN                                  │
-  │     Hooks receive a JSON blob on stdin with tool_input fields.  │
-  │     No file arguments, no environment variable contracts, no    │
-  │     assumptions about working directory.                        │
+  │  5. NEVER WRITE TO STDERR ON EXIT 0                             │
+  │     It is not surfaced. Three notices sat in this plugin for    │
+  │     months, correct and unseen. Exit-0 output is JSON.          │
   │                                                                 │
-  └─────────────────────────────────────────────────────────────────┘
+  │  6. ALL INPUT COMES FROM STDIN                                  │
+  │     A JSON blob with tool_input fields. No file arguments, no   │
+  │     environment-variable contracts, no assumptions about the    │
+  │     working directory. Anything interpolated into a path        │
+  │     (session_id) is validated before use.                      │
+  │                                                                 │
+  └─────────────────────────────────────────────────────────────┘
 ```
 
 ### How Each Hook Implements the Pattern
 
-Every hook in the plugin follows the same structural template. Here is how the pattern maps across all seven hooks.
+Every handler follows the same structural template: read stdin, `JSON.parse`, read one
+named field, decide. Here is how it maps across all **eight** handlers. The columns that
+used to appear here — "jq Path" and "grep+sed Fallback" — are gone with the ladder they
+described; the deep links formerly pointed at line numbers inside `plugin.json`, which no
+longer contains hooks at all.
 
-| Hook | Event | Matcher | What It Parses | jq Path | grep+sed Fallback | Security Level |
-| :----- | :------ | :-------- | :--------------- | :-------- | :----------------- | :--------------- |
-| [SessionStart](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json#L21) | SessionStart | `*` | session context | N/A (no JSON parsing) | `ls -td`, `basename` | Informational |
-| [Git Guard](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json#L46) | PreToolUse | `Bash` | `tool_input.command` | `jq -r ".tool_input.command"` | `grep -o '"command":"[^"]*"'` | **Blocking** |
-| [Migration Guard](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json#L36) | PreToolUse | `Write\|Edit` | `tool_input.file_path` | `jq -r ".tool_input.file_path"` | `grep -o '"file_path":"[^"]*"'` | **Blocking** |
-| [DB Deploy Guard](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json#L46) | PreToolUse | `Bash` | `tool_input.command` | `jq -r ".tool_input.command"` | `grep -o '"command":"[^"]*"'` | **Blocking** |
-| [Change Tracker](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json#L58) | PostToolUse | `Write\|Edit` | `session_id` | `jq -r ".session_id"` | `grep -o '"session_id":"[^"]*"'` | Informational |
-| [Test/Build Tracker](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json#L68) | PostToolUse | `Bash` | `tool_input.command` | `jq -r ".tool_input.command"` | `grep -o '"command":"[^"]*"'` | Informational |
-| [Stop Summary](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json#L77) | Stop | `*` | `session_id` | `jq -r ".session_id"` | `grep -o '"session_id":"[^"]*"'` | Informational |
+| Handler | Event | Matcher | Field it reads | Decision it can return |
+| :------ | :---- | :------ | :------------- | :--------------------- |
+| [dg-session-start.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-session-start.js) | SessionStart | (none) | `source` | JSON `systemMessage` only |
+| [dg-migration-guard.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-migration-guard.js) | PreToolUse | `Write\|Edit` | `tool_input.file_path` | deny (exit 2) / allow |
+| [dg-git-guard.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-git-guard.js) | PreToolUse | `Bash` | `tool_input.command` | deny / **ask** / allow |
+| [dg-track-change.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-track-change.js) | PostToolUse | `Write\|Edit` | `tool_input.file_path`, `session_id` | JSON `systemMessage` only |
+| [dg-track-test.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-track-test.js) | PostToolUse | `Bash` | `tool_input.command`, `session_id` | nothing (writes markers) |
+| [dg-session-stop.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-session-stop.js) | Stop | (none) | `session_id` | JSON `systemMessage` only |
+| [dg-subagent-stop.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-subagent-stop.js) | SubagentStop | (none) | `reason` | nothing (appends to a log) |
+| [dg-pre-compact.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-pre-compact.js) | PreCompact | (none) | (none) | JSON `systemMessage` only |
+
+Two things this table now makes explicit that the old one hid. The **Matcher** column
+reads "(none)" for four events rather than `*`: SessionStart, Stop, SubagentStop and
+PreCompact have no tool to match on, and Claude Code silently ignores a matcher there —
+the field was present and meaningless until a setup audit flagged it. And the git guard
+is the only handler that can return **ask**: a hard reset and any command containing a
+construct the guard cannot evaluate both prompt rather than being denied or waved through.
 
 The three blocking hooks (Git Guard, Migration Guard, DB Deploy Guard) are the ones where the fail-open problem matters most. If any of them cannot parse the input and the input actually contains a dangerous command, we have a security hole. That is why the jq-first-then-grep pattern exists.
 
-Source: [scripts/dg-git-guard.sh](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-git-guard.sh), [scripts/dg-migration-guard.sh](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-migration-guard.sh), [scripts/dg-session-start.sh](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-session-start.sh)
+Source: [scripts/dg-git-guard.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-git-guard.js), [scripts/dg-migration-guard.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-migration-guard.js), [scripts/dg-session-start.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-session-start.js) — the `.sh` handlers these lines used to cite were deleted in 5.0.0
 
 ### The grep+sed Pattern Up Close
 
@@ -1839,12 +1862,12 @@ Source: [`.claude-plugin/plugin.json`](https://github.com/krwhynot/deepgrade/blo
 
 ### Why Not Just Require jq?
 
-Because "just require jq" is how we got v4.21. The moment you add a required dependency, you have two problems:
+This section argued against requiring a dependency, and 5.0.0 reversed it. The argument below is preserved because the reasoning is still worth reading and the counter-argument is specific, not a change of taste: a fallback ladder whose lower rung cannot parse JSON does not preserve the guarantee, it hides its absence. What follows is the original case, then why it lost:
 
 1. **Discovery**: How does the user find out they need jq? A README line? A startup error? An install script? Every one of these has a failure mode.
 2. **Enforcement**: What happens when jq is missing? If you block everything, the plugin is unusable. If you allow everything, the safety hooks are theater.
 
-The current design sidesteps both problems. jq is optional but recommended. If it is present, you get robust JSON parsing. If it is absent, you get a one-time warning and fallback parsing that handles the common cases. The plugin never stops working entirely, and the safety hooks never silently turn off.
+**5.0.0 chose the required dependency instead, and this is the paragraph that changed.** The old answer was that `jq` is optional but recommended, with a `grep`+`sed` path when it is absent. That reads as having it both ways, and it does not: the two paths do not enforce the same rules, so the guarantee silently depended on which one ran. The plugin now requires Node.js 18+ — already required by Claude Code — and has exactly one parsing path. On a host without it the guards do not run and Claude Code reports a hook error on every guarded event. That is a worse availability story and a better safety one, which is the correct direction for a security control: the failure is visible instead of silent.
 
 | Approach | Strength | Failure Mode | Verdict |
 | :------- | :------- | :----------- | :------ |
