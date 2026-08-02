@@ -9,7 +9,12 @@
     {
       "name": "deepgrade",
       "description": "AI-powered codebase grading, planning, auditing, and operational readiness.",
-      "source": "./"
+      "source": {
+        "source": "github",
+        "repo": "krwhynot/deepgrade",
+        "ref": "v5.0.1",
+        "sha": "9f162770abf8aa9b895f6ed8e9567993402e32fd"
+      }
     }
   ]
 }
