@@ -1,11 +1,92 @@
 # Changelog
 
+## 5.0.1 (2026-08-02)
+
+### Added
+- The 4.x migration note 5.0.0 should have carried. 5.0.0 changed the hook runtime
+  dependency, moved where hooks are declared, and changed the `git reset --hard` decision —
+  and shipped with no upgrade sequence, no disable procedure, and no statement of what was
+  and was not verified. Those are now recorded under 5.0.0 below, describing the release
+  they belong to. This version exists so they reach installed copies: the version in
+  `plugin.json` is the cache key, and text attached to an already-published tag propagates
+  to nobody.
+- The marketplace catalog now pins an explicit source object carrying the release commit's
+  full SHA, so an install resolves to a known tree rather than to whatever the default
+  branch happens to hold.
+
+
 ## 5.0.0 (2026-07-30)
 
 A hardening pass across the plugin's configuration, hooks, and command surface. No new
 user-facing features — this release fixes defects found by a structured audit and verifies
 the fixes actually work, including with a runtime check that confirms the safety hooks fire
 in a live session rather than just looking correctly configured on disk.
+
+### Breaking
+
+**The safety hooks now require `node` (18 or later) instead of `bash` and `jq`.** On 4.31.0
+the hooks were declared inline in `plugin.json` as `bash -c '...'` one-liners that preferred
+`jq` and fell back to `grep`/`sed` string parsing. They are now one Node script per handler
+under `scripts/`, declared in `hooks/hooks.json`. Where `node` cannot be spawned the guards
+do not run at all and Claude Code surfaces its own hook-error notice — visible in an
+interactive session, suppressed under `claude -p`.
+
+**`git reset --hard` now asks instead of blocking.** On 4.x it was denied outright. It now
+raises a confirmation prompt you can accept. Force pushes and direct database deploys are
+still blocked.
+
+**Guard matching is scoped to the command itself.** On 4.x the guard matched its trigger
+strings anywhere in the hook payload, so `git commit -m "no git push --force"` was blocked by
+its own commit message, and a trigger word inside a quoted argument or a tool description
+stopped legitimate work. Matching is now shell-word aware and reads only the command field.
+Commands that 4.x wrongly blocked will now run.
+
+**Enforcement is PARTIAL by design.** The guards enforce only where a real parser is
+available. On a host without one they allow the event and report themselves rather than
+failing closed. This is recorded as formally NOT MET on parser-less hosts rather than
+claimed fixed everywhere.
+
+### Upgrading from 4.x
+
+Third-party marketplace auto-update is off by default, and hook commands keep using the
+previous version's path mid-session. An upgrade will not reach you without these four
+commands:
+
+```
+/plugin marketplace update deepgrade-marketplace
+/plugin update deepgrade
+/reload-plugins
+/plugin list
+```
+
+`/plugin list` is the verification step — confirm it reports the version you expect.
+**The version in `plugin.json` is the cache key; without a bump, nothing propagates.**
+
+**To turn the guards off immediately**, in order of preference:
+
+1. `/plugin uninstall deepgrade` (or disable it) **followed by `/reload-plugins`**. Verify by
+   attempting a guarded command and confirming it is not stopped, and restart the session if
+   any handler is still live. Uninstalling alone does not relieve a running session — hook
+   commands keep using the previous version's path until `/reload-plugins` runs.
+2. Set `DG_DISABLE_GUARDS=1` in the environment **and restart the session**. A process that
+   is already running does not observe a newly-set environment variable.
+
+**The `dg-*` temp files are disposable.** The plugin writes them to track state across a
+session. A stale-schema file left by a mid-upgrade session is read as zero, and deleting any
+`dg-*` temp file is always a safe recovery step.
+
+### Verification scope
+
+Stated plainly so it is not read as more than it is:
+
+- The test suite and the manifest schema are verified **on Windows only**. There is no CI
+  matrix yet, so behaviour on Linux and macOS — including runtime hook dispatch — is
+  unverified.
+- **No minimum Claude Code version is declared.** The plugin relies on hooks-folder-over-
+  manifest precedence, exec-form `args`, `${CLAUDE_PLUGIN_ROOT}` substitution and structured
+  hook output. All were confirmed on the development host (2.1.216), but the lowest version
+  that supports them has not been established by running against it, so no floor is claimed
+  rather than implying one that has not been tested.
 
 ### Fixed
 - `/deepgrade:codebase-gates` told users their generated hooks were written to

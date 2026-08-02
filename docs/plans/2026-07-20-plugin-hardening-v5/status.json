@@ -194,7 +194,7 @@
     "build": {
       "status": "in_progress",
       "started": "2026-07-29",
-      "wave": 4,
+      "wave": 8,
       "tickets_complete": [
         "PHV5-001",
         "PHV5-002",
@@ -498,6 +498,61 @@
           "B7 canary is syntax instrumentation, not flow evidence. Needs the zero-argument boundary tested directly rather than inferring reachability from one spelling of a downstream guard.",
           "Harness gaps: no subprocess timeout, unanchored \"Results:\" completion check, final crash flags discarded, apply() outside the restore try/finally, basename collision in scratch backups (both SKILL.md), no byte-comparison after restore."
         ]
+      },
+      "commits_note": "The `commits` list above stopped being maintained after Wave 0 (two entries). `git log` is authoritative for this plan; the per-wave keys below name their own commits.",
+      "wave_6_resolved_2026_07_30": {
+        "commit": "89f4b07",
+        "disposition": "Wave 6 was specced as a reconciliation SYSTEM - a blank-line segmenter, an occurrence-addressed inventory, an exact-consumption checker, a deterministic renderer and a drift gate - to keep the plugin's copy of nine troubleshooting technique files in sync with a standalone sibling bundle. Before building any of it the question 'who reads the plugin's copy' was asked and answered: nothing does. No command, agent, skill, test or manifest entry loaded the directory, searched by directory name and by every technique filename across *.md, *.js, *.json and *.sh. commands/troubleshoot.md does not reference the techniques at all and the plugin ships no troubleshooting skill. The two 'live copies' were one live copy plus ~100 KB of orphaned duplication, so the directory was DELETED rather than synchronised. You cannot drift from a file that is not there.",
+        "supersedes": "PHV5-060, PHV5-061, PHV5-062, PHV5-063 - by removing their subject, not by completing them.",
+        "content_preserved": "git history, plus the byte-frozen Wave 0 snapshots under snapshots/plugin-side/ with recorded SHA-256 hashes; .gitattributes pins those -text so no clone can normalise them.",
+        "independently_reverified_2026_08_02": "Re-checked at HEAD after the release: the only surviving mention of 'troubleshooting-techniques' outside this plan directory is the CHANGELOG line recording the removal. No dangling reference shipped.",
+        "lesson": "Audit the REQUIREMENT before satisfying it. The spec assumed two live copies needing synchronisation; the check found one live copy and orphaned duplication, and the entire wave dissolved. This is the Wave 5 question - 'which committed artifact satisfies this row' - applied one level up, to the row itself."
+      },
+      "layer7_runtime_proof_2026_07_30": {
+        "commit": "c14128a",
+        "ticket": "PHV5-044",
+        "state": "PARTIAL - part 1 (automated) passes; part 2 (owner-observed) has no artifact.",
+        "part_1_result": "5 passed, 0 failed. Hooks confirmed FIRING by execution rather than by reading configuration, for Write|Edit (migration guard), Bash (git/deploy guard) and SubagentStop. This is the first runtime evidence in the plan; every other layer proves only that the configuration is right.",
+        "the_defect_the_probe_found_was_its_own": "PostToolUse:Bash was driven with `pytest --version`. There is no pytest on this host, so the nested session never ran the command and the probe reported the hook dead. Fed a pytest payload directly, dg-track-test.js writes the marker correctly - the handler was right the whole time. The probe was testing 'will Claude run an absent tool', not 'does the hook fire'. It is now preconditioned on a runner that exists (python -m unittest, pytest as fallback) and FAILS rather than skips when none does. A false red costs what a false green costs, and from the same root: a test whose subject is not what its message claims.",
+        "part_2_has_no_artifact": "The harness writes no evidence file itself; the A-I interactive checklist is owner-observed and pasted into research/layer7-runtime-evidence.md. That file has NEVER existed - `git log --all -- '*layer7-runtime-evidence*'` is empty and it is absent from the working tree. The script's own closing lines state the position: 'This layer is NOT complete until the part-2 observations are recorded' and 'Findings F06, F24 and F26 stay PARTIAL until then'.",
+        "consequence": "F06, F24 and F26 stay PARTIAL. The 5-passed/0-failed result currently lives only in a commit message, which is the same unauditable-testimony class Codex refused to credit for the mutation harness in the Wave 5 reaudit. U4 and U5 are likewise not settled by part 1: their evidence is a surfaced notice, and U6 established that print mode suppresses it."
+      },
+      "wave_7_deferred_to_5_1_0": {
+        "tickets_deferred": [
+          "PHV5-070",
+          "PHV5-071"
+        ],
+        "decision": "The /deepgrade:plan command-to-skill migration is deferred to 5.1.0, recorded in the 5.0.0 CHANGELOG. Rationale as committed: an improvement to a command that works today rather than a fix, with its own staging and rollback proof (the 9.1 activation contract) still to be built.",
+        "f12_state": "F12 stays OPEN and out of findings_closed."
+      },
+      "wave_8_partial_2026_07_30": {
+        "_why": "5.0.0 was tagged and pushed with Wave 8 only partly executed. No commit in the repository names PHV5-080, PHV5-081, PHV5-082 or PHV5-083. This key records which clauses of each ticket are met and which are not, so the release's real coverage is legible from the structured record instead of being inferred from a green gate run.",
+        "PHV5-080": "PARTIAL. Version bump DONE (455bb2e), CHANGELOG entry DONE, README/GUIDE badges DONE. The MIGRATION NOTE was not written, and none of its required contents shipped: the four-command update sequence, the lane prerequisite and first-use check, the F24 PARTIAL disposition, the corrected 8.3 disable procedure, the temp-file disposal note, the compatibility floor, and the G1-state phrasing. The 5.0.0 entry also carried no breaking-change section at all, although the entire justification for a major bump is changed hook denial semantics. Being remedied in 5.0.1.",
+        "PHV5-081": "PARTIAL. `claude plugin validate --strict` PASSES at the release commit on the current CLI. The ticket additionally requires the floor version, which does not exist because PHV5-003 (U7) never ran, and a CI re-run, which cannot happen because no CI exists - .github/workflows/ is absent.",
+        "PHV5-082": "NOT MET. The rollback rehearsal on a disposable channel - forward rollback, dist/ restore from the Wave 0 snapshots, and the uninstall + /reload-plugins hook-silence check - has no artifact and no commit.",
+        "PHV5-083": "PARTIAL. Step 1 of the two-commit sequence is DONE: release commit 455bb2e plus annotated tag v5.0.0, both pushed to origin. Step 2 did NOT happen - the catalog commit pinning the source object to the release commit's full 40-char SHA was never made, and .claude-plugin/marketplace.json still carried the relative source './' at the tagged commit. Flow A and Flow B (credentialed profile and fresh CLAUDE_CONFIG_DIR install verification) were not run, and the normalized installed-tree comparison was not performed. 5.0.1 addresses the catalog pin only; both install flows need credentialed profiles and stay with the owner.",
+        "PHV5-084": "CORRECTLY NOT EXECUTED. Conditional on G1 = POSIX_RUNTIME_VERIFIED; G1's terminal state is CI_ONLY.",
+        "species": "The same failure the plan already caught twice in Wave 5: a wave is closed when its acceptance ROWS are satisfied, not when the fixes are verified. The release commit checked 'are the fixes in' and 'do the gates pass' - both true - and never asked which committed artifact satisfies PHV5-080's migration-note clause. No gate could have caught it: nothing in run-all.sh or the consistency sweep reads Wave 8's rows."
+      },
+      "release_5_0_0": {
+        "commit": "455bb2e",
+        "date": "2026-07-30",
+        "tag": "v5.0.0, annotated, pushed to origin and dereferencing to 455bb2e",
+        "sync": "main and the tag are both at origin; working tree clean at the release.",
+        "gates_at_release": "run-all 5/5 layers (139/9/11/42, 0 failed), sweep PASS, validate --strict PASS. Independently re-run 2026-08-02 against the same tree: still 5/5 layers, 0 failed, sweep PASS.",
+        "known_gaps_section_is_real_but_is_not_the_migration_note": "The 5.0.0 CHANGELOG carries a 'Known gaps' section stating that several internal acceptance criteria are text-based checks for whether an instruction is followed, which cannot reliably separate an instruction from an example or a negation. That disclosure is honest and correct. It is a different clause from the migration note, and does not substitute for it."
+      },
+      "release_5_0_1_prepared_2026_08_02": {
+        "_why": "The migration note cannot ship as 5.0.0. The v5.0.0 tag is public and points at 455bb2e, which does not contain the note; pinning the catalog at that SHA would publish a release still missing it, and re-tagging an already-pushed tag was rejected as a destructive public action. The version in plugin.json is the cache key, so text attached to an already-published tag propagates to nobody. 5.0.1 is therefore the vehicle, with the note's CONTENT placed in the 5.0.0 section where it describes the release it belongs to, and a short 5.0.1 entry recording why it arrives late.",
+        "state": "PREPARED and gate-verified in the working tree; not committed. The owner reviews and pushes.",
+        "contents": [
+          "CHANGELOG 5.0.0 gains '### Breaking' (node 18+ replaces bash+jq, hooks moved to hooks/hooks.json, `git reset --hard` now asks instead of denying, guard matching scoped to the command field, F24 PARTIAL disposition), '### Upgrading from 4.x' (the four-command sequence, the 8.3 disable procedure with its verification step, the dg-* temp-file disposal note) and '### Verification scope'.",
+          "CHANGELOG gains a 5.0.1 entry recording that the migration note is what this version carries, and why.",
+          "plugin.json 5.0.0 -> 5.0.1; README 'Current:' line and both GUIDE version badges follow.",
+          "Catalog pin (PHV5-083 step 2) is prepared separately: it must name the 5.0.1 release commit's own full SHA, so it can only be written after that commit exists."
+        ],
+        "verification_scope_stated_honestly": "The new '### Verification scope' section says two things the release had not said. First, the suite and manifest schema are verified on Windows only; no CI matrix exists, so Linux and macOS behaviour including runtime hook dispatch is unverified - the locked posix_verification decision made the two-platform claim standing ON Ubuntu CI, and that CI was never built, so the claim has no basis. Second, no minimum Claude Code version is declared, because U7 was never established; the relied-upon behaviours were confirmed on the development host at 2.1.216 but the lowest version supporting them has not been determined by running against it.",
+        "gates": "run-all 5/5 layers, 0 failed, sweep PASS, validate --strict PASS in the prepared tree. The F20A guard caught a real miss during preparation: a second GUIDE version badge at line 936, more than 900 lines below the heading badge, still read 5.0.0. That is exactly the drift F20A was written for."
       }
     },
     "impact_review": {
@@ -628,6 +683,27 @@
       "state": "ACCEPTED",
       "summary": "Supersedes acceptance-matrix row A1 on two points: (1) acceptance is the fresh-clone working-tree check - the git ls-files --eol clause reports w/lf for all 14 scripts with no .gitattributes present at all, so it is not falsifying; (2) scope extends from *.sh to also cover tests/fixtures/**, since layer3-fixture-lint.sh reads tab-separated fixture data where a trailing CR silently breaks every string comparison. Raised during Build Wave 0 by A1's own corrected falsifying test on first execution; clean clone showed Layer 3 at 7/2 vs 9/0 locally. The alternative - recording the two failures in expected-failures.txt - was rejected as enshrining a live defect, the R2 anti-pattern.",
       "file": "changes/CR-2.md"
+    },
+    {
+      "id": "CR-4",
+      "date": "2026-07-30",
+      "state": "WITHDRAWN",
+      "summary": "WITHDRAWN before ratification. It framed F30's 'survives anywhere' row as a dilemma - narrow the row with structural exemptions, or hold the finding open until Wave 8. Codex named a third option neither branch contained: reword the history truthfully, which satisfied the absolute row with no exemption at all and retired a HIGH finding built around exemption machinery. Generalisable: framing a decision as a dilemma is itself a claim to check, and reaching for an exemption plus a change record is the tell that the option set is too small.",
+      "file": "changes/CR-4.md"
+    },
+    {
+      "id": "CR-5",
+      "date": "2026-07-30",
+      "state": "PROPOSED - needs owner ratification",
+      "summary": "Extends the line-ending policy to *.py and fixes the section-14 derivation that was supposed to make the extension unnecessary. Committing the first tracked .py proved CR-3's central claim FALSE: CR-3 was ratified partly on 'a new script class cannot silently fall outside the policy', but section 14 enumerated '*.sh' '*.js' 'tests/fixtures/*' - known EXTENSIONS, not script classes. The .py landed with eol unspecified and the suite stayed green. Section 14 now derives known extensions UNION any tracked file whose FIRST line is a shebang (awk 'FNR==1'; grep '^#!' was wrong because it matches a shebang anywhere in a file, and a per-file head -c2 blew the time budget). Applied in the same commit as the record.",
+      "file": "changes/CR-5.md"
+    },
+    {
+      "id": "CR-6",
+      "date": "2026-07-30",
+      "state": "PROPOSED - needs owner ratification; nothing applied",
+      "summary": "Replaces F30's 'the strings survive nowhere' row with two enforceable requirements: (1) SEMANTIC ABSENCE - no registered command, live product surface, template, agent or skill reference RESOLVES to the deleted command; and (2) an OCCURRENCE-ADDRESSED PROVENANCE ledger enumerating every intentional historical mention. Codex named this after the erase-the-strings versus keep-the-allowlist framing was escalated as a dilemma - the second time a two-option framing was wrong in this plan. A directory exemption is a hiding place; an occurrence ledger is an inventory. NOTHING IS APPLIED and F30 stays open and out of findings_closed. Note for ratification: the shipped 5.0.0 CHANGELOG already uses CR-6's semantic-absence wording ('no live references to it anywhere in the plugin's product surface'), so the released text is ahead of the unratified record.",
+      "file": "changes/CR-6.md"
     }
   ],
   "external_review": {
