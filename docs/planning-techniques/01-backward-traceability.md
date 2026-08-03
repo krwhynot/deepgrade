@@ -84,9 +84,13 @@ We have no "reverse coverage check." A developer could add an entirely new featu
 
 3. **Orphan changes (code that serves no goal) get flagged as scope creep.** These are not automatically rejected — sometimes scope creep is justified — but they must be explicitly acknowledged and approved. Silent scope creep is the failure mode.
 
-4. **Add LINT-11: Every code change maps to a plan ticket.** This lint rule runs during Phase 7 and fails if any changed file cannot be traced to a ticket. The developer must either link the change to an existing ticket, create a new ticket (which then needs a goal), or justify the orphan.
+4. **Add LINT-11: Every code change maps to a plan ticket**
 
-5. **Add LINT-12: Every plan ticket maps to at least one code change (or is explicitly deferred).** This lint rule runs during Phase 7 and fails if any ticket in the plan has no corresponding code change. The ticket must either have implementation artifacts or be marked as explicitly deferred with a reason.
+   This lint rule runs during Phase 7 and fails if any changed file cannot be traced to a ticket. The developer must either link the change to an existing ticket, create a new ticket (which then needs a goal), or justify the orphan.
+
+5. **Add LINT-12: Every plan ticket maps to at least one code change (or deferred)**
+
+   This lint rule runs during Phase 7 and fails if any ticket in the plan has no corresponding code change. The ticket must either have implementation artifacts or be marked as explicitly deferred with a reason.
 
 ## References
 

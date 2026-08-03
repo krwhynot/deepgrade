@@ -649,14 +649,18 @@ Question: What is weak or missing?
 Run four checks using the plan-auditor agent:
 
 CHECK 1 - 8-DIMENSION SCORE:
-Scoring rubric:
-  5 = Thorough, no gaps (evidence: direct quotes + code verification)
-  4 = Good, minor gaps (evidence: direct quotes, minor items missing)
-  3 = Adequate, notable gaps (section exists but incomplete)
-  2 = Weak, major gaps (section exists but critically incomplete)
-  1 = Missing or failing (absent or fundamentally wrong)
+The rubric, its per-level anchors and the band interpretation live in
+`agents/plan-auditor.md`. They are deliberately not repeated here.
 
-Thresholds: 32-40 GREEN, 24-31 YELLOW, 16-23 ORANGE, 1-15 RED
+This file is read by the Phase 4 generator. A generator that can see the scoring
+function writes to the scoring function — it produces text shaped like each anchor
+rather than a plan that happens to score well, and the two are indistinguishable
+from the score alone. Keeping the rubric on the auditor's side is what makes the
+score a measurement of the plan rather than a measurement of how well the generator
+remembered the rubric.
+
+The score is reported. Under the verifier-first gate it does not authorize passage
+(see GATE below), so its role is trend and triage, not permission.
 
 CHECK 2 - DEVIL'S ADVOCATE:
 Challenge each assumption. For each challenge, cite evidence or flag [VERIFY].
@@ -733,56 +737,84 @@ Track verification results:
   "Assumptions: X total, Y verified (Z automated, W manual), V unverified, F falsified"
 
 OUTPUT C: Scenario Matrix
-Force 8 scenarios per plan and map each to implementation, test, and monitoring:
+The auditor maps a fixed set of scenarios to implementation, test and monitoring.
+The scenario list and the output table live in `agents/plan-auditor.md`; they are
+not repeated here, for the same reason the rubric is not.
 
-```markdown
-## C. Scenario Matrix
+What the plan itself must do — state this to the generator, not the list:
+the plan has to account for how the change behaves when it works, when it fails,
+while old and new run side by side, under load, at permission boundaries, across
+environment differences, and on the way back out. A plan written against a named
+checklist tends to grow a section per checklist item; a plan written against the
+requirement tends to notice which of those actually apply to it and say so.
 
-| Scenario | Planned? | Which Phase? | Tested? | Monitored? | Status |
-|----------|----------|-------------|---------|-----------|--------|
-| Happy path (normal flow) | yes | Phase 1-3 | T1,T2,T3 | metrics | covered |
-| Failure path (what breaks) | yes | Phase 2 | T4 | alerts | covered |
-| Partial rollout (old+new coexist) | partial | Phase 3 | none | none | GAP |
-| Backward compatibility | yes | Phase 1 | T5 | none | partial |
-| Scale/volume edge | no | - | - | - | GAP |
-| Auth/permission edge | yes | Phase 2 | T6 | audit log | covered |
-| Config/environment difference | no | - | - | - | GAP |
-| Rollback path | yes | all phases | T7 | runbook | covered |
-```
-
-Rules:
-- All 8 scenarios MUST have an entry (even if "not applicable" with reason)
-- "Partial rollout" catches mixed-state issues (CORS, OTP/recovery, old+new)
-- "Config/environment" catches dev-vs-prod differences
-- Items marked GAP fail the gap check
+Every scenario in the auditor's set gets an entry, including "not applicable" with
+a reason. Items marked GAP fail the gap check.
 
 OUTPUT D: Cross-Cutting Concern Sweep
-For every feature/change in the plan, check each concern:
+The auditor checks every feature and change against a fixed set of concerns. That
+set and its output table live in `agents/plan-auditor.md` and are not repeated here.
 
-```markdown
-## D. Cross-Cutting Concern Sweep
+What the plan itself must do: address the concerns that cut across the change
+rather than sitting inside one component — the contract it exposes, who is allowed
+to call it, what differs between environments, how it behaves at the network and
+data-access boundary, what it emits when running, and how it migrates and rolls
+back. Concerns that genuinely do not apply are excluded explicitly with a reason.
 
-| Concern | Addressed? | Where? | Status |
-|---------|-----------|--------|--------|
-| API contract | yes | spec section 3.2 | ok |
-| UI behavior | yes | wireframes in research | ok |
-| Auth/authz | yes | Phase 2, ticket POS-5164 | ok |
-| Config | partial | mentioned but no env diff table | warn |
-| CORS/network/browser | no | - | GAP |
-| Data model/query limits | no | - | GAP |
-| Pagination | no | - | GAP |
-| Caching | n/a | no cache layer involved | ok-na |
-| Observability | partial | metrics mentioned, no dashboard | warn |
-| Migration/backward compat | yes | Phase 1 migration plan | ok |
-| Rollout/rollback | yes | Phase 3 + feature flags | ok |
-| Tests | yes | test plan document | ok |
-| String path refs (if files move) | n/a | no file moves planned | ok-na |
+Every concern in the auditor's set gets a verdict. Unaddressed concerns are GAPS;
+partial ones are WARNINGS.
+
+EVIDENCE VALIDATION (automated, run before anything is treated as MET):
+
+The auditor returns criterion records, each carrying its evidence. Those records are
+a PROPOSAL, not a result. Re-check every one of them mechanically:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/dg-evidence-validate.js" \
+  docs/plans/{date}-{plan-name}/evidence/
 ```
 
-Rules:
-- Every concern must be addressed, explicitly excluded, or marked N/A with reason
-- Unaddressed concerns are GAPS
-- "Partial" concerns are WARNINGS
+The validator re-reads each cited artifact, confirms its hash still matches, slices
+the cited line range and asserts the quoted text is byte-identical to it. It can only
+ever DEMOTE a verdict — there is no input that makes it turn an UNMET into a MET. Use
+the verdicts it returns, never the verdicts the auditor claimed.
+
+A record comes back UNMET, with a flag naming the reason, when:
+  EVIDENCE-INVALID           the quote does not match the lines it cites
+  EVIDENCE-MISSING           MET was claimed with no evidence at all
+  EVIDENCE-STALE             the artifact changed after the record was written
+  EVIDENCE-ARTIFACT-MISSING  the cited file does not exist
+  EVIDENCE-RANGE-INVALID     the cited line range does not exist in the file
+  EVIDENCE-UNEXECUTED        an executable criterion retained no command
+  EVIDENCE-COMMAND-FAILED    the retained command exited non-zero
+
+The fourth rule is the one that matters most and is easiest to soften by accident:
+an externally checkable claim with no evidence is UNMET. Not PARTIAL, not a warning,
+not "verified but undocumented". This project has lost that argument twice — a layer
+was recorded PARTIAL with its result asserted in a commit message and no artifact in
+any commit, and a whole wave was closed against greps typed at a terminal that left
+nothing behind. Both are UNMET here without anyone needing to notice.
+
+Do not re-run the auditor to "resolve" a demotion. A demotion is not a disagreement
+to be settled; it means the evidence was not there, and the fix is in the plan.
+
+COMMIT the evidence directory together with audit.md. An audit whose evidence is not committed did not happen.
+
+This is the rule that makes an audit auditable later. A verdict is only as good as
+the ability to re-derive it, and a re-check needs the records, the artifacts and the
+hashes that bound them together at the time. Without them the audit degrades into
+testimony — "it passed when I ran it" — which is exactly the class of claim this
+project has already had to refuse twice.
+
+Exit codes from the validator, which the gate branches on:
+  0  every record survived re-checking
+  1  at least one claimed MET was demoted — the gate does NOT open
+  2  the evidence directory is missing or empty
+
+Treat 2 as the most serious of the three. A missing directory is not a clean run
+with nothing to report; it means the audit produced no evidence at all, and reading
+it as a pass would rebuild the exact failure this replaces — a phase recorded green
+on the strength of a claim that no artifact anywhere supports.
 
 INFRASTRUCTURE VERIFICATION (automated, run after gap matrices):
 Cross-reference every coverage claim against verifiable artifacts.
@@ -810,35 +842,15 @@ List all INFRA-GAPs with the claim, expected file, and actual status.
 PLAN LINT RULES (automated, run before presenting results):
 These are binary pass/fail checks. Any FAIL is a gap.
 
-```
-LINT-01: Every goal has at least one mapped ticket          [PASS/FAIL]
-LINT-02: Every HIGH risk has a mitigation                   [PASS/FAIL]
-LINT-03: Every deployment phase has a rollback plan          [PASS/FAIL]
-LINT-04: Every external dependency has an owner              [PASS/FAIL]
-LINT-05: Every new endpoint/API has a contract or test entry [PASS/FAIL]
-LINT-06: Backward compatibility claimed but no mixed-state scenario [PASS/FAIL]
-LINT-07: Every new behavior has a test or test delta         [PASS/FAIL]
-LINT-08: No unverified HIGH-impact assumption exists         [PASS/FAIL]
-LINT-09: No unaddressed cross-cutting concern for in-scope features [PASS/FAIL]
-LINT-10: Every phase has go/no-go criteria                   [PASS/FAIL]
-LINT-13: Approach has options analysis with min 2 alternatives [PASS/FAIL]
-LINT-15: All "Tested" claims have verified test infrastructure  [PASS/FAIL]
-LINT-16: All "Monitored" claims have verified monitoring infra  [PASS/FAIL]
-LINT-17: Confidence brief exists with no unresolved HIGH-impact markers       [PASS/FAIL]
-LINT-18: Confidence brief has all 3 sections and each entry has required fields [PASS/FAIL]
-```
+Rule text and the applicable rule set live in `docs/planning-techniques/lint-registry.md`.
+Read it and apply every rule the registry assigns to Phase 5 in the current audit mode.
+This file names ids only — it does not restate what a rule means, so the two cannot
+drift apart. Report one PASS/FAIL per id, using the ids exactly as the registry
+numbers them.
 
-LINT-17 blocks on any HIGH-impact entry containing:
-- [SOURCE NEEDED] — no verifiable source found
-- [LINK DEAD] — reference URL was unreachable
-- [UNVERIFIED] on a HIGH-impact entry — training data recall only
-These markers on MEDIUM/LOW entries are warnings, not blockers.
-
-LINT-18 checks:
-- confidence.md exists in the plan folder
-- At least one of the 3 sections is present (Dependencies, Methods, Best Practices)
-- Every entry has: "What it is", "Why it works", "Connection to this plan"
-- Every HIGH-impact entry additionally has: "Reference" with a URL, impact rationale
+Apply at Phase 5: the registry's Phase 5 set.
+LINT-14 is skipped on the first audit (no baseline exists to regress from).
+LINT-11 and LINT-12 belong to Phase 7 and do not run here.
 
 GAP SUMMARY:
 After all 4 outputs + lint rules, produce:
@@ -846,7 +858,7 @@ After all 4 outputs + lint rules, produce:
 ```markdown
 ## Gap Summary
 
-Lint: {N}/14 passed, {M} failed
+Lint: {N}/{applicable} passed, {M} failed   <- denominator = the registry's Phase 5 set for this mode
 Coverage Matrix: {N} items, {M} gaps
 Assumption Register: {N} assumptions, {M} unverified high-impact
 Scenario Matrix: 8 scenarios, {M} gaps
@@ -859,7 +871,8 @@ Gap-checked: YES / NO
 ```
 
 A plan is gap-checked ONLY when:
-- All lint rules pass (including LINT-14, LINT-15, and LINT-16)
+- Every rule in the registry's Phase 5 set passes (enumerating a subset here is how
+  the count drifted to four different values before PH5-001)
 - Coverage matrix has zero GAPs
 - No unverified HIGH-impact assumptions
 - Scenario matrix has zero GAPs
@@ -930,10 +943,10 @@ On re-audit (after revision loop or manual re-run), compare current vs baseline:
 Report: "Baseline comparison: X regressions, Y improvements, Z new items"
 Regressions are flagged as HIGH priority in the audit output.
 
-LINT-14: No regressions from previous baseline.
-If any element that was covered/passing in the previous baseline is now
-gap/failing, LINT-14 fails. Pre-existing gaps do not trigger this rule.
-LINT-14 only applies when a previous baseline exists (skipped on first audit).
+This comparison is what LINT-14 is evaluated against (see the registry for its text).
+Only an element that was covered/passing in the previous baseline and is now
+gap/failing counts; pre-existing gaps do not trigger it. Skipped on the first audit,
+when no baseline exists.
 
 Update the baseline in status.json after each comparison (append to history array
 for trend tracking).
@@ -957,6 +970,22 @@ IF score < 32 OR gap-checked = NO:
      were passing in v1 but now fail in v2). Regressions indicate the
      revision broke something that was previously working.
   -> Maximum 2 revision iterations.
+
+SPAWN A NEW plan-auditor INSTANCE for every audit iteration. Do not re-audit inside
+the instance that produced the previous verdict, and do not pass it the previous
+audit.md, the previous score, or a summary of either.
+
+An evaluator that already published a number for v1 is, on v2, checking its own
+prior judgement. The consistent story available to it is that the revision fixed
+what it said was broken, so the second audit tends to ratify the first rather than
+re-derive it — and the loop's regression check is exactly the thing that cannot
+work if the same evaluator grades both sides of it. The agent refuses prior-iteration
+scores on its side too (see <forbidden_inputs> in agents/plan-auditor.md); both
+halves are required, because either alone is a single point of failure.
+
+The baseline comparison above is done by the CALLER, which holds both audits. The
+judge sees one spec and reports on it, and never learns that a previous attempt
+existed.
 
 After revision loop completes:
 - GREEN + gap-checked: "Plan revised and now solid. Ready to build."
@@ -1221,8 +1250,8 @@ WHAT IT CHECKS:
    - Justified as necessary infrastructure (added to a new ticket)
    - Flagged as scope creep for review
 
-   LINT-11: Every code change maps to a plan ticket
-   LINT-12: Every plan ticket maps to at least one code change (or is explicitly deferred)
+   This traceability check is what LINT-11 and LINT-12 are evaluated against;
+   the registry holds their text and marks both as Phase 7, Full mode only.
 
 PROCESS:
 PARALLELIZATION RULE: The 5 check dimensions are independent. Deploy parallel

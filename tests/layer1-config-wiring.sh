@@ -1119,15 +1119,51 @@ else
   done
   [ "$missing" -eq 0 ] && pass "F06: every referenced handler script exists"
 
+  # The plugin invokes scripts by two mechanisms, and F06 originally knew only one.
+  # Hook handlers are named in hooks.json; audit tooling is invoked from a command or
+  # agent as an explicit `node .../scripts/NAME` line. The invariant F06 defends is
+  # "no unwired code ships", not "everything in scripts/ is a hook", so the reverse
+  # sweep accepts either mechanism (PH5-020).
+  #
+  # A bare mention does NOT count. Deciding whether prose "refers to" a script is an
+  # intent question; requiring the reference to appear in executable form — `node`
+  # followed by the path — keeps this structural. A script named only in a sentence
+  # is still an orphan, which is the correct answer.
+  inv_re='node[^`]*scripts/[A-Za-z0-9._-]+\.js'
+  inv=$(grep -ohE "$inv_re" commands/*.md agents/*.md 2>/dev/null | sed 's|.*/||' | sort -u)
+  inv_count=$(echo "$inv" | grep -c . || true)
+
+  # Self-tests. The known-positive is the QUOTED form, copied from how the plugin
+  # actually invokes a script — an earlier draft used an invented unquoted form and
+  # excluded '"' from the pattern, so the self-test passed while every real
+  # invocation went unrecognised. A known-positive that is not drawn from the real
+  # artifact tests the pattern against the author's imagination.
+  if ! printf '%s\n' 'node "${CLAUDE_PLUGIN_ROOT}/scripts/dg-example.js" \' | grep -qE "$inv_re"; then
+    fail "F06: invocation pattern fails its known-positive — command-wired scripts cannot be recognised"
+  fi
+  if ! printf '%s\n' 'Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/dg-example.js` on the records.' | grep -qE "$inv_re"; then
+    fail "F06: invocation pattern misses the unquoted form"
+  fi
+  if printf '%s\n' 'See scripts/dg-example.js for the validation rules.' | grep -qE "$inv_re"; then
+    fail "F06: invocation pattern matches a bare prose mention — a script named in a sentence would count as wired"
+  fi
+
   # Reverse: nothing in scripts/ is unreferenced. This is the direction that stops
   # dead code shipping — the .sh set was orphaned in exactly this way before 4b.
   orphan=0
   for f in scripts/*; do
     [ -e "$f" ] || continue
     b=$(basename "$f")
-    echo "$refs" | grep -qxF "$b" || { fail "F06: scripts/$b is not referenced by hooks.json — unwired code must not ship"; orphan=1; }
+    if echo "$refs" | grep -qxF "$b"; then
+      continue
+    elif echo "$inv" | grep -qxF "$b"; then
+      continue
+    else
+      fail "F06: scripts/$b is referenced by neither hooks.json nor a node invocation in commands/ or agents/ — unwired code must not ship"
+      orphan=1
+    fi
   done
-  [ "$orphan" -eq 0 ] && pass "F06: no orphaned files in scripts/ (reverse sweep)"
+  [ "$orphan" -eq 0 ] && pass "F06: no orphaned files in scripts/ ($ref_count hook-wired, $inv_count command-wired)"
 
   # Ledger row 4 / F06: the SubagentStop handler existed but was wired to nothing.
   if grep -q '"SubagentStop"' hooks/hooks.json; then
@@ -1608,6 +1644,499 @@ if [ "$f30_count" -lt 10 ]; then
 fi
 
 [ "$f30_bad" -eq 0 ] && pass "F30: neither stale string survives in any of $f30_count tracked files ($f30_skipped skipped: this plan's own records and spec)"
+
+# ===========================================================================
+# PH5-001 / acceptance row A1: lint-registry.md is the ONLY file that states
+# LINT rule text.
+#
+# The registry declares itself the single source of truth and nothing enforced it.
+# Every one of the 18 rules had drifted into a second wording, and LINT-17/18 had
+# drifted into a second MEANING. Harmless while a prose score carried the Phase 5
+# gate; load-bearing once LINT verdicts ARE the gate
+# (docs/specs/phase5-verifier-gate.md).
+#
+# Formulated as ABSENCE, deliberately. An earlier version of this guard compared
+# each restatement against the registry's wording, which required deciding whether
+# a given sentence was "a definition" — an intent question, and the species this
+# repo has been bitten by repeatedly. Asking instead "does any prose follow a LINT
+# id outside the registry?" is a question text matching answers soundly, and it
+# makes collisions impossible by construction rather than merely detected.
+#
+# Bare references are unaffected: "LINT-08 blocks Build" and "all of LINT-01..10
+# apply" carry no ':' or '|' delimiter and are not collected. Governing files may
+# reference any id freely; they may not restate what it means.
+# ===========================================================================
+lint_hits=$(mktemp)
+lint_bad=0
+LINT_REGISTRY="docs/planning-techniques/lint-registry.md"
+
+# Subject set: tracked .md that GOVERNS behaviour, minus the registry itself.
+# Files under docs/plans/ are records of audits that already ran; they restate the
+# rule text in force at the time, and rewriting them to satisfy a guard would
+# falsify a record rather than fix a defect. The split is structural (governing
+# document vs. historical record), never per-file, and the floors below prove the
+# set did not quietly collapse.
+#
+# One awk process over the set. An earlier shell-loop version spawned ~5 processes
+# per matched line and blew the suite's time budget on Windows; the extraction is
+# identical, the cost is not.
+lint_extract() {
+  xargs -0 awk '
+    {
+      line = $0
+      pos  = 1
+      while (1) {
+        rest = substr(line, pos)
+        if (! match(rest, /LINT-[0-9]+[ \t]*[:|]/)) break
+        id = substr(rest, RSTART, RLENGTH)
+        sub(/[ \t]*[:|]$/, "", id)
+
+        after = substr(rest, RSTART + RLENGTH)
+        p     = index(after, "|")
+        desc  = (p > 0) ? substr(after, 1, p - 1) : after
+
+        # Verdict placeholders are not prose.
+        gsub(/\[[Pp][Aa][Ss][Ss][^]]*\]/, "", desc)
+        gsub(/^[ \t]+/, "", desc); gsub(/[ \t]+$/, "", desc)
+
+        norm = tolower(desc)
+        gsub(/[^a-z0-9]+/, " ", norm)
+        gsub(/^ +/, "", norm); gsub(/ +$/, "", norm)
+
+        # Three words separates real rule text from a bare "LINT-01 |" table cell.
+        if (split(norm, w, " ") >= 3) print FILENAME "\t" id "\t" desc "\t" norm
+
+        pos += RSTART + RLENGTH - 1
+      }
+    }
+  ' 2>/dev/null
+}
+
+lint_reg=$(mktemp)
+printf '%s\0' "$LINT_REGISTRY" | lint_extract | sort -u > "$lint_reg"
+
+# Floor 1: the extractor must find the registry's own definitions. If the pattern
+# stops matching, every other file goes silent too and the guard passes vacuously —
+# the recurring "answer does not depend on the truth" species.
+registry_defs=$(cut -f2 "$lint_reg" | sort -u | grep -c . || true)
+if [ "${registry_defs:-0}" -lt 15 ]; then
+  fail "PH5-001: extractor found only ${registry_defs:-0} rule ids in $LINT_REGISTRY — the pattern collapsed, so a clean sweep elsewhere would be vacuous"
+  lint_bad=1
+fi
+
+# --- A1a: machine-read files carry ids, never rule text -------------------
+# commands/ and agents/ are loaded into agent context. Text that drifts here is
+# text a judge actually applies, so nothing may follow a LINT id but the id.
+git ls-files -z 'commands/*.md' 'agents/*.md' 2>/dev/null | lint_extract | sort -u > "$lint_hits"
+
+for must in commands/plan.md agents/plan-auditor.md; do
+  git ls-files -z 'commands/*.md' 'agents/*.md' 2>/dev/null | tr '\0' '\n' | grep -qxF "$must" \
+    || { fail "PH5-001a: $must is not in the machine-read set — the derivation is wrong, not the repo clean"; lint_bad=1; }
+done
+
+mr_count=$(grep -c . "$lint_hits" || true)
+if [ "${mr_count:-0}" -gt 0 ]; then
+  lint_bad=1
+  fail "PH5-001a: $mr_count restatement(s) of LINT rule text in machine-read files (commands/, agents/) — these must carry bare ids only:"
+  awk -F'\t' '{ printf "           %s  %s: %s\n", $1, $2, substr($3, 1, 60) }' "$lint_hits" | head -25
+  [ "$mr_count" -gt 25 ] && echo "           ... $(( mr_count - 25 )) more"
+fi
+
+# --- A1b: human-facing docs may restate, but only verbatim ----------------
+# METHODOLOGY.md and the technique docs explain the rules to a reader, so bare ids
+# would make them useless. They may restate — the restatement must be one the
+# registry actually contains. This is equality, not intent: no judgement about
+# whether a sentence "expresses" a rule, only whether it matches one.
+lint_hf=$(mktemp)
+git ls-files -z '*.md' 2>/dev/null \
+  | grep -zv '^docs/plans/' \
+  | grep -zv '^commands/' \
+  | grep -zv '^agents/' \
+  | grep -zv "^${LINT_REGISTRY}\$" \
+  | lint_extract | sort -u > "$lint_hf"
+
+git ls-files -z '*.md' 2>/dev/null | grep -zv '^docs/plans/' | grep -zv '^commands/' \
+  | grep -zv '^agents/' | grep -zv "^${LINT_REGISTRY}\$" | tr '\0' '\n' | grep -qxF 'METHODOLOGY.md' \
+  || { fail "PH5-001b: METHODOLOGY.md fell outside the human-facing set — the exclusions grew past their intent"; lint_bad=1; }
+
+lint_drift=$(mktemp)
+awk -F'\t' '
+  NR == FNR { reg[$2 "\t" $4] = 1; next }
+  ! (($2 "\t" $4) in reg) { print $1 "\t" $2 "\t" $3 }
+' "$lint_reg" "$lint_hf" > "$lint_drift"
+
+hf_count=$(grep -c . "$lint_drift" || true)
+if [ "${hf_count:-0}" -gt 0 ]; then
+  lint_bad=1
+  fail "PH5-001b: $hf_count restatement(s) in human-facing docs do not match any wording in $LINT_REGISTRY:"
+  awk -F'\t' '{ printf "           %s  %s: %s\n", $1, $2, substr($3, 1, 60) }' "$lint_drift" | head -25
+  [ "$hf_count" -gt 25 ] && echo "           ... $(( hf_count - 25 )) more"
+fi
+
+[ "$lint_bad" -eq 0 ] && pass "PH5-001: $registry_defs rules defined in $LINT_REGISTRY; 0 rule text in machine-read files, $(grep -c . "$lint_hf" || true) doc restatement(s) all verbatim"
+rm -f "$lint_hits" "$lint_reg" "$lint_hf" "$lint_drift"
+
+# ===========================================================================
+# PH5-002 / acceptance row A1: rule COUNTS live only in the registry.
+#
+# Rule text was not the only thing that drifted. Four different Phase 5 counts were
+# in print at once — 14 in commands/plan.md, 14 and 15 in agents/plan-auditor.md,
+# 16 in the registry, 15 in METHODOLOGY.md — plus a fifth ("13 in Lite mode") in the
+# same METHODOLOGY sentence. A count is a claim about the rule SET, so it belongs
+# where the set is defined.
+#
+# Decidable by absence, like PH5-001: a count is an integer bound to the word
+# "rule(s)", or the denominator of an "N/M passed" tally. LINT-NN tokens are stripped
+# first so the ids' own digits cannot be read as counts. No question is asked about
+# what any sentence means.
+# ===========================================================================
+lint_counts=$(mktemp)
+count_bad=0
+
+# One scanner, used for both the sweep and its floor. Two copies of this pattern is
+# exactly the drift the guard exists to prevent, and the first draft had already
+# diverged: the floor stripped only LINT ids while the sweep stripped five token
+# classes, so the two disagreed about whether "Phase 5 lint rules" was a count.
+count_scan() {   # NUL-separated paths on stdin -> "file:line<TAB>text"
+  xargs -0 awk '
+    function strip(s) {
+      # An identifier that merely contains a digit is not a count. "Phase 5 lint
+      # rules" names a phase; "14 lint rules" claims a set size. Removing the
+      # identifier tokens first keeps that distinction mechanical, not interpretive.
+      gsub(/LINT-[0-9]+/, "", s)
+      gsub(/PH5-[0-9]+/, "", s)
+      gsub(/[Pp]hase[ \t]+[0-9]+/, "", s)
+      gsub(/[Ll]ayer[ \t]+[0-9]+/, "", s)
+      gsub(/[Ww]ave[ \t]+[0-9]+/, "", s)
+      return s
+    }
+    {
+      probe = strip($0)
+      if (probe ~ /[0-9]+[ \t]*(lint[ \t]*)?rules?[^a-z]/ ||
+          probe ~ /\/[0-9]+[ \t]+passed/) {
+        printf "%s:%d\t%s\n", FILENAME, FNR, substr($0, 1, 88)
+      }
+    }
+  ' 2>/dev/null
+}
+
+git ls-files -z '*.md' 2>/dev/null \
+  | grep -zv '^docs/plans/' \
+  | grep -zv "^${LINT_REGISTRY}\$" \
+  | count_scan | sort -u > "$lint_counts"
+
+# Floor, inverted: assert the pattern STILL FIRES on the one file allowed to state
+# counts. A sweep for a forbidden pattern everywhere-but-here cannot otherwise tell
+# "nothing to find" from "my pattern broke" — the two produce identical output.
+count_probe=$(printf '%s\0' "$LINT_REGISTRY" | count_scan | grep -c . || true)
+if [ "${count_probe:-0}" -lt 1 ]; then
+  fail "PH5-002: the count pattern no longer fires on $LINT_REGISTRY, which states counts by design — the probe is broken, so a clean sweep elsewhere is vacuous"
+  count_bad=1
+fi
+
+cnt=$(grep -c . "$lint_counts" || true)
+if [ "${cnt:-0}" -gt 0 ]; then
+  count_bad=1
+  fail "PH5-002: $cnt lint rule count(s) stated outside $LINT_REGISTRY:"
+  awk -F'\t' '{ printf "           %s  %s\n", $1, $2 }' "$lint_counts" | head -20
+fi
+
+[ "$count_bad" -eq 0 ] && pass "PH5-002: no lint rule count outside $LINT_REGISTRY (probe fires on $count_probe registry line(s))"
+rm -f "$lint_counts"
+
+# ===========================================================================
+# PH5-013 / acceptance row A3: the judge is never told what passing costs.
+#
+# agents/plan-auditor.md used to carry the band table verbatim — "Interpret: 32-40
+# = Green, 24-31 = Yellow" — so the evaluator knew the exact total the plan needed.
+# Naming the desired outcome to a grader is the sycophancy channel: an instruction-
+# following model produces a justification for the wanted verdict rather than a
+# disinterested measurement, and ambiguity resolves toward passing.
+#
+# The judge keeps the 1-5 dimension anchors (it still has to score) and may know the
+# scale runs to 40. What it may not know is where the cut is. So this forbids band
+# WORDS and explicit pass marks, not scoring vocabulary generally.
+#
+# Non-vacuity is established by self-test rather than by a floor over the repo: the
+# pattern is run against a literal known-positive and a literal known-negative every
+# time, so "no hits" cannot be produced by a broken regex.
+# ===========================================================================
+band_bad=0
+band_re='[0-9]+[ \t]*-[ \t]*[0-9]+[ \t]*=?[ \t]*(GREEN|YELLOW|ORANGE|RED|Green|Yellow|Orange|Red)|[0-9]+/40|>=[ \t]*3[0-9]'
+
+if ! printf '%s\n' 'Interpret: 32-40 = Green, 24-31 = Yellow, 16-23 = Orange' | grep -qE "$band_re"; then
+  fail "PH5-013: band pattern fails its own known-positive — a clean sweep would be vacuous"
+  band_bad=1
+fi
+if printf '%s\n' 'Rate each dimension 1-5 and give reasoning before the score.' | grep -qE "$band_re"; then
+  fail "PH5-013: band pattern matches its known-negative — it would flag ordinary scoring vocabulary"
+  band_bad=1
+fi
+
+# Judge-visible set. Anything the evaluator reads as instructions belongs here.
+JUDGE_FILES="agents/plan-auditor.md"
+for jf in $JUDGE_FILES; do
+  if [ ! -f "$jf" ]; then
+    fail "PH5-013: judge file $jf not found — the subject set is wrong, not the repo clean"
+    band_bad=1
+    continue
+  fi
+  hits=$(grep -nE "$band_re" "$jf" || true)
+  if [ -n "$hits" ]; then
+    band_bad=1
+    fail "PH5-013: $jf discloses the pass threshold to the evaluator:"
+    printf '%s\n' "$hits" | sed 's/^/           /' | head -10
+  fi
+done
+
+[ "$band_bad" -eq 0 ] && pass "PH5-013: no pass threshold or score band disclosed in the judge-visible set ($JUDGE_FILES)"
+
+# ===========================================================================
+# PH5-010 / acceptance row A3: audit criteria are not in the generator's reach.
+#
+# commands/plan.md is what the Phase 4 generator reads. It carried a full copy of
+# the scoring rubric and the gap matrices — the 1-5 anchors, the Scenario Matrix with
+# its eight scenarios named, the Cross-Cutting Sweep with its concerns named. A
+# generator holding that list writes sections matching the list, which is compliance
+# with a checklist rather than thought about the plan in front of it.
+#
+# The copy was also DIVERGENT, the same species PH5-001 fixed for lint rules: plan.md
+# scored 3 as "Adequate, notable gaps (section exists but incomplete)" while
+# plan-auditor.md scored it "Section exists but has notable gaps. Stated without
+# evidence." Two rubrics, one dimension.
+#
+# Checked in both directions. Absence alone would be satisfied by deleting the
+# criteria outright, so the judge-side presence floor is what makes this a MOVE.
+# ===========================================================================
+crit_bad=0
+anchor_re='^[[:space:]]*[1-5][[:space:]]*=[[:space:]]*[A-Z]'
+scen_re='\| *Scenario *\| *Planned\?'
+conc_re='\| *Concern *\| *Addressed\?'
+
+# Self-tests: the anchor pattern must fire on a real anchor and stay quiet on prose
+# that merely contains a digit and an equals sign.
+if ! printf '%s\n' '  5 = Thorough, no gaps (evidence: direct quotes)' | grep -qE "$anchor_re"; then
+  fail "PH5-010: anchor pattern fails its known-positive — a clean sweep would be vacuous"
+  crit_bad=1
+fi
+if printf '%s\n' 'Set iterations = 2 when the loop re-runs.' | grep -qE "$anchor_re"; then
+  fail "PH5-010: anchor pattern matches its known-negative — it would flag ordinary prose"
+  crit_bad=1
+fi
+
+# --- generator side: the criteria must be absent -------------------------
+GENERATOR_FILES="commands/plan.md commands/quick-plan.md agents/plan-scaffolder.md"
+for gf in $GENERATOR_FILES; do
+  [ -f "$gf" ] || { fail "PH5-010: generator file $gf not found — the subject set is wrong, not the repo clean"; crit_bad=1; continue; }
+  for probe in "$anchor_re:scoring anchor" "$scen_re:Scenario Matrix criteria" "$conc_re:Cross-Cutting criteria"; do
+    re="${probe%:*}"; what="${probe##*:}"
+    n=$(grep -cE "$re" "$gf" || true)
+    if [ "${n:-0}" -gt 0 ]; then
+      crit_bad=1
+      fail "PH5-010: $gf exposes $what to the generator ($n occurrence(s)) — belongs in the judge-visible set only"
+    fi
+  done
+done
+
+# --- judge side: the criteria must still exist ---------------------------
+# Without this the guard would go green on a repo that had simply lost its rubric.
+ja=$(grep -cE '^[[:space:]]*[1-5]/5:' agents/plan-auditor.md || true)
+if [ "${ja:-0}" -lt 5 ]; then
+  crit_bad=1
+  fail "PH5-010: agents/plan-auditor.md holds only ${ja:-0} per-level scoring anchors — the criteria were deleted, not moved"
+fi
+for probe in "$scen_re:Scenario Matrix" "$conc_re:Cross-Cutting Sweep"; do
+  re="${probe%:*}"; what="${probe##*:}"
+  if ! grep -qE "$re" agents/plan-auditor.md; then
+    crit_bad=1
+    fail "PH5-010: agents/plan-auditor.md no longer defines the $what — the criteria were deleted, not moved"
+  fi
+done
+
+[ "$crit_bad" -eq 0 ] && pass "PH5-010: audit criteria absent from the generator set, present in the judge set ($ja anchors + both matrices)"
+
+# ===========================================================================
+# PH5-011 / acceptance row A4: the judge's forbidden inputs are enumerated.
+#
+# Isolation that lives only in the calling command is isolation nobody can audit.
+# The evaluator's own file has to state what it must not read, so the constraint
+# travels with the agent and a reviewer can check it in one place.
+#
+# This is a PRESENCE check, which is the class this repo has been burned by:
+# "the file instructs X" is an intent question, and a keyword probe for it stays
+# green after the instruction is deleted because the surrounding prose still
+# mentions the keyword. Two things make it decidable here:
+#
+#   1. The block is delimited (<forbidden_inputs>...</forbidden_inputs>), so its
+#      presence is structural, not inferred from vocabulary.
+#   2. Each entry is anchored on a SENTENCE-INITIAL imperative, "NEVER read:".
+#      That is negation-proof by construction — you cannot weaken the rule to
+#      "do not never read" without destroying the anchor the count depends on.
+#
+# The count floor is what stops an empty block from passing.
+# ===========================================================================
+fi_bad=0
+FI_FILE="agents/plan-auditor.md"
+fi_open=$(grep -c '^<forbidden_inputs>$' "$FI_FILE" || true)
+fi_close=$(grep -c '^</forbidden_inputs>$' "$FI_FILE" || true)
+fi_rules=$(grep -cE '^NEVER read: ' "$FI_FILE" || true)
+
+# Self-test: the anchor must fire on the real form and stay quiet on a negated or
+# indented variant, so a weakened rule cannot be counted as a rule.
+if ! printf '%s\n' 'NEVER read: the generation transcript' | grep -qE '^NEVER read: '; then
+  fail "PH5-011: forbidden-input anchor fails its known-positive — a pass would be vacuous"
+  fi_bad=1
+fi
+if printf '%s\n' '  You should never read the transcript, generally' | grep -qE '^NEVER read: '; then
+  fail "PH5-011: forbidden-input anchor matches hedged prose — it would count a non-rule"
+  fi_bad=1
+fi
+
+if [ "${fi_open:-0}" -ne 1 ] || [ "${fi_close:-0}" -ne 1 ]; then
+  fail "PH5-011: $FI_FILE has no delimited <forbidden_inputs> block (open=$fi_open close=$fi_close)"
+  fi_bad=1
+elif [ "${fi_rules:-0}" -lt 5 ]; then
+  fail "PH5-011: $FI_FILE enumerates only ${fi_rules:-0} forbidden inputs — the five isolation-critical ones are transcript, rationale, prior scores, threshold, author identity"
+  fi_bad=1
+fi
+
+[ "$fi_bad" -eq 0 ] && pass "PH5-011: $FI_FILE enumerates $fi_rules forbidden inputs in a delimited block"
+
+# ===========================================================================
+# PH5-012 / acceptance row A4: every audit iteration gets an unused judge.
+#
+# The revision loop said only "Re-run the audit on the revised spec". Re-running it
+# in the same session hands iteration 2 an evaluator that already published a number
+# for iteration 1 — it is now checking its own prior judgement, and the cheapest
+# consistent story is that the revision fixed what it said was broken. Anchoring on
+# a stale score is the whole reason the loop caps at 2 and still drifts.
+#
+# Stated on both sides so neither alone is load-bearing: the command must spawn a
+# new instance, and the agent must refuse prior scores (PH5-011 rule 3). Anchored on
+# a sentence-initial imperative for the same negation-proofing reason as PH5-011.
+# ===========================================================================
+iso_bad=0
+ISO_FILE="commands/plan.md"
+iso_re='^SPAWN A NEW plan-auditor INSTANCE'
+
+if ! printf '%s\n' 'SPAWN A NEW plan-auditor INSTANCE for every audit iteration.' | grep -qE "$iso_re"; then
+  fail "PH5-012: respawn anchor fails its known-positive — a pass would be vacuous"
+  iso_bad=1
+fi
+if printf '%s\n' 'Consider whether to spawn a new plan-auditor instance if context is stale.' | grep -qE "$iso_re"; then
+  fail "PH5-012: respawn anchor matches hedged prose — it would count a suggestion as a rule"
+  iso_bad=1
+fi
+
+iso_n=$(grep -cE "$iso_re" "$ISO_FILE" || true)
+if [ "${iso_n:-0}" -lt 1 ]; then
+  fail "PH5-012: $ISO_FILE does not require a new plan-auditor instance per iteration — re-auditing in session lets iteration 2 anchor on iteration 1's score"
+  iso_bad=1
+fi
+
+# Cross-side floor: the command's respawn is worth little if the agent will happily
+# read the prior audit anyway. That rule is PH5-011's third entry; assert it is still
+# there, so removing it cannot leave this guard green.
+if ! grep -qE '^NEVER read: scores, verdicts or audit\.md files from a previous iteration' agents/plan-auditor.md; then
+  fail "PH5-012: agents/plan-auditor.md no longer refuses prior-iteration scores — the respawn alone does not isolate the judge"
+  iso_bad=1
+fi
+
+[ "$iso_bad" -eq 0 ] && pass "PH5-012: each audit iteration spawns a fresh judge, and the agent refuses prior-iteration scores"
+
+# ===========================================================================
+# PH5-014 / acceptance row A5: the verdict schema carries no total, and puts
+# evidence before the verdict.
+#
+# Two separate properties, both structural.
+#
+# NO TOTAL: if the judge can emit a total it can aim at one. Verdicts are per
+# criterion; the caller adds them up. A schema field is the thing that makes this
+# enforceable rather than aspirational — there is nowhere to put the number.
+#
+# FIELD ORDER: a schema that serialises verdict first gets a verdict conditioned on
+# nothing, and the evidence that follows is assembled to support it. Emitting
+# evidence, then reasoning, then verdict locks the finding before the judgement.
+# Order within a JSON example is decidable by line position, so this is checkable
+# rather than merely requested.
+# ===========================================================================
+vs_bad=0
+VS_FILE="agents/plan-auditor.md"
+vs_block=$(sed -n '/^<verdict_schema>$/,/^<\/verdict_schema>$/p' "$VS_FILE" 2>/dev/null)
+forbidden_key='"(total|total_score|points|points_awarded|pass_threshold|overall)"[[:space:]]*:'
+
+if ! printf '%s\n' '  "total_score": 34,' | grep -qE "$forbidden_key"; then
+  fail "PH5-014: forbidden-key pattern fails its known-positive — a pass would be vacuous"
+  vs_bad=1
+fi
+if printf '%s\n' '  "criterion_id": "LINT-03",' | grep -qE "$forbidden_key"; then
+  fail "PH5-014: forbidden-key pattern matches an ordinary field — it would reject a valid schema"
+  vs_bad=1
+fi
+
+if [ -z "$vs_block" ]; then
+  fail "PH5-014: $VS_FILE has no delimited <verdict_schema> block"
+  vs_bad=1
+else
+  for k in '"verdict"' '"evidence"' 'MET' 'UNMET' 'N_A'; do
+    printf '%s\n' "$vs_block" | grep -qF "$k" \
+      || { fail "PH5-014: <verdict_schema> does not mention $k"; vs_bad=1; }
+  done
+
+  offending=$(printf '%s\n' "$vs_block" | grep -nE "$forbidden_key" || true)
+  if [ -n "$offending" ]; then
+    vs_bad=1
+    fail "PH5-014: <verdict_schema> gives the judge somewhere to put a total:"
+    printf '%s\n' "$offending" | sed 's/^/           /'
+  fi
+
+  # Field order: evidence < reasoning < verdict, by first occurrence in the block.
+  ln_ev=$(printf '%s\n' "$vs_block" | grep -nF '"evidence"'  | head -1 | cut -d: -f1)
+  ln_rs=$(printf '%s\n' "$vs_block" | grep -nF '"reasoning"' | head -1 | cut -d: -f1)
+  ln_vd=$(printf '%s\n' "$vs_block" | grep -nF '"verdict"'   | head -1 | cut -d: -f1)
+  if [ -z "$ln_ev" ] || [ -z "$ln_rs" ] || [ -z "$ln_vd" ]; then
+    fail "PH5-014: <verdict_schema> is missing one of evidence/reasoning/verdict, so order cannot be checked"
+    vs_bad=1
+  elif [ "$ln_ev" -ge "$ln_rs" ] || [ "$ln_rs" -ge "$ln_vd" ]; then
+    fail "PH5-014: <verdict_schema> orders evidence=$ln_ev reasoning=$ln_rs verdict=$ln_vd — must be evidence, then reasoning, then verdict, or the verdict is rationalised rather than derived"
+    vs_bad=1
+  fi
+fi
+
+[ "$vs_bad" -eq 0 ] && pass "PH5-014: verdict schema has no total field and locks evidence before verdict"
+
+# ===========================================================================
+# PH5-021 / PH5-022 / acceptance row A22: the records are emitted and kept.
+#
+# The validator is worthless if its input never exists. PH5-014 defines the record
+# shape; these two require the auditor to WRITE the records and the caller to COMMIT
+# them, so an audit leaves behind something a later reader can re-check.
+#
+# Matched as EXACT FULL LINES with grep -qxF, not as regexes. That is a deliberate
+# correction: the F06 invocation guard used a regex whose known-positive was invented
+# alongside the pattern, so the self-test passed while every real invocation went
+# unmatched. A known-positive authored by the same author at the same moment shares
+# the blind spot it exists to catch. Literal equality removes the gap entirely —
+# the pattern IS the artifact text, so the two cannot diverge and no self-test is
+# needed to prove they agree.
+#
+# Both lines open with a sentence-initial imperative, so they stay negation-proof:
+# the rule cannot be softened without destroying the string the check matches.
+# ===========================================================================
+emit_bad=0
+PH5_021_LINE='WRITE one evidence record per criterion to evidence/{criterion_id}.json before reporting anything.'
+PH5_022_LINE='COMMIT the evidence directory together with audit.md. An audit whose evidence is not committed did not happen.'
+
+if ! grep -qxF "$PH5_021_LINE" agents/plan-auditor.md; then
+  fail "PH5-021: agents/plan-auditor.md does not require emitting evidence records — the validator has no input, so the gate cannot open"
+  emit_bad=1
+fi
+if ! grep -qxF "$PH5_022_LINE" commands/plan.md; then
+  fail "PH5-022: commands/plan.md does not require committing the evidence directory — evidence that is not committed cannot be re-checked later"
+  emit_bad=1
+fi
+
+[ "$emit_bad" -eq 0 ] && pass "PH5-021/022: evidence records are emitted by the auditor and committed by the caller"
 
 # ===========================================================================
 # RESULTS SUMMARY

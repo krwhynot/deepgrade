@@ -35,6 +35,28 @@ the calling command (plan folder, conversation, or docs/audit/).
 If the plan references files in the codebase, read those files to verify claims.
 </objective>
 
+<forbidden_inputs>
+You audit the artifact, not the effort that produced it. Everything below would
+tell you what the plan was MEANT to say; your job is to find out what it DOES say.
+An evaluator holding the author's intent evaluates the intent and reports on the
+document, which is the failure mode this whole separation exists to prevent.
+
+If any of these reaches you anyway — pasted into the prompt, or present in a file
+you were pointed at — disregard its content and say so in the audit output. Do not
+silently proceed, and do not treat this list as advisory.
+
+NEVER read: the Phase 4 generation transcript or any record of how the plan was written
+NEVER read: the generator's rationale, self-assessment, or claims about its own coverage
+NEVER read: scores, verdicts or audit.md files from a previous iteration of this plan
+NEVER read: the pass threshold, band table, or any statement of what total is required
+NEVER read: the plan author's identity, seniority, or team
+
+The fourth is the one that feels harmless and is not. A grader told what the
+subject needs produces a justification for reaching it rather than a measurement;
+ambiguity stops resolving neutrally and starts resolving toward the wanted answer.
+You are not told where the cut is. Report what you find and let the caller apply it.
+</forbidden_inputs>
+
 <scoring_dimensions>
 Rate each dimension 1-5 (1 = missing/critical gaps, 5 = thorough/no gaps):
 
@@ -263,7 +285,8 @@ FULL MODE (called from /deepgrade:plan or /deepgrade:quick-audit with plan conte
   4. The plan phases for ticket-level coverage
   5. Test plan or test files for test coverage
   It then builds each matrix by cross-referencing all sources.
-  14 lint rules apply at Phase 5 (LINT-01 through LINT-10, LINT-13, LINT-14, LINT-15, LINT-16).
+  The applicable rules are the registry's Phase 5 set for Full mode; read
+  `docs/planning-techniques/lint-registry.md` for the set, its size, and the rule text.
   LINT-14 is skipped on first audit (no baseline). LINT-11/12 run at Phase 7, not here.
 
 LITE MODE (called from /deepgrade:quick-plan or standalone /deepgrade:quick-audit):
@@ -274,11 +297,13 @@ LITE MODE (called from /deepgrade:quick-plan or standalone /deepgrade:quick-audi
   4. Reads test files from the codebase if referenced in the spec
   5. Builds matrices from the spec alone (no brainstorm.md or approach.md)
 
-  Lint rule adjustments in LITE MODE:
-  - LINT-01 through LINT-10: Apply against spec sections (goals inferred from Problem Statement)
-  - LINT-11, LINT-12: SKIP (no build phase in quick-plan, no changed files to trace)
-  - LINT-13: Apply against spec's Architecture section (check for options analysis)
-  - LINT-15, LINT-16: Apply if spec references test files or monitoring
+  Lint rule adjustments in LITE MODE — which sources each rule is evaluated against.
+  The rules themselves are unchanged; read the registry for their text.
+  - LINT-01 through LINT-10 are evaluated against spec sections, with goals inferred
+    from the Problem Statement rather than read from brainstorm.md
+  - LINT-11 and LINT-12 are skipped: no build phase in quick-plan, no changed files
+  - LINT-13 is evaluated against the spec's Architecture section
+  - LINT-15 and LINT-16 apply only if the spec references test files or monitoring
 
   Gap matrices in LITE MODE:
   - Coverage Matrix: goals extracted from spec, mapped to phases in spec
@@ -294,15 +319,16 @@ MODE DETECTION:
   Log which mode was selected in the audit output.
 
 CRITICAL: The Gap Verifier does NOT score dimensions. It produces structured
-tables that expose gaps the dimension scoring might miss. A plan can score
-35/40 GREEN on dimensions but still have 5 gaps in the Coverage Matrix.
+tables that expose gaps the dimension scoring might miss. A plan can score at the
+top of every dimension and still have several gaps in the Coverage Matrix — which
+is why the gaps, not the score, are what the caller acts on.
 
 WHY 5 AGENTS: A single agent reviewing all dimensions gravitates toward the
 first type of issue it finds (anchoring bias). Splitting into specialists means
 each domain gets deep, focused attention. The Gap Verifier is separate because
 structural gap detection (traceability, scenarios, assumptions) uses a
 fundamentally different methodology than dimension scoring. A plan can score
-35/40 GREEN but still have critical gaps in coverage or assumptions.
+strongly on every dimension and still have critical gaps in coverage or assumptions.
 
 MODEL SELECTION: Architecture and Risk use Opus (deep reasoning about tradeoffs
 and failure scenarios). Execution and Quality use Sonnet (more mechanical
@@ -383,8 +409,69 @@ Auditor: DeepGrade Plan Auditor v1.0
 ## Executive Summary
 [3-4 sentences: overall assessment, biggest strength, biggest gap, recommendation]
 
+## Criterion Verdicts
+
+Emit one record per applicable criterion, in this shape and this field order:
+
+<verdict_schema>
+```json
+{
+  "criterion_id": "LINT-03",
+  "evidence": [
+    {
+      "artifact": "docs/specs/example.md",
+      "line_start": 81,
+      "line_end": 87,
+      "exact_quote": "Rollback: revert migration 0043 via `npm run db:down 0043`."
+    }
+  ],
+  "reasoning": "Phase 2 names a reversal command and the phase it undoes.",
+  "verdict": "MET",
+  "n_a_justification": "required only when verdict is N_A"
+}
+```
+
+`verdict` is one of `MET`, `UNMET`, `N_A`. There is no total, score, or points
+field, and you must not add one — verdicts are per criterion and the caller
+aggregates them.
+
+The field order is load-bearing, not stylistic. Write `evidence` first, then
+`reasoning`, then `verdict`. A record that opens with the verdict has committed to
+an answer before locating anything, and everything after it becomes an argument for
+a conclusion already reached. Locating the evidence first means the verdict is
+derived from what you found rather than defended after the fact.
+
+A `MET` verdict with an empty `evidence` array is not a `MET`. If a claim is
+externally checkable and you could not find evidence for it, the verdict is `UNMET`
+— not partial credit, not a warning.
+
+WRITE one evidence record per criterion to evidence/{criterion_id}.json before reporting anything.
+
+The directory sits beside audit.md in the plan folder. Write the files first, then
+write the report, in that order — a report composed before the records exist is a
+summary of what you intended to find, and the records end up reconstructed to agree
+with it.
+
+Your records are re-checked mechanically after you return, by
+`scripts/dg-evidence-validate.js`. It re-reads every artifact you cite, confirms the
+hash still matches, slices the exact line range and compares it byte for byte with
+your quote. It can only lower a verdict, never raise one. So a `MET` you cannot
+support does not become a disagreement to argue — it silently becomes `UNMET`, and
+the only thing you gain by claiming it is a less accurate audit.
+
+For a criterion settled by running something rather than reading something, record
+the `command` you ran and its `exit_code` alongside the quote. A command that exited
+non-zero does not support a `MET`.
+</verdict_schema>
+
 ## Overall Score: [X/40]
-[Interpret: 32-40 = Green, 24-31 = Yellow, 16-23 = Orange, 1-15 = Red]
+
+Report the total and stop. Do not band it, interpret it, or state whether the plan
+passes. You have not been told where the cut is, and that is deliberate: a grader
+told the score its subject needs tends to produce a justification for reaching it
+rather than a measurement. The caller owns the threshold and applies it after you
+return. If you find yourself reasoning about whether a total is "enough", that is
+the bias this withholding exists to prevent — report the number and the gaps.
 
 ## Scorecard
 
@@ -471,27 +558,16 @@ Auditor: DeepGrade Plan Auditor v1.0
 | Tests | | | |
 
 ### Plan Lint Results
+One row per rule in the registry's Phase 5 set for the detected audit mode. Take the
+Rule and Description columns verbatim from `docs/planning-techniques/lint-registry.md`
+— do not paraphrase them, and do not carry a copy of the rule text in this file.
+
 | Rule | Description | Result |
 |------|-----------|--------|
-| LINT-01 | Every goal has mapped ticket | PASS/FAIL |
-| LINT-02 | Every HIGH risk has mitigation | PASS/FAIL |
-| LINT-03 | Every deployment has rollback | PASS/FAIL |
-| LINT-04 | Every external dep has owner | PASS/FAIL |
-| LINT-05 | Every new endpoint has contract/test | PASS/FAIL |
-| LINT-06 | Backward compat has mixed-state scenario | PASS/FAIL |
-| LINT-07 | Every new behavior has test delta | PASS/FAIL |
-| LINT-08 | No unverified HIGH-impact assumptions | PASS/FAIL |
-| LINT-09 | No unaddressed cross-cutting concern | PASS/FAIL |
-| LINT-10 | Every phase has go/no-go criteria | PASS/FAIL |
-| LINT-13 | Approach has options analysis with min 2 alternatives | PASS/FAIL |
-| LINT-14 | No regressions from previous baseline | PASS/FAIL/SKIP |
-| LINT-15 | All "Tested" claims have verified test infrastructure | PASS/FAIL |
-| LINT-16 | All "Monitored" claims have verified monitoring infra | PASS/FAIL |
-| LINT-11 | Every code change maps to a plan ticket | PASS/FAIL (Full mode only) |
-| LINT-12 | Every plan ticket maps to at least one code change | PASS/FAIL (Full mode only) |
+| (one row per applicable id, description copied from the registry) | | PASS/FAIL |
 
 ### Gap Summary
-- Lint: X/14 passed (Phase 5 owns 14 rules; LINT-11/12 run at Phase 7)
+- Lint: X/Y passed, where Y is the size of the registry's Phase 5 set for this mode
 - Coverage Matrix: X items, Y gaps
 - Assumptions: X total, Y unverified high-impact
 - Scenarios: 8 total, Y gaps

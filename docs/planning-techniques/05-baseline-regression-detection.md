@@ -21,7 +21,7 @@ A baseline is a point-in-time snapshot stored as structured data (JSON) that rep
    - Assumption count: total, verified, unverified, waived
    - Scenario Matrix: 8 scenarios with individual status (covered/partial/gap)
    - Cross-Cutting Concerns: 12 concerns with individual status
-   - Lint rule results: 10 rules with individual pass/fail
+   - Lint rule results: every applicable rule with individual pass/fail
    - Dimension scores: 8 dimensions individually
 
 2. **Store as JSON** with run metadata (date, plan version, run number):
@@ -87,7 +87,7 @@ A baseline is a point-in-time snapshot stored as structured data (JSON) that rep
 
 ## Status Before Implementation
 
-Our `/deepgrade:codebase-delta` scanner tracks aggregate codebase scores over time but not per-element plan metrics. A plan audit might improve 3 lint rules but regress on 2 scenario matrix items, and we'd report "6/10 lint rules pass" without noting that 2 previously-passing rules now fail. We have no per-concern baseline comparison. We also don't distinguish between pre-existing gaps and newly introduced regressions.
+Our `/deepgrade:codebase-delta` scanner tracks aggregate codebase scores over time but not per-element plan metrics. A plan audit might improve several lint rules but regress on two scenario matrix items, and we'd report a headline "most lint rules pass" without noting that two previously-passing rules now fail. We have no per-concern baseline comparison. We also don't distinguish between pre-existing gaps and newly introduced regressions.
 
 When a plan is re-audited after changes, the new audit produces a fresh score. If the score is the same or higher, we report success. But that score could hide element-level regressions masked by improvements elsewhere. There is no mechanism to flag "Scenario 5 was covered in the last audit but is now a gap" — only "the plan has 1 scenario gap."
 
@@ -131,7 +131,9 @@ When a plan is re-audited after changes, the new audit produces a fresh score. I
 - **Auto-generate new baseline JSON** after each comparison. The new baseline becomes the reference for the next run.
 - **Add "Compare to Baseline" step to Phase 5 Audit** when re-auditing an existing plan. Before generating the audit report, load the previous baseline and run the comparison. Include the comparison results in the audit output.
 - **Track baseline history as array in status.json** for trend analysis. Each baseline snapshot is appended, not overwritten, creating a full history of plan health over time.
-- **Add LINT-14: No regressions from previous baseline** (hard gate). This lint rule fails the audit if any element that was covered/passing in the previous baseline is now a gap/failing. Pre-existing gaps do not trigger this rule.
+- **Add LINT-14: No regressions from previous baseline**
+
+  A hard gate. This lint rule fails the audit if any element that was covered/passing in the previous baseline is now a gap/failing. Pre-existing gaps do not trigger this rule.
 
 ## References
 

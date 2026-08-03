@@ -2,6 +2,20 @@
 
 Single source of truth for all plan lint rules. Referenced by `plan-auditor.md`, `plan.md`, and `quick-plan.md`.
 
+**This file is the only place rule text or rule counts may be written.** The claim used to be
+aspirational: every one of the rules had drifted into a second wording elsewhere, and LINT-17/18
+had drifted into a second *meaning* — the confidence-brief rules now numbered LINT-19/20 below were
+occupying those ids in `commands/plan.md` and `agents/plan-auditor.md`. Enforced since PH5-001 by
+`tests/layer1-config-wiring.sh`, in two halves:
+
+- `commands/**` and `agents/**` are read into agent context, so they carry **bare ids only**. Text
+  that drifts there is text a judge actually applies.
+- Human-facing docs (`METHODOLOGY.md`, the rest of `docs/planning-techniques/`) may restate a rule,
+  but the restatement must match a wording on this page **verbatim**.
+
+Counts live here too, for the same reason: `commands/plan.md` claimed 14 Phase 5 rules while this
+file defined 16, and `agents/plan-auditor.md` claimed 14 in one place and 15 in another.
+
 ## Rules
 
 | Rule | Description | Phase | Applies In |
@@ -24,18 +38,25 @@ Single source of truth for all plan lint rules. Referenced by `plan-auditor.md`,
 | LINT-16 | All "Monitored" claims have verified monitoring infrastructure | 5 (Audit) | Full + Lite |
 | LINT-17 | Every deliverable in Phase 4 spec must have a testing methodology assigned | 4 (Plan) / 5 (Audit) | Full + Lite |
 | LINT-18 | AI-generated code deliverables must specify a separate test writer | 4 (Plan) / 5 (Audit) | Full + Lite |
+| LINT-19 | Confidence brief exists with no unresolved HIGH-impact markers | 5 (Audit) | Full + Lite |
+| LINT-20 | Confidence brief has all 3 sections and each entry has required fields | 5 (Audit) | Full + Lite |
+
+LINT-19 and LINT-20 were numbered 17 and 18 in `commands/plan.md` and `agents/plan-auditor.md`
+until PH5-001, colliding with the two testing-methodology rules above. Audit reports written before
+that renumbering (under `docs/plans/`) refer to the confidence-brief checks by their old ids; those
+records are left as they were rather than rewritten, because they record what ran at the time.
 
 ## Phase Ownership
 
 - **Phase 4 (Plan):** LINT-17, LINT-18 (enforced during plan creation, audited at Phase 5)
-- **Phase 5 (Audit):** LINT-01 through LINT-10, LINT-13, LINT-14, LINT-15, LINT-16, LINT-17, LINT-18 (16 rules)
+- **Phase 5 (Audit):** LINT-01 through LINT-10, LINT-13, LINT-14, LINT-15, LINT-16, LINT-17, LINT-18, LINT-19, LINT-20 (18 rules)
 - **Phase 7 (Impact Review):** LINT-11, LINT-12 (2 rules, Full mode only)
-- **Total:** 18 active rules
+- **Total:** 20 active rules
 
 ## Audit Modes
 
-- **Full mode** (`/deepgrade:plan`, `/deepgrade:quick-audit` with plan context): All 18 rules apply. Phase 7 rules run during Impact Review.
-- **Lite mode** (`/deepgrade:quick-plan`, standalone `/deepgrade:quick-audit`): 16 rules apply. LINT-11 and LINT-12 are skipped (no build phase, no changed files to trace).
+- **Full mode** (`/deepgrade:plan`, `/deepgrade:quick-audit` with plan context): All 20 rules apply. Phase 7 rules run during Impact Review.
+- **Lite mode** (`/deepgrade:quick-plan`, standalone `/deepgrade:quick-audit`): 18 rules apply. LINT-11 and LINT-12 are skipped (no build phase, no changed files to trace).
 
 ## Gate Behavior
 
@@ -47,14 +68,16 @@ Single source of truth for all plan lint rules. Referenced by `plan-auditor.md`,
 | LINT-14 | Audit quality (Phase 5) | Fails if any previously-passing element now fails. Skipped on first audit (no baseline). |
 | LINT-17 | Audit quality (Phase 5) | Fails if any deliverable has no testing methodology or uses "unit tests" without justification. |
 | LINT-18 | Audit quality (Phase 5) | Fails if AI-generated code has the same agent as both implementation author and test author. |
+| LINT-19 | Audit quality (Phase 5) | Blocks on any HIGH-impact confidence entry marked [SOURCE NEEDED], [LINK DEAD], or [UNVERIFIED]. The same markers on MEDIUM/LOW entries are warnings. |
+| LINT-20 | Audit quality (Phase 5) | Fails if confidence.md is absent, has none of the 3 sections, or has an entry missing "What it is" / "Why it works" / "Connection to this plan". |
 | All others | Audit quality | Contribute to gap-checked status. Plan is gap-checked only when all applicable lint rules pass. |
 
 ## Lint Count by Context
 
 | Context | Lint Rules | Count |
 |---------|-----------|-------|
-| Phase 5 Audit (Full mode) | 01-10, 13-18 | 16 |
-| Phase 5 Audit (Lite mode) | 01-10, 13-18 | 16 |
+| Phase 5 Audit (Full mode) | 01-10, 13-20 | 18 |
+| Phase 5 Audit (Lite mode) | 01-10, 13-20 | 18 |
 | Phase 7 Impact Review | 11, 12 | 2 |
-| Total (Full mode) | All active | 18 |
-| Total (Lite mode) | Minus 11, 12 | 16 |
+| Total (Full mode) | All active | 20 |
+| Total (Lite mode) | Minus 11, 12 | 18 |

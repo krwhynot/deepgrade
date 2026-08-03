@@ -135,7 +135,9 @@ This means:
 - **Add traffic-light indicators for quick visual scanning.** Green/amber/red with `+`/`-` prefixes and brief rationale per cell.
 - **Winner must have an explicit "Argument" section** (per Tyree/Akerman: "Outline why you selected a position"). The argument must reference specific criteria from the matrix, not general statements.
 - **Losing options documented with "would revisit if" conditions.** This transforms rejected options into contingency plans rather than dead ends.
-- **Add LINT-13: Approach has options analysis with minimum 2 alternatives evaluated.** This lint rule checks for the structural presence of the Options Analysis section, the minimum number of options, and the presence of a Decision Rationale.
+- **Add LINT-13: Approach has options analysis with min 2 alternatives evaluated**
+
+  This lint rule checks for the structural presence of the Options Analysis section, the minimum number of options, and the presence of a Decision Rationale.
 - **Plan-scaffolder's Pattern Researcher analyst should produce a comparison, not just a recommendation.** The analyst's output should be a scored matrix, and the orchestrator should select from the matrix rather than receiving a single recommendation.
 
 ## References
