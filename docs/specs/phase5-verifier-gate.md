@@ -61,7 +61,7 @@ gate on it.
 truth for all plan lint rules." It is not. Three files disagree on both the
 content and the count of the rules.
 
-| Source | LINT-17 | LINT-18 | Stated Phase 5 count |
+| Source | LINT-17 | LINT-18 | Count |
 |--------|---------|---------|----------------------|
 | `lint-registry.md:25-26`, `:31` | Every deliverable has a testing methodology assigned | AI-generated code specifies a separate test writer | 16 |
 | `commands/plan.md:827-828`, `:849`, `:862` | Confidence brief exists, no unresolved HIGH-impact markers | Confidence brief has all 3 sections, entries have required fields | 14 |
@@ -402,9 +402,10 @@ which is how eight guards ended up rejecting valid work.
 
 Wave 0 was verified this way and the controls earned their place immediately. The
 first draft of the PH5-002 guard flagged `Phase 5 lint rules` as a rule count — it
-names a phase — and only a control distinguished that from the real finding of
-`14 Phase 5 lint rules` two words later. A sensitivity-only round would have scored
-that draft 2/2 and shipped a guard that fires on correct text.
+names a phase — and only a control distinguished that from the genuine finding two
+words later, where the identical phrase was preceded by a cardinal and did assert a
+set size. A sensitivity-only round would have scored that draft 2/2 and shipped a
+guard that fires on correct text.
 
 | Case | Mutation | Expected | Result |
 |------|----------|----------|--------|

@@ -764,6 +764,44 @@ back. Concerns that genuinely do not apply are excluded explicitly with a reason
 Every concern in the auditor's set gets a verdict. Unaddressed concerns are GAPS;
 partial ones are WARNINGS.
 
+CANARY (automated, run BEFORE the auditor is spawned):
+
+Every other check in Phase 5 examines the plan. This one examines the auditor.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/dg-canary.js" inject \
+  docs/specs/{plan-name}.md docs/plans/{date}-{plan-name}/.canary/
+```
+
+One known defect is injected into a working copy of the spec — a rollback line
+removed, a dependency owner blanked, an unverified HIGH-impact assumption added,
+go/no-go criteria deleted, or a claim of coverage from a test file that does not
+exist. The class is recorded along with the single criterion it violates.
+
+The auditor then audits the MUTATED copy, knowing nothing of any of this.
+
+Afterwards:
+  1. If the recorded criterion is NOT in the audit's UNMET set, the audit missed a
+     defect that was placed there to be found. Re-run once with a different class.
+     A second miss fails the gate as "audit untrustworthy" — and DOES NOT trigger
+     the revision loop. Revising a plan against findings from an audit that could
+     not see a planted defect is worse than not revising: it rewrites the spec to
+     satisfy conclusions never derived from reading it.
+  2. If it was found, strip that finding from the report — it is an artefact of
+     this harness, not a property of the plan — and then RE-CHECK that one
+     criterion against the unmutated original. The strip alone is unsafe: if the
+     plan has a genuine gap on the same criterion, removing "the LINT-03 finding"
+     would remove the real one with it. The strip removes the artefact; the
+     recheck decides the truth.
+
+An audit reporting zero gaps on a document known to contain a defect is not a
+clean audit. It is a broken one, and nothing in its output would tell you so.
+
+Known limitation, stated rather than glossed: the auditor can read
+`scripts/dg-canary.js`, including its defect table. This detects a lazy audit
+reliably and an adversarial one only incidentally. Rotating the class per run
+raises the cost of pre-empting it; it does not make the canary tamper-proof.
+
 EVIDENCE VALIDATION (automated, run before anything is treated as MET):
 
 The auditor returns criterion records, each carrying its evidence. Those records are

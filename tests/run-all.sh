@@ -9,6 +9,7 @@
 #   4. Behavioral      - Command structure and cross-references
 #   5. Codex Challenge - SCORES/GAPS parser regression (node)
 #   6. Evidence Validator - PH5-020 record validation (node)
+#   7. Canary - PH5-030 auditor liveness check (node)
 #
 # Usage:
 #   bash tests/run-all.sh              # Run all layers
@@ -77,7 +78,7 @@ QUICK=false
 for arg in "$@"; do
     case $arg in
         --quick) QUICK=true ;;
-        [1-6]) RUN_LAYERS="$RUN_LAYERS $arg" ;;
+        [1-7]) RUN_LAYERS="$RUN_LAYERS $arg" ;;
     esac
 done
 
@@ -86,7 +87,7 @@ if [[ -z "$RUN_LAYERS" ]]; then
     if $QUICK; then
         RUN_LAYERS="1 2 3"
     else
-        RUN_LAYERS="1 2 3 4 5 6"
+        RUN_LAYERS="1 2 3 4 5 6 7"
     fi
 fi
 
@@ -111,6 +112,7 @@ for layer in $RUN_LAYERS; do
         4) run_layer 4 "Behavioral Smoke" "$SCRIPT_DIR/layer4-behavioral-smoke.sh" || OVERALL_EXIT=1 ;;
         5) run_layer 5 "Codex Challenge Parser" "$SCRIPT_DIR/codex-challenge-test.js" node || OVERALL_EXIT=1 ;;
         6) run_layer 6 "Evidence Validator" "$SCRIPT_DIR/evidence-validate-test.js" node || OVERALL_EXIT=1 ;;
+        7) run_layer 7 "Canary" "$SCRIPT_DIR/canary-test.js" node || OVERALL_EXIT=1 ;;
     esac
 done
 
