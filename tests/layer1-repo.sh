@@ -143,60 +143,86 @@ for f30_cmds in commands plugins/*/commands; do
   [ -e "$f30_cmds/doc.md" ] && { fail "F30: $f30_cmds/doc.md still exists"; f30_bad=1; }
 done
 
-# Subject set: every tracked .md except an EXPLICIT two-path allowlist.
+# CR-6 (ratified 2026-08-03): occurrence-addressed provenance ledger, no allowlist.
 #
-# The previous version skipped all of `docs/plans/*`, which I described in the pass
-# message and the commit as "enforced literally, no exemptions". It was not: three stale
-# references were living in an UNRELATED plan (2026-04-03-mcp-research-integration) and
-# the sweep reported clean (Codex N1). I had replaced two narrow disclosed exemptions
-# with one broad undisclosed one. Those three are now reworded, so the allowlist is:
+# The two-path allowlist this replaces was the THIRD construction. The first skipped
+# all of docs/plans/* while claiming "no exemptions" (Codex N1 — three stale
+# references survived in an unrelated plan). The second was CR-4's exemption
+# machinery, withdrawn. A directory allowlist of any width is a hiding place: a new
+# stale INSTRUCTION added under an allowlisted path passes. An occurrence ledger is
+# an inventory: every intentional historical mention is enumerated in
+# tests/fixtures/f30-provenance-ledger.tsv as `path<TAB>sha256(line)`, and the sweep
+# fails BOTH ways — an occurrence not in the ledger (new stale reference, wherever
+# it lives), and an entry whose file no longer carries a matching line (the ledger
+# cannot go stale and keep passing).
 #
-#   1. THIS plan's directory      — its records ARE the evidence of the deletion
-#   2. THIS plan's spec           — it states the row, so it must quote the strings
-#
-# Nothing else, including other plans. Anything added to this list is a scope change and
-# belongs in a change record.
-f30_count=0
-f30_skipped=0
-# NUL-delimited: `for f in $subjects` word-splits, so a tracked path containing a space
-# would be counted toward the floor and then silently skipped during inspection
-# (Codex F2). -z/IFS= is immune to that.
-while IFS= read -r -d '' f; do
-  case "$f" in
-    docs/plans/2026-07-20-plugin-hardening-v5/*|docs/specs/plugin-hardening-v5.md)
-      f30_skipped=$((f30_skipped + 1)); continue ;;
-  esac
-  [ -f "$f" ] || continue
-  f30_count=$((f30_count + 1))
-  if grep -qE '/deepgrade:doc\b|commands/doc\.md' "$f" 2>/dev/null; then
-    fail "F30: $f references a deleted command — $(grep -nE '/deepgrade:doc\b|commands/doc\.md' "$f" | head -1 | cut -c1-70)"
+# Hash granularity is the LINE, not the file: a file-level hash would freeze every
+# record that contains one mention, which punishes exactly the truthful-rewording
+# practice CR-4 established. Editing the ledgered line itself changes its hash and
+# fails both directions at once. The ledger stores hashes, never the tokens, so it
+# is not an occurrence; this script is not swept (subjects are tracked .md).
+F30_LEDGER="tests/fixtures/f30-provenance-ledger.tsv"
+f30_re='/deepgrade:doc\b|commands/doc\.md'
+f30_hash() { printf '%s' "$1" | tr -d '\r' | sha256sum | cut -d' ' -f1; }
+
+# Instruments proven before their silence is trusted: the regex must fire on the
+# real token and stay quiet on the near-miss; the hasher must distinguish lines.
+printf '%s\n' 'see /deepgrade:doc for usage' | grep -qE "$f30_re" \
+  || { fail "F30: token regex fails its known-positive — the sweep would be vacuous"; f30_bad=1; }
+printf '%s\n' 'see /deepgrade:documentation for usage' | grep -qE "$f30_re" \
+  && { fail "F30: token regex matches the LIVE documentation skill name — it would flag legitimate references"; f30_bad=1; }
+[ "$(f30_hash 'line A')" != "$(f30_hash 'line B')" ] \
+  || { fail "F30: line hasher cannot distinguish lines — ledger lookups would be vacuous"; f30_bad=1; }
+
+if [ ! -f "$F30_LEDGER" ]; then
+  fail "F30: provenance ledger $F30_LEDGER is missing — every historical mention is unregistered without it"
+  f30_bad=1
+else
+  # Direction 1: every occurrence in every tracked .md must be registered.
+  # NUL-delimited: `for f in $subjects` word-splits, so a tracked path containing a
+  # space would be counted toward the floor and silently skipped (Codex F2).
+  f30_count=0
+  f30_occurrences=0
+  while IFS= read -r -d '' f; do
+    [ -f "$f" ] || continue
+    f30_count=$((f30_count + 1))
+    while IFS= read -r f30_line; do
+      [ -n "$f30_line" ] || continue
+      f30_occurrences=$((f30_occurrences + 1))
+      f30_h=$(f30_hash "$f30_line")
+      grep -qF "$f	$f30_h" "$F30_LEDGER" \
+        || { fail "F30: unregistered occurrence in $f — $(printf '%s' "$f30_line" | cut -c1-60)"; f30_bad=1; }
+    done < <(grep -E "$f30_re" "$f" 2>/dev/null)
+  done < <(git ls-files -z '*.md' 2>/dev/null)
+
+  # Direction 2: every ledger entry must still be backed by a matching line.
+  f30_entries=0
+  while IFS=$'\t' read -r f30_lf f30_lh; do
+    case "$f30_lf" in \#*|'') continue ;; esac
+    f30_entries=$((f30_entries + 1))
+    f30_found=0
+    if [ -f "$f30_lf" ]; then
+      while IFS= read -r f30_line; do
+        [ "$(f30_hash "$f30_line")" = "$f30_lh" ] && { f30_found=1; break; }
+      done < <(grep -E "$f30_re" "$f30_lf" 2>/dev/null)
+    fi
+    [ "$f30_found" -eq 1 ] \
+      || { fail "F30: stale ledger entry — $f30_lf no longer carries the registered line ($(printf '%s' "$f30_lh" | cut -c1-12)...)"; f30_bad=1; }
+  done < "$F30_LEDGER"
+
+  # Floors, per the recurring vacuous-pass lesson: a subject set or a ledger that
+  # collapses to nothing would sweep clean and prove nothing.
+  if [ "$f30_count" -lt 10 ]; then
+    fail "F30: subject set is only $f30_count files — the derivation collapsed, so a pass here would be vacuous"
     f30_bad=1
   fi
-done < <(git ls-files -z '*.md' 2>/dev/null)
+  if [ "$f30_entries" -lt 10 ]; then
+    fail "F30: ledger holds only $f30_entries entries (39 registered at ratification) — the ledger read collapsed, so the stale-entry direction proved nothing"
+    f30_bad=1
+  fi
 
-# Detect N1's ACTUAL failure mode rather than counting skips. N1 was not "too many files
-# skipped" — this plan legitimately has ~46 — it was OTHER plans falling inside the
-# exclusion. So: assert that files under docs/plans/ belonging to other plans are being
-# INSPECTED. A count threshold cannot see that and my first attempt at one just fired on
-# the legitimate size of this plan.
-f30_other_plans=$(git ls-files 'docs/plans/*.md' 2>/dev/null \
-  | grep -v '^docs/plans/2026-07-20-plugin-hardening-v5/' | grep -c . || true)
-f30_other_dirs=$(git ls-files 'docs/plans/*' 2>/dev/null \
-  | grep -v '^docs/plans/2026-07-20-plugin-hardening-v5/' \
-  | sed 's|^docs/plans/\([^/]*\)/.*|\1|' | sort -u | grep -c . || true)
-if [ "$f30_other_dirs" -gt 0 ] && [ "$f30_other_plans" -eq 0 ]; then
-  fail "F30: $f30_other_dirs other plan director(ies) exist but contributed no inspected .md files — the exclusion is broader than this plan, which is how three stale references survived"
-  f30_bad=1
+  [ "$f30_bad" -eq 0 ] && pass "F30: all $f30_occurrences occurrences across $f30_count tracked files are ledger-registered, and all $f30_entries ledger entries are live"
 fi
-
-# Floor, per the recurring vacuous-pass lesson: a derivation that collapses to nothing
-# would otherwise sweep clean and prove nothing.
-if [ "$f30_count" -lt 10 ]; then
-  fail "F30: subject set is only $f30_count files — the derivation collapsed, so a pass here would be vacuous"
-  f30_bad=1
-fi
-
-[ "$f30_bad" -eq 0 ] && pass "F30: neither stale string survives in any of $f30_count tracked files ($f30_skipped skipped: this plan's own records and spec)"
 # ===========================================================================
 # PH5-001 / acceptance row A1: lint-registry.md is the ONLY file that states
 # LINT rule text.
