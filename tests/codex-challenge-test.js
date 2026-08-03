@@ -390,7 +390,7 @@ test('JSON rejects out-of-range score', () => {
 console.log('\n9. Schema File Validation');
 const schema = JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, 'codex-review-schema.json'), 'utf-8'));
 
-const SHIPPED_CMD = path.join(__dirname, '..', 'commands', 'codex-challenge.md');
+const SHIPPED_CMD = path.join(__dirname, '..', 'plugins', 'deepgrade', 'commands', 'codex-challenge.md');
 
 test('fixture schema is byte-equivalent to the schema shipped in commands/codex-challenge.md', () => {
   const md = fs.readFileSync(SHIPPED_CMD, 'utf-8').replace(/\r\n/g, '\n');

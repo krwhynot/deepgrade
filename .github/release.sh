@@ -62,17 +62,34 @@ preflight() {
   VERSION="$vers"
   [ -n "$VERSION" ] && note "$count manifest(s) in lockstep at $VERSION"
 
-  # 3. The F20A quartet agrees with the manifests.
+  # 3. The F20A quartet agrees with the manifests — at the repo root and in
+  #    EVERY plugin directory. The split gives each plugin its own README and
+  #    GUIDE; a missing one is an error, not a skip, or a plugin could drop its
+  #    docs and the preflight would go quieter instead of louder.
   if [ -f README.md ]; then
     grep -q "Current: v$VERSION" README.md \
-      && note "README states v$VERSION" \
-      || err "README version drift: expected 'Current: v$VERSION'"
+      && note "root README states v$VERSION" \
+      || err "root README version drift: expected 'Current: v$VERSION'"
   fi
-  if [ -f GUIDE.md ]; then
-    grep -q "v$VERSION" GUIDE.md \
-      && note "GUIDE states v$VERSION" \
-      || err "GUIDE version drift: no v$VERSION found"
-  fi
+  local d
+  while IFS= read -r m; do
+    d=$(dirname "$(dirname "$m")")
+    [ "$d" = "." ] && continue
+    if [ -f "$d/README.md" ]; then
+      grep -q "Current: v$VERSION" "$d/README.md" \
+        && note "$d README states v$VERSION" \
+        || err "$d README version drift: expected 'Current: v$VERSION'"
+    else
+      err "$d/README.md is missing — every plugin ships its own quartet"
+    fi
+    if [ -f "$d/GUIDE.md" ]; then
+      grep -q "v$VERSION" "$d/GUIDE.md" \
+        && note "$d GUIDE states v$VERSION" \
+        || err "$d GUIDE version drift: no v$VERSION found"
+    else
+      err "$d/GUIDE.md is missing — every plugin ships its own quartet"
+    fi
+  done < <(manifests)
 
   # 4. The CHANGELOG has a real entry for this version. This is the check whose
   #    absence shipped 5.0.0 without its breaking-change section.
@@ -111,7 +128,7 @@ do_run() {
   if [ "$DRY" = "--dry-run" ]; then
     echo ""
     echo "dry run — would do, in order:"
-    echo "  1. bump $OLD -> $NEW in: $(manifests | tr '\n' ' ')README.md GUIDE.md"
+    echo "  1. bump $OLD -> $NEW in: $(manifests | tr '\n' ' ')+ per-plugin README/GUIDE + root README"
     echo "  2. bash tests/run-all.sh  (abort on red)"
     echo "  3. commit 'release: $NEW'; tag -a v$NEW"
     echo "  4. git push origin main --follow-tags; verify remote v$NEW deref"
@@ -119,12 +136,15 @@ do_run() {
     exit 0
   fi
 
-  local m
+  local m d
   while IFS= read -r m; do
     sed -i "s/\"version\": \"$OLD\"/\"version\": \"$NEW\"/" "$m"
+    d=$(dirname "$(dirname "$m")")
+    [ "$d" = "." ] && continue
+    sed -i "s/Current: v$OLD/Current: v$NEW/" "$d/README.md"
+    sed -i "s/v$OLD/v$NEW/g" "$d/GUIDE.md"
   done < <(manifests)
   sed -i "s/Current: v$OLD/Current: v$NEW/" README.md
-  sed -i "s/v$OLD/v$NEW/g; s/DeepGrade_v$OLD/DeepGrade_v$NEW/g" GUIDE.md
 
   echo "running the suite against the bumped tree..."
   bash tests/run-all.sh || { echo "ERROR: suite red — release aborted, tree left for inspection"; exit 1; }

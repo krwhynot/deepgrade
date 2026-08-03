@@ -9,7 +9,7 @@
  */
 
 const path = require('path');
-const { validateRecord } = require('../scripts/dg-evidence-validate.js');
+const { validateRecord } = require('../plugins/deepgrade/scripts/dg-evidence-validate.js');
 
 const ROOT = __dirname;
 const ARTIFACT = 'fixtures/evidence/spec-sample.md';
@@ -235,7 +235,7 @@ console.log('\n5. CLI contract');
   const os = require('os');
   const fs = require('fs');
   const { execFileSync } = require('child_process');
-  const CLI = path.join(__dirname, '..', 'scripts', 'dg-evidence-validate.js');
+  const CLI = path.join(__dirname, '..', 'plugins', 'deepgrade', 'scripts', 'dg-evidence-validate.js');
 
   const run = (args) => {
     try {
