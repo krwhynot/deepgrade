@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 7.1.0 (2026-08-03)
 
 ### Changed
 - **Check-element vocabulary ratified to `points`/`max`.** The 2026-08-03
@@ -8,14 +8,28 @@
   while all eight live scanners emitted `points`/`max` unanimously; the
   templates were aligned to observed reality, the interop fixture was
   regenerated from a real scan artifact, and the retired vocabulary is now
-  banned by the INTEROP sweep. Open question, deliberately not ratified:
-  live check elements also omit the `confidence` field some templates
-  request.
+  banned by the INTEROP sweep.
 - Marketplace entries use `git-subdir` sources with explicit https URLs, so
   installs no longer require GitHub SSH keys; SPLIT-4 guards the catalog
   shape. `interop.md` documents the cross-plugin artifact contracts,
   enforced by the INTEROP sweep. Two README drifts fixed (readiness score
   path, guard output table).
+
+### Removed
+- **Per-check `confidence` field dropped from scanner templates.** Recon
+  proved zero consumers: the report generator never reads it, and the
+  methodology's "confidence levels" are a module-level concept the
+  orchestrator derives from gate results, not a `checks[]` field.
+  Module-level confidence is untouched.
+
+### Internal
+- Runtime evidence completed: all nine PHV5-044 Part 2 owner-observed
+  checks recorded live on the installed copy — SessionStart, PreCompact and
+  both Stop branches surfacing; deny, ask and allow paths; and the
+  node-less hook-error notice (CR-1 re-confirmed). Line-ending handling is
+  enforced via `.gitattributes` (`* text=auto eol=lf`, snapshots frozen),
+  and F30's directory allowlist was replaced by an occurrence-addressed
+  provenance ledger.
 
 ## 7.0.0 (2026-08-03)
 
