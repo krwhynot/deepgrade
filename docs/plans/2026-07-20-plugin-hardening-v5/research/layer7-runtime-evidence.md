@@ -230,12 +230,31 @@ surfaced to anyone.
 
 ```
 OBSERVED (verbatim):
+[DeepGrade] Session summary: 115 files changed.
 ```
 
-Not yet recorded — but the setup ran on 2026-08-03: the guard's Stop handler went live mid-session,
-this evidence file was edited, and no tests ran in the same turn, so the summary and no-tests nudge
-should surface when that turn ends. The owner pastes what they see — or that nothing appeared —
-into this slot.
+Recorded 2026-08-03 — the owner saw the line above surface at the end of the recording turn.
+**The Stop handler's output IS user-visible** — the exact thing F26 said never happened (pre-5.0.0
+both messages went to stderr at exit 0 and were seen by no one).
+
+Two things this observation taught, recorded so the checklist's expectation reads correctly:
+
+- **This check's "a summary AND a nudge" expectation is unsatisfiable as written.**
+  `dg-session-stop.js` emits exactly ONE message per stop — `notify()` exits — so a session shows
+  the no-tests nudge OR the summary, never both. The expectation predates reading the one-message
+  design.
+- **The summary branch (not the nudge) was the CORRECT branch here:** the recording turn ran
+  `bash tests/layer7-runtime-proof.sh --manual`, which matches the test tracker's
+  `/\bbash\s+tests\/layer\d/` pattern, so a `dg-test-<session>` marker existed and the session
+  genuinely counted as having run a suite script. The count (115) is the session-cumulative
+  change tracker across the whole day's session, not the single turn.
+
+Nudge branch: the session's `dg-test-*` marker was then deliberately removed and the file edited
+again, staging the no-tests branch for the next turn boundary.
+
+```
+NUDGE BRANCH OBSERVED (verbatim):
+```
 
 ### H. Zero hook errors on a healthy host
 
