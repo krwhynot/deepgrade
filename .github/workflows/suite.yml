@@ -1,0 +1,55 @@
+# PHV5-005 — the CI matrix, built on the monolith before the plugin split
+# (owner-chosen sequence 2026-08-02: release 6.0.0 -> CI -> split).
+#
+# This workflow is what turns two standing claims into checked ones:
+#   - posix_verification: "suite and schema verified on Windows and Ubuntu" was a
+#     locked decision with no basis until this file existed.
+#   - expected-failures.txt's contract ("CI passes IFF the failure list matches")
+#     is enforced inside run-all.sh, which this inherits by running it.
+#
+# No Claude Code compatibility floor is declared (U7 was never established), so
+# the matrix is OS-only. Do not add a CLI-version dimension without establishing
+# the floor first — a matrix cell that tests an arbitrary version proves nothing.
+
+name: suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  suite:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # bash on windows-latest is Git Bash, matching the dev environment the
+      # suite was written under. Blobs are stored LF; ubuntu checks out clean.
+      - name: Run the 7-layer suite
+        shell: bash
+        run: bash tests/run-all.sh
+
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+      # Schema validation only — no auth required. Known scope limit, recorded in
+      # the repo's own memory: validate reads manifests only and proves nothing
+      # about component wiring. The suite job above is what covers wiring.
+      - name: Validate plugin manifests (strict)
+        run: claude plugin validate . --strict
