@@ -2,9 +2,12 @@
 
 **Raised:** 2026-07-30, immediately after commit `49119d7`
 **Raised by:** Claude (optimizer), self-reported on committing the first tracked `.py` file
-**State: PROPOSED** — needs owner ratification. Applied in the same commit as this record,
-because the alternative is leaving a guard that is knowingly broken; see *Why applied before
-ratification* below.
+**State: RATIFIED** — owner ratification 2026-08-03. The change had been applied in the same
+commit as this record (the alternative was leaving a guard that is knowingly broken; see *Why
+applied before ratification* below) and survived the plugin split intact. The enumeration
+approach it extended was then SUPERSEDED by the repo-wide `* text=auto eol=lf` default
+(PR #6, main `ae0b417`), which closes the "new file class falls outside the policy" failure
+mode this CR and CR-3 each hit one instance of — `*.py` remains covered, now twice over.
 **Extends:** acceptance-matrix row **A1**, as CR-2 and CR-3 did.
 
 ## What happened
