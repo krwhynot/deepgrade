@@ -998,6 +998,92 @@ elif [ "$ns_bad" -eq 0 ]; then
 fi
 
 # ===========================================================================
+# SPLIT-4: the catalog entries stay INSTALLABLE.
+#
+# `claude plugin validate` accepts any well-formed source, and the suite's
+# static checks accept any spelling of a path — so the v7.0.0 catalog shipped
+# green while being uninstallable for every user without GitHub SSH keys. The
+# `github` source type resolves to `git@github.com:` at install time; the
+# marketplace itself clones over https, so `marketplace add` succeeded and
+# every `plugin install` then failed with "Permission denied (publickey)".
+# Nothing was malformed. Nothing caught it. It was found by installing.
+#
+# What this asserts is therefore the SHAPE the install path needs, not the
+# shape a validator accepts:
+#   - git-subdir + an explicit https:// url — the documented form that clones
+#     without SSH and still honours path/ref/sha
+#   - path points at a real plugin directory in THIS repo
+#   - ref looks like a release tag, sha is a full 40-hex commit
+#
+# ref is NOT compared against the manifest version: the pin legitimately lags
+# during a release (it is repinned after the tag exists), which release.sh
+# surfaces as a warning. Encoding "pin == manifests" here would fail the suite
+# in the middle of every release, and a check that must be bypassed on release
+# day is the 5.0.0 process again.
+# ===========================================================================
+cat_bad=0
+CATALOG=".claude-plugin/marketplace.json"
+if [ ! -f "$CATALOG" ]; then
+  fail "SPLIT-4: $CATALOG is missing — the marketplace is the install surface"
+elif ! command -v jq >/dev/null 2>&1; then
+  fail "SPLIT-4: jq is unavailable — the catalog shape cannot be checked, and silence here is not a pass"
+else
+  # Self-test: the extractor must actually read entries out of THIS file, or
+  # every per-entry assertion below sweeps an empty set and reports clean.
+  cat_n=$(jq '.plugins | length' "$CATALOG" 2>/dev/null | tr -d '\r')
+  if [ "${cat_n:-0}" -ne 4 ]; then
+    fail "SPLIT-4: catalog lists ${cat_n:-0} plugins, expected exactly 4 — a fifth entry is a deliberate decision that updates this number"
+    cat_bad=1
+  fi
+
+  # Entry names must be exactly the four plugin directories. A catalog naming
+  # a plugin that does not ship (or omitting one that does) installs nothing
+  # useful, and no other check compares these two sets.
+  cat_names=$(jq -r '.plugins[].name' "$CATALOG" 2>/dev/null | tr -d '\r' | sort)
+  dir_names=$(git ls-files '*/.claude-plugin/plugin.json' | sed 's|^plugins/||; s|/.claude-plugin/plugin.json$||' | sort)
+  if [ "$cat_names" != "$dir_names" ]; then
+    fail "SPLIT-4: catalog entry names and plugin directories differ (catalog: $(echo $cat_names | tr '\n' ' '); dirs: $(echo $dir_names | tr '\n' ' '))"
+    cat_bad=1
+  fi
+
+  while IFS=$'\t' read -r c_name c_src c_url c_path c_ref c_sha; do
+    [ -n "$c_name" ] || continue
+    case "$c_src" in
+      git-subdir) ;;
+      *) fail "SPLIT-4: $c_name uses source type '$c_src' — only git-subdir clones over the url it is given; 'github' resolves to SSH at install time and fails for users without keys"; cat_bad=1 ;;
+    esac
+    case "$c_url" in
+      https://*) ;;
+      *) fail "SPLIT-4: $c_name url '$c_url' is not https:// — an SSH or shorthand url requires keys the installing user may not have"; cat_bad=1 ;;
+    esac
+    if [ ! -f "$c_path/.claude-plugin/plugin.json" ]; then
+      fail "SPLIT-4: $c_name path '$c_path' has no plugin manifest in this repo — the entry points at nothing installable"
+      cat_bad=1
+    fi
+    echo "$c_ref" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+      || { fail "SPLIT-4: $c_name ref '$c_ref' is not a release tag (vX.Y.Z)"; cat_bad=1; }
+    echo "$c_sha" | grep -qE '^[0-9a-f]{40}$' \
+      || { fail "SPLIT-4: $c_name sha '$c_sha' is not a full 40-character commit — a short or absent sha is not a pin"; cat_bad=1; }
+    # `// "(absent)"` on every field, because tab is IFS WHITESPACE: bash
+    # collapses a run of tabs into one delimiter, so a null field (a `github`
+    # entry has no url) shifts every later column left and the check reports
+    # the wrong field as malformed. It still failed — with three misdiagnosed
+    # messages. A guard that fires for the wrong stated reason sends the next
+    # reader to the wrong line.
+  done < <(jq -r '.plugins[] | [(.name // "(absent)"), (.source.source // "(absent)"), (.source.url // "(absent)"), (.source.path // "(absent)"), (.source.ref // "(absent)"), (.source.sha // "(absent)")] | @tsv' "$CATALOG" 2>/dev/null | tr -d '\r')
+
+  # All four entries share one pin: the release is atomic, so a split pin means
+  # a user can install two plugins from two different releases of a lockstep set.
+  cat_pins=$(jq -r '.plugins[] | "\(.source.ref) \(.source.sha)"' "$CATALOG" 2>/dev/null | tr -d '\r' | sort -u)
+  if [ "$(echo "$cat_pins" | grep -c .)" -ne 1 ]; then
+    fail "SPLIT-4: catalog entries do not share one ref+sha pin: $(echo $cat_pins | tr '\n' ' ')"
+    cat_bad=1
+  fi
+
+  [ "$cat_bad" -eq 0 ] && pass "SPLIT-4: all 4 catalog entries are git-subdir over https, resolve to real plugin dirs, and share one release pin"
+fi
+
+# ===========================================================================
 # INTEROP: cross-plugin artifact contracts (split step 6).
 #
 # SPLIT-3 proves namespaced REFERENCES resolve; nothing proved the ARTIFACTS
