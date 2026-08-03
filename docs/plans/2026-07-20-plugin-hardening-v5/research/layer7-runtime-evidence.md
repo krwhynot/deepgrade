@@ -82,18 +82,29 @@ its message claims.
 
 ### Prerequisite before running A–I
 
+> **Procedure refreshed 2026-08-03 (post-split, catalog at v7.0.0).** The plugin split (7.0.0)
+> moved the hooks under test: the five safety handlers (both PreToolUse, both PostToolUse, Stop)
+> now ship in `deepgrade-guard`; `deepgrade` retains SessionStart, SubagentStop and PreCompact.
+> Checks B–E and G below therefore exercise `deepgrade-guard`'s handlers; A and F exercise
+> `deepgrade`'s. The slots below remain EMPTY — nothing about the observations themselves is
+> carried over or inferred. `tests/layer7-runtime-proof.sh --manual` prints this same checklist
+> and was retargeted with the split.
+
 ```
 /plugin marketplace update deepgrade-marketplace
 /plugin update deepgrade
+/plugin update deepgrade-guard
 /reload-plugins
-/plugin details deepgrade        -> must report Hooks (6) incl. SubagentStop
+/plugin details deepgrade        -> must report Hooks (3) incl. SubagentStop
+/plugin details deepgrade-guard  -> must report Hooks (5)
 ```
 
-> **Changed as of `df8ac58`.** The catalog now pins a GitHub source object at `9f16277`, so these
-> commands install **from the pushed SHA, not from this working copy**. That is currently harmless —
-> hook code is byte-identical between `9f16277` and `df8ac58` — but it stops being harmless the moment
-> you edit anything under `hooks/` or `scripts/` and re-run this checklist. Push first, or the copy
-> under test is not the copy you changed.
+> The catalog pins a GitHub source object (v7.0.0 @ `55dbdeb`), so these commands install
+> **from the pinned SHA, not from this working copy**. That is harmless only while hook code is
+> byte-identical between the pin and HEAD — it stops being harmless the moment you edit anything
+> under `plugins/deepgrade/scripts/`, `plugins/deepgrade-guard/scripts/` or either `hooks/` and
+> re-run this checklist. Release (or test via `--plugin-dir` against the working copy) first, or
+> the copy under test is not the copy you changed.
 
 ### A. SessionStart (F26; settles part of U4)
 
