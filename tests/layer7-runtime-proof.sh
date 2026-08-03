@@ -218,9 +218,10 @@ cat <<'CHECKLIST'
 
   G. Stop (F26)
      Edit a file, then end the turn without running tests.
-     Expect: a summary naming the change count, and a nudge that no tests ran.
-     Both messages existed pre-5.0.0 but went to stderr at exit 0 and were never
-     surfaced to anyone.
+     Expect: the no-tests nudge, naming the change count. The handler emits ONE
+     message per stop — the nudge when no test run was detected, else the summary
+     — never both (notify() exits). Both messages existed pre-5.0.0 but went to
+     stderr at exit 0 and were never surfaced to anyone.
 
   H. Zero hook errors on a healthy host
      Through all of the above, no "hook error" notice should appear.

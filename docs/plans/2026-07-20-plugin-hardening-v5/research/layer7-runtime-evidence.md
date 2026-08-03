@@ -6,10 +6,12 @@ not a pass.** Until 2026-08-02 this file had never existed in any commit — `gi
 That made the plan's only runtime evidence unauditable testimony, the same class Codex declined to
 credit for the mutation harness in the Wave 5 reaudit.
 
-Part 1 is now recorded below, verbatim. **Part 2 is nearly recorded (2026-08-03): the prerequisite
-and checks A–H hold observations — D's dialog confirmed on a primed redrive, G observed on both
-Stop branches, H owner-confirmed clean; only I remains open.** F24 and F26 hold complete evidence;
-F06 stays PARTIAL until I holds an observation.
+Part 1 is now recorded below, verbatim. **Part 2 is COMPLETE (2026-08-03): the prerequisite and
+all nine checks A–I hold observations.** D's dialog was confirmed on a primed redrive, G was
+observed on both Stop branches, H was owner-confirmed clean, and I captured the vendor's notice
+verbatim on a node-less host. U4 and U5 settle POSITIVE; CR-1's condition is re-confirmed on an
+installed copy. F06 and F26 close; F24's Part 2 clauses are met, with full closure still gated on
+the U7 floor (PHV5-003, never run) — see the disposition table.
 
 ---
 
@@ -79,8 +81,7 @@ its message claims.
 
 ## Part 2 — owner-observed (interactive session required)
 
-**STATUS: PARTIALLY RECORDED (2026-08-03).** Checks A–H below hold observations; only I is
-still empty. Do not infer any empty slot from part 1.
+**STATUS: RECORDED IN FULL (2026-08-03).** All nine checks A–I below hold observations.
 
 Recording context (applies to every slot dated 2026-08-03): interactive Claude Code session in this
 repo — claude CLI 2.1.220, node v24.12.0, Windows 11 Pro 10.0.26200. Checks B–E were driven by the
@@ -305,7 +306,23 @@ in-product signal. Record it VERBATIM; CR-1's acceptance is that it is user-visi
 
 ```
 OBSERVED (verbatim):
+SessionStart:startup hook error
+Failed with non-blocking status code: Error occurred while executing hook command: Executable not found in $PATH: "node"
 ```
+
+Recorded 2026-08-03 — owner ran the node-less shell (PowerShell equivalent:
+`$env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch 'node' }) -join ';'`, with
+`node --version` confirmed failing) and launched the installed copy interactively in this repo.
+The notice appeared immediately at session start: **user-visible, names the failing event
+(SessionStart:startup), the severity (non-blocking — the session continues with the guards dead,
+lane N's honest limit), and the exact cause (node not on PATH). CR-1's acceptance condition is
+RE-CONFIRMED on an installed copy.**
+
+One discrepancy recorded, not settled: an earlier node-less launch from the PARENT directory
+(`~\Projects\plugin`, not this repo) started with NO notice visible in the owner's paste. Most
+plausible explanation is folder-trust gating (hooks not executed in a directory the owner had not
+previously trusted), which would mean no hook fired and there was nothing to fail; paste truncation
+is not excluded. In the deployment-relevant context — this repo — the notice fires and is correct.
 
 ---
 
@@ -342,9 +359,9 @@ automated layer proves:
 
 | Finding | State | Moves when |
 |---|---|---|
-| F06 | **PARTIAL** | I recorded (A–H held 2026-08-03: D's dialog confirmed, G on both branches, H owner-confirmed clean) |
-| F24 | **MET — evidence recorded 2026-08-03** | — E observed allowed and B observed blocked naming `--force-with-lease` (settling part 1's pending item); `status.json` closure rides Part 2's completion commit |
-| F26 | **MET — evidence recorded 2026-08-03** | — A (SessionStart), F (PreCompact) and G (both Stop branches) all user-observed surfacing; `status.json` closure rides Part 2's completion commit |
+| F06 | **MET — evidence recorded 2026-08-03; CLOSED in status.json** | — all of A–I hold observations; the installed-copy clause (the I in its U,R,I class) is exactly what Part 2 ran |
+| F24 | **Part 2 clauses MET (2026-08-03); stays PARTIAL in status.json** | — E observed allowed, B observed blocked naming `--force-with-lease` (settling part 1's pending item), H settles "runtime-verified locally", the hosted ubuntu+windows CI matrix exists (suite.yml, PHV5-005), and the corpus carries the `--force-with-lease` allowed case. The single remaining unmet clause is "runtime-verified at the U7 floor": the floor does not exist because PHV5-003 never ran |
+| F26 | **MET — evidence recorded 2026-08-03; CLOSED in status.json** | — A (SessionStart), F (PreCompact) and G (both Stop branches) all user-observed surfacing |
 | U4 | **settled POSITIVE** (2026-08-03, check A) | — real plan, phase and status at session start |
 | U5 | **settled POSITIVE** (2026-08-03, check F) | — PreCompact line surfaced on `/compact`; §3.1.6 fallback not needed |
-| CR-1 condition | held on U6's earlier resolution | I re-confirms it on an installed copy |
+| CR-1 condition | **RE-CONFIRMED on an installed copy** (2026-08-03, check I) | — vendor notice user-visible, names event, severity and cause |
