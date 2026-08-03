@@ -267,7 +267,7 @@ Write results as JSON to docs/audit/readability/context-scan.json following the 
 standard scanner output schema with all 10 checks.
 
 Each check must include:
-- id, name, status, score, max_score, confidence, evidence, details, remediation
+- id, name, status, points, max, confidence, evidence, details, remediation
 
 **Constraints:**
 - Read-only. Do not modify any source files.

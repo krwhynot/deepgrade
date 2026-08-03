@@ -588,8 +588,8 @@ standard scanner output schema.
       "name": "Schema source of truth",
       "priority": "critical",
       "status": "pass|partial|fail|skipped",
-      "score": 0,
-      "max_score": 3,
+      "points": 0,
+      "max": 3,
       "confidence": "high|medium|low",
       "evidence": "...",
       "details": "...",
@@ -599,7 +599,7 @@ standard scanner output schema.
 }
 ```
 
-Each check must include: id, name, priority, status, score, max_score, confidence,
+Each check must include: id, name, priority, status, points, max, confidence,
 evidence, details, remediation.
 
 Status mapping:
