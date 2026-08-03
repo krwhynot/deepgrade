@@ -12,8 +12,8 @@
       "source": {
         "source": "github",
         "repo": "krwhynot/deepgrade",
-        "ref": "v5.0.1",
-        "sha": "9f162770abf8aa9b895f6ed8e9567993402e32fd"
+        "ref": "v6.0.0",
+        "sha": "e41336bc830164d2b298557252ed1a2482d8a335"
       }
     }
   ]
