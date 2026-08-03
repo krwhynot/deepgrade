@@ -989,7 +989,49 @@ when no baseline exists.
 Update the baseline in status.json after each comparison (append to history array
 for trend tracking).
 
+SCORE DISTRIBUTION (append on every audit, including re-audits):
+
+Record each audit's score in a score_history array in status.json:
+```json
+{
+  "score_history": [
+    { "date": "{ISO date}", "plan_version": "v1", "iteration": 1,
+      "score": 27, "canary_found": true, "gate_passed": false },
+    { "date": "{ISO date}", "plan_version": "v2", "iteration": 2,
+      "score": 36, "canary_found": true, "gate_passed": true }
+  ]
+}
+```
+
+The score no longer gates, but its distribution is still the cheapest detector of
+the gate being gamed. A cluster of totals sitting just above any historical
+threshold — 32-34 under the old regime — is the statistical signature of
+threshold-aiming, and it is visible only as a series. One audit's score means
+almost nothing; forty audits piling up at the same boundary means the boundary is
+being aimed at. Keeping the series costs one array append.
+
 GATE: Evaluator-Optimizer Loop.
+
+RUBRIC-FREE HOLISTIC PASS (advisory, runs alongside the gate):
+
+RUN one additional judge with no rubric, no criterion list, and no dimension names.
+
+Its entire prompt is: "Ignore any checklist. What would make this plan fail in
+production?" Fresh instance, same input manifest as the auditor, none of the
+criterion files.
+
+Map its findings against the criterion set afterwards. A finding that maps to an
+existing criterion is discarded — the gate already covers it. A finding that maps
+to NOTHING is appended to docs/planning-techniques/lint-candidates.md with the plan
+name and date, as a candidate rule for owner review.
+
+This pass never gates, and that is deliberate. Every other mechanism in Phase 5
+makes the judge honest ABOUT the criteria; none of them can notice that the
+criteria are incomplete. A plan can satisfy every rule and still be bad in a way no
+rule names — rubric-design failure as distinct from verifier failure. This is the
+only check on that class, and its output is a proposed rule, not a verdict on the
+current plan: gating on unmapped findings would just re-create the unfalsifiable
+prose judgment the gate rewrite removed.
 
 The gate does not read the score. It reads whether the claims survived checking.
 
@@ -1090,22 +1132,44 @@ Track revision history in audit.md:
 
 Update status.json (include score, rating, gap_checked boolean, gap_count), manifest.md.
 
-HUMAN REVIEW GATE (waivable):
+HUMAN REVIEW GATE (conditionally waivable):
 After the automated audit completes, prompt for human review before Build:
 
 "Automated audit complete (score: {X}/40, gap-checked: {YES/NO}).
  Before starting Build, this plan should be reviewed by at least one person.
  [1] Enter reviewer name(s) to proceed
- [2] Waive review (solo mode) — requires documented reason
+ [2] Waive review (solo mode) — requires documented reason, and only offered
+     when the waiver condition below holds
  [3] View audit summary first"
+
+<waiver_condition>
+waiver_allowed = (infra_gaps == 0)
+                 AND (score >= 35)
+                 AND (canary_found == true)
+</waiver_condition>
+
+This is the one place the score is load-bearing, and the asymmetry is the design:
+the score cannot let a plan PASS the gate, but a borderline one can remove the
+owner's ability to SKIP review. A gameable signal is safe in the direction that
+adds friction. The 32-34 band — the scores that sat just above the old threshold —
+is exactly where threshold-aiming lands, so a plan scoring there gets a human
+whether or not the automated gate passed.
+
+If the waiver condition fails, option [2] is not offered at all. Do not present it
+greyed out with the reason; a visible near-miss invites one more revision aimed at
+the waiver rather than at the plan.
 
 If [1]: Record reviewer name(s) and date in status.json:
   { "review": { "reviewers": [{"name": "...", "date": "..."}], "outcome": "accepted" } }
   Proceed to Phase 6.
 
-If [2]: Record waiver in status.json:
-  { "review": { "waived": true, "reason": "...", "waived_by": "..." } }
-  Proceed to Phase 6.
+If [2]: Record waiver in status.json AND stamp it visibly:
+  { "review": { "waived": true, "reason": "...", "waived_by": "...",
+                "waiver_condition": { "infra_gaps": 0, "score": X, "canary_found": true } } }
+  Also append one line to audit.md and to the Phase 9 handoff:
+  "Review waived (solo mode) by {name} on {date}: {reason}"
+  A waiver recorded only in machine state is invisible to the person reading the
+  plan later, which is the person it exists to warn. Proceed to Phase 6.
 
 If [3]: Show audit-derived review checklist:
   - Audit scorecard (8 dimensions with scores)

@@ -2219,6 +2219,60 @@ fi
 [ "$fb_bad" -eq 0 ] && pass "PH5-040: revision feedback carries defects and locations, no scoring vocabulary"
 
 # ===========================================================================
+# PH5-060 / row A14: the waiver is conditional, and DOES use the score.
+#
+# The mirror image of PH5-041, and the reason that guard is scoped to a block
+# rather than banning the word outright. The score cannot let a plan pass, but a
+# borderline score can remove the owner's ability to skip human review. Same
+# number, opposite trust: safe in the direction that adds friction, unsafe in the
+# one that removes it. A guard that banned "score" file-wide would have forced an
+# exemption here within one wave.
+#
+# The guard body checks the block STATES all three conditions, not that it merely
+# mentions the word "waiver" — a mention survives the rule being deleted.
+# ===========================================================================
+wv_bad=0
+wv_block=$(sed -n '/^<waiver_condition>$/,/^<\/waiver_condition>$/p' commands/plan.md 2>/dev/null)
+if [ -z "$wv_block" ]; then
+  fail "PH5-060: commands/plan.md has no delimited <waiver_condition> block"
+  wv_bad=1
+else
+  for term in 'infra_gaps == 0' 'score >= 35' 'canary_found == true'; do
+    printf '%s\n' "$wv_block" | grep -qF "$term" \
+      || { fail "PH5-060: <waiver_condition> does not require: $term"; wv_bad=1; }
+  done
+fi
+[ "$wv_bad" -eq 0 ] && pass "PH5-060: review waiver is blocked by infra gaps, a borderline score, or a missed canary"
+
+# ===========================================================================
+# PH5-050 / row A15: something looks for what the criteria do not cover.
+#
+# Every other mechanism makes the judge honest ABOUT the rubric. None of them can
+# notice that the rubric is incomplete — a plan can satisfy every criterion and
+# still fail for a reason no criterion names. This is the only check on that, and
+# it deliberately never gates: its output is a proposed new rule, not a verdict.
+# ===========================================================================
+hol_bad=0
+HOL_LINE='RUN one additional judge with no rubric, no criterion list, and no dimension names.'
+grep -qxF "$HOL_LINE" commands/plan.md \
+  || { fail "PH5-050: commands/plan.md does not run a rubric-free pass — nothing checks the criteria for completeness"; hol_bad=1; }
+[ -f docs/planning-techniques/lint-candidates.md ] \
+  || { fail "PH5-050: docs/planning-techniques/lint-candidates.md missing — unmapped findings have nowhere to land"; hol_bad=1; }
+[ "$hol_bad" -eq 0 ] && pass "PH5-050: a rubric-free pass runs and its unmapped findings land in lint-candidates.md"
+
+# ===========================================================================
+# PH5-051 / row A15: score distribution is retained.
+#
+# The score no longer gates, but it is still the cheapest detector of a gate being
+# gamed: a cluster of totals sitting just above any historical threshold is the
+# signature of threshold-aiming. Keeping the series costs nothing and is the only
+# way to see that pattern at all.
+# ===========================================================================
+grep -qF 'score_history' commands/plan.md \
+  && pass "PH5-051: audit scores are retained as a series for distribution monitoring" \
+  || fail "PH5-051: commands/plan.md does not record score_history — threshold-aiming would be invisible"
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="
