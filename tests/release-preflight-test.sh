@@ -43,6 +43,18 @@ cp "$ROOT/.github/release.sh" .github/release.sh
 git add -A && git commit -qm "test: stage release.sh under test"
 BASE=$(git rev-parse HEAD)
 
+# The CURRENT version, discovered, not hardcoded. The first draft spelled 6.0.0
+# into every violation's sed; the first release bump would have turned each sed
+# into a no-op, every "violation" into a clean tree that check rightly accepts,
+# and layer 8 red — aborting release.sh mid-run on a half-bumped tree.
+CUR=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' plugins/deepgrade/.claude-plugin/plugin.json | head -1 | sed 's/.*"\([0-9][^"]*\)"$/\1/')
+CUR_RE=${CUR//./\\.}
+if [ -z "$CUR" ]; then
+  fail "current version not derivable from plugins/deepgrade manifest — every violation below would be vacuous"
+  echo "Results: $PASS passed, $((FAIL)) failed"
+  exit 1
+fi
+
 # --- Control: a clean released tree must pass --------------------------------
 # If preflight cannot pass on the state that just shipped cleanly, it will be
 # bypassed on release day, and a bypassed preflight is the 5.0.0 process again.
@@ -70,24 +82,24 @@ violation() {  # violation <label> <expected-substring>  (violation already comm
 }
 
 # V1: versions drift across the quartet — the F20A failure, pre-commit.
-sed -i 's/^Current: v6\.0\.0/Current: v5.9.9/' README.md
+sed -i "s/^Current: v$CUR_RE/Current: v0.0.1/" README.md
 git commit -qam "v1"
 violation "V1: root README version drift refused" "version|drift"
 
 # V1b: a PLUGIN's README drifts — the split's per-plugin quartet loop must
 # refuse this on its own; the root README is clean in this case.
-sed -i 's/^Current: v6\.0\.0/Current: v5.9.9/' plugins/deepgrade/README.md
+sed -i "s/^Current: v$CUR_RE/Current: v0.0.1/" plugins/deepgrade/README.md
 git commit -qam "v1b"
 violation "V1b: plugin README version drift refused" "version|drift"
 
 # V2: a manifest disagrees — the lockstep rule, load-bearing at four manifests.
-sed -i 's/"version": "6.0.0"/"version": "6.1.0"/' plugins/deepgrade-guard/.claude-plugin/plugin.json
+sed -i "s/\"version\": \"$CUR_RE\"/\"version\": \"0.0.1\"/" plugins/deepgrade-guard/.claude-plugin/plugin.json
 git commit -qam "v2"
 violation "V2: manifest out of lockstep refused" "lockstep|version"
 
 # V3: CHANGELOG has no entry for the manifest version — how 5.0.0 shipped
 # without its breaking-change section.
-sed -i 's/^## 6\.0\.0/## 6.0.0-moved/' CHANGELOG.md
+sed -i "s/^## $CUR_RE/## $CUR-moved/" CHANGELOG.md
 git commit -qam "v3"
 violation "V3: missing CHANGELOG entry refused" "changelog"
 
@@ -98,7 +110,7 @@ violation "V4: dirty tree refused" "clean|dirty|uncommitted"
 # V5: catalog pin naming a different release than the manifests. Legitimate
 # mid-release (pin updates after the tag), so check must SURFACE it — warn or
 # refuse — but silence is the forgotten-pin failure mode.
-sed -i 's/"ref": "v6.0.0"/"ref": "v5.0.1"/' .claude-plugin/marketplace.json
+sed -i "s/\"ref\": \"v[^\"]*\"/\"ref\": \"v0.0.1\"/" .claude-plugin/marketplace.json
 git commit -qam "v5"
 # Capture, then grep the variable. Piping check into grep under pipefail returns
 # check's own exit status even when grep matches, which turned a correctly

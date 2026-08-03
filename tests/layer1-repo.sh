@@ -889,6 +889,14 @@ fi
 # each plugin resolves the skill under its own namespace. Two copies of one
 # text is exactly the drift species PH5-001 exists to kill, so the mirror is
 # tolerated only under a byte-identity guard: edit both or neither.
+#
+# The comparison strips \r first. On a core.autocrlf host, restoring ONE copy
+# via `git checkout` re-materializes it CRLF while the untouched copy stays LF
+# — identical git blobs, different working-tree bytes, and `git status` clean
+# throughout (both sides are i/lf). That exact state produced this guard's one
+# false positive (2026-08-03, split step 4 boundary run). What ships is the
+# blob, so eol divergence in the working tree is materialization, not drift;
+# CONTENT divergence is still refused byte-for-byte.
 # ===========================================================================
 echo ""
 echo "--- Split invariants ---"
@@ -909,7 +917,7 @@ if [ "$sak_bad" -eq 0 ]; then
     sak_bad=1
   else
     for f in $sak_list_a; do
-      cmp -s "$SAK_A/$f" "$SAK_B/$f" \
+      cmp -s <(tr -d '\r' < "$SAK_A/$f") <(tr -d '\r' < "$SAK_B/$f") \
         || { fail "SPLIT-1: $f differs between the canonical skill and its mirror — edit both or neither"; sak_bad=1; }
     done
   fi
