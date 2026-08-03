@@ -2,15 +2,49 @@
 
 ## Unreleased
 
+(Ships as 7.0.0 — the heading is renamed at release time; layer 1 reads the
+first versioned heading as the current release, so a 7.0.0 heading may not
+exist in a tree whose manifests still say 6.0.0.)
+
+The monolith is now four plugins. Updating `deepgrade` alone does NOT keep the
+toolkit you had — read the BREAKING section before updating.
+
+### BREAKING
+
+- **One plugin is now four.** `deepgrade` keeps only the planning core (plan,
+  plan-status, plan-export, quick-plan, quick-audit, quick-cleanup,
+  troubleshoot, codex-challenge, help). Auditing, readiness scanning, and the
+  safety hooks moved to plugins that must be installed separately:
+  `/plugin install deepgrade-audit@deepgrade-marketplace`,
+  `deepgrade-readiness@deepgrade-marketplace`, and
+  `deepgrade-guard@deepgrade-marketplace`.
+- **Audit and readiness commands renamespace to their plugin.**
+  `/deepgrade:codebase-audit` → `/deepgrade-audit:codebase-audit` (same for
+  codebase-characterize, codebase-delta, codebase-gates, codebase-security);
+  `/deepgrade:readiness-scan` → `/deepgrade-readiness:readiness-scan` (same for
+  readiness-generate). Anything scripted against the old names breaks.
+- **Skills renamespace with their plugin.** `deepgrade-knowledge` and
+  `governance-knowledge` load as `deepgrade-audit:*`; `readiness-scoring` as
+  `deepgrade-readiness:readiness-scoring`. `self-audit-knowledge` resolves under
+  BOTH `deepgrade:` (canonical) and `deepgrade-audit:` (byte-identical mirror,
+  guarded by the suite).
+- **The safety hooks ship only in `deepgrade-guard`.** The git/DB deploy guard,
+  migration guard, change/test trackers, and the Stop-time session summary
+  (PreToolUse ×2, PostToolUse ×2, Stop) are no longer part of `deepgrade`,
+  which retains only SessionStart, SubagentStop, and PreCompact. An update that
+  does not add `deepgrade-guard` silently loses force-push and DB-deploy
+  blocking.
+- **The monolith GUIDE is retired.** Each plugin ships its own README and
+  GUIDE; METHODOLOGY.md remains the deep reference for the audit methodology.
+
 ### Changed
-- **Monorepo restructure (split step 4).** The single plugin is now four under
-  `plugins/`: `deepgrade` (planning core, keeps the name and namespace),
-  `deepgrade-readiness`, `deepgrade-audit`, and `deepgrade-guard` (safety hooks
-  only). Versions are lockstep; the marketplace lists four entries sharing one
-  ref+SHA pin. Readiness and audit commands renamespace to their plugin names
-  (`/deepgrade-readiness:readiness-scan`, `/deepgrade-audit:codebase-audit`).
-  Not yet released: the catalog pin still points at the v6.0.0 monolith SHA
-  until the atomic four-entry release.
+
+- Versions are lockstep across the four manifests; the marketplace lists four
+  entries sharing one ref+SHA pin, released atomically by `.github/release.sh`.
+- The suite gained per-plugin layer-1 profiles plus split invariants: SPLIT-1
+  (self-audit-knowledge mirror byte-identity, eol-insensitive), SPLIT-2
+  (4-manifest lockstep), SPLIT-3 (cross-namespace reference resolution). CI
+  validates the root marketplace and each plugin directory.
 
 ## 6.0.0 (2026-08-02)
 
