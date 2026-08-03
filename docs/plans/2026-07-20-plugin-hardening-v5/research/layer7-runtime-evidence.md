@@ -6,11 +6,10 @@ not a pass.** Until 2026-08-02 this file had never existed in any commit — `gi
 That made the plan's only runtime evidence unauditable testimony, the same class Codex declined to
 credit for the mutation harness in the Wave 5 reaudit.
 
-Part 1 is now recorded below, verbatim. **Part 2 is partially recorded (2026-08-03): the
-prerequisite and checks A–F hold observations; D additionally needs the owner to confirm whether a
-confirmation dialog surfaced; G, H and I remain open.** F24's deciding slots (E, plus B settling
-part 1's pending item) are held; F06 and F26 stay PARTIAL until their remaining slots hold
-observations.
+Part 1 is now recorded below, verbatim. **Part 2 is nearly recorded (2026-08-03): the prerequisite
+and checks A–G hold observations — D's dialog confirmed on a primed redrive, G observed on both
+Stop branches; H and I remain open.** F24 and F26 hold complete evidence; F06 stays PARTIAL until
+H and I hold observations.
 
 ---
 
@@ -80,8 +79,8 @@ its message claims.
 
 ## Part 2 — owner-observed (interactive session required)
 
-**STATUS: PARTIALLY RECORDED (2026-08-03).** Checks A–F below hold observations; G, H and I are
-still empty, and D carries a PENDING-OWNER line. Do not infer any empty slot from part 1.
+**STATUS: PARTIALLY RECORDED (2026-08-03).** Checks A–G below hold observations; H and I are
+still empty. Do not infer any empty slot from part 1.
 
 Recording context (applies to every slot dated 2026-08-03): interactive Claude Code session in this
 repo — claude CLI 2.1.220, node v24.12.0, Windows 11 Pro 10.0.26200. Checks B–E were driven by the
@@ -267,7 +266,13 @@ again, staging the no-tests branch for the next turn boundary.
 
 ```
 NUDGE BRANCH OBSERVED (verbatim):
+[DeepGrade] 118 files changed this session but no test run was detected. Run the suite before finishing.
 ```
+
+Recorded 2026-08-03 — after the session's `dg-test-*` marker was cleared and further recording
+edits were made, the next turn boundary produced the line above in the owner's UI. **Both Stop
+branches are now user-observed live.** The count moving 115 → 118 across the two observations
+confirms both branches read the same session-cumulative change counter.
 
 ### H. Zero hook errors on a healthy host
 
@@ -301,13 +306,42 @@ OBSERVED (verbatim):
 
 ---
 
+## Supplementary runtime observations (2026-08-03, same session)
+
+Not on the checklist, but observed surfacing while recording it — each a runtime surface no
+automated layer proves:
+
+- **The git guard's ask-on-unparseable branch** (§3.1.6: never DENY on something unparsed — ask)
+  surfaced on a heredoc commit (`git commit -m "$(cat <<'EOF' …)"`, whose `$( )` the guard cannot
+  evaluate). Owner's paste, verbatim:
+
+  ```
+  Hook PreToolUse:Bash requires confirmation for this command:
+  This command contains a shell construct the guard cannot evaluate (a variable, a substitution, or a nested shell), so its real effect is unknown. Confirm it does not force-push or deploy to a remote database. [plugin:deepgrade]
+  ```
+
+  The owner approved and the commit ran — ask, not deny, exactly as locked. (Practical corollary:
+  every heredoc-style commit in a guarded session asks for confirmation.)
+
+- **The change tracker's threshold notice** (`dg-track-change.js:74`) surfaced after an edit:
+
+  ```
+  PostToolUse:Edit says: [DeepGrade] 118 files changed since the last audit. Consider /deepgrade:codebase-delta.
+  ```
+
+- The `[plugin:deepgrade]` attribution label appears on every guard dialog although these handlers
+  ship in `deepgrade-guard` (see check D's note) — display attribution, tracked as a possible
+  follow-up, not a defect in the handlers.
+
+---
+
 ## Disposition
 
 | Finding | State | Moves when |
 |---|---|---|
-| F06 | **PARTIAL** | G's nudge branch, H and I recorded (A–F and D's dialog held 2026-08-03) |
+| F06 | **PARTIAL** | H and I recorded (A–G held 2026-08-03, D's dialog confirmed, G on both branches) |
 | F24 | **MET — evidence recorded 2026-08-03** | — E observed allowed and B observed blocked naming `--force-with-lease` (settling part 1's pending item); `status.json` closure rides Part 2's completion commit |
-| F26 | **PARTIAL** | G recorded (A and F held 2026-08-03) |
+| F26 | **MET — evidence recorded 2026-08-03** | — A (SessionStart), F (PreCompact) and G (both Stop branches) all user-observed surfacing; `status.json` closure rides Part 2's completion commit |
 | U4 | **settled POSITIVE** (2026-08-03, check A) | — real plan, phase and status at session start |
 | U5 | **settled POSITIVE** (2026-08-03, check F) | — PreCompact line surfaced on `/compact`; §3.1.6 fallback not needed |
 | CR-1 condition | held on U6's earlier resolution | I re-confirms it on an installed copy |
