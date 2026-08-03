@@ -1,0 +1,71 @@
+{
+  "tool": "ai-readiness-scanner",
+  "version": "0.3.0",
+  "scan_id": "3f9c2f1e-8a4b-4a5f-9d2e-6b7c8d9e0f1a",
+  "timestamp": "2026-08-03T10:45:00Z",
+  "codebase": "/home/dev/example-app",
+  "detected": {
+    "language": "TypeScript",
+    "framework": "React",
+    "package_manager": "npm"
+  },
+  "overall": {
+    "score": 82.5,
+    "grade": "B+",
+    "phase2_eligible": true,
+    "phase2_eligible_with_warnings": true,
+    "phase2_blockers": [],
+    "phase2_warnings": ["3.6"]
+  },
+  "categories": {
+    "manifest": { "score": 100, "grade": "A+", "points": 8, "max": 8 },
+    "context_files": { "score": 75, "grade": "B", "points": 15, "max": 20 },
+    "structure": { "score": 78, "grade": "B", "points": 14, "max": 18 },
+    "entry_points": { "score": 90, "grade": "A", "points": 9, "max": 10 },
+    "conventions": { "score": 86, "grade": "A-", "points": 12, "max": 14 },
+    "feedback_loops": { "score": 83, "grade": "B+", "points": 10, "max": 12 },
+    "baseline": { "score": 50, "grade": "D", "points": 4, "max": 8 },
+    "context_budget": { "score": 88, "grade": "A-", "points": 14, "max": 16 },
+    "database": { "score": 75, "grade": "B", "points": 12, "max": 16, "status": "applicable" }
+  },
+  "critical_gates": {
+    "hard": {
+      "1.1": "pass",
+      "2.1": "pass",
+      "4.1": "pass",
+      "6.1": "pass"
+    },
+    "soft": {
+      "2.5": "pass",
+      "2.9": "pass",
+      "3.6": "WARN",
+      "5.6": "pass"
+    }
+  },
+  "checks": [
+    {
+      "id": "1.1",
+      "name": "Project manifest present",
+      "category": "manifest",
+      "score": 2,
+      "max_score": 2,
+      "evidence": "package.json at repo root",
+      "remediation": null
+    }
+  ],
+  "generation_offers": [
+    {
+      "artifact": "CLAUDE.md",
+      "reason": "no context file at repo root",
+      "priority": "high",
+      "estimated_impact": 6
+    }
+  ],
+  "delta": {
+    "previous_scan_id": null,
+    "previous_score": null,
+    "score_change": null,
+    "improved_checks": [],
+    "regressed_checks": []
+  }
+}

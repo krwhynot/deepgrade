@@ -998,6 +998,159 @@ elif [ "$ns_bad" -eq 0 ]; then
 fi
 
 # ===========================================================================
+# INTEROP: cross-plugin artifact contracts (split step 6).
+#
+# SPLIT-3 proves namespaced REFERENCES resolve; nothing proved the ARTIFACTS
+# plugins hand each other stay contract-true. A producer renaming its output
+# strands every consumer in a sibling plugin, and no per-plugin check can see
+# it — the drift is only visible repo-wide. interop.md is the contract; this
+# sweep holds it to the tree in BOTH directions, so neither a stale row nor an
+# undocumented new edge survives.
+#
+# Subjects are FUNCTIONAL files only (commands/, agents/, skills/, scripts/):
+# README/GUIDE mentions are description, not consumption — the guard README
+# shipped a whole output-table row describing a sibling's writer, which is
+# exactly why prose does not count as an edge.
+# ===========================================================================
+echo ""
+echo "--- Interop contracts (INTEROP-1/2/3) ---"
+
+INTEROP_DOC="interop.md"
+IT_FIX="tests/fixtures/interop/readability-score.sample.json"
+it_path_re='docs/audit/[A-Za-z0-9_./-]*\.(json|md)'
+
+# Instrument self-tests: the extractor must fire on a real spelling and stay
+# quiet on a directory-only mention, or the derived set silently collapses.
+if [ "$(printf 'see docs/audit/foo-bar.md now' | grep -oE "$it_path_re")" != "docs/audit/foo-bar.md" ]; then
+  fail "INTEROP: path extractor fails its known-positive — the derived edge set would be vacuous"
+fi
+if printf 'the docs/audit/readability/ directory' | grep -qE "$it_path_re"; then
+  fail "INTEROP: path extractor matches a bare directory mention — it would count non-artifacts as edges"
+fi
+
+if [ ! -f "$INTEROP_DOC" ]; then
+  fail "INTEROP: $INTEROP_DOC is missing — the cross-plugin contracts are undocumented"
+else
+  # --- INTEROP-1: every contract row is live in both its producer and every
+  #     consumer. Rows are `| <artifact> | <producer> | <consumers,> |`.
+  it_rows=0
+  it_bad=0
+  while IFS='|' read -r _ it_art it_prod it_cons _; do
+    it_art=$(echo "$it_art" | tr -d ' ')
+    it_prod=$(echo "$it_prod" | tr -d ' ')
+    [ -n "$it_art" ] || continue
+    it_rows=$((it_rows + 1))
+    if [ ! -f "$it_prod" ]; then
+      fail "INTEROP-1: producer $it_prod (for $it_art) does not exist"
+      it_bad=1
+    elif ! grep -qF "$it_art" "$it_prod"; then
+      fail "INTEROP-1: producer $it_prod no longer mentions $it_art — the contract row is stale or the producer renamed its output"
+      it_bad=1
+    fi
+    for it_c in $(echo "$it_cons" | tr ',' ' '); do
+      if [ ! -f "$it_c" ]; then
+        fail "INTEROP-1: consumer $it_c (for $it_art) does not exist"
+        it_bad=1
+      elif ! grep -qF "$it_art" "$it_c"; then
+        fail "INTEROP-1: consumer $it_c no longer mentions $it_art — stale row, or the consumer moved off the contract"
+        it_bad=1
+      fi
+    done
+  done < <(grep -E '^\| docs/' "$INTEROP_DOC")
+
+  if [ "$it_rows" -lt 8 ]; then
+    fail "INTEROP-1: only $it_rows contract rows parsed from $INTEROP_DOC (expected >= 8) — the parser or the table collapsed"
+  elif [ "$it_bad" -eq 0 ]; then
+    pass "INTEROP-1: all $it_rows contract rows are live in their producers and consumers"
+  fi
+
+  # --- INTEROP-2: the DERIVED cross-plugin edge set equals the documented
+  #     one. An artifact referenced from functional files of 2+ plugins is an
+  #     edge whether or not anyone wrote it down.
+  it_tmp=$(mktemp)
+  for it_p in deepgrade deepgrade-readiness deepgrade-audit deepgrade-guard; do
+    git ls-files -z "plugins/$it_p/commands/*" "plugins/$it_p/agents/*" \
+                    "plugins/$it_p/skills/*" "plugins/$it_p/scripts/*" 2>/dev/null \
+      | xargs -0 -r grep -ohE "$it_path_re" 2>/dev/null | sort -u | sed "s|^|$it_p |"
+  done > "$it_tmp"
+
+  it_derived=$(mktemp)
+  awk '{print $2}' "$it_tmp" | sort | uniq -c | awk '$1 >= 2 {print $2}' | sort > "$it_derived"
+  it_documented=$(mktemp)
+  grep -E '^\| docs/' "$INTEROP_DOC" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | sort > "$it_documented"
+
+  it_derived_n=$(grep -c . "$it_derived" || true)
+  if [ "$it_derived_n" -lt 8 ]; then
+    fail "INTEROP-2: derived only $it_derived_n cross-plugin artifacts (expected >= 8) — the derivation is broken, not the tree"
+  else
+    it2_bad=0
+    while IFS= read -r it_miss; do
+      [ -n "$it_miss" ] || continue
+      fail "INTEROP-2: $it_miss is referenced by 2+ plugins but has no contract row in $INTEROP_DOC"
+      it2_bad=1
+    done < <(comm -23 "$it_derived" "$it_documented")
+    while IFS= read -r it_stale; do
+      [ -n "$it_stale" ] || continue
+      fail "INTEROP-2: $INTEROP_DOC documents $it_stale but the tree no longer has a cross-plugin edge for it — delete or update the row"
+      it2_bad=1
+    done < <(comm -13 "$it_derived" "$it_documented")
+    [ "$it2_bad" -eq 0 ] && pass "INTEROP-2: derived cross-plugin edge set ($it_derived_n artifacts) exactly matches the documented contracts"
+  fi
+  rm -f "$it_tmp" "$it_derived" "$it_documented"
+fi
+
+# --- INTEROP-3: the readability-score.json schema smoke test. The score file
+#     is the one MACHINE-read cross-plugin artifact, so its contract is keys,
+#     not prose: the fixture must parse, carry every load-bearing key a
+#     consumer extracts, and agree with the producer's schema block.
+IT_SCAN="plugins/deepgrade-readiness/commands/readiness-scan.md"
+if [ ! -f "$IT_FIX" ]; then
+  fail "INTEROP-3: fixture $IT_FIX is missing"
+elif ! command -v jq >/dev/null 2>&1; then
+  fail "INTEROP-3: jq is unavailable — the schema smoke test cannot run, and silence here is not a pass"
+else
+  if ! jq -e '
+      (.timestamp | type == "string") and
+      (.overall.score | type == "number") and
+      (.overall.grade | type == "string") and
+      (.categories | has("manifest") and has("context_files") and has("structure")
+        and has("entry_points") and has("conventions") and has("feedback_loops")
+        and has("baseline") and has("context_budget") and has("database")) and
+      (.categories.database.status | IN("applicable", "not_applicable")) and
+      (.checks | type == "array") and
+      (.delta | has("previous_scan_id"))
+    ' "$IT_FIX" >/dev/null 2>&1; then
+    fail "INTEROP-3: fixture fails the load-bearing key contract (timestamp, overall.score/grade, 9 categories, database.status, checks, delta)"
+  else
+    pass "INTEROP-3: fixture carries every load-bearing key with the right types"
+  fi
+
+  # Top-level keys: producer schema block vs fixture, exact set equality.
+  # tr -d '\r' on BOTH sides: Windows jq emits CRLF lines, and a CRLF-
+  # materialized producer file would poison the other side the same way —
+  # the SPLIT-1 eol lesson applies to every text comparison in this file.
+  it_schema_keys=$(awk '/must follow this schema/,/^}/' "$IT_SCAN" \
+    | grep -oE '^  "[a-z_]+":' | tr -d ' ":\r' | sort)
+  it_fix_keys=$(jq -r 'keys_unsorted[]' "$IT_FIX" | tr -d '\r' | sort)
+  if [ -z "$it_schema_keys" ]; then
+    fail "INTEROP-3: no schema block extractable from $IT_SCAN — the producer contract is gone or moved"
+  elif [ "$it_schema_keys" != "$it_fix_keys" ]; then
+    fail "INTEROP-3: schema block keys and fixture keys diverge (schema: $(echo $it_schema_keys | tr '\n' ' '); fixture: $(echo $it_fix_keys | tr '\n' ' '))"
+  else
+    pass "INTEROP-3: schema block and fixture agree on the top-level key set"
+  fi
+
+  # The consumer's extraction must name a key the schema still declares.
+  if ! grep -q 'timestamp' plugins/deepgrade-audit/agents/delta-scanner.md; then
+    fail "INTEROP-3: delta-scanner no longer extracts 'timestamp' — the scan-age contract is broken on the consumer side"
+  elif ! echo "$it_fix_keys" | grep -qx 'timestamp'; then
+    fail "INTEROP-3: 'timestamp' missing from the fixture keys — the scan-age contract is broken on the producer side"
+  else
+    pass "INTEROP-3: the scan-age key (timestamp) is intact on both sides of the contract"
+  fi
+fi
+
+# ===========================================================================
 # RESULTS (part subtotal — the dispatcher owns the anchored Results line)
 # ===========================================================================
 echo "==========================================="

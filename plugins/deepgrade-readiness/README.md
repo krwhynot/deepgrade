@@ -51,7 +51,7 @@ The scanners auto-detect your stack. Tested on:
 | Output | Location | Committed? |
 | ------ | -------- | ---------- |
 | Readiness reports | `docs/audit/` | Yes |
-| Machine-readable scores | `docs/audit/readability-score.json` | Yes |
+| Machine-readable scores | `docs/audit/readability/readability-score.json` | Yes |
 
 ## Version History
 
