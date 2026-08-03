@@ -991,23 +991,61 @@ for trend tracking).
 
 GATE: Evaluator-Optimizer Loop.
 
-Based on score AND gap check, determine if auto-revision is needed:
+The gate does not read the score. It reads whether the claims survived checking.
 
-IF score >= 32 AND gap-checked = YES (GREEN + gap-checked):
+<gate_expression>
+CANARY_OK   = the criterion the planted defect violates came back UNMET
+EVIDENCE_OK = dg-evidence-validate.js exited 0 (nothing was demoted)
+VERIFIED    = every applicable criterion is MET or N_A after validation
+INFRA_OK    = infra_gaps == 0
+
+PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK
+</gate_expression>
+
+Every term is re-derivable by someone who has the plan folder and did not run the
+audit. That is the property being bought here: the previous gate authorised passage
+on a number the audited model chose for itself, and no reader could tell a plan that
+earned it from one that was written to earn it.
+
+There is no weighted sum, so a strong showing on seven criteria cannot offset a
+failure on the eighth. Non-compensability is the thing a 40-point total structurally
+cannot give you.
+
+IF PASS:
   -> "Plan is solid. Ready to start building."
   -> Proceed to Phase 6.
 
-IF score < 32 OR gap-checked = NO:
-  -> Auto-trigger revision of the Phase 4 spec.
-  -> Feed audit findings back to the plan generation step:
-     "Revise docs/specs/{plan-name}.md to address these gaps:"
-     followed by specific findings with dimension references.
+IF NOT PASS:
+  -> If CANARY_OK is false after a re-run: STOP. Do not revise. The audit could not
+     see a defect placed for it to find, so its other findings are not a basis for
+     rewriting anything.
+  -> Otherwise auto-trigger revision of the Phase 4 spec, using the feedback form
+     below.
   -> Revise ONLY the failing sections (not the entire spec).
   -> Re-run the audit on the revised spec.
   -> Compare re-audit against baseline: flag any regressions (items that
      were passing in v1 but now fail in v2). Regressions indicate the
      revision broke something that was previously working.
   -> Maximum 2 revision iterations.
+
+<revision_feedback>
+Send the generator defects and locations. One line per unmet criterion:
+
+  {criterion_id} UNMET: {what is missing}. Location: {file}:{line}.
+
+Worked example:
+
+  LINT-03 UNMET: Phase 2 database migration has no rollback step.
+    Location: docs/specs/plugin-hardening-v5.md:142.
+
+Never send the rubric, the totals, the bands, or how near the plan came to passing.
+The generator cannot see any of that when it writes, and returning it through the
+revision channel would hand back exactly what was withheld — after which the cheapest
+response is prose shaped like the missing thing rather than the missing thing itself.
+
+A defect the generator can locate is a defect it can fix. A number it can chase is a
+number it will chase.
+</revision_feedback>
 
 SPAWN A NEW plan-auditor INSTANCE for every audit iteration. Do not re-audit inside
 the instance that produced the previous verdict, and do not pass it the previous
@@ -1025,12 +1063,21 @@ The baseline comparison above is done by the CALLER, which holds both audits. Th
 judge sees one spec and reports on it, and never learns that a previous attempt
 existed.
 
-After revision loop completes:
-- GREEN + gap-checked: "Plan revised and now solid. Ready to build."
-- YELLOW + gap-checked: "Plan revised. Usable with known gaps: [list]"
-- YELLOW + not gap-checked (after 2 iterations): "Plan has remaining gaps after 2 revisions. Review manually: [prioritized list]"
-- ORANGE (after 2 iterations): "Plan still needs work after 2 revisions. Fix manually: [prioritized list]"
-- RED (after 2 iterations): "Plan needs significant rework. Go back to Phase 3 or 4."
+After revision loop completes, report against the gate, not against a band:
+- PASS: "Plan revised and now solid. Ready to build."
+- NOT PASS, criteria still unmet after 2 iterations: "Plan has remaining unmet
+  criteria. Fix manually: [list each id with its defect and location]"
+- NOT PASS because evidence was demoted: "Claims in this plan are not supported by
+  what they cite: [list each flag]. These are not near-misses; the cited text does
+  not say what the plan says it says."
+- NOT PASS because the canary was missed twice: "The audit could not be trusted and
+  no revision was attempted. Re-run Phase 5 before reading any of its findings."
+
+A plan does not "usably pass with known gaps". Either every applicable criterion is
+satisfied and evidenced, or the specific ones that are not get named. The old
+YELLOW rung existed because a 24-31 total had to mean something; without the total
+there is nothing for it to mean, and "proceed with known gaps" was the rung most
+often used to proceed without reading them.
 
 Track revision history in audit.md:
 ```markdown

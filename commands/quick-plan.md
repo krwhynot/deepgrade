@@ -69,21 +69,26 @@ Spawn the plan-auditor agent with:
 - Instruction: produce structured findings with scores per dimension
 
 Record the audit results:
-- Overall score (X/40)
+- Overall score (X/40), reported only — it does not gate anything
 - Gap-checked status (YES/NO)
-- Specific gaps found (list with dimension references)
+- Specific gaps found, each named by criterion id with a location
 
 ## Step 5: Revision Loop (Optimizer)
 
-If score >= 32/40 AND gap-checked = YES:
+This uses the same gate as `/deepgrade:plan` Phase 5. It has to: a command that
+accepted a plan on a score the model gave itself would be a way around the gate
+rather than a lighter version of it, and the way around is the one that gets used.
+
+If every applicable criterion is MET or N_A after validation, and gap-checked = YES:
   -> Skip revision, proceed to Step 6
 
-If score < 32/40 OR gap-checked = NO:
+Otherwise:
   -> Feed audit findings back to the plan-scaffolder for targeted revision
-  -> The scaffolder receives: "Revise the following sections to address these gaps:"
-     followed by the specific findings from the auditor
+  -> The scaffolder receives one line per unmet criterion, in the form
+     "{criterion_id} UNMET: {what is missing}. Location: {file}:{line}."
+     Never the rubric, the totals, the bands, or how close the plan came
   -> The scaffolder revises ONLY the failing sections (not the entire plan)
-  -> Re-run the plan-auditor on the revised plan
+  -> Re-run the plan-auditor on the revised plan, as a FRESH instance
 
 Maximum 2 revision iterations. After 2 iterations, accept the plan at its
 current quality with audit findings attached.

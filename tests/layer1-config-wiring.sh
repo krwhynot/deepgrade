@@ -2139,6 +2139,86 @@ fi
 [ "$emit_bad" -eq 0 ] && pass "PH5-021/022: evidence records are emitted by the auditor and committed by the caller"
 
 # ===========================================================================
+# PH5-041 / acceptance row A13: the gate expression contains no score term.
+#
+# This is the point of the whole change. Phase 5 used to read
+# "IF score >= 32 AND gap-checked = YES -> ready to build", authorising passage on
+# a number the audited model assigned to itself. The gate now keys on things that
+# can be re-derived: the canary was found, evidence survived re-checking, every
+# applicable criterion is MET or N_A, and infra gaps are zero.
+#
+# Scoped to a delimited block rather than banned outright, because the score is
+# still legitimately used elsewhere — it gates the WAIVER (PH5-060), and reporting
+# it is fine. The asymmetry is deliberate: a gameable signal is safe in the
+# direction that ADDS friction (blocking a review waiver) and unsafe in the one
+# that removes it (authorising a build). Only the gate expression is policed here.
+# ===========================================================================
+gate_bad=0
+GATE_LINE='PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK'
+gate_block=$(sed -n '/^<gate_expression>$/,/^<\/gate_expression>$/p' commands/plan.md 2>/dev/null)
+
+if [ -z "$gate_block" ]; then
+  fail "PH5-041: commands/plan.md has no delimited <gate_expression> block"
+  gate_bad=1
+else
+  printf '%s\n' "$gate_block" | grep -qxF "$GATE_LINE" \
+    || { fail "PH5-041: <gate_expression> does not state the verifier-first PASS expression verbatim"; gate_bad=1; }
+
+  # No score term inside the gate. Checked case-insensitively and including the
+  # numeric forms, so "score", "34/40" and ">= 32" are all refused.
+  offend=$(printf '%s\n' "$gate_block" | grep -nEi 'score|[0-9]+/40|>=[[:space:]]*[0-9]{2}' || true)
+  if [ -n "$offend" ]; then
+    gate_bad=1
+    fail "PH5-041: <gate_expression> still keys on a score:"
+    printf '%s\n' "$offend" | sed 's/^/           /' | head -6
+  fi
+fi
+
+# The superseded form must be gone, not merely superseded by a newer block below it.
+if grep -qE '^IF score (>=|<) [0-9]+' commands/plan.md; then
+  gate_bad=1
+  fail "PH5-041: the score-based gate branch is still present in commands/plan.md"
+  grep -nE '^IF score (>=|<) [0-9]+' commands/plan.md | sed 's/^/           /' | head -4
+fi
+
+[ "$gate_bad" -eq 0 ] && pass "PH5-041: the gate keys on canary, evidence, verdicts and infra — not on a score"
+
+# ===========================================================================
+# PH5-040 / acceptance row A12: revision feedback names defects, not dimensions.
+#
+# The loop used to feed back "specific findings with dimension references", which
+# hands the generator the scoring structure Wave 1 removed from its view. Telling it
+# "Dimension 4 scored 2" invites text shaped like dimension 4; telling it "LINT-03
+# UNMET: Phase 2 migration has no rollback step" names a defect it can actually fix.
+# ===========================================================================
+fb_bad=0
+fb_block=$(sed -n '/^<revision_feedback>$/,/^<\/revision_feedback>$/p' commands/plan.md 2>/dev/null)
+fb_forbidden='dimension|score|/40|points|threshold|GREEN|YELLOW|ORANGE'
+
+if ! printf '%s\n' 'Dimension 4 scored 2 — improve rollback coverage.' | grep -qEi "$fb_forbidden"; then
+  fail "PH5-040: forbidden-vocabulary pattern fails its known-positive"
+  fb_bad=1
+fi
+if printf '%s\n' 'LINT-03 UNMET: Phase 2 migration has no rollback step. Location: spec.md:142.' | grep -qEi "$fb_forbidden"; then
+  fail "PH5-040: forbidden-vocabulary pattern matches a well-formed defect message"
+  fb_bad=1
+fi
+
+if [ -z "$fb_block" ]; then
+  fail "PH5-040: commands/plan.md has no delimited <revision_feedback> block defining what goes back to the generator"
+  fb_bad=1
+else
+  offend=$(printf '%s\n' "$fb_block" | grep -nEi "$fb_forbidden" || true)
+  if [ -n "$offend" ]; then
+    fb_bad=1
+    fail "PH5-040: <revision_feedback> leaks scoring vocabulary back to the generator:"
+    printf '%s\n' "$offend" | sed 's/^/           /' | head -6
+  fi
+fi
+
+[ "$fb_bad" -eq 0 ] && pass "PH5-040: revision feedback carries defects and locations, no scoring vocabulary"
+
+# ===========================================================================
 # RESULTS SUMMARY
 # ===========================================================================
 echo "==========================================="
