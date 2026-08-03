@@ -1,10 +1,6 @@
 # Changelog
 
-## Unreleased
-
-(Ships as 7.0.0 — the heading is renamed at release time; layer 1 reads the
-first versioned heading as the current release, so a 7.0.0 heading may not
-exist in a tree whose manifests still say 6.0.0.)
+## 7.0.0 (2026-08-03)
 
 The monolith is now four plugins. Updating `deepgrade` alone does NOT keep the
 toolkit you had — read the BREAKING section before updating.
