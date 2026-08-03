@@ -1,6 +1,6 @@
 {
   "name": "deepgrade-readiness",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "DeepGrade AI-readiness scanning: 52 checks across 9 categories score how well an AI agent can read and navigate a codebase, with a composite letter grade and generated scaffolding for the gaps. Stack-agnostic.",
   "author": {
     "name": "Kyle Whynot",

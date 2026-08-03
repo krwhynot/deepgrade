@@ -90,7 +90,7 @@ Claude Code itself needs, so if Claude Code runs, they do too.
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
-Current: v6.0.0
+Current: v7.0.0
 
 ## Contributing
 

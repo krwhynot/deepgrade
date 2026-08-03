@@ -1,11 +1,11 @@
 <div align="center">
 
-# DeepGrade Guard Guide v6.0.0
+# DeepGrade Guard Guide v7.0.0
 
 **0 Commands** &nbsp;&bull;&nbsp; **0 Skills** &nbsp;&bull;&nbsp; **5 Safety Hooks** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/deepgrade)
-[![Version](https://img.shields.io/badge/v6.0.0-stable-2ECC71?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/v7.0.0-stable-2ECC71?style=for-the-badge)](#)
 [![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
 
 </div>
