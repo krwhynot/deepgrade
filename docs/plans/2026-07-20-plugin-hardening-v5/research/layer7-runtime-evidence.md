@@ -185,10 +185,23 @@ OBSERVED (verbatim):
 HEAD is now at e6a4e01 Merge pull request #8 from krwhynot/cr6-ledger
 ```
 
-Recorded 2026-08-03 — NOT a refusal: the command executed (the tree was verified clean first, so it
-was harmless). What the assistant side cannot see is whether a CONFIRMATION DIALOG surfaced in the
-owner's UI before execution — an approved ask and a silent allow produce identical tool results.
-**PENDING-OWNER:** one line settles it — "dialog appeared, approved" or "no dialog appeared".
+First run recorded 2026-08-03 — NOT a refusal: the command executed (the tree was verified clean
+first, so it was harmless). Whether a dialog had surfaced went unnoticed by the owner ("Not sure /
+didn't notice"), so the check was REDRIVEN the same day with the owner primed to watch and the
+tree freshly committed. The owner's paste of the UI, verbatim:
+
+```
+Hook PreToolUse:Bash requires confirmation for this command:
+A hard reset discards every uncommitted change in the working tree. Confirm this is intended. [plugin:deepgrade]
+```
+
+**A CONFIRMATION PROMPT, not a refusal** — the owner approved it and the command then executed
+(`HEAD is now at 292d1db …`). The handler's ask JSON (`dg-git-guard.js:201`,
+`permissionDecision: "ask"`) surfaces as a user-visible confirmation carrying the handler's exact
+message. One oddity recorded as seen: the UI attributes the hook `[plugin:deepgrade]` although the
+handler ships in `deepgrade-guard` — display attribution only (the message text is uniquely
+dg-git-guard.js's, and core deepgrade has no PreToolUse handler); noted as a possible
+vendor-display or naming follow-up, not a guard defect.
 
 ### E. PreToolUse:Bash — quoted mention must be allowed (F24)
 
@@ -292,7 +305,7 @@ OBSERVED (verbatim):
 
 | Finding | State | Moves when |
 |---|---|---|
-| F06 | **PARTIAL** | G, H, I recorded and D's dialog confirmed (A–F held 2026-08-03) |
+| F06 | **PARTIAL** | G's nudge branch, H and I recorded (A–F and D's dialog held 2026-08-03) |
 | F24 | **MET — evidence recorded 2026-08-03** | — E observed allowed and B observed blocked naming `--force-with-lease` (settling part 1's pending item); `status.json` closure rides Part 2's completion commit |
 | F26 | **PARTIAL** | G recorded (A and F held 2026-08-03) |
 | U4 | **settled POSITIVE** (2026-08-03, check A) | — real plan, phase and status at session start |
