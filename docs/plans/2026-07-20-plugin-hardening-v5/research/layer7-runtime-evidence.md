@@ -6,9 +6,11 @@ not a pass.** Until 2026-08-02 this file had never existed in any commit — `gi
 That made the plan's only runtime evidence unauditable testimony, the same class Codex declined to
 credit for the mutation harness in the Wave 5 reaudit.
 
-Part 1 is now recorded below, verbatim. **Part 2 is still NOT RECORDED.** Creating this file does not
-close it; each check A–I carries an explicit empty slot, and F06, F24 and F26 stay PARTIAL until those
-slots hold observations.
+Part 1 is now recorded below, verbatim. **Part 2 is partially recorded (2026-08-03): the
+prerequisite and checks A–F hold observations; D additionally needs the owner to confirm whether a
+confirmation dialog surfaced; G, H and I remain open.** F24's deciding slots (E, plus B settling
+part 1's pending item) are held; F06 and F26 stay PARTIAL until their remaining slots hold
+observations.
 
 ---
 
@@ -78,7 +80,20 @@ its message claims.
 
 ## Part 2 — owner-observed (interactive session required)
 
-**STATUS: NOT RECORDED.** Every slot below is empty. Do not infer any of them from part 1.
+**STATUS: PARTIALLY RECORDED (2026-08-03).** Checks A–F below hold observations; G, H and I are
+still empty, and D carries a PENDING-OWNER line. Do not infer any empty slot from part 1.
+
+Recording context (applies to every slot dated 2026-08-03): interactive Claude Code session in this
+repo — claude CLI 2.1.220, node v24.12.0, Windows 11 Pro 10.0.26200. Checks B–E were driven by the
+assistant through its Bash tool at the owner's direction ("execute"); hook responses are quoted
+verbatim from the tool results the hooks produced, which is the same interception surface a
+user-typed command hits. A and F are surfaces this same session emitted on its own (session start;
+an owner-run `/compact`). Copy under test: the plugins INSTALLED from deepgrade-marketplace —
+`installed_plugins.json` records gitCommitSha `55dbdeb2fd18e4a50b3ac93e7a66e1f6893c2390` (the
+v7.0.0 pin) for both — while the working tree stood at `e6a4e01` with
+`git diff v7.0.0 HEAD -- plugins/deepgrade/hooks plugins/deepgrade/scripts
+plugins/deepgrade-guard/hooks plugins/deepgrade-guard/scripts` empty, so the pinned copy under test
+and HEAD agree byte-for-byte on everything exercised (the caveat below, satisfied).
 
 ### Prerequisite before running A–I
 
@@ -106,6 +121,17 @@ its message claims.
 > re-run this checklist. Release (or test via `--plugin-dir` against the working copy) first, or
 > the copy under test is not the copy you changed.
 
+> **Prerequisite RECORDED (2026-08-03).** `deepgrade-guard` was NOT installed when Part 2 began —
+> `claude plugin list` showed only `deepgrade@7.0.0` enabled. The catalog was refreshed
+> (`claude plugin marketplace update deepgrade-marketplace`) and the guard installed
+> (`claude plugin install deepgrade-guard@deepgrade-marketplace` — user scope, 7.0.0,
+> gitCommitSha `55dbdeb…`). Handler counts read from the installed manifests rather than the
+> `/plugin details` UI: deepgrade 3 (SessionStart, SubagentStop, PreCompact), deepgrade-guard 5
+> (PreToolUse `Write|Edit` + `Bash`, PostToolUse `Write|Edit` + `Bash`, Stop `*`) — the
+> Hooks (3) / Hooks (5) expectation holds. Notable observed behavior: the guard's hooks went LIVE
+> mid-session immediately after the CLI install — check B was intercepted with no
+> `/reload-plugins` and no session restart.
+
 ### A. SessionStart (F26; settles part of U4)
 
 Start a fresh session in this repo. Expect a line naming the active plan, its phase and status.
@@ -114,7 +140,12 @@ real phase name is the proof.
 
 ```
 OBSERVED (verbatim):
+Active DeepGrade plan: 2026-07-20-plugin-hardening-v5, phase build (in_progress).
 ```
+
+Recorded 2026-08-03 — the SessionStart hook's additional-context line exactly as this session
+received it at start. Real plan name, real phase, real status: the pre-5.0.0
+`phase: unknown, status: unknown` defect is absent. **Settles U4's SessionStart half POSITIVE.**
 
 ### B. PreToolUse:Bash — deny (F25)
 
@@ -123,7 +154,14 @@ Run: `git push --force origin main` — expect blocked, with a message naming `-
 
 ```
 OBSERVED (verbatim):
+PreToolUse:Bash hook error: [node ${CLAUDE_PLUGIN_ROOT}/scripts/dg-git-guard.js]: [DeepGrade] BLOCKED: Force push is not allowed. Use --force-with-lease if you must overwrite a remote branch.
 ```
+
+Recorded 2026-08-03 — BLOCKED; the command never ran (local and origin `main` were verified
+identical beforehand, so even a miss would have been a no-op push). The refusal names
+`--force-with-lease`. **Part 1's PENDING item is settled:** the refusal text print mode suppressed
+is fully captured interactively. Note: the `hook error:` prefix is the harness's rendering of a
+PreToolUse deny to the model — it is not a hook failure and does not count against check H.
 
 ### C. PreToolUse:Bash — the SAFE form must be ALLOWED (F25, the inverted defect)
 
@@ -132,7 +170,11 @@ denied while bare `-f` was allowed.
 
 ```
 OBSERVED (verbatim):
+Everything up-to-date
 ```
+
+Recorded 2026-08-03 — NOT blocked; the command executed cleanly. The pre-5.0.0 inversion (safe
+form denied while bare `-f` passed) is absent.
 
 ### D. PreToolUse:Bash — ask (F22)
 
@@ -140,7 +182,13 @@ Run: `git reset --hard` — expect a CONFIRMATION PROMPT, not a refusal. Record 
 
 ```
 OBSERVED (verbatim):
+HEAD is now at e6a4e01 Merge pull request #8 from krwhynot/cr6-ledger
 ```
+
+Recorded 2026-08-03 — NOT a refusal: the command executed (the tree was verified clean first, so it
+was harmless). What the assistant side cannot see is whether a CONFIRMATION DIALOG surfaced in the
+owner's UI before execution — an approved ask and a silent allow produce identical tool results.
+**PENDING-OWNER:** one line settles it — "dialog appeared, approved" or "no dialog appeared".
 
 ### E. PreToolUse:Bash — quoted mention must be allowed (F24)
 
@@ -149,7 +197,12 @@ that blocked this plan's own commits.
 
 ```
 OBSERVED (verbatim):
+[main d456358] never git push --force
 ```
+
+Recorded 2026-08-03 — NOT blocked: the commit whose message quotes the guarded string was created.
+This is F24's direct check, observed green on the installed copy. (The empty probe commit was
+removed afterwards with a mixed reset; `main` returned to `e6a4e01`, clean and in sync.)
 
 ### F. PreCompact (settles U5)
 
@@ -161,7 +214,13 @@ is recorded PARTIAL — never silently dropped.
 
 ```
 OBSERVED (verbatim):
+PreCompact [node ${CLAUDE_PLUGIN_ROOT}/scripts/dg-pre-compact.js] completed successfully: {"systemMessage":"[DeepGrade] Compacting. Active plan: 2026-07-20-plugin-hardening-v5 at phase: build. Resume with /deepgrade:plan 2026-07-20-plugin-hardening-v5"}
 ```
+
+Recorded 2026-08-03 — the owner ran `/compact` in this session and the line above appeared in
+their terminal's command output: a DeepGrade line naming the active plan and its phase.
+**U5 settles POSITIVE.** The locked §3.1.6 fallback (compact-resume via the SessionStart `compact`
+source) is implemented but NOT needed.
 
 ### G. Stop (F26)
 
@@ -173,6 +232,11 @@ surfaced to anyone.
 OBSERVED (verbatim):
 ```
 
+Not yet recorded — but the setup ran on 2026-08-03: the guard's Stop handler went live mid-session,
+this evidence file was edited, and no tests ran in the same turn, so the summary and no-tests nudge
+should surface when that turn ends. The owner pastes what they see — or that nothing appeared —
+into this slot.
+
 ### H. Zero hook errors on a healthy host
 
 Through all of the above, no "hook error" notice should appear. **This is the acceptance criterion for
@@ -181,6 +245,12 @@ the whole wave.**
 ```
 OBSERVED (verbatim):
 ```
+
+Partially evidenced 2026-08-03 from the assistant side: across SessionStart, PreCompact, four
+PreToolUse:Bash evaluations (one deny, three allows) and the Write|Edit trackers, no hook FAILURE
+notice appeared in any tool result (check B's `hook error:` prefix is the deny rendering, not a
+failure). The slot stays empty until the owner confirms no hook-error notice appeared in the UI
+either, once G is observed.
 
 ### I. Node-less installed copy (CR-1's condition, lane N's honest limit)
 
@@ -203,9 +273,9 @@ OBSERVED (verbatim):
 
 | Finding | State | Moves when |
 |---|---|---|
-| F06 | **PARTIAL** | A–I recorded |
-| F24 | **PARTIAL** | A–I recorded (E is the direct check; B settles part 1's pending item) |
-| F26 | **PARTIAL** | A, F, G recorded |
-| U4 | unsettled | A |
-| U5 | unsettled | F |
+| F06 | **PARTIAL** | G, H, I recorded and D's dialog confirmed (A–F held 2026-08-03) |
+| F24 | **MET — evidence recorded 2026-08-03** | — E observed allowed and B observed blocked naming `--force-with-lease` (settling part 1's pending item); `status.json` closure rides Part 2's completion commit |
+| F26 | **PARTIAL** | G recorded (A and F held 2026-08-03) |
+| U4 | **settled POSITIVE** (2026-08-03, check A) | — real plan, phase and status at session start |
+| U5 | **settled POSITIVE** (2026-08-03, check F) | — PreCompact line surfaced on `/compact`; §3.1.6 fallback not needed |
 | CR-1 condition | held on U6's earlier resolution | I re-confirms it on an installed copy |
