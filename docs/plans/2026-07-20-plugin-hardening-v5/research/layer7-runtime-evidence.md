@@ -360,7 +360,7 @@ automated layer proves:
 | Finding | State | Moves when |
 |---|---|---|
 | F06 | **MET — evidence recorded 2026-08-03; CLOSED in status.json** | — all of A–I hold observations; the installed-copy clause (the I in its U,R,I class) is exactly what Part 2 ran |
-| F24 | **Part 2 clauses MET (2026-08-03); stays PARTIAL in status.json** | — E observed allowed, B observed blocked naming `--force-with-lease` (settling part 1's pending item), H settles "runtime-verified locally", the hosted ubuntu+windows CI matrix exists (suite.yml, PHV5-005), and the corpus carries the `--force-with-lease` allowed case. The single remaining unmet clause is "runtime-verified at the U7 floor": the floor does not exist because PHV5-003 never ran |
+| F24 | **CLOSED (2026-08-03)** | — E observed allowed, B observed blocked naming `--force-with-lease` (settling part 1's pending item), H settles "runtime-verified locally", the hosted ubuntu+windows CI matrix exists (suite.yml, PHV5-005), and the corpus carries the `--force-with-lease` allowed case. The last clause ("runtime-verified at the U7 floor") was replaced by CR-7 (owner-ratified descope) with current-version verification, which the existing evidence satisfies — see `changes/CR-7.md` and `research/u7-floor-evidence.md` |
 | F26 | **MET — evidence recorded 2026-08-03; CLOSED in status.json** | — A (SessionStart), F (PreCompact) and G (both Stop branches) all user-observed surfacing |
 | U4 | **settled POSITIVE** (2026-08-03, check A) | — real plan, phase and status at session start |
 | U5 | **settled POSITIVE** (2026-08-03, check F) | — PreCompact line surfaced on `/compact`; §3.1.6 fallback not needed |

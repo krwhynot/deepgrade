@@ -83,12 +83,12 @@ purpose-built probe plugin carrying deliberately conflicting/parallel/powershell
 definitions. Blocked on the owner's authentication decision for sandboxed old-CLI sessions;
 credential copying into scratch configs remains refused by default.
 
-## Disposition
+## Disposition — DESCOPED by CR-7 (owner-ratified 2026-08-03)
 
 | Item | State |
 |---|---|
-| Auth-free floor (B5+B8) | **2.1.145** — bisected, 7 probes, edges verbatim above |
-| Dispatch behaviors 1–4, 6–7 | NOT RUN — awaiting auth decision + probe plugin |
-| Declared floor | **not yet declared** — requires all eight |
-| F24's U7-floor clause | still open; closes when the declared floor exists and the runtime proof re-runs there |
-| CI floor job (§10.3, auth-free: suite + `validate --strict` at the floor) | not yet added — lands with the declared floor |
+| Auth-free floor (B5+B8) | **2.1.145** — bisected, 7 probes, edges verbatim above; kept as permanent factual record |
+| Dispatch behaviors 1–4, 6–7 | **DELIBERATELY NOT RUN** — descoped by CR-7 (users live on auto-updated current; the probed edge measures dev tooling) |
+| Declared floor | **NONE, by decision** — CR-7 replaces the floor clause with current-version verification (CI matrix + release-time local runtime evidence) |
+| F24's U7-floor clause | **CLOSED via CR-7** — replacing clause satisfied by check H (`layer7-runtime-evidence.md`) and the green hosted CI matrix |
+| CI floor job (§10.3) | **not built, by the same CR** — the existing current-version ubuntu+windows matrix is the verification that matches reality |
