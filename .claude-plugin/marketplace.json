@@ -1,6 +1,6 @@
 {
   "name": "deepgrade-marketplace",
-  "description": "Developer toolkit for codebase auditing, AI-readiness scanning, structured planning, and operational readiness. Works on any stack.",
+  "description": "Developer toolkit for codebase auditing, AI-readiness scanning, structured planning, and operational readiness. Four plugins, one lockstep release. Works on any stack.",
   "owner": {
     "name": "Kyle Whynot",
     "email": "krwhynot@github.com"
@@ -8,10 +8,44 @@
   "plugins": [
     {
       "name": "deepgrade",
-      "description": "AI-powered codebase grading, planning, auditing, and operational readiness.",
+      "description": "9-phase planning with an adversarial verifier-first audit gate, plan-linked troubleshooting, and documentation generation.",
       "source": {
         "source": "github",
         "repo": "krwhynot/deepgrade",
+        "path": "plugins/deepgrade",
+        "ref": "v6.0.0",
+        "sha": "e41336bc830164d2b298557252ed1a2482d8a335"
+      }
+    },
+    {
+      "name": "deepgrade-readiness",
+      "description": "AI-readiness scanning: 52 checks, 9 categories, composite letter grade, generated scaffolding for the gaps.",
+      "source": {
+        "source": "github",
+        "repo": "krwhynot/deepgrade",
+        "path": "plugins/deepgrade-readiness",
+        "ref": "v6.0.0",
+        "sha": "e41336bc830164d2b298557252ed1a2482d8a335"
+      }
+    },
+    {
+      "name": "deepgrade-audit",
+      "description": "Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates.",
+      "source": {
+        "source": "github",
+        "repo": "krwhynot/deepgrade",
+        "path": "plugins/deepgrade-audit",
+        "ref": "v6.0.0",
+        "sha": "e41336bc830164d2b298557252ed1a2482d8a335"
+      }
+    },
+    {
+      "name": "deepgrade-guard",
+      "description": "Always-on safety hooks: force-push and DB-deploy blocking, migration protection, change/test tracking, session summaries.",
+      "source": {
+        "source": "github",
+        "repo": "krwhynot/deepgrade",
+        "path": "plugins/deepgrade-guard",
         "ref": "v6.0.0",
         "sha": "e41336bc830164d2b298557252ed1a2482d8a335"
       }

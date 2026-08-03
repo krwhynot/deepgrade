@@ -1,9 +1,18 @@
 # DeepGrade
 
-DeepGrade gives your codebase a letter grade. AI-powered
-codebase auditing, planning, operational readiness assessment,
-and documentation generation. Stack-agnostic.
-Works on any codebase.
+DeepGrade gives your codebase a letter grade. AI-powered codebase auditing,
+planning, operational readiness assessment, and documentation generation for
+Claude Code. Stack-agnostic. Works on any codebase.
+
+This repository is a monorepo of **four plugins with lockstep versions** — one
+marketplace, one release, install any subset:
+
+| Plugin | What it does | Who installs it |
+| ------ | ------------ | --------------- |
+| [`deepgrade`](plugins/deepgrade/) | 9-phase planning with an adversarial verifier-first audit gate, plan-linked troubleshooting, documentation generation | Developers living in `docs/plans/` daily |
+| [`deepgrade-readiness`](plugins/deepgrade-readiness/) | AI-readiness scan: 52 checks, 9 categories, composite letter grade A+ to F, generated scaffolding | Consultants and leads grading many repos |
+| [`deepgrade-audit`](plugins/deepgrade-audit/) | Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates | Engineering managers doing due diligence |
+| [`deepgrade-guard`](plugins/deepgrade-guard/) | Always-on safety hooks: force-push and DB-deploy blocking, migration protection, change/test tracking, session summaries | Everyone — recommended universal co-install |
 
 ## What It Does
 
@@ -15,151 +24,67 @@ DeepGrade asks three questions about your codebase:
 | 2. Phased Delivery Over Big-Bang Releases | What shape is it in? | Present |
 | 3. Operational Readiness | Can we safely change it? | Future |
 
-## Install DeepGrade Plugin
+The methodology behind all four plugins lives in [METHODOLOGY.md](METHODOLOGY.md).
+
+## Install
 
 **Prerequisite:** Claude Code installed ([claude.ai](https://claude.ai))
 
-**Step 1:** Open a terminal (not inside Claude Code) and run:
+**Step 1:** Open a terminal (not inside Claude Code) and add the marketplace:
 
 ```bash
 claude plugin marketplace add krwhynot/deepgrade
 ```
 
-**Step 2:** Then run:
+**Step 2:** Install the plugins you want (any subset works; `deepgrade-guard`
+is recommended alongside whichever you pick):
 
 ```bash
 claude plugin install deepgrade@deepgrade-marketplace --scope user
+claude plugin install deepgrade-readiness@deepgrade-marketplace --scope user
+claude plugin install deepgrade-audit@deepgrade-marketplace --scope user
+claude plugin install deepgrade-guard@deepgrade-marketplace --scope user
 ```
 
-**Step 3:** Start Claude Code in any project:
-
-```bash
-claude
-```
-
-**Step 4:** Verify:
+**Step 3:** Start Claude Code in any project and verify:
 
 ```
 /deepgrade:help
 ```
 
-## Commands (16)
+`/deepgrade:help` (from the `deepgrade` plugin) shows the full toolkit map,
+including the commands that belong to the sibling plugins.
 
-### Planning
+## A Suggested Path Through the Toolkit
 
-| Command | Description |
-| ------- | ----------- |
-| `/deepgrade:plan` | 9-phase structured planning workflow |
-| `/deepgrade:quick-plan` | Lightweight plan for small changes |
-| `/deepgrade:plan-status` | Check plan progress and phase status |
-| `/deepgrade:plan-export` | Export a plan as a portable package |
+1. `/deepgrade-readiness:readiness-scan` for a baseline navigability grade
+2. `/deepgrade-readiness:readiness-generate` to fix the low-hanging issues
+3. `/deepgrade-audit:codebase-audit` once the readiness score is healthy
+4. `/deepgrade:plan` to plan the remediation work the audit surfaced
+5. `/deepgrade-audit:codebase-delta` after changes, to verify improvement
 
-### Auditing
+## Repository Layout
 
-| Command | Description |
-| ------- | ----------- |
-| `/deepgrade:codebase-audit` | Full codebase audit across all three pillars |
-| `/deepgrade:quick-audit` | Audit any technical plan or spec |
-| `/deepgrade:codebase-delta` | Compare against previous audit baseline |
-| `/deepgrade:codebase-characterize` | Generate codebase characterization |
+```
+.claude-plugin/marketplace.json   # the four catalog entries, one shared ref+SHA pin
+plugins/deepgrade/                # planning core (commands, agents, skills, hooks)
+plugins/deepgrade-readiness/      # readiness scanners
+plugins/deepgrade-audit/          # audit agents
+plugins/deepgrade-guard/          # safety hooks only
+tests/                            # one suite for the whole monorepo (run-all.sh)
+docs/                             # dev-time records: plans, specs, release notes
+METHODOLOGY.md                    # the methodology reference (not shipped by any plugin)
+```
 
-### Operational Readiness
-
-| Command | Description |
-| ------- | ----------- |
-| `/deepgrade:readiness-scan` | AI readiness scan (9 categories, letter grade) |
-| `/deepgrade:readiness-generate` | Generate improvement recs |
-| `/deepgrade:codebase-gates` | Set up quality gates and baseline tracking |
-| `/deepgrade:codebase-security` | Security-focused audit |
-
-### Documentation
-
-| Command | Description |
-| ------- | ----------- |
-| `/deepgrade:documentation` | Generate specs, PRDs, BRDs, ADRs, READMEs |
-| `/deepgrade:quick-cleanup` | Identify and fix common codebase issues |
-| `/deepgrade:troubleshoot` | 4-phase debugging framework with incident triage and containment |
-| `/deepgrade:help` | Show all commands and usage |
-
-## Safety Hooks (8)
-
-The plugin includes 8 safety hooks that activate automatically. They are declared
-in `hooks/hooks.json` and run as Node scripts from `scripts/`, one file per handler.
-**Requires Node.js 18 or later** — the same runtime Claude Code itself needs.
-
-| Hook | Event | What It Does |
-| ---- | ----- | ------------ |
-| Active Plan Display | SessionStart | Reports the active plan, its phase, and audit staleness |
-| Migration Guard | PreToolUse Write/Edit | Blocks edits to existing migrations |
-| Git + DB Guard | PreToolUse Bash | Blocks force push and direct DB deploys; asks before a hard reset |
-| Change Tracker | PostToolUse Write/Edit | Counts file changes, nudges when an audit is stale |
-| Test/Build Tracker | PostToolUse Bash | Records test and build runs |
-| Session Summary | Stop | Reports file change count and warns if no tests ran |
-| Subagent Log | SubagentStop | Logs subagent completions to the active plan |
-| Plan Context | PreCompact | Preserves plan name and phase on compact |
-
-### Database Deploy Guard
-
-Blocks direct database migration deploys from local machine.
-Supports:
-
-| Blocked Command | Stack | Safe Exception |
-| --------------- | ----- | -------------- |
-| `supabase db push` | Supabase | `--dry-run`, `--local` |
-| `prisma migrate deploy` | Prisma | `--dry-run` |
-| `dotnet ef database update` | .NET EF Core | - |
-| `flyway migrate` | Flyway | - |
-| `rails db:migrate` | Rails | `RAILS_ENV=test`, `development` |
+Every plugin manifest carries the same version, bumped together by
+`.github/release.sh` — the four catalog entries always pin one ref and one SHA.
 
 ## Dependencies
 
-**Required:** [Node.js](https://nodejs.org/) 18 or later — the same runtime Claude
-Code itself needs, so if Claude Code runs, this does too.
-
-```bash
-node --version   # must print v18.0.0 or higher
-```
-
-**Not required:** `jq`. Versions before 5.0.0 parsed hook payloads with `jq`, falling
-back to `grep`+`sed` when it was absent. That fallback is gone, and its removal was
-the point rather than a side effect: `grep` and `sed` are not a JSON parser, so the
-guards could not distinguish a command from text that merely mentioned one. They
-blocked a read-only `grep` whose search pattern named a deployment, and blocked commit
-messages that referred to a force push.
-
-**What happens without Node.** The hooks cannot start, and Claude Code reports a hook
-error on each guarded event. That is deliberate: the previous design degraded quietly
-to a weaker parser, so you could not tell a working safety layer from a broken one.
-Absent and loud beats present and wrong.
-
-## Supported Stacks
-
-The plugin auto-detects your stack. Tested on:
-
-| Stack | Detection |
-| ----- | --------- |
-| Node/React/TypeScript | package.json, tsconfig.json |
-| .NET (C#/VB.NET) | \*.sln, \*.csproj, \*.vbproj |
-| Python | pyproject.toml, setup.py, requirements.txt |
-| Rust | Cargo.toml |
-| Go | go.mod |
-
-## File Output Locations
-
-| Output | Location | Committed? |
-| ------ | -------- | ---------- |
-| Audit reports | `docs/audit/` | Yes |
-| Plan documents | `docs/plans/{date}-{name}/` | Yes |
-| Specifications | `docs/specs/` | Yes |
-| ADRs | `docs/adr/` | Yes |
-| Session markers | `$TMPDIR/dg-*` (`%TEMP%` on Windows) | No (OS-managed) |
-
-## Architecture
-
-- **22 agents** - Specialized scanners and generators
-- **6 skills** - Docs, governance, readiness, knowledge, self-audit, MCP research
-- **6 doc templates** - ADR, BRD, PRD, README, release notes, spec
-- **8 hook handlers** - `scripts/dg-*.js`, the runtime safety layer (was labelled "reference, not runtime" before 5.0.0, which is now inverted: F06 exists precisely to stop unwired code shipping)
+The `deepgrade` and `deepgrade-guard` plugins run their hooks as Node scripts
+and require [Node.js](https://nodejs.org/) 18 or later — the same runtime
+Claude Code itself needs, so if Claude Code runs, they do too.
+`deepgrade-readiness` and `deepgrade-audit` need nothing beyond Claude Code.
 
 ## Version History
 

@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const canary = require('../scripts/dg-canary.js');
+const canary = require('../plugins/deepgrade/scripts/dg-canary.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'canary', 'spec-full.md');
 const SPEC = fs.readFileSync(FIXTURE, 'utf8').replace(/\r\n/g, '\n');
@@ -153,7 +153,7 @@ console.log('\n6. CLI contract');
 {
   const os = require('os');
   const { execFileSync } = require('child_process');
-  const CLI = path.join(__dirname, '..', 'scripts', 'dg-canary.js');
+  const CLI = path.join(__dirname, '..', 'plugins', 'deepgrade', 'scripts', 'dg-canary.js');
   const run = (args) => {
     try { return { code: 0, out: execFileSync('node', [CLI].concat(args), { encoding: 'utf8' }) }; }
     catch (e) { return { code: e.status, out: String(e.stdout || '') + String(e.stderr || '') }; }

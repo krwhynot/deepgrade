@@ -57,7 +57,8 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 pass "prerequisite: claude CLI $(claude --version 2>&1 | head -1)"
 
-[ -f hooks/hooks.json ] || { fail "hooks/hooks.json missing — nothing to prove"; exit 1; }
+[ -f plugins/deepgrade-guard/hooks/hooks.json ] || { fail "plugins/deepgrade-guard/hooks/hooks.json missing — nothing to prove"; exit 1; }
+[ -f plugins/deepgrade/hooks/hooks.json ] || { fail "plugins/deepgrade/hooks/hooks.json missing — nothing to prove"; exit 1; }
 
 if [ "${1:-}" = "--manual" ]; then
   MANUAL_ONLY=1
@@ -86,7 +87,7 @@ mkdir -p "$HOOKTMP"
 nested() {
   local prompt=$1
   ( cd "$SCRATCH" && TMPDIR="$HOOKTMP" TEMP="$HOOKTMP" \
-    timeout 180 claude -p --plugin-dir "$ROOT" "$prompt" 2>&1 ) || true
+    timeout 180 claude -p --plugin-dir "$ROOT/plugins/deepgrade-guard" --plugin-dir "$ROOT/plugins/deepgrade" "$prompt" 2>&1 ) || true
 }
 
 # PostToolUse:Write|Edit -> dg-track-change.js writes a baseline tracker.
@@ -177,8 +178,10 @@ cat <<'CHECKLIST'
 
       /plugin marketplace update deepgrade-marketplace
       /plugin update deepgrade
+      /plugin update deepgrade-guard
       /reload-plugins
-      /plugin details deepgrade        -> must report Hooks (6) incl. SubagentStop
+      /plugin details deepgrade        -> must report Hooks (3) incl. SubagentStop
+      /plugin details deepgrade-guard  -> must report Hooks (5)
 
   A. SessionStart (F26, settles part of U4)
      Start a fresh session in this repo. Expect a line naming the active plan,

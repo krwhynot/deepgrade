@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- **Monorepo restructure (split step 4).** The single plugin is now four under
+  `plugins/`: `deepgrade` (planning core, keeps the name and namespace),
+  `deepgrade-readiness`, `deepgrade-audit`, and `deepgrade-guard` (safety hooks
+  only). Versions are lockstep; the marketplace lists four entries sharing one
+  ref+SHA pin. Readiness and audit commands renamespace to their plugin names
+  (`/deepgrade-readiness:readiness-scan`, `/deepgrade-audit:codebase-audit`).
+  Not yet released: the catalog pin still points at the v6.0.0 monolith SHA
+  until the atomic four-entry release.
+
 ## 6.0.0 (2026-08-02)
 
 The Phase 5 audit gate no longer authorizes a plan on the score the audited model

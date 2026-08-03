@@ -25,9 +25,11 @@ echo "=== DeepGrade Plugin: Layer 1 - Config/Wiring Tests ==="
 echo ""
 
 # Parts: one core run per plugin profile, then the repo-wide sweeps.
-# Pre-split layout: the single monolith profile at the repo root.
 PARTS=(
-  ". monolith"
+  "plugins/deepgrade deepgrade"
+  "plugins/deepgrade-readiness deepgrade-readiness"
+  "plugins/deepgrade-audit deepgrade-audit"
+  "plugins/deepgrade-guard deepgrade-guard"
 )
 
 COUNTS_FILE=$(mktemp)

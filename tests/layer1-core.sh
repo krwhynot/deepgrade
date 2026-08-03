@@ -30,28 +30,104 @@ cd "$PLUGIN_DIR" || { echo "[FAIL] plugin dir '$PLUGIN_DIR' does not exist"; exi
 # here so a new plugin cannot inherit floors it never earned.
 # ---------------------------------------------------------------------------
 case "$PROFILE" in
-  monolith)
+  deepgrade)
+    # Planning core: 9 commands, the two planner agents, 3 skills, the three
+    # plan-context hooks, and the canary/evidence audit tooling wired from
+    # commands/plan.md (F06's command-wired mechanism).
     PLUGIN_NAME="deepgrade"
     OWN_NS="deepgrade"
-    EXPECTED_EVENTS="SessionStart PreToolUse PostToolUse Stop SubagentStop PreCompact"
-    FORBIDDEN_EVENTS=""
+    EXPECTED_EVENTS="SessionStart SubagentStop PreCompact"
+    FORBIDDEN_EVENTS="PreToolUse PostToolUse Stop"
     EXPECT_HOOKS=1            # 1: hooks/hooks.json + scripts/ required; 0: both must be ABSENT
-    F06_REF_FLOOR=8
+    F06_REF_FLOOR=3
     SUBAGENT_WIRED=1
-    MARKER_CHECK=both         # both: README and scripts must agree; absent: neither side may exist
+    MARKER_CHECK=absent       # both: README and scripts must agree; absent: neither side may exist
     HAS_HELP=1
-    F02_CHECK=1
+    F02_CHECK=0
     F03_EXACT="plan-scaffolder plan-auditor"
-    F07_FLOOR=20
-    F21_FLOOR=30
-    F27_FLOOR=7
-    F14_SET="codebase-gates plan-export readiness-generate"
+    F07_FLOOR=0
+    F21_FLOOR=10
+    F27_FLOOR=2
+    F14_SET="plan-export"
     EXPECT_COMMANDS=1
     EXPECT_AGENTS=1
     F14_PLAN_NEG=1
-    F13_CHECK=1; F09_POS=1; F10_POS=1; F11_ARGHINT=1; F15_ZIP=1
-    F08_CHECK=1; F30_POS=1; F32_CHECK=1; TPL_CHECK=1
+    F13_CHECK=1; F09_POS=1; F10_POS=1; F11_ARGHINT=0; F15_ZIP=1
+    F08_CHECK=0; F30_POS=1; F32_CHECK=1; TPL_CHECK=1
     NODE_REQ=1; GUIDE_8E=1
+    ;;
+  deepgrade-readiness)
+    # Readiness scanners: 2 commands, 10 agents, 1 skill, ZERO hooks by design.
+    PLUGIN_NAME="deepgrade-readiness"
+    OWN_NS="deepgrade-readiness"
+    EXPECTED_EVENTS=""
+    FORBIDDEN_EVENTS=""
+    EXPECT_HOOKS=0
+    F06_REF_FLOOR=0
+    SUBAGENT_WIRED=0
+    MARKER_CHECK=absent
+    HAS_HELP=0
+    F02_CHECK=0
+    F03_EXACT=""
+    F07_FLOOR=10
+    F21_FLOOR=12
+    F27_FLOOR=0
+    F14_SET="readiness-generate"
+    EXPECT_COMMANDS=1
+    EXPECT_AGENTS=1
+    F14_PLAN_NEG=0
+    F13_CHECK=0; F09_POS=0; F10_POS=0; F11_ARGHINT=1; F15_ZIP=0
+    F08_CHECK=0; F30_POS=0; F32_CHECK=0; TPL_CHECK=0
+    NODE_REQ=0; GUIDE_8E=0
+    ;;
+  deepgrade-audit)
+    # Audit team: 5 codebase-* commands, 10 agents, 3 skills (incl. the
+    # byte-identical self-audit-knowledge mirror), ZERO hooks by design.
+    PLUGIN_NAME="deepgrade-audit"
+    OWN_NS="deepgrade-audit"
+    EXPECTED_EVENTS=""
+    FORBIDDEN_EVENTS=""
+    EXPECT_HOOKS=0
+    F06_REF_FLOOR=0
+    SUBAGENT_WIRED=0
+    MARKER_CHECK=absent
+    HAS_HELP=0
+    F02_CHECK=1
+    F03_EXACT=""
+    F07_FLOOR=10
+    F21_FLOOR=15
+    F27_FLOOR=5
+    F14_SET="codebase-gates"
+    EXPECT_COMMANDS=1
+    EXPECT_AGENTS=1
+    F14_PLAN_NEG=0
+    F13_CHECK=0; F09_POS=0; F10_POS=0; F11_ARGHINT=0; F15_ZIP=0
+    F08_CHECK=1; F30_POS=0; F32_CHECK=0; TPL_CHECK=0
+    NODE_REQ=0; GUIDE_8E=0
+    ;;
+  deepgrade-guard)
+    # Safety rails: hooks ONLY. The complete TMPDIR marker bus lives here.
+    PLUGIN_NAME="deepgrade-guard"
+    OWN_NS="deepgrade-guard"
+    EXPECTED_EVENTS="PreToolUse PostToolUse Stop"
+    FORBIDDEN_EVENTS="SessionStart SubagentStop PreCompact"
+    EXPECT_HOOKS=1
+    F06_REF_FLOOR=5
+    SUBAGENT_WIRED=0
+    MARKER_CHECK=both
+    HAS_HELP=0
+    F02_CHECK=0
+    F03_EXACT=""
+    F07_FLOOR=0
+    F21_FLOOR=0
+    F27_FLOOR=0
+    F14_SET=""
+    EXPECT_COMMANDS=0
+    EXPECT_AGENTS=0
+    F14_PLAN_NEG=0
+    F13_CHECK=0; F09_POS=0; F10_POS=0; F11_ARGHINT=0; F15_ZIP=0
+    F08_CHECK=0; F30_POS=0; F32_CHECK=0; TPL_CHECK=0
+    NODE_REQ=1; GUIDE_8E=0
     ;;
   *)
     echo "[FAIL] unknown profile '$PROFILE' — refusing to run with undefined floors"
@@ -59,9 +135,6 @@ case "$PROFILE" in
     ;;
 esac
 
-# ---------------------------------------------------------------------------
-# Test infrastructure
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # Test infrastructure
 # ---------------------------------------------------------------------------
@@ -772,7 +845,17 @@ fi
 # 10c. REVERSE SWEEP — every agent name referenced by a command, agent, or skill
 #      must resolve to a real agent. This is the F17 landmine: renaming
 #      frontmatter without moving the caller lines passes 10a and breaks runtime.
-for af in agents/*.md; do grep -m1 '^name:' "$af" | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//'; done | sort -u > /tmp/dg_valid_agents.$$
+#
+#      Resolution is against the UNION of every plugin's agents, not just this
+#      plugin's: help.md maps the whole toolkit, readiness-scan hands off to the
+#      audit team, and the byte-identical self-audit mirror names agents from
+#      both sides. Those references are legitimate in a co-installable monorepo;
+#      what must never pass is a name that resolves NOWHERE — a sibling rename
+#      still fails every plugin that references the old name.
+for af in agents/*.md "$REPO_ROOT"/plugins/*/agents/*.md; do
+  [ -f "$af" ] || continue
+  grep -m1 '^name:' "$af" | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//'
+done | sort -u > /tmp/dg_valid_agents.$$
 unresolved=0
 # Extract MAXIMAL hyphenated tokens, then keep those with an agent-shaped suffix.
 # Do NOT anchor with \b around the suffix: grep treats '-' as a word boundary, so

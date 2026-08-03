@@ -15,7 +15,17 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const S = (n) => path.join(ROOT, 'scripts', n);
+// The split partitions handlers across two plugins: the safety rails live in
+// deepgrade-guard, the plan-context handlers in deepgrade. Resolve each script
+// wherever it ships, and THROW on a miss — a silently-skipped handler would
+// read as a passing row, which is the vacuous-pass species.
+const S = (n) => {
+  for (const p of ['deepgrade-guard', 'deepgrade']) {
+    const c = path.join(ROOT, 'plugins', p, 'scripts', n);
+    if (fs.existsSync(c)) return c;
+  }
+  throw new Error(`handler ${n} found in no plugin scripts/ dir — the ledger row has no subject`);
+};
 
 let pass = 0;
 const fails = [];

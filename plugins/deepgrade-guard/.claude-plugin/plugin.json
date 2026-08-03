@@ -1,0 +1,19 @@
+{
+  "name": "deepgrade-guard",
+  "version": "6.0.0",
+  "description": "DeepGrade safety rails: always-on hooks that block force pushes and direct DB deploys, protect existing migrations, track changes and test runs, and summarize each session. Zero commands, zero context cost.",
+  "author": {
+    "name": "Kyle Whynot",
+    "url": "https://github.com/krwhynot"
+  },
+  "license": "MIT",
+  "keywords": [
+    "safety",
+    "hooks",
+    "git-guard",
+    "migration-guard",
+    "developer-toolkit"
+  ],
+  "repository": "https://github.com/krwhynot/deepgrade",
+  "homepage": "https://github.com/krwhynot/deepgrade#readme"
+}

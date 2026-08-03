@@ -220,7 +220,7 @@ fi
 # ===========================================================================
 lint_hits=$(mktemp)
 lint_bad=0
-LINT_REGISTRY="docs/planning-techniques/lint-registry.md"
+LINT_REGISTRY="plugins/deepgrade/docs/planning-techniques/lint-registry.md"
 
 # Subject set: tracked .md that GOVERNS behaviour, minus the registry itself.
 # Files under docs/plans/ are records of audits that already ran; they restate the
@@ -279,10 +279,10 @@ fi
 # --- A1a: machine-read files carry ids, never rule text -------------------
 # commands/ and agents/ are loaded into agent context. Text that drifts here is
 # text a judge actually applies, so nothing may follow a LINT id but the id.
-git ls-files -z 'commands/*.md' 'agents/*.md' 2>/dev/null | lint_extract | sort -u > "$lint_hits"
+git ls-files -z 'plugins/*/commands/*.md' 'plugins/*/agents/*.md' 2>/dev/null | lint_extract | sort -u > "$lint_hits"
 
-for must in commands/plan.md agents/plan-auditor.md; do
-  git ls-files -z 'commands/*.md' 'agents/*.md' 2>/dev/null | tr '\0' '\n' | grep -qxF "$must" \
+for must in plugins/deepgrade/commands/plan.md plugins/deepgrade/agents/plan-auditor.md; do
+  git ls-files -z 'plugins/*/commands/*.md' 'plugins/*/agents/*.md' 2>/dev/null | tr '\0' '\n' | grep -qxF "$must" \
     || { fail "PH5-001a: $must is not in the machine-read set — the derivation is wrong, not the repo clean"; lint_bad=1; }
 done
 
@@ -302,13 +302,13 @@ fi
 lint_hf=$(mktemp)
 git ls-files -z '*.md' 2>/dev/null \
   | grep -zv '^docs/plans/' \
-  | grep -zv '^commands/' \
-  | grep -zv '^agents/' \
+  | grep -zvE '^plugins/[^/]*/commands/' \
+  | grep -zvE '^plugins/[^/]*/agents/' \
   | grep -zv "^${LINT_REGISTRY}\$" \
   | lint_extract | sort -u > "$lint_hf"
 
-git ls-files -z '*.md' 2>/dev/null | grep -zv '^docs/plans/' | grep -zv '^commands/' \
-  | grep -zv '^agents/' | grep -zv "^${LINT_REGISTRY}\$" | tr '\0' '\n' | grep -qxF 'METHODOLOGY.md' \
+git ls-files -z '*.md' 2>/dev/null | grep -zv '^docs/plans/' | grep -zvE '^plugins/[^/]*/commands/' \
+  | grep -zvE '^plugins/[^/]*/agents/' | grep -zv "^${LINT_REGISTRY}\$" | tr '\0' '\n' | grep -qxF 'METHODOLOGY.md' \
   || { fail "PH5-001b: METHODOLOGY.md fell outside the human-facing set — the exclusions grew past their intent"; lint_bad=1; }
 
 lint_drift=$(mktemp)
@@ -332,7 +332,7 @@ rm -f "$lint_hits" "$lint_reg" "$lint_hf" "$lint_drift"
 # PH5-002 / acceptance row A1: rule COUNTS live only in the registry.
 #
 # Rule text was not the only thing that drifted. Four different Phase 5 counts were
-# in print at once — 14 in commands/plan.md, 14 and 15 in agents/plan-auditor.md,
+# in print at once — 14 in plugins/deepgrade/commands/plan.md, 14 and 15 in plugins/deepgrade/agents/plan-auditor.md,
 # 16 in the registry, 15 in METHODOLOGY.md — plus a fifth ("13 in Lite mode") in the
 # same METHODOLOGY sentence. A count is a claim about the rule SET, so it belongs
 # where the set is defined.
@@ -399,7 +399,7 @@ rm -f "$lint_counts"
 # ===========================================================================
 # PH5-013 / acceptance row A3: the judge is never told what passing costs.
 #
-# agents/plan-auditor.md used to carry the band table verbatim — "Interpret: 32-40
+# plugins/deepgrade/agents/plan-auditor.md used to carry the band table verbatim — "Interpret: 32-40
 # = Green, 24-31 = Yellow" — so the evaluator knew the exact total the plan needed.
 # Naming the desired outcome to a grader is the sycophancy channel: an instruction-
 # following model produces a justification for the wanted verdict rather than a
@@ -426,7 +426,7 @@ if printf '%s\n' 'Rate each dimension 1-5 and give reasoning before the score.' 
 fi
 
 # Judge-visible set. Anything the evaluator reads as instructions belongs here.
-JUDGE_FILES="agents/plan-auditor.md"
+JUDGE_FILES="plugins/deepgrade/agents/plan-auditor.md"
 for jf in $JUDGE_FILES; do
   if [ ! -f "$jf" ]; then
     fail "PH5-013: judge file $jf not found — the subject set is wrong, not the repo clean"
@@ -446,7 +446,7 @@ done
 # ===========================================================================
 # PH5-010 / acceptance row A3: audit criteria are not in the generator's reach.
 #
-# commands/plan.md is what the Phase 4 generator reads. It carried a full copy of
+# plugins/deepgrade/commands/plan.md is what the Phase 4 generator reads. It carried a full copy of
 # the scoring rubric and the gap matrices — the 1-5 anchors, the Scenario Matrix with
 # its eight scenarios named, the Cross-Cutting Sweep with its concerns named. A
 # generator holding that list writes sections matching the list, which is compliance
@@ -477,7 +477,7 @@ if printf '%s\n' 'Set iterations = 2 when the loop re-runs.' | grep -qE "$anchor
 fi
 
 # --- generator side: the criteria must be absent -------------------------
-GENERATOR_FILES="commands/plan.md commands/quick-plan.md agents/plan-scaffolder.md"
+GENERATOR_FILES="plugins/deepgrade/commands/plan.md plugins/deepgrade/commands/quick-plan.md plugins/deepgrade/agents/plan-scaffolder.md"
 for gf in $GENERATOR_FILES; do
   [ -f "$gf" ] || { fail "PH5-010: generator file $gf not found — the subject set is wrong, not the repo clean"; crit_bad=1; continue; }
   for probe in "$anchor_re:scoring anchor" "$scen_re:Scenario Matrix criteria" "$conc_re:Cross-Cutting criteria"; do
@@ -492,16 +492,16 @@ done
 
 # --- judge side: the criteria must still exist ---------------------------
 # Without this the guard would go green on a repo that had simply lost its rubric.
-ja=$(grep -cE '^[[:space:]]*[1-5]/5:' agents/plan-auditor.md || true)
+ja=$(grep -cE '^[[:space:]]*[1-5]/5:' plugins/deepgrade/agents/plan-auditor.md || true)
 if [ "${ja:-0}" -lt 5 ]; then
   crit_bad=1
-  fail "PH5-010: agents/plan-auditor.md holds only ${ja:-0} per-level scoring anchors — the criteria were deleted, not moved"
+  fail "PH5-010: plugins/deepgrade/agents/plan-auditor.md holds only ${ja:-0} per-level scoring anchors — the criteria were deleted, not moved"
 fi
 for probe in "$scen_re:Scenario Matrix" "$conc_re:Cross-Cutting Sweep"; do
   re="${probe%:*}"; what="${probe##*:}"
-  if ! grep -qE "$re" agents/plan-auditor.md; then
+  if ! grep -qE "$re" plugins/deepgrade/agents/plan-auditor.md; then
     crit_bad=1
-    fail "PH5-010: agents/plan-auditor.md no longer defines the $what — the criteria were deleted, not moved"
+    fail "PH5-010: plugins/deepgrade/agents/plan-auditor.md no longer defines the $what — the criteria were deleted, not moved"
   fi
 done
 
@@ -528,7 +528,7 @@ done
 # The count floor is what stops an empty block from passing.
 # ===========================================================================
 fi_bad=0
-FI_FILE="agents/plan-auditor.md"
+FI_FILE="plugins/deepgrade/agents/plan-auditor.md"
 fi_open=$(grep -c '^<forbidden_inputs>$' "$FI_FILE" || true)
 fi_close=$(grep -c '^</forbidden_inputs>$' "$FI_FILE" || true)
 fi_rules=$(grep -cE '^NEVER read: ' "$FI_FILE" || true)
@@ -568,7 +568,7 @@ fi
 # a sentence-initial imperative for the same negation-proofing reason as PH5-011.
 # ===========================================================================
 iso_bad=0
-ISO_FILE="commands/plan.md"
+ISO_FILE="plugins/deepgrade/commands/plan.md"
 iso_re='^SPAWN A NEW plan-auditor INSTANCE'
 
 if ! printf '%s\n' 'SPAWN A NEW plan-auditor INSTANCE for every audit iteration.' | grep -qE "$iso_re"; then
@@ -589,8 +589,8 @@ fi
 # Cross-side floor: the command's respawn is worth little if the agent will happily
 # read the prior audit anyway. That rule is PH5-011's third entry; assert it is still
 # there, so removing it cannot leave this guard green.
-if ! grep -qE '^NEVER read: scores, verdicts or audit\.md files from a previous iteration' agents/plan-auditor.md; then
-  fail "PH5-012: agents/plan-auditor.md no longer refuses prior-iteration scores — the respawn alone does not isolate the judge"
+if ! grep -qE '^NEVER read: scores, verdicts or audit\.md files from a previous iteration' plugins/deepgrade/agents/plan-auditor.md; then
+  fail "PH5-012: plugins/deepgrade/agents/plan-auditor.md no longer refuses prior-iteration scores — the respawn alone does not isolate the judge"
   iso_bad=1
 fi
 
@@ -613,7 +613,7 @@ fi
 # rather than merely requested.
 # ===========================================================================
 vs_bad=0
-VS_FILE="agents/plan-auditor.md"
+VS_FILE="plugins/deepgrade/agents/plan-auditor.md"
 vs_block=$(sed -n '/^<verdict_schema>$/,/^<\/verdict_schema>$/p' "$VS_FILE" 2>/dev/null)
 forbidden_key='"(total|total_score|points|points_awarded|pass_threshold|overall)"[[:space:]]*:'
 
@@ -679,12 +679,12 @@ emit_bad=0
 PH5_021_LINE='WRITE one evidence record per criterion to evidence/{criterion_id}.json before reporting anything.'
 PH5_022_LINE='COMMIT the evidence directory together with audit.md. An audit whose evidence is not committed did not happen.'
 
-if ! grep -qxF "$PH5_021_LINE" agents/plan-auditor.md; then
-  fail "PH5-021: agents/plan-auditor.md does not require emitting evidence records — the validator has no input, so the gate cannot open"
+if ! grep -qxF "$PH5_021_LINE" plugins/deepgrade/agents/plan-auditor.md; then
+  fail "PH5-021: plugins/deepgrade/agents/plan-auditor.md does not require emitting evidence records — the validator has no input, so the gate cannot open"
   emit_bad=1
 fi
-if ! grep -qxF "$PH5_022_LINE" commands/plan.md; then
-  fail "PH5-022: commands/plan.md does not require committing the evidence directory — evidence that is not committed cannot be re-checked later"
+if ! grep -qxF "$PH5_022_LINE" plugins/deepgrade/commands/plan.md; then
+  fail "PH5-022: plugins/deepgrade/commands/plan.md does not require committing the evidence directory — evidence that is not committed cannot be re-checked later"
   emit_bad=1
 fi
 
@@ -707,10 +707,10 @@ fi
 # ===========================================================================
 gate_bad=0
 GATE_LINE='PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK'
-gate_block=$(sed -n '/^<gate_expression>$/,/^<\/gate_expression>$/p' commands/plan.md 2>/dev/null)
+gate_block=$(sed -n '/^<gate_expression>$/,/^<\/gate_expression>$/p' plugins/deepgrade/commands/plan.md 2>/dev/null)
 
 if [ -z "$gate_block" ]; then
-  fail "PH5-041: commands/plan.md has no delimited <gate_expression> block"
+  fail "PH5-041: plugins/deepgrade/commands/plan.md has no delimited <gate_expression> block"
   gate_bad=1
 else
   printf '%s\n' "$gate_block" | grep -qxF "$GATE_LINE" \
@@ -727,10 +727,10 @@ else
 fi
 
 # The superseded form must be gone, not merely superseded by a newer block below it.
-if grep -qE '^IF score (>=|<) [0-9]+' commands/plan.md; then
+if grep -qE '^IF score (>=|<) [0-9]+' plugins/deepgrade/commands/plan.md; then
   gate_bad=1
-  fail "PH5-041: the score-based gate branch is still present in commands/plan.md"
-  grep -nE '^IF score (>=|<) [0-9]+' commands/plan.md | sed 's/^/           /' | head -4
+  fail "PH5-041: the score-based gate branch is still present in plugins/deepgrade/commands/plan.md"
+  grep -nE '^IF score (>=|<) [0-9]+' plugins/deepgrade/commands/plan.md | sed 's/^/           /' | head -4
 fi
 
 [ "$gate_bad" -eq 0 ] && pass "PH5-041: the gate keys on canary, evidence, verdicts and infra — not on a score"
@@ -744,7 +744,7 @@ fi
 # UNMET: Phase 2 migration has no rollback step" names a defect it can actually fix.
 # ===========================================================================
 fb_bad=0
-fb_block=$(sed -n '/^<revision_feedback>$/,/^<\/revision_feedback>$/p' commands/plan.md 2>/dev/null)
+fb_block=$(sed -n '/^<revision_feedback>$/,/^<\/revision_feedback>$/p' plugins/deepgrade/commands/plan.md 2>/dev/null)
 fb_forbidden='dimension|score|/40|points|threshold|GREEN|YELLOW|ORANGE'
 
 if ! printf '%s\n' 'Dimension 4 scored 2 — improve rollback coverage.' | grep -qEi "$fb_forbidden"; then
@@ -757,7 +757,7 @@ if printf '%s\n' 'LINT-03 UNMET: Phase 2 migration has no rollback step. Locatio
 fi
 
 if [ -z "$fb_block" ]; then
-  fail "PH5-040: commands/plan.md has no delimited <revision_feedback> block defining what goes back to the generator"
+  fail "PH5-040: plugins/deepgrade/commands/plan.md has no delimited <revision_feedback> block defining what goes back to the generator"
   fb_bad=1
 else
   offend=$(printf '%s\n' "$fb_block" | grep -nEi "$fb_forbidden" || true)
@@ -784,9 +784,9 @@ fi
 # mentions the word "waiver" — a mention survives the rule being deleted.
 # ===========================================================================
 wv_bad=0
-wv_block=$(sed -n '/^<waiver_condition>$/,/^<\/waiver_condition>$/p' commands/plan.md 2>/dev/null)
+wv_block=$(sed -n '/^<waiver_condition>$/,/^<\/waiver_condition>$/p' plugins/deepgrade/commands/plan.md 2>/dev/null)
 if [ -z "$wv_block" ]; then
-  fail "PH5-060: commands/plan.md has no delimited <waiver_condition> block"
+  fail "PH5-060: plugins/deepgrade/commands/plan.md has no delimited <waiver_condition> block"
   wv_bad=1
 else
   for term in 'infra_gaps == 0' 'score >= 35' 'canary_found == true'; do
@@ -806,10 +806,10 @@ fi
 # ===========================================================================
 hol_bad=0
 HOL_LINE='RUN one additional judge with no rubric, no criterion list, and no dimension names.'
-grep -qxF "$HOL_LINE" commands/plan.md \
-  || { fail "PH5-050: commands/plan.md does not run a rubric-free pass — nothing checks the criteria for completeness"; hol_bad=1; }
-[ -f docs/planning-techniques/lint-candidates.md ] \
-  || { fail "PH5-050: docs/planning-techniques/lint-candidates.md missing — unmapped findings have nowhere to land"; hol_bad=1; }
+grep -qxF "$HOL_LINE" plugins/deepgrade/commands/plan.md \
+  || { fail "PH5-050: plugins/deepgrade/commands/plan.md does not run a rubric-free pass — nothing checks the criteria for completeness"; hol_bad=1; }
+[ -f plugins/deepgrade/docs/planning-techniques/lint-candidates.md ] \
+  || { fail "PH5-050: plugins/deepgrade/docs/planning-techniques/lint-candidates.md missing — unmapped findings have nowhere to land"; hol_bad=1; }
 [ "$hol_bad" -eq 0 ] && pass "PH5-050: a rubric-free pass runs and its unmapped findings land in lint-candidates.md"
 
 # ===========================================================================
@@ -820,9 +820,9 @@ grep -qxF "$HOL_LINE" commands/plan.md \
 # signature of threshold-aiming. Keeping the series costs nothing and is the only
 # way to see that pattern at all.
 # ===========================================================================
-grep -qF 'score_history' commands/plan.md \
+grep -qF 'score_history' plugins/deepgrade/commands/plan.md \
   && pass "PH5-051: audit scores are retained as a series for distribution monitoring" \
-  || fail "PH5-051: commands/plan.md does not record score_history — threshold-aiming would be invisible"
+  || fail "PH5-051: plugins/deepgrade/commands/plan.md does not record score_history — threshold-aiming would be invisible"
 
 # ===========================================================================
 # 16R. Root-doc conformance (§9.2, class G) — the root-level docs.
@@ -880,6 +880,113 @@ if [ -n "$root_bare" ]; then
   fail "F04: unqualified install command in a root doc (missing @deepgrade-marketplace): $root_bare"
 else
   pass "F04: all install commands in root docs are marketplace-qualified"
+fi
+
+# ===========================================================================
+# SPLIT-1: the self-audit-knowledge mirror is byte-identical (split step 4).
+#
+# deepgrade-audit ships a MIRROR of deepgrade's self-audit-knowledge skill so
+# each plugin resolves the skill under its own namespace. Two copies of one
+# text is exactly the drift species PH5-001 exists to kill, so the mirror is
+# tolerated only under a byte-identity guard: edit both or neither.
+# ===========================================================================
+echo ""
+echo "--- Split invariants ---"
+
+SAK_A="plugins/deepgrade/skills/self-audit-knowledge"
+SAK_B="plugins/deepgrade-audit/skills/self-audit-knowledge"
+sak_bad=0
+for d in "$SAK_A" "$SAK_B"; do
+  [ -f "$d/SKILL.md" ] || { fail "SPLIT-1: $d/SKILL.md is missing — the mirror pair is broken, not clean"; sak_bad=1; }
+done
+if [ "$sak_bad" -eq 0 ]; then
+  # File LISTS must match too — a resource added to one side only is drift the
+  # per-file compare below would never see.
+  sak_list_a=$(cd "$SAK_A" && git ls-files . | sort)
+  sak_list_b=$(cd "$SAK_B" && git ls-files . | sort)
+  if [ "$sak_list_a" != "$sak_list_b" ]; then
+    fail "SPLIT-1: the self-audit-knowledge copies ship different file sets"
+    sak_bad=1
+  else
+    for f in $sak_list_a; do
+      cmp -s "$SAK_A/$f" "$SAK_B/$f" \
+        || { fail "SPLIT-1: $f differs between the canonical skill and its mirror — edit both or neither"; sak_bad=1; }
+    done
+  fi
+fi
+[ "$sak_bad" -eq 0 ] && pass "SPLIT-1: self-audit-knowledge mirror is byte-identical to the canonical"
+
+# ===========================================================================
+# SPLIT-2: version lockstep across every plugin manifest.
+#
+# The release script enforces this at release time; this copy enforces it on
+# every suite run, so a drifted manifest is caught in the PR that drifts it
+# rather than on release day. The count floor is EXACTLY four — a fifth plugin
+# is a deliberate decision that must update this number in the same commit.
+# ===========================================================================
+split_manifests=$(git ls-files '*/.claude-plugin/plugin.json')
+split_mcount=$(echo "$split_manifests" | grep -c . || true)
+if [ "$split_mcount" -ne 4 ]; then
+  fail "SPLIT-2: found $split_mcount plugin manifests, expected exactly 4"
+else
+  split_vers=$(for m in $split_manifests; do
+    grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$m" | head -1 | sed 's/.*"\([0-9][^"]*\)"$/\1/'
+  done | sort -u)
+  if [ "$(echo "$split_vers" | grep -c .)" -ne 1 ]; then
+    fail "SPLIT-2: version lockstep broken across manifests: $(echo $split_vers | tr '\n' ' ')"
+  else
+    pass "SPLIT-2: all 4 plugin manifests in lockstep at $split_vers"
+  fi
+fi
+
+# ===========================================================================
+# SPLIT-3: every namespaced reference resolves against its own plugin.
+#
+# After the split, `/deepgrade-audit:codebase-audit` is a claim that a file
+# exists in ANOTHER plugin's directory — nothing else checks cross-plugin
+# references (help.md's 5c and the template check resolve only same-plugin
+# names). A rename on one side of the boundary must fail every referring
+# plugin, or the reference decays into an "if installed" guess.
+#
+# Subjects: every tracked .md under plugins/ plus the root README. docs/plans
+# and the CHANGELOG are historical records; docs/specs quote old namespaces by
+# design. Longest-alternative-first is cosmetic — grep -E is leftmost-longest,
+# so 'deepgrade' can never shadow 'deepgrade-audit' at the same position.
+# ===========================================================================
+ns_re='(deepgrade-readiness|deepgrade-audit|deepgrade-guard|deepgrade):[a-z][a-z0-9-]*'
+
+# Self-tests. The known-positive is drawn from the LIVE artifact (help.md), not
+# authored here — a known-positive written alongside the pattern shares its
+# blind spots (the F06 lesson). The known-negative proves the resolver can
+# refuse: a real namespace with a sibling's command name must NOT resolve.
+ns_kp=$(grep -ohE "$ns_re" plugins/deepgrade/commands/help.md 2>/dev/null | grep -m1 '^deepgrade-readiness:')
+if [ -z "$ns_kp" ]; then
+  fail "SPLIT-3: extractor finds no cross-plugin token in help.md, which maps the whole toolkit — the pattern collapsed, so a clean sweep would be vacuous"
+fi
+ns_resolves() {  # ns_resolves <ns> <name> -> 0 if the name exists in that plugin
+  [ -f "plugins/$1/commands/$2.md" ] || [ -f "plugins/$1/skills/$2/SKILL.md" ]
+}
+if ns_resolves "deepgrade-readiness" "plan"; then
+  fail "SPLIT-3: resolver accepts deepgrade-readiness:plan, which does not exist — it can no longer refuse anything"
+fi
+
+ns_bad=0
+ns_total=0
+while IFS= read -r tok; do
+  [ -n "$tok" ] || continue
+  ns_total=$((ns_total + 1))
+  ns=${tok%%:*}
+  name=${tok#*:}
+  if ! ns_resolves "$ns" "$name"; then
+    fail "SPLIT-3: '$tok' resolves to neither plugins/$ns/commands/$name.md nor plugins/$ns/skills/$name/SKILL.md"
+    ns_bad=1
+  fi
+done < <(git ls-files -z 'plugins/*.md' 'README.md' 2>/dev/null | xargs -0 grep -hoE "$ns_re" 2>/dev/null | sort -u)
+
+if [ "$ns_total" -lt 20 ]; then
+  fail "SPLIT-3: only $ns_total distinct namespaced references derived (expected >= 20) — the subject set collapsed, so a pass would be vacuous"
+elif [ "$ns_bad" -eq 0 ]; then
+  pass "SPLIT-3: all $ns_total distinct namespaced references resolve within their declared plugin"
 fi
 
 # ===========================================================================

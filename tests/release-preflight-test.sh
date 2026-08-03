@@ -72,10 +72,16 @@ violation() {  # violation <label> <expected-substring>  (violation already comm
 # V1: versions drift across the quartet — the F20A failure, pre-commit.
 sed -i 's/^Current: v6\.0\.0/Current: v5.9.9/' README.md
 git commit -qam "v1"
-violation "V1: README version drift refused" "version|drift"
+violation "V1: root README version drift refused" "version|drift"
+
+# V1b: a PLUGIN's README drifts — the split's per-plugin quartet loop must
+# refuse this on its own; the root README is clean in this case.
+sed -i 's/^Current: v6\.0\.0/Current: v5.9.9/' plugins/deepgrade/README.md
+git commit -qam "v1b"
+violation "V1b: plugin README version drift refused" "version|drift"
 
 # V2: a manifest disagrees — the lockstep rule, load-bearing at four manifests.
-sed -i 's/"version": "6.0.0"/"version": "6.1.0"/' .claude-plugin/plugin.json
+sed -i 's/"version": "6.0.0"/"version": "6.1.0"/' plugins/deepgrade-guard/.claude-plugin/plugin.json
 git commit -qam "v2"
 violation "V2: manifest out of lockstep refused" "lockstep|version"
 

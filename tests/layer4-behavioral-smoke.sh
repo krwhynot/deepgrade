@@ -11,6 +11,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DG="$PLUGIN_ROOT/plugins/deepgrade"
 PASS=0; FAIL=0; SKIP=0
 
 pass() { echo "[PASS] $1"; PASS=$((PASS + 1)); }
@@ -27,7 +28,7 @@ DRY_RUN=false
 # Test B1: help.md produces expected command sections
 # -----------------------------------------------
 echo "--- B1: Help Command Structure ---"
-HELP_FILE="$PLUGIN_ROOT/commands/help.md"
+HELP_FILE="$DG/commands/help.md"
 if [[ -f "$HELP_FILE" ]]; then
     # Check required sections exist in help.md
     SECTIONS=("Planning" "Quick Shortcuts" "Readiness Scan" "Codebase Audit" "Codebase Monitoring" "Documentation" "Utility")
@@ -41,7 +42,7 @@ if [[ -f "$HELP_FILE" ]]; then
     $ALL_FOUND && pass "B1: help.md has all required sections (${#SECTIONS[@]})"
 
     # Count commands listed vs command files that exist
-    CMD_FILES=$(find "$PLUGIN_ROOT/commands" -name "*.md" ! -name "help.md" | wc -l | tr -d ' ')
+    CMD_FILES=$(find "$DG/commands" -name "*.md" ! -name "help.md" | wc -l | tr -d ' ')
     CMD_LISTED=$(grep -c "/deepgrade:" "$HELP_FILE" | head -1 || echo 0)
     # Commands in help should reference actual command files
     MISSING_REFS=0
@@ -51,8 +52,8 @@ if [[ -f "$HELP_FILE" ]]; then
         # commands/doc.md with the documentation skill, and a skill is addressed the
         # same way (`/plugin:name`), so a command-only check would reject a working
         # reference. Widened, not relaxed — an unresolvable name still fails.
-        if [[ ! -f "$PLUGIN_ROOT/commands/$CMD_NAME.md" ]] \
-           && [[ ! -f "$PLUGIN_ROOT/skills/$CMD_NAME/SKILL.md" ]]; then
+        if [[ ! -f "$DG/commands/$CMD_NAME.md" ]] \
+           && [[ ! -f "$DG/skills/$CMD_NAME/SKILL.md" ]]; then
             fail "B1: help.md references /deepgrade:$CMD_NAME but it resolves to neither a command nor a skill"
             MISSING_REFS=$((MISSING_REFS + 1))
         fi
@@ -85,7 +86,7 @@ while IFS= read -r cmd_file; do
         fail "B2: $BASENAME frontmatter missing 'description' field"
         INVALID_FM=$((INVALID_FM + 1))
     fi
-done < <(find "$PLUGIN_ROOT/commands" -name "*.md")
+done < <(find "$PLUGIN_ROOT"/plugins/*/commands -name "*.md")
 [[ $INVALID_FM -eq 0 ]] && pass "B2: All command files have valid frontmatter with description"
 
 echo ""
@@ -112,7 +113,7 @@ while IFS= read -r agent_file; do
         fail "B3: $BASENAME frontmatter missing 'description' field"
         INVALID_AG=$((INVALID_AG + 1))
     fi
-done < <(find "$PLUGIN_ROOT/agents" -name "*.md")
+done < <(find "$PLUGIN_ROOT"/plugins/*/agents -name "*.md")
 [[ $INVALID_AG -eq 0 ]] && pass "B3: All agent files have valid frontmatter with name and description"
 
 echo ""
@@ -127,21 +128,21 @@ while IFS= read -r cmd_file; do
     BASENAME=$(basename "$cmd_file")
     # Look for agent references like "plan-scaffolder", "plan-auditor", etc.
     AGENT_REFS=$(grep -oE '[a-z]+-[a-z]+(-[a-z]+)*' "$cmd_file" | sort -u | while read -r ref; do
-        if [[ -f "$PLUGIN_ROOT/agents/$ref.md" ]]; then
+        if [[ -f "$DG/agents/$ref.md" ]]; then
             echo "found:$ref"
         fi
     done)
     # Now check for references to agents that DON'T exist
     # This is heuristic — look for patterns like "deploy.*agent" or "spawn.*scanner"
-    AGENT_NAMES=$(ls "$PLUGIN_ROOT/agents/" 2>/dev/null | sed 's/.md$//')
-done < <(find "$PLUGIN_ROOT/commands" -name "*.md")
+    AGENT_NAMES=$(ls "$DG/agents/" 2>/dev/null | sed 's/.md$//')
+done < <(find "$DG/commands" -name "*.md")
 # For now, verify key known cross-references
 for ref_pair in "quick-plan.md:plan-scaffolder" "quick-audit.md:plan-auditor"; do
     CMD=$(echo "$ref_pair" | cut -d: -f1)
     AGENT=$(echo "$ref_pair" | cut -d: -f2)
-    if [[ -f "$PLUGIN_ROOT/commands/$CMD" ]]; then
-        if grep -q "$AGENT" "$PLUGIN_ROOT/commands/$CMD"; then
-            if [[ -f "$PLUGIN_ROOT/agents/$AGENT.md" ]]; then
+    if [[ -f "$DG/commands/$CMD" ]]; then
+        if grep -q "$AGENT" "$DG/commands/$CMD"; then
+            if [[ -f "$DG/agents/$AGENT.md" ]]; then
                 pass "B4: commands/$CMD references agents/$AGENT.md (exists)"
             else
                 fail "B4: commands/$CMD references $AGENT but agents/$AGENT.md missing"
@@ -158,7 +159,7 @@ echo ""
 # -----------------------------------------------
 echo "--- B5: Skill Directory Validation ---"
 MISSING_ENTRY=0
-if [[ -d "$PLUGIN_ROOT/skills" ]]; then
+if [[ -d "$DG/skills" ]]; then
     while IFS= read -r skill_dir; do
         DIRNAME=$(basename "$skill_dir")
         # Each skill directory should have at least one .md file
@@ -167,7 +168,7 @@ if [[ -d "$PLUGIN_ROOT/skills" ]]; then
             fail "B5: skills/$DIRNAME has no .md files"
             MISSING_ENTRY=$((MISSING_ENTRY + 1))
         fi
-    done < <(find "$PLUGIN_ROOT/skills" -mindepth 1 -maxdepth 1 -type d)
+    done < <(find "$PLUGIN_ROOT"/plugins/*/skills -mindepth 1 -maxdepth 1 -type d)
     [[ $MISSING_ENTRY -eq 0 ]] && pass "B5: All skill directories have entry files"
 else
     fail "B5: skills/ directory does not exist"
@@ -189,7 +190,7 @@ echo ""
 # status.json — the only way to observe the output.
 # -----------------------------------------------
 echo "--- B6: plan-status no-arg overview (F13, executed) ---"
-PS_MD="$PLUGIN_ROOT/commands/plan-status.md"
+PS_MD="$DG/commands/plan-status.md"
 if [[ ! -f "$PS_MD" ]]; then
     fail "B6: commands/plan-status.md is missing"
 else
@@ -291,7 +292,7 @@ echo ""
 # sentinel is the live path, not an edge case.
 # -----------------------------------------------
 echo "--- B7: quick-cleanup zero-arg degradation (F09, executed) ---"
-QC_MD="$PLUGIN_ROOT/commands/quick-cleanup.md"
+QC_MD="$DG/commands/quick-cleanup.md"
 if [[ ! -f "$QC_MD" ]]; then
     fail "B7: commands/quick-cleanup.md is missing"
 else
@@ -387,7 +388,7 @@ echo ""
 # fails; one that invokes it passes.
 # -----------------------------------------------
 echo "--- B8: plan-export archive fallback creates an archive (F15, executed) ---"
-PE_MD="$PLUGIN_ROOT/commands/plan-export.md"
+PE_MD="$DG/commands/plan-export.md"
 if [[ ! -f "$PE_MD" ]]; then
     fail "B8: commands/plan-export.md is missing"
 else

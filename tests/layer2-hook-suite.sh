@@ -46,7 +46,7 @@ if [ -f tests/layer2-hook-simulation.sh ]; then
   FAILED=1
 fi
 
-run_part "1 lane-N parser contract (F24/F22/F25/F26)" node tests/run-hook-corpus.js scripts/dg-git-guard.js
+run_part "1 lane-N parser contract (F24/F22/F25/F26)" node tests/run-hook-corpus.js plugins/deepgrade-guard/scripts/dg-git-guard.js
 run_part "2 lane-N behaviour ledger (rows 1-11)" node tests/layer2-ledger-rows.js
 
 echo ""
