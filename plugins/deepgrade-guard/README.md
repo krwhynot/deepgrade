@@ -64,7 +64,6 @@ layer from a broken one. Absent and loud beats present and wrong.
 | Output | Location | Committed? |
 | ------ | -------- | ---------- |
 | Session markers | `$TMPDIR/dg-*` (`%TEMP%` on Windows) | No (OS-managed) |
-| Subagent/session notes | the active plan folder, when one exists | Yes |
 
 The trackers, the git/DB guard, and the session summary communicate through the
 session markers above — the complete marker bus ships in this one plugin, so the

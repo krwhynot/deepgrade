@@ -1,0 +1,80 @@
+# Cross-Plugin Interop Contracts
+
+The four plugins exchange artifacts through the repository they are installed
+into. SPLIT-3 proves that namespaced *references* resolve; this file is the
+contract for the *artifacts* those plugins hand each other — who writes a file,
+who reads it, and which fields are load-bearing. The INTEROP section of
+`tests/layer1-repo.sh` parses the table below and verifies every row against
+the tree, in both directions: an edge that exists in the tree but not here
+fails, and a row here that the tree no longer backs fails.
+
+## Contract table
+
+Format rules (the sweep depends on them):
+
+- One row per artifact. Column 1 is the repo-relative artifact path.
+- Column 2 is the single producer file, as a repo-relative path.
+- Column 3 is every cross-plugin consumer file, comma-separated,
+  repo-relative. "Cross-plugin" means the consumer lives in a different
+  `plugins/<name>/` directory than the producer.
+- Only functional files count — `commands/`, `agents/`, `skills/`, `scripts/`
+  under each plugin. README/GUIDE mentions are description, not consumption,
+  and are not listed or swept.
+
+| Artifact | Producer | Consumers |
+| -------- | -------- | --------- |
+| docs/audit/readability/readability-score.json | plugins/deepgrade-readiness/commands/readiness-scan.md | plugins/deepgrade-audit/agents/gate-generator.md, plugins/deepgrade-audit/agents/delta-scanner.md, plugins/deepgrade-audit/commands/codebase-delta.md |
+| docs/audit/readability/readability-report.md | plugins/deepgrade-readiness/agents/readiness-report-generator.md | plugins/deepgrade-audit/commands/codebase-audit.md, plugins/deepgrade-audit/agents/delta-scanner.md, plugins/deepgrade/skills/documentation/resources/spec-template.md |
+| docs/audit/deepgrade-report.md | plugins/deepgrade-audit/agents/deepgrade-report-generator.md | plugins/deepgrade/scripts/dg-session-start.js |
+| docs/audit/risk-assessment.md | plugins/deepgrade-audit/agents/risk-assessor.md | plugins/deepgrade/agents/plan-scaffolder.md, plugins/deepgrade/agents/plan-auditor.md, plugins/deepgrade/commands/quick-plan.md, plugins/deepgrade/skills/documentation/SKILL.md, plugins/deepgrade/skills/documentation/resources/spec-template.md |
+| docs/audit/dependency-map.md | plugins/deepgrade-audit/agents/dependency-mapper.md | plugins/deepgrade/agents/plan-scaffolder.md, plugins/deepgrade/agents/plan-auditor.md, plugins/deepgrade/commands/quick-plan.md, plugins/deepgrade/commands/plan.md, plugins/deepgrade/skills/documentation/resources/spec-template.md |
+| docs/audit/feature-inventory.md | plugins/deepgrade-audit/agents/feature-scanner.md | plugins/deepgrade/commands/quick-plan.md, plugins/deepgrade/skills/documentation/SKILL.md, plugins/deepgrade/skills/documentation/resources/spec-template.md |
+| docs/audit/integration-scan.md | plugins/deepgrade-audit/agents/integration-scanner.md | plugins/deepgrade/agents/plan-auditor.md, plugins/deepgrade/commands/quick-plan.md, plugins/deepgrade/commands/plan.md, plugins/deepgrade/skills/documentation/resources/spec-template.md |
+| docs/audit/audit-progress.md | plugins/deepgrade-audit/commands/codebase-audit.md | plugins/deepgrade-readiness/agents/baseline-scanner.md |
+
+## The readability-score.json schema
+
+The producer's schema lives in
+`plugins/deepgrade-readiness/commands/readiness-scan.md` (the fenced block
+after "must follow this schema"). The canonical valid instance is
+`tests/fixtures/interop/readability-score.sample.json`; the INTEROP sweep
+verifies the fixture parses, carries every load-bearing key, and agrees with
+the schema block's top-level key set.
+
+Load-bearing keys — fields a cross-plugin consumer actually extracts:
+
+- `timestamp` — deepgrade-audit's delta-scanner greps it for scan age.
+- `overall.score`, `overall.grade` — gate-generator and codebase-delta read
+  the current score and grade.
+- `categories.*` — all nine category keys (manifest, context_files,
+  structure, entry_points, conventions, feedback_loops, baseline,
+  context_budget, database); database additionally carries `status`
+  ("applicable" or "not_applicable") because category 9 is conditional.
+
+## Deliberate non-edges
+
+- **Session markers (`$TMPDIR/dg-*`) are deepgrade-guard-internal.** The
+  complete marker bus — writers and readers — ships in that one plugin.
+  Layer 1's per-plugin core fails any other plugin that grows a marker
+  surface.
+- **Plan folders (`docs/plans/{date}-{name}/`) are deepgrade-internal.**
+  Written by the planning commands and deepgrade's own hooks
+  (dg-subagent-stop appends `subagent-log.txt` there); no other plugin reads
+  or writes them.
+- **Single-plugin artifacts are not contracts.** Files under `docs/audit/`
+  referenced by only one plugin (documentation-audit.md, security-scan.md,
+  gate-config.md, kpi-dashboard.md, delta-report.md, plan-audit.md,
+  characterization-tests.md, override-log.md) may be renamed freely with
+  their plugin; the sweep derives the cross-plugin set rather than trusting
+  this list.
+- **`docs/audit/readiness-report.md`** appears in codebase-audit.md only as
+  a legacy fallback location ("or ...") for pre-split readiness reports;
+  nothing produces it today. It is deliberately not a contract row.
+
+## Change protocol
+
+Renaming or moving a contracted artifact touches, in ONE commit: the
+producer, every consumer in its row, and this table. The INTEROP sweep fails
+on any partial version of that commit, in whichever direction the drift
+points. Fields consumed from readability-score.json change the same way:
+producer schema block, consumer extraction, fixture, and this file together.
