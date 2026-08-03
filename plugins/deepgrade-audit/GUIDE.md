@@ -1,11 +1,11 @@
 <div align="center">
 
-# DeepGrade Audit Guide v7.0.0
+# DeepGrade Audit Guide v7.1.0
 
 **5 Commands** &nbsp;&bull;&nbsp; **10 Agents** &nbsp;&bull;&nbsp; **3 Skills**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/deepgrade)
-[![Version](https://img.shields.io/badge/v7.0.0-stable-2ECC71?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/v7.1.0-stable-2ECC71?style=for-the-badge)](#)
 [![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
 
 </div>

@@ -57,7 +57,7 @@ The scanners auto-detect your stack. Tested on:
 
 See the monorepo [CHANGELOG](https://github.com/krwhynot/deepgrade/blob/main/CHANGELOG.md).
 
-Current: v7.0.0
+Current: v7.1.0
 
 ## License
 

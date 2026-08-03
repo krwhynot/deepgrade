@@ -1,6 +1,6 @@
 {
   "name": "deepgrade",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "description": "DeepGrade planning: 9-phase idea-to-handoff planning with an adversarial verifier-first audit gate, plan-linked troubleshooting, and documentation generation. Stack-agnostic.",
   "author": {
     "name": "Kyle Whynot",

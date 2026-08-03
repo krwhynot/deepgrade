@@ -1,11 +1,11 @@
 <div align="center">
 
-# DeepGrade Knowledge Guide v7.0.0
+# DeepGrade Knowledge Guide v7.1.0
 
 **9 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **3 Skills** &nbsp;&bull;&nbsp; **3 Safety Hooks** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/deepgrade)
-[![Version](https://img.shields.io/badge/v7.0.0-stable-2ECC71?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/v7.1.0-stable-2ECC71?style=for-the-badge)](#)
 [![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
 
 </div>
