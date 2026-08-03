@@ -3,8 +3,18 @@
 **Raised:** 2026-07-30, after Codex round 4 (`gpt-5.6-sol` @ `xhigh`, session `019fb495`)
 **Raised by:** Claude (optimizer), on the reviewer's adjudication of a conflict I had escalated
 rather than resolved
-**State: PROPOSED** — needs owner ratification. **Nothing is applied.** F30 stays open and out of
-`findings_closed` until this is accepted and implemented.
+**State: RATIFIED** — owner ratification 2026-08-03; implemented the same day. The F30 guard
+in `tests/layer1-repo.sh` now enforces both halves: semantic absence (the sweep covers every
+tracked `.md` with NO allowlist, and SPLIT-3's resolver independently fails any shipping
+reference that cannot resolve) and the occurrence-addressed ledger
+(`tests/fixtures/f30-provenance-ledger.tsv`, 39 entries across 10 files at ratification).
+One implementation decision within the proposal's frame: occurrence address = file +
+sha256 of the exact line, NOT a file hash — a file-level hash would freeze every record
+containing one mention, punishing the truthful-rewording practice CR-4 established.
+All six acceptance probes executed and caught/passed as specified, including the one the
+allowlist could never catch (a stale instruction added inside this plan's own directory)
+and both controls. F30 accordingly moves into `findings_closed` and PHV5-053 into
+`tickets_complete`.
 **Replaces:** Wave 5 acceptance row 3, verbatim:
 
 > - [ ] F30 stale-reference sweep — no `/deepgrade:doc` or `commands/doc.md` string survives anywhere [G]

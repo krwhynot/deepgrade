@@ -1,0 +1,47 @@
+# F30 provenance ledger (CR-6) — every intentional historical mention of the
+# deleted doc command, addressed by file + sha256 of the exact line content
+# (\r-stripped). The F30 guard fails on any occurrence NOT listed here, and on
+# any entry whose file no longer contains a matching line. Line-content hashes,
+# not file hashes: records that contain one mention stay editable elsewhere,
+# which is what the CR-4 truthful-rewording practice requires.
+# Registering a NEW entry is a provenance claim — it belongs in a change
+# record or a plan's own history, never in the same commit as a feature.
+docs/plans/2026-07-20-plugin-hardening-v5/acceptance-matrix.md	e6853e0a8d0feeca0cac0dd058a05c92fcf06fbd7e60b7f47f421603c229227d
+docs/plans/2026-07-20-plugin-hardening-v5/approach.md	77f3ff950477dc077571b5e95536b1fda50416f6fc7474ef862f85d88b4786a2
+docs/plans/2026-07-20-plugin-hardening-v5/approach.md	61e980dcea61b78c03aa968bfc09ab4aed853a09fc8bb06e1d3590daf5903369
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	3d301f87992072978cfb5d3e9d68651987267fd128b82dd214b597ae6d830414
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	7dee6b9416e47f84d3ba8070f83a6cf2d1a5ffc0d018399128166009b94fbda5
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	7323964a02cae50a620f54fcdf9570dc873bc05958abf7bdc7df5eab6c5d406a
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	982d1d4ab8eb247102b5b7ee463cc5824e6c3b9482de45e8c1002e496ebd05df
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	c67934f2b5f2863c44b00a176afa60a1607c884140cb573237155e25c5318dba
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	36a2a4338f77c9fc33d2e284037c18ee0ecb221b385219af901f9a34f10d362c
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	a51f1525ab49dc4d3939b116a8ac849e7019f8a2524de34a4dab2d1820fe9452
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	335603b911112447452b031a177fc7044f31fa7d5ee7a0c26ab6a6964a97f972
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	506dcbe880722d979fa1c76ae920ee6adef19aa49f4cd65d7a138219df40f58d
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	f6a77c6959030a42fabb03e048ef101088e49757207be7fb0902fa2b9ea835fd
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	ff9dd134d04abe138a7ba5adbc8af9bb7fea18e2c846834275566854b8155c44
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	77684a6230f46967fc2ee3eadc49f00c8be62228869b099f687363d98a9e81fc
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md	5b1eceac26a57f385fb6cc708d3f3cb3fe1a56ce9205b586badc8dae30118dbb
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-6.md	7dee6b9416e47f84d3ba8070f83a6cf2d1a5ffc0d018399128166009b94fbda5
+docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-6.md	65aac0f3799ea409530500b62874bcf3dada028be76af327a3d963ef8c2f5a4c
+docs/plans/2026-07-20-plugin-hardening-v5/codex-wave5-audit-prompt.md	c505fd57059eb3b2ec6608920a38a809948839c65e0c8cfd17179309e1181cd4
+docs/plans/2026-07-20-plugin-hardening-v5/codex-wave5-round4-prompt.md	ba7d59ca6b4fc046714190e26d3f3bc5fa0cff4cd2bad1b1f2910656feb341fe
+docs/plans/2026-07-20-plugin-hardening-v5/codex-wave5-round4-prompt.md	7c299a3ab04f0ec102e4d624568f4ab12310f852d23778b8d0e9e04c0acb3e33
+docs/plans/2026-07-20-plugin-hardening-v5/confidence.md	9f9ff55063c411826ebef8eedc8d4d3c829441edf2b36f6bd02b5c2f7e63b35a
+docs/plans/2026-07-20-plugin-hardening-v5/research/best-practices.md	2400e6c61184dfacfd205352d8d4d2f674f63fff22722a7eb697440a598f3676
+docs/plans/2026-07-20-plugin-hardening-v5/research/best-practices.md	4a99c57fcd0892a68e4762771ebb0af8e841da7a348fb19fb874fcae95235209
+docs/plans/2026-07-20-plugin-hardening-v5/research/best-practices.md	540f775e8ea452f49cd8bea0dce0991afc896421ca496f6f05671498ca342b34
+docs/plans/2026-07-20-plugin-hardening-v5/research/best-practices.md	200fe30a67acda51178ff5df09376407b942cb8aadfae5cdf85f34c40b0652db
+docs/plans/2026-07-20-plugin-hardening-v5/research/best-practices.md	a86a422185766e80a4869b43d323f6732dc13c12d70f19ee7c28200adc2a2669
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	3a8f182183ad6de5ed815f923e9ecb827ff8afc783767fadceffd4e4e3ce4b6d
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	a4178ef6ae8d411a9e07d8d7a36ceeeb255e76bedcbc8e0f9cea12baeb5342b4
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	7cd93c83ef7781dea6503d536f076414a69613fac41e7c12893a9b565ea974c9
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	0b23e4b82af736f653ce0fa9dcd044f6bc0cc34d3cc1ed0c552a30a7bc04dbb0
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	21231c01ac6b12797054f2965e8c0e2143e76945e1d26adbeaa5aa1a94afaff6
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	3c1fa4458ad8b0faa72f3c3b1ccca720e29cabc8a3f17c1bfc270c43a62b1b12
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	f004b555362aa375778b0de0e4e5dfbe06b9d64926554f9379b4c0329577f43d
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	f31645295d9a3dad0849718992fe514153701565970512808c3a12868a5bf908
+docs/plans/2026-07-20-plugin-hardening-v5/research/codebase-scan.md	7cc69bb6b4c464839ce50571f644adc47c301708c0478fcd263cf093b831c6e0
+docs/specs/plugin-hardening-v5.md	2e16326a4c37f4a673a76eaef4859b0508848af028073ceec974dc5505e16a2e
+docs/specs/plugin-hardening-v5.md	6d2df358afd5a639de92e59ad7efc6d2a2ee35593b78456f07ab22a8a2c6eb79
+docs/specs/plugin-hardening-v5.md	cc81f0c810473f344b305faf57faa928de64363476367c08c667ee488eb5628a
