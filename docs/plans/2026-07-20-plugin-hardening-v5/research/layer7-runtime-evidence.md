@@ -7,9 +7,9 @@ That made the plan's only runtime evidence unauditable testimony, the same class
 credit for the mutation harness in the Wave 5 reaudit.
 
 Part 1 is now recorded below, verbatim. **Part 2 is nearly recorded (2026-08-03): the prerequisite
-and checks A–G hold observations — D's dialog confirmed on a primed redrive, G observed on both
-Stop branches; H and I remain open.** F24 and F26 hold complete evidence; F06 stays PARTIAL until
-H and I hold observations.
+and checks A–H hold observations — D's dialog confirmed on a primed redrive, G observed on both
+Stop branches, H owner-confirmed clean; only I remains open.** F24 and F26 hold complete evidence;
+F06 stays PARTIAL until I holds an observation.
 
 ---
 
@@ -79,7 +79,7 @@ its message claims.
 
 ## Part 2 — owner-observed (interactive session required)
 
-**STATUS: PARTIALLY RECORDED (2026-08-03).** Checks A–G below hold observations; H and I are
+**STATUS: PARTIALLY RECORDED (2026-08-03).** Checks A–H below hold observations; only I is
 still empty. Do not infer any empty slot from part 1.
 
 Recording context (applies to every slot dated 2026-08-03): interactive Claude Code session in this
@@ -281,13 +281,16 @@ the whole wave.**
 
 ```
 OBSERVED (verbatim):
+1 did not notice any errors
 ```
 
-Partially evidenced 2026-08-03 from the assistant side: across SessionStart, PreCompact, four
-PreToolUse:Bash evaluations (one deny, three allows) and the Write|Edit trackers, no hook FAILURE
-notice appeared in any tool result (check B's `hook error:` prefix is the deny rendering, not a
-failure). The slot stays empty until the owner confirms no hook-error notice appeared in the UI
-either, once G is observed.
+Recorded 2026-08-03 — the owner's answer ("1" indexes the H item in the closing question list),
+given AFTER the full run: prerequisite, A–G including the D redrive and both Stop branches, plus
+the supplementary surfaces (ask-on-unparseable, change-tracker notice). No hook-failure notice
+was observed in the owner's UI. The assistant side corroborates: across SessionStart, PreCompact,
+every PreToolUse:Bash evaluation (denies, asks and allows) and the Write|Edit trackers, no hook
+FAILURE appeared in any tool result (check B's `hook error:` prefix is the deny rendering, not a
+failure). **The wave's acceptance criterion holds on this host.**
 
 ### I. Node-less installed copy (CR-1's condition, lane N's honest limit)
 
@@ -339,7 +342,7 @@ automated layer proves:
 
 | Finding | State | Moves when |
 |---|---|---|
-| F06 | **PARTIAL** | H and I recorded (A–G held 2026-08-03, D's dialog confirmed, G on both branches) |
+| F06 | **PARTIAL** | I recorded (A–H held 2026-08-03: D's dialog confirmed, G on both branches, H owner-confirmed clean) |
 | F24 | **MET — evidence recorded 2026-08-03** | — E observed allowed and B observed blocked naming `--force-with-lease` (settling part 1's pending item); `status.json` closure rides Part 2's completion commit |
 | F26 | **MET — evidence recorded 2026-08-03** | — A (SessionStart), F (PreCompact) and G (both Stop branches) all user-observed surfacing; `status.json` closure rides Part 2's completion commit |
 | U4 | **settled POSITIVE** (2026-08-03, check A) | — real plan, phase and status at session start |
