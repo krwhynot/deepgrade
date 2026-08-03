@@ -78,7 +78,6 @@ Do NOT change any "id" or "name" field. The check names are a contract.
       "status": "pass|fail",
       "points": <0 or 3>,
       "max": 3,
-      "confidence": "high|medium|low",
       "evidence": "<what was found>",
       "details": { "manifest_path": "<path>", "all_manifests_found": ["<paths>"] },
       "remediation": null
@@ -89,7 +88,6 @@ Do NOT change any "id" or "name" field. The check names are a contract.
       "status": "pass|warn|fail",
       "points": <0-2>,
       "max": 2,
-      "confidence": "high|medium|low",
       "evidence": "<what sections exist>",
       "details": { "has_name": <bool>, "has_deps": <bool>, "has_scripts": <bool> },
       "remediation": "<what's missing>"
@@ -100,7 +98,6 @@ Do NOT change any "id" or "name" field. The check names are a contract.
       "status": "pass|warn|fail",
       "points": <0-2>,
       "max": 2,
-      "confidence": "high|medium|low",
       "evidence": "<how determined>",
       "details": { "language": "<str>", "framework": "<str or null>", "method": "<manifest|deps|extension>" },
       "remediation": null
@@ -111,7 +108,6 @@ Do NOT change any "id" or "name" field. The check names are a contract.
       "status": "pass|warn|fail",
       "points": <0-2>,
       "max": 2,
-      "confidence": "high|medium|low",
       "evidence": "<summary of README content>",
       "details": { "readme_path": "<path or null>", "has_description": <bool>, "has_setup": <bool>, "has_run": <bool> },
       "remediation": "<what to add>"

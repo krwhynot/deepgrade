@@ -65,10 +65,12 @@ reproduced the documented shape instead of the actual one and hid the
 vocabulary drift above; provenance from a live artifact is what makes it a
 known-positive. One observed key was deliberately NOT ratified: a top-level
 `weight_set` appeared in the live artifact but in no template or schema and
-has no consumer; it stays out of the contract. Observed but unresolved: live
-elements also omit the `confidence` field some templates request — a
-semantic question (the scoring skill defines confidence levels) left open
-rather than silently ratified.
+has no consumer; it stays out of the contract. The per-check `confidence` field the templates
+originally requested was RESOLVED the same way (2026-08-03): recon showed it
+had no consumer anywhere — the report generator never reads it, and the
+methodology's "confidence levels" are a different, module-level concept the
+orchestrator derives from gate results, not from a checks[] field. The dead
+field is removed from the templates; module-level confidence is untouched.
 
 ## Deliberate non-edges
 

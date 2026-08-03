@@ -429,7 +429,7 @@ Write results as JSON to docs/audit/readability/context-budget-scan.json followi
 the standard scanner output schema with all 8 checks.
 
 Each check must include:
-- id, name, status, points, max, confidence, evidence, details, remediation
+- id, name, status, points, max, evidence, details, remediation
 
 **Remediation guidance per check:**
 - 8.1 high tokens: "Move detailed instructions to .claude/rules/ with paths: or globs: frontmatter. Use progressive disclosure: CLAUDE.md points to docs, Claude reads on-demand."

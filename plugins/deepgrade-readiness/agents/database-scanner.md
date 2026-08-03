@@ -590,7 +590,6 @@ standard scanner output schema.
       "status": "pass|partial|fail|skipped",
       "points": 0,
       "max": 3,
-      "confidence": "high|medium|low",
       "evidence": "...",
       "details": "...",
       "remediation": "..."
@@ -599,7 +598,7 @@ standard scanner output schema.
 }
 ```
 
-Each check must include: id, name, priority, status, points, max, confidence,
+Each check must include: id, name, priority, status, points, max,
 evidence, details, remediation.
 
 Status mapping:
