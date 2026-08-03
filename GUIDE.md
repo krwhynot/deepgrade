@@ -1,11 +1,11 @@
 <div align="center">
 
-# DeepGrade Knowledge Guide v5.0.1
+# DeepGrade Knowledge Guide v6.0.0
 
 **16 Commands** &nbsp;&bull;&nbsp; **22 Agents** &nbsp;&bull;&nbsp; **6 Skills** &nbsp;&bull;&nbsp; **8 Safety Hooks** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDE4Yy00LjQxIDAtOC0zLjU5LTgtOHMzLjU5LTggOC04IDggMy41OSA4IDgtMy41OSA4LTggOHoiLz48L3N2Zz4=)](https://github.com/krwhynot/deepgrade)
-[![Version](https://img.shields.io/badge/v5.0.1-stable-2ECC71?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/v6.0.0-stable-2ECC71?style=for-the-badge)](#)
 [![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
 
 </div>
@@ -933,6 +933,6 @@ On Windows, `jq` installed via `winget` lands in `$LOCALAPPDATA/Microsoft/WinGet
 
 ---
 
-[![Generated](https://img.shields.io/badge/Generated_for-DeepGrade_v5.0.1-5A45FF?style=flat-square)](#) &nbsp; [![Date](https://img.shields.io/badge/2026--03--10-stable-2ECC71?style=flat-square)](#) &nbsp; [![License](https://img.shields.io/badge/MIT-License-F39C12?style=flat-square)](#)
+[![Generated](https://img.shields.io/badge/Generated_for-DeepGrade_v6.0.0-5A45FF?style=flat-square)](#) &nbsp; [![Date](https://img.shields.io/badge/2026--03--10-stable-2ECC71?style=flat-square)](#) &nbsp; [![License](https://img.shields.io/badge/MIT-License-F39C12?style=flat-square)](#)
 
 </div>

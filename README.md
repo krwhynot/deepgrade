@@ -165,7 +165,7 @@ The plugin auto-detects your stack. Tested on:
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
-Current: v5.0.1
+Current: v6.0.0
 
 ## Contributing
 

@@ -37,7 +37,12 @@ The generator receives the source material (codebase analysis, brainstorm goals,
 
 The evaluator receives the generated plan and scores it across defined quality dimensions. In DeepGrade's case, this means 8 scoring dimensions (completeness, risk coverage, phase structure, rollback strategy, etc.) and 4 gap verification matrices (coverage, dependency, risk, cross-cutting). The evaluator produces both a numeric score and specific, localized findings.
 
-### 3. If score < threshold OR gaps found: Evaluator produces specific, actionable feedback
+### 3. If the gate fails: Evaluator produces specific, actionable feedback
+
+Since the verifier-first rewrite (docs/specs/phase5-verifier-gate.md), "fails" means
+a criterion came back UNMET after mechanical evidence validation, an infra gap
+exists, or the seeded canary was missed — never that a numeric total fell short.
+The score is computed and reported, but it authorizes nothing.
 
 The evaluator's feedback is not "try again" or "needs improvement." It is targeted: "Section 4 (Phase 2: Database Migration) has no rollback strategy. The migration adds 3 non-nullable columns but the rollback section only mentions dropping 2. The third column (user_preferences.locale) has no rollback path." This specificity is what makes revision productive rather than random.
 
@@ -49,10 +54,18 @@ The generator does not regenerate the entire plan. It receives the evaluator's f
 
 The evaluator scores the revised plan using the same criteria. This is a full re-evaluation, not just a check of the previously failing sections — revision can sometimes fix one gap while introducing another.
 
-### 6. Loop terminates when: score >= threshold AND gap-checked = YES, OR max iterations reached (recommend cap at 2)
+### 6. Loop terminates when the gate passes, OR max iterations reached (recommend cap at 2)
 
 The termination conditions are:
-- **Success**: Score meets or exceeds the quality threshold (e.g., 32/40) AND all gap matrices pass verification. The plan is accepted and proceeds to user review.
+- **Success**: The verifier-first gate passes — the canary was found, every evidence
+  record survived re-checking, every applicable criterion is MET or N_A, and infra
+  gaps are zero. The plan is accepted and proceeds to user review. The earlier
+  design terminated on a score threshold; that was retired because a self-assigned
+  total is exactly the quantity an optimizing generator learns to hit without the
+  plan improving.
+- **Untrustworthy audit**: The canary was missed twice. The loop STOPS without
+  revising — findings from an audit that could not see a planted defect are not a
+  basis for rewriting anything.
 - **Max iterations**: The loop has run the maximum number of revision cycles (recommended: 2). The plan is accepted at its current quality level with the audit findings attached. Diminishing returns are observed after 2 iterations — the gains from a third pass rarely justify the cost.
 
 ### 7. Track iteration history: v1 -> audit1 -> v2 -> audit2 -> final
@@ -91,7 +104,7 @@ You have to manually read the audit, fix the plan, and re-audit. This manual loo
 
 - **Wire plan-auditor output back into plan-scaffolder as a revision loop.** The auditor's findings become the scaffolder's revision instructions. This is a mechanical connection, not an architectural change — the auditor already produces structured findings, and the scaffolder already accepts instructions.
 
-- **In `/deepgrade:quick-plan`**: After scaffolder completes, auto-run auditor. If score < 32/40 OR gap-checked = NO, feed audit findings back to scaffolder for targeted revision. The scaffolder receives the findings as a structured input: "Revise sections X, Y, Z to address the following gaps: [list]." The scaffolder revises only those sections and resubmits.
+- **In `/deepgrade:quick-plan`**: After scaffolder completes, auto-run auditor. If any applicable criterion is UNMET after evidence validation, or gap-checked = NO, feed audit findings back to scaffolder for targeted revision. The scaffolder receives one line per unmet criterion — "{criterion_id} UNMET: {defect}. Location: {file}:{line}." — never the rubric, totals, or bands. It revises only the failing sections and resubmits to a fresh auditor instance.
 
 - **In `/deepgrade:plan` Phase 5**: If audit finds gaps, auto-suggest revisions to Phase 4 spec before proceeding to Phase 6. This catches gaps before Build begins, when they are cheapest to fix. A gap caught in Phase 5 costs one revision cycle. A gap caught in Phase 7 (after Build) costs a code change, a re-test, and a re-audit.
 

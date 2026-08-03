@@ -1,5 +1,71 @@
 # Changelog
 
+## 6.0.0 (2026-08-02)
+
+The Phase 5 audit gate no longer authorizes a plan on the score the audited model
+assigned to itself. Full design: `docs/specs/phase5-verifier-gate.md`.
+
+### BREAKING
+
+- **The Phase 5 gate expression changed.** `IF score >= 32 AND gap-checked = YES`
+  is gone. A plan now passes only when the seeded canary was found, every evidence
+  record survived mechanical re-checking, every applicable criterion is MET or N_A,
+  and infra gaps are zero. **Plans that previously passed at 32-40 on prose scores
+  will fail under 6.0.0 until their claims carry evidence.** This is intended: a
+  score in that band proved the text resembled the rubric, not that the claims were
+  true.
+- **The YELLOW outcome is gone.** "Usable with known gaps" no longer exists as a
+  rung; either every applicable criterion is satisfied and evidenced, or the
+  specific unmet ones are named. Anything scripted against the GREEN/YELLOW/ORANGE
+  bands must read the gate verdict instead.
+- **`/deepgrade:quick-plan` uses the same gate.** It previously accepted a plan at
+  `score >= 32/40` on its own; a lighter command with a score gate was a way
+  around the main one.
+- **The solo-mode review waiver is conditional.** Blocked when infra gaps exist,
+  when the score is under 35, or when the canary was missed. Solo workflows that
+  relied on an unconditional waiver will now be prompted for a named reviewer in
+  those cases.
+- **Audits must produce evidence.** The auditor writes one record per criterion to
+  `evidence/{criterion_id}.json`; a missing or empty evidence directory fails the
+  gate (exit 2 — treated as worse than a demotion, because an audit that produced
+  nothing checkable reporting clean is the failure mode this release removes).
+- **LINT-17/18 renumbering.** The confidence-brief rules formerly carrying those
+  ids in `commands/plan.md` and `agents/plan-auditor.md` are now LINT-19/20; 17/18
+  are the testing-methodology rules, as the registry always defined them. Audit
+  reports written before 6.0.0 refer to the confidence-brief checks by the old ids
+  and are left unrewritten.
+
+### Added
+
+- `scripts/dg-evidence-validate.js` — re-reads every cited artifact, verifies the
+  hash, slices the cited line range, and compares byte-for-byte with the quote.
+  Validation only ever demotes; the judge's MET is a proposal. Suite layer 6.
+- `scripts/dg-canary.js` — injects one known defect (5 classes, seeded rotation)
+  into a working copy before the audit; an audit that misses it twice fails as
+  untrustworthy and does NOT trigger the revision loop. Suite layer 7.
+- A rubric-free holistic judge whose unmapped findings land in
+  `docs/planning-techniques/lint-candidates.md` — the only mechanism that can
+  notice the rubric itself is incomplete. Advisory, never gates.
+- `score_history` in `status.json`: the score no longer gates, but its
+  distribution is the cheapest detector of threshold-aiming.
+- Judge isolation: the rubric, anchors, and thresholds moved out of
+  generator-readable files; `<forbidden_inputs>` in `agents/plan-auditor.md`; a
+  fresh auditor instance per revision iteration; verdict schema with no total
+  field and evidence serialized before the verdict.
+- `docs/planning-techniques/lint-registry.md` is now the enforced single source of
+  lint rule text and counts (guards PH5-001/002 in the suite; every rule had
+  drifted into at least one alternate wording, and two into a second meaning).
+
+### Known limitations (stated, not closed)
+
+- The auditor holds Read/Grep/Glob over the repository and can reach the criterion
+  files and the canary defect table. Isolation is enforced by instruction, not
+  capability; the canary reliably detects a lazy audit, only incidentally an
+  adversarial one.
+- Nothing in this release measures whether the judge is *right* — only whether it
+  is evidenced. Judge calibration against known-good/known-bad plans is the
+  natural successor.
+
 ## 5.0.1 (2026-08-02)
 
 ### Added
