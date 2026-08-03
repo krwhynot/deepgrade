@@ -1,64 +1,184 @@
 {
   "tool": "ai-readiness-scanner",
   "version": "0.3.0",
-  "scan_id": "3f9c2f1e-8a4b-4a5f-9d2e-6b7c8d9e0f1a",
-  "timestamp": "2026-08-03T10:45:00Z",
+  "scan_id": "dfb695eb-f14c-4dc9-ad31-ccf400aa2c22",
+  "timestamp": "2026-08-03T14:25:34.578Z",
   "codebase": "/home/dev/example-app",
   "detected": {
     "language": "TypeScript",
-    "framework": "React",
-    "package_manager": "npm"
+    "framework": "Hono (this repo IS the framework; zero runtime dependencies)",
+    "package_manager": "bun"
   },
   "overall": {
-    "score": 82.5,
-    "grade": "B+",
-    "phase2_eligible": true,
-    "phase2_eligible_with_warnings": true,
-    "phase2_blockers": [],
-    "phase2_warnings": ["3.6"]
+    "score": 56.37,
+    "grade": "F",
+    "phase2_eligible": false,
+    "phase2_eligible_with_warnings": false,
+    "phase2_blockers": [
+      "2.1",
+      "score_below_80"
+    ],
+    "phase2_warnings": [
+      "2.5",
+      "2.9",
+      "5.6"
+    ]
   },
   "categories": {
-    "manifest": { "score": 100, "grade": "A+", "points": 8, "max": 8 },
-    "context_files": { "score": 75, "grade": "B", "points": 15, "max": 20 },
-    "structure": { "score": 78, "grade": "B", "points": 14, "max": 18 },
-    "entry_points": { "score": 90, "grade": "A", "points": 9, "max": 10 },
-    "conventions": { "score": 86, "grade": "A-", "points": 12, "max": 14 },
-    "feedback_loops": { "score": 83, "grade": "B+", "points": 10, "max": 12 },
-    "baseline": { "score": 50, "grade": "D", "points": 4, "max": 8 },
-    "context_budget": { "score": 88, "grade": "A-", "points": 14, "max": 16 },
-    "database": { "score": 75, "grade": "B", "points": 12, "max": 16, "status": "applicable" }
+    "manifest": {
+      "score": 100,
+      "grade": "A+",
+      "points": 9,
+      "max": 9
+    },
+    "context_files": {
+      "score": 0,
+      "grade": "F",
+      "points": 0,
+      "max": 20
+    },
+    "structure": {
+      "score": 68.75,
+      "grade": "D+",
+      "points": 11,
+      "max": 16
+    },
+    "entry_points": {
+      "score": 63.64,
+      "grade": "D",
+      "points": 7,
+      "max": 11
+    },
+    "conventions": {
+      "score": 53.85,
+      "grade": "F",
+      "points": 7,
+      "max": 13
+    },
+    "feedback_loops": {
+      "score": 63.64,
+      "grade": "D",
+      "points": 7,
+      "max": 11
+    },
+    "baseline": {
+      "score": 0,
+      "grade": "F",
+      "points": 0,
+      "max": 5
+    },
+    "context_budget": {
+      "score": 92.31,
+      "grade": "A-",
+      "points": 12,
+      "max": 13
+    },
+    "database": {
+      "score": 0,
+      "grade": "N/A",
+      "points": 0,
+      "max": 14,
+      "status": "not_applicable"
+    }
   },
   "critical_gates": {
     "hard": {
       "1.1": "pass",
-      "2.1": "pass",
+      "2.1": "FAIL",
       "4.1": "pass",
       "6.1": "pass"
     },
     "soft": {
-      "2.5": "pass",
-      "2.9": "pass",
-      "3.6": "WARN",
-      "5.6": "pass"
+      "2.5": "WARN",
+      "2.9": "WARN",
+      "3.6": "pass",
+      "5.6": "WARN"
     }
   },
   "checks": [
     {
-      "id": "1.1",
-      "name": "Project manifest present",
       "category": "manifest",
-      "score": 2,
-      "max_score": 2,
-      "evidence": "package.json at repo root",
+      "id": "1.1",
+      "name": "Primary manifest exists",
+      "status": "pass",
+      "points": 3,
+      "max": 3,
+      "evidence": "package.json found at repo root (/home/dev/example-app\\package.json), 23,977 bytes, valid JSON. Additional manifest-related files present: jsr.json (JSR registry manifest, name \"@hono/hono\"), package.cjs.json (small CJS dual-publish marker: {\"type\":\"commonjs\"}), tsconfig.json / tsconfig.base.json / tsconfig.build.json / tsconfig.spec.json (TypeScript project config), bun.lock + bunfig.toml (Bun lockfile and test config). No .csproj/.sln/Cargo.toml/go.mod/pyproject.toml/requirements.txt/Gemfile/pom.xml/build.gradle/composer.json/mix.exs/pubspec.yaml/CMakeLists.txt/Makefile found at root.",
+      "details": {
+        "manifest_path": "/home/dev/example-app\\package.json",
+        "all_manifests_found": [
+          "package.json",
+          "jsr.json",
+          "package.cjs.json",
+          "tsconfig.json",
+          "tsconfig.base.json",
+          "tsconfig.build.json",
+          "tsconfig.spec.json",
+          "bunfig.toml",
+          "bun.lock"
+        ]
+      },
+      "remediation": null
+    },
+    {
+      "category": "context_budget",
+      "id": "8.8",
+      "name": "No context-budget anti-patterns",
+      "status": "pass",
+      "points": 2,
+      "max": 2,
+      "evidence": "Checked all 9 anti-patterns: AP1 (large embedded code blocks in CLAUDE.md) = 0, no CLAUDE.md exists. AP2 (README/CLAUDE.md duplication) = 0, no CLAUDE.md exists to compare. AP3 (pasted source code in CLAUDE.md) = 0, no CLAUDE.md exists. AP4 (duplicate instructions across CLAUDE.md and rules) = 0, neither exists. AP5 (orphan scoped rules matching zero files) = 0, no rules directory. AP6 (README has imperative AI instructions but no CLAUDE.md) = 0, README.md was checked (grep -ci ALWAYS|NEVER|MUST|DO NOT|REQUIRED) and returned 0 matches, so this anti-pattern does not apply. AP7 (linter-enforceable style rules in CLAUDE.md/rules) = 0, neither exists. AP8 (@imports exceeding 20K chars loaded at launch) = 0, no CLAUDE.md exists. AP9 (unscoped domain-specific rules) = 0, no rules directory. Total anti-patterns detected: 0.",
       "remediation": null
     }
   ],
   "generation_offers": [
     {
       "artifact": "CLAUDE.md",
-      "reason": "no context file at repo root",
+      "reason": "Unblocks HARD gate 2.1. Sole hard-gate failure. Also fixes 2.2/2.5/2.9/2.10 partially 2.4, plus 5.5, 6.6, 8.7.",
+      "priority": "critical",
+      "estimated_impact": 17
+    },
+    {
+      "artifact": "docs/audit/ baseline artifacts (state.json, dependency-map.json, api-surface.json, audit-progress.md)",
+      "reason": "Baseline category is 0/5. Cheapest full-category win: 0%->100% of a 5% weight.",
       "priority": "high",
-      "estimated_impact": 6
+      "estimated_impact": 5
+    },
+    {
+      "artifact": ".claude/rules/*.md with YAML paths: frontmatter + do-not-touch zones",
+      "reason": "Fixes 2.3, 2.6, 2.7 and clears SOFT gate 5.6 (currently 0/3, no CODEOWNERS or generated-file markers anywhere).",
+      "priority": "high",
+      "estimated_impact": 6.8
+    },
+    {
+      "artifact": ".claude/commands/*.md and .claude/agents/*.md",
+      "reason": "Checks 4.4 and 4.5 are both 0/2. Multi-runtime test matrix (bun/deno/node/workerd/fastly/lambda) is a natural agent/command surface.",
+      "priority": "medium",
+      "estimated_impact": 3.64
+    },
+    {
+      "artifact": ".claude/settings.json hooks + pre-commit hook (husky/lint-staged)",
+      "reason": "Checks 6.4 and 6.5 both 0/1. ESLint+Prettier already configured, so hooks are wiring only.",
+      "priority": "medium",
+      "estimated_impact": 1.45
+    },
+    {
+      "artifact": "Child CLAUDE.md for src/jsx and src/middleware",
+      "reason": "Check 2.8 is 0/1 and directly mitigates the 3.7 module token-cost finding via progressive disclosure.",
+      "priority": "medium",
+      "estimated_impact": 1
+    },
+    {
+      "artifact": ".mcp.json",
+      "reason": "Check 5.7 is 0/1.",
+      "priority": "low",
+      "estimated_impact": 0.92
+    },
+    {
+      "artifact": "GUIDANCE ONLY: index.ts barrels for remaining 56 of 118 directories",
+      "reason": "Check 3.5 partial (1/2). Requires source changes - out of scope for a read-only scan and for artifact generation.",
+      "priority": "low",
+      "estimated_impact": 1.13
     }
   ],
   "delta": {

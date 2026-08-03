@@ -1203,12 +1203,28 @@ else
         and has("entry_points") and has("conventions") and has("feedback_loops")
         and has("baseline") and has("context_budget") and has("database")) and
       (.categories.database.status | IN("applicable", "not_applicable")) and
-      (.checks | type == "array") and
+      (.checks | type == "array" and length > 0
+        and all(has("id") and has("name") and has("status") and has("points") and has("max"))) and
       (.delta | has("previous_scan_id"))
     ' "$IT_FIX" >/dev/null 2>&1; then
-    fail "INTEROP-3: fixture fails the load-bearing key contract (timestamp, overall.score/grade, 9 categories, database.status, checks, delta)"
+    fail "INTEROP-3: fixture fails the load-bearing key contract (timestamp, overall.score/grade, 9 categories, database.status, checks[] elements with id/name/status/points/max, delta)"
   else
     pass "INTEROP-3: fixture carries every load-bearing key with the right types"
+  fi
+
+  # The check-element vocabulary is points/max, RATIFIED from observed reality
+  # (2026-08-03 dogfood): every template said score/max_score, every one of 8
+  # live scanners emitted points/max, and no consumer noticed — both ends of
+  # an LLM-to-LLM contract are tolerant, so the drift had no symptom. The
+  # templates now say points/max; this ban keeps the dead vocabulary from
+  # creeping back in either the templates or the fixture.
+  it_vocab=$(grep -rln 'max_score' plugins/deepgrade-readiness/ tests/fixtures/interop/ 2>/dev/null)
+  if [ -n "$it_vocab" ]; then
+    for it_v in $it_vocab; do
+      fail "INTEROP-3: $it_v says 'max_score' — the ratified check-element vocabulary is points/max"
+    done
+  else
+    pass "INTEROP-3: the retired score/max_score vocabulary appears nowhere in the readiness plugin or the fixture"
   fi
 
   # Top-level keys: producer schema block vs fixture, exact set equality.

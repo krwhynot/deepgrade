@@ -50,6 +50,25 @@ Load-bearing keys — fields a cross-plugin consumer actually extracts:
   structure, entry_points, conventions, feedback_loops, baseline,
   context_budget, database); database additionally carries `status`
   ("applicable" or "not_applicable") because category 9 is conditional.
+- `checks[]` elements carry `id`, `name`, `status`, `points`, `max` —
+  readiness-generate and delta tracking address checks by id and score them
+  by points against max. The `points`/`max` spelling is RATIFIED from
+  observed output (2026-08-03 dogfood run): the templates originally said
+  `score`/`max_score`, all eight live scanners emitted `points`/`max`
+  unanimously, and the templates were aligned to reality rather than the
+  reverse. The retired vocabulary is banned by the sweep.
+
+The fixture is DERIVED from a real scan (2026-08-03, hono@main shallow
+clone), sanitized and trimmed to two representative check elements — not
+authored from this file or the templates. A fixture written from the docs
+reproduced the documented shape instead of the actual one and hid the
+vocabulary drift above; provenance from a live artifact is what makes it a
+known-positive. One observed key was deliberately NOT ratified: a top-level
+`weight_set` appeared in the live artifact but in no template or schema and
+has no consumer; it stays out of the contract. Observed but unresolved: live
+elements also omit the `confidence` field some templates request — a
+semantic question (the scoring skill defines confidence levels) left open
+rather than silently ratified.
 
 ## Deliberate non-edges
 

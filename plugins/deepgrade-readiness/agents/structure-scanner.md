@@ -137,7 +137,7 @@ head -5 "$filepath" 2>/dev/null | grep -qiE \
 ```
 
 Scoring (updated with auto-generated distinction):
-FIXED SCORING — max_score for this check is ALWAYS 3 (Critical check). Do not use 2 as max_score.
+FIXED SCORING — max for this check is ALWAYS 3 (Critical check). Do not use 2 as the max.
 Run these bash commands to determine the score:
 ```bash
 # Count hand-written files over 5000 lines

@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- **Check-element vocabulary ratified to `points`/`max`.** The 2026-08-03
+  dogfood run showed every scanner template demanding `score`/`max_score`
+  while all eight live scanners emitted `points`/`max` unanimously; the
+  templates were aligned to observed reality, the interop fixture was
+  regenerated from a real scan artifact, and the retired vocabulary is now
+  banned by the INTEROP sweep. Open question, deliberately not ratified:
+  live check elements also omit the `confidence` field some templates
+  request.
+- Marketplace entries use `git-subdir` sources with explicit https URLs, so
+  installs no longer require GitHub SSH keys; SPLIT-4 guards the catalog
+  shape. `interop.md` documents the cross-plugin artifact contracts,
+  enforced by the INTEROP sweep. Two README drifts fixed (readiness score
+  path, guard output table).
+
 ## 7.0.0 (2026-08-03)
 
 The monolith is now four plugins. Updating `deepgrade` alone does NOT keep the
