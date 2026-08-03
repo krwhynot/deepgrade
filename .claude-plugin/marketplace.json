@@ -10,8 +10,8 @@
       "name": "deepgrade",
       "description": "9-phase planning with an adversarial verifier-first audit gate, plan-linked troubleshooting, and documentation generation.",
       "source": {
-        "source": "github",
-        "repo": "krwhynot/deepgrade",
+        "source": "git-subdir",
+        "url": "https://github.com/krwhynot/deepgrade.git",
         "path": "plugins/deepgrade",
         "ref": "v7.0.0",
         "sha": "55dbdeb2fd18e4a50b3ac93e7a66e1f6893c2390"
@@ -21,8 +21,8 @@
       "name": "deepgrade-readiness",
       "description": "AI-readiness scanning: 52 checks, 9 categories, composite letter grade, generated scaffolding for the gaps.",
       "source": {
-        "source": "github",
-        "repo": "krwhynot/deepgrade",
+        "source": "git-subdir",
+        "url": "https://github.com/krwhynot/deepgrade.git",
         "path": "plugins/deepgrade-readiness",
         "ref": "v7.0.0",
         "sha": "55dbdeb2fd18e4a50b3ac93e7a66e1f6893c2390"
@@ -32,8 +32,8 @@
       "name": "deepgrade-audit",
       "description": "Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates.",
       "source": {
-        "source": "github",
-        "repo": "krwhynot/deepgrade",
+        "source": "git-subdir",
+        "url": "https://github.com/krwhynot/deepgrade.git",
         "path": "plugins/deepgrade-audit",
         "ref": "v7.0.0",
         "sha": "55dbdeb2fd18e4a50b3ac93e7a66e1f6893c2390"
@@ -43,8 +43,8 @@
       "name": "deepgrade-guard",
       "description": "Always-on safety hooks: force-push and DB-deploy blocking, migration protection, change/test tracking, session summaries.",
       "source": {
-        "source": "github",
-        "repo": "krwhynot/deepgrade",
+        "source": "git-subdir",
+        "url": "https://github.com/krwhynot/deepgrade.git",
         "path": "plugins/deepgrade-guard",
         "ref": "v7.0.0",
         "sha": "55dbdeb2fd18e4a50b3ac93e7a66e1f6893c2390"
