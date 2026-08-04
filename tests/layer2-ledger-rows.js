@@ -15,6 +15,23 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
+
+// Scratch dirs are swept at exit — before this existed every run leaked its
+// dirs into the OS temp (3,000+ had accumulated). force+maxRetries because the
+// row-6 scratch git repos hold read-only objects on Windows; a cleanup failure
+// must never fail the run.
+const scratchDirs = [];
+function mkScratch(prefix) {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  scratchDirs.push(d);
+  return d;
+}
+process.on('exit', () => {
+  for (const d of scratchDirs) {
+    try { fs.rmSync(d, { recursive: true, force: true, maxRetries: 3 }); } catch { /* leave it */ }
+  }
+});
+
 // The split partitions handlers across two plugins: the safety rails live in
 // deepgrade-guard, the plan-context handlers in deepgrade. Resolve each script
 // wherever it ships, and THROW on a miss — a silently-skipped handler would
@@ -36,7 +53,7 @@ function check(name, ok, detail) {
 
 // Each run gets its own TMPDIR so session markers cannot leak between rows.
 function run(script, payload, opts = {}) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row-'));
+  const tmp = mkScratch('dg-row-');
   const env = { ...process.env, TMPDIR: tmp, TEMP: tmp, ...(opts.env || {}) };
   const r = spawnSync(process.execPath, [S(script)], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
@@ -56,7 +73,7 @@ const r1b = run('dg-git-guard.js', { session_id: 's', tool_input: { command: 'su
 check('row 1: `db diff` (read-only) allowed', r1b.exit === 0, `exit ${r1b.exit}`);
 
 // Row 2: Windows backslash normalization in the migration guard.
-const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-mig-'));
+const scratch = mkScratch('dg-mig-');
 fs.mkdirSync(path.join(scratch, 'db', 'migrations'), { recursive: true });
 const migFile = path.join(scratch, 'db', 'migrations', '20240101_init.sql');
 fs.writeFileSync(migFile, 'select 1;\n');
@@ -117,7 +134,7 @@ console.log('\n--- Ledger rows 5-6: opt-in, DG_STRICT_GIT default OFF (F05c) ---
 // version of this test ran in a bare scratch dir with no package.json, so the
 // guard correctly found nothing to require and returned 0 — the test was wrong,
 // not the code. Give it a project shape so the assertion means something.
-const proj = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-proj-'));
+const proj = mkScratch('dg-proj-');
 fs.writeFileSync(path.join(proj, 'package.json'), JSON.stringify({ scripts: { build: 'tsc' } }));
 
 const r5off = run('dg-git-guard.js', { session_id: 's', tool_input: { command: 'git commit -m "x"' } }, { cwd: proj });
@@ -135,14 +152,14 @@ check('rows 5-6: active when DG_STRICT_GIT=1', r5on.exit === 2 && /npm run build
 // denies when far more files are staged than were edited this session, which catches
 // an accidental `git add -A` over unrelated work.
 (() => {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row6-'));
+  const tmp = mkScratch('dg-row6-');
   // 1 file edited this session...
   fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), '{"session_changes":1,"total_changes_since_audit":1}');
   // ...and a fresh build marker, so the check under test is row 6 and not row 5.
   fs.writeFileSync(path.join(tmp, 'dg-build-s'), '1');
 
   // A real repo with many staged files, so `git diff --cached` returns a big number.
-  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row6repo-'));
+  const repo = mkScratch('dg-row6repo-');
   const git = (...a) => spawnSync('git', a, { cwd: repo, encoding: 'utf8' });
   git('init', '-q');
   git('config', 'user.email', 'x@example.com');
@@ -162,10 +179,10 @@ check('rows 5-6: active when DG_STRICT_GIT=1', r5on.exit === 2 && /npm run build
 
   // Negative: a proportionate staged count must pass. The threshold is edits*2+5, so
   // 1 edit tolerates up to 7 staged files.
-  const tmp2 = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row6b-'));
+  const tmp2 = mkScratch('dg-row6b-');
   fs.writeFileSync(path.join(tmp2, 'dg-baseline-s'), '{"session_changes":1,"total_changes_since_audit":1}');
   fs.writeFileSync(path.join(tmp2, 'dg-build-s'), '1');
-  const repo2 = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-row6repo2-'));
+  const repo2 = mkScratch('dg-row6repo2-');
   const git2 = (...a) => spawnSync('git', a, { cwd: repo2, encoding: 'utf8' });
   git2('init', '-q');
   git2('config', 'user.email', 'x@example.com');
@@ -183,7 +200,7 @@ check('rows 5-6: active when DG_STRICT_GIT=1', r5on.exit === 2 && /npm run build
 })();
 
 // A recorded build inside the 120-minute window satisfies it.
-const buildTmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-bld-'));
+const buildTmp = mkScratch('dg-bld-');
 fs.writeFileSync(path.join(buildTmp, 'dg-build-s'), '1');
 const r5marker = spawnSync(process.execPath, [S('dg-git-guard.js')], {
   input: JSON.stringify({ session_id: 's', tool_input: { command: 'git commit -m "x"' } }),
@@ -195,7 +212,7 @@ check('row 5: a fresh build marker satisfies the check', r5marker.status === 0, 
 // ---------------------------------------------------------------------------
 console.log('\n--- Ledger rows 7-8: tracker threshold and tolerant key read ---');
 function trackerRun(seed, threshold) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-trk-'));
+  const tmp = mkScratch('dg-trk-');
   if (seed) fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), seed);
   const r = spawnSync(process.execPath, [S('dg-track-change.js')], {
     input: JSON.stringify({ session_id: 's', tool_input: { file_path: 'a.ts' } }),
@@ -221,7 +238,7 @@ check('row 8: writes BOTH key names', /total_changes_since_audit/.test(written) 
 // ---------------------------------------------------------------------------
 console.log('\n--- Ledger rows 9-11: Stop verification, SessionStart, runner detection ---');
 function stopRun(seed, markTest) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-stop-'));
+  const tmp = mkScratch('dg-stop-');
   fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), seed);
   if (markTest) fs.writeFileSync(path.join(tmp, 'dg-test-s'), '1');
   const r = spawnSync(process.execPath, [S('dg-session-stop.js')], {
@@ -239,7 +256,7 @@ check('row 9 negative: silent about tests once a test run is recorded',
 // Row 11: the runner list must recognize THIS repo's suite, which the .sh list
 // did not — so a green `bash tests/run-all.sh` recorded nothing and row 9 nagged.
 function trackTest(cmd) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-tt-'));
+  const tmp = mkScratch('dg-tt-');
   spawnSync(process.execPath, [S('dg-track-test.js')], {
     input: JSON.stringify({ session_id: 's', tool_input: { command: cmd } }),
     encoding: 'utf8', cwd: ROOT, env: { ...process.env, TMPDIR: tmp, TEMP: tmp },
@@ -257,7 +274,7 @@ check('row 11 negative: a quoted mention does not record a test run',
 // Row 10: SessionStart must report the phase from a PRETTY-PRINTED status.json.
 // dg-session-start.sh reports "phase: unknown" here because its grep pattern
 // requires no space after the colon.
-const planRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-plan-'));
+const planRoot = mkScratch('dg-plan-');
 const planDir = path.join(planRoot, 'docs', 'plans', '2026-01-01-demo');
 fs.mkdirSync(planDir, { recursive: true });
 fs.writeFileSync(path.join(planDir, 'status.json'), JSON.stringify({
@@ -286,7 +303,7 @@ const f26Cases = [
 // mutation P8 made the stop hook write to stderr and this row stayed green.
 // Seed a tracker so both actually emit.
 function runEmitting(script, payload) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-f26-'));
+  const tmp = mkScratch('dg-f26-');
   fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), '{"session_changes":3,"total_changes_since_audit":99}');
   const r = spawnSync(process.execPath, [S(script)], {
     input: JSON.stringify(payload), encoding: 'utf8', cwd: planRoot,
@@ -325,7 +342,7 @@ check('F26: all informational handlers exit 0, JSON-only, no stderr', f26);
 // F26 loop above cannot detect a no-op version of it. Assert the actual effect.
 // Without this, replacing the file with `process.exit(0)` left the whole suite green.
 (() => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-sub-'));
+  const root = mkScratch('dg-sub-');
   const dir = path.join(root, 'docs', 'plans', '2026-01-01-demo', 'troubleshooting');
   fs.mkdirSync(dir, { recursive: true });
   const log = path.join(dir, 'subagent-log.txt');
@@ -337,7 +354,7 @@ check('F26: all informational handlers exit 0, JSON-only, no stderr', f26);
   // Negative: no troubleshooting/ directory means the plan has not opted in, and the
   // handler must NOT create one. A stop hook silently making directories in someone
   // else's repo is a surprise.
-  const root2 = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-sub2-'));
+  const root2 = mkScratch('dg-sub2-');
   fs.mkdirSync(path.join(root2, 'docs', 'plans', '2026-01-01-demo'), { recursive: true });
   const r2 = run('dg-subagent-stop.js', { session_id: 's', reason: 'x' }, { cwd: root2 });
   check('row 4 negative: no troubleshooting/ dir means no log and no directory created',

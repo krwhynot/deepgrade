@@ -148,6 +148,7 @@ console.log('\n3. Staleness');
   const os = require('os');
   const fs = require('fs');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-evidence-'));
+  process.on('exit', () => { try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 3 }); } catch { /* leave it */ } });
   const crlfDir = path.join(tmp, 'fixtures', 'evidence');
   fs.mkdirSync(crlfDir, { recursive: true });
   const lf = fs.readFileSync(path.join(ROOT, ARTIFACT), 'utf8').replace(/\r\n/g, '\n');
@@ -247,6 +248,7 @@ console.log('\n5. CLI contract');
   };
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-cli-'));
+  process.on('exit', () => { try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 3 }); } catch { /* leave it */ } });
   const evd = path.join(tmp, 'evidence');
   fs.mkdirSync(evd, { recursive: true });
 
