@@ -160,6 +160,7 @@ console.log('\n6. CLI contract');
   };
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-canary-'));
+  process.on('exit', () => { try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 3 }); } catch { /* leave it */ } });
   const specCopy = path.join(tmp, 'spec.md');
   fs.writeFileSync(specCopy, SPEC);
   const outDir = path.join(tmp, '.canary');
