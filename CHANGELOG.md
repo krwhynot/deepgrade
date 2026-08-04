@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+- CR-7 (owner-ratified): the U7 compatibility-floor requirement is descoped.
+  Verification is on the current Claude Code version at each release (hosted
+  ubuntu+windows CI); no floor is declared. F24 closed — every
+  plugin-hardening-v5 finding is now closed. The auth-free bisection facts
+  (`--strict` appears at 2.1.145; git-subdir pinned installs work at ≤2.1.144)
+  are preserved in the plan's research record.
+- Test scratch directories are swept at process exit — 49 OS-temp entries
+  leaked per combined test run before, zero after.
+
 ## 7.1.0 (2026-08-03)
 
 ### Changed
