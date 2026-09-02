@@ -31,9 +31,9 @@ cd "$PLUGIN_DIR" || { echo "[FAIL] plugin dir '$PLUGIN_DIR' does not exist"; exi
 # ---------------------------------------------------------------------------
 case "$PROFILE" in
   deepgrade)
-    # Planning core: 9 commands, the two planner agents, 3 skills, the three
+    # Planning core: 8 commands, the two planner agents, 4 skills, the three
     # plan-context hooks, and the canary/evidence audit tooling wired from
-    # commands/plan.md (F06's command-wired mechanism).
+    # skills/plan/ (F06's command-wired mechanism).
     PLUGIN_NAME="deepgrade"
     OWN_NS="deepgrade"
     EXPECTED_EVENTS="SessionStart SubagentStop PreCompact"
@@ -1082,7 +1082,7 @@ allow_of() {
 }
 mcp_bad=0
 mcp_subjects=0
-for f in "$AGENTS_DIR"/*.md "$COMMANDS_DIR"/*.md; do
+for f in "$AGENTS_DIR"/*.md "$COMMANDS_DIR"/*.md "$SKILLS_DIR"/*/SKILL.md; do
   [ -e "$f" ] || continue
   val=$(allow_of "$f")
   [ -z "$val" ] && continue
@@ -1248,8 +1248,8 @@ else
   [ "$missing" -eq 0 ] && pass "F06: every referenced handler script exists"
 
   # The plugin invokes scripts by two mechanisms, and F06 originally knew only one.
-  # Hook handlers are named in hooks.json; audit tooling is invoked from a command or
-  # agent as an explicit `node .../scripts/NAME` line. The invariant F06 defends is
+  # Hook handlers are named in hooks.json; audit tooling is invoked from a command,
+  # skill, or agent as an explicit `node .../scripts/NAME` line. The invariant F06 defends is
   # "no unwired code ships", not "everything in scripts/ is a hook", so the reverse
   # sweep accepts either mechanism (PH5-020).
   #
@@ -1258,7 +1258,7 @@ else
   # followed by the path — keeps this structural. A script named only in a sentence
   # is still an orphan, which is the correct answer.
   inv_re='node[^`]*scripts/[A-Za-z0-9._-]+\.js'
-  inv=$(grep -ohE "$inv_re" commands/*.md agents/*.md 2>/dev/null | sed 's|.*/||' | sort -u)
+  inv=$(grep -ohE "$inv_re" commands/*.md agents/*.md skills/*/*.md skills/*/phases/*.md 2>/dev/null | sed 's|.*/||' | sort -u)
   inv_count=$(echo "$inv" | grep -c . || true)
 
   # Self-tests. The known-positive is the QUOTED form, copied from how the plugin
@@ -1456,8 +1456,8 @@ if [ "$f14_actual" != "$f14_want" ]; then
 fi
 # Negative, per the §3.8 discovery-path decision: `plan` must stay model-invocable.
 if [ "$F14_PLAN_NEG" -eq 1 ]; then
-  [ -n "$(fm_get "$COMMANDS_DIR/plan.md" 'disable-model-invocation')" ] \
-    && { fail "F14: plan.md must NOT disable model invocation (§3.8 discovery path)"; f14_bad=1; }
+  [ -n "$(fm_get "$SKILLS_DIR/plan/SKILL.md" 'disable-model-invocation')" ] \
+    && { fail "F14: skills/plan/SKILL.md must NOT disable model invocation (§3.8 discovery path)"; f14_bad=1; }
 fi
 [ "$f14_bad" -eq 0 ] && pass "F14: disable-model-invocation on exactly [$f14_want], not on plan"
 
@@ -1598,7 +1598,7 @@ for d in "$SKILLS_DIR"/*/; do
   # An explicit ${CLAUDE_PLUGIN_ROOT}/skills/<name>/ path is accepted too: it is a real,
   # unambiguous reference, and rejecting it was over-strict (Codex Q3).
   if ! grep -rhE "$OWN_NS:$sk([^A-Za-z0-9_-]|\$)|skills/$sk/SKILL\.md" \
-         "$AGENTS_DIR" "$COMMANDS_DIR" "$SKILLS_DIR"/*/SKILL.md 2>/dev/null \
+         "$AGENTS_DIR" "$COMMANDS_DIR" "$SKILLS_DIR"/*/SKILL.md "$SKILLS_DIR"/*/phases/*.md 2>/dev/null \
        --exclude-dir="$sk" \
        | grep -viE '(never|do not|don'"'"'t|no longer|deprecated|avoid)[^.]{0,60}('"$sk"')' \
        | grep -q .; then

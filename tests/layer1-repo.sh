@@ -305,10 +305,10 @@ fi
 # --- A1a: machine-read files carry ids, never rule text -------------------
 # commands/ and agents/ are loaded into agent context. Text that drifts here is
 # text a judge actually applies, so nothing may follow a LINT id but the id.
-git ls-files -z 'plugins/*/commands/*.md' 'plugins/*/agents/*.md' 2>/dev/null | lint_extract | sort -u > "$lint_hits"
+git ls-files -z 'plugins/*/commands/*.md' 'plugins/*/agents/*.md' 'plugins/*/skills/plan/*.md' 'plugins/*/skills/plan/phases/*.md' 2>/dev/null | lint_extract | sort -u > "$lint_hits"
 
-for must in plugins/deepgrade/commands/plan.md plugins/deepgrade/agents/plan-auditor.md; do
-  git ls-files -z 'plugins/*/commands/*.md' 'plugins/*/agents/*.md' 2>/dev/null | tr '\0' '\n' | grep -qxF "$must" \
+for must in plugins/deepgrade/skills/plan/phases/phase-5-audit.md plugins/deepgrade/agents/plan-auditor.md; do
+  git ls-files -z 'plugins/*/commands/*.md' 'plugins/*/agents/*.md' 'plugins/*/skills/plan/*.md' 'plugins/*/skills/plan/phases/*.md' 2>/dev/null | tr '\0' '\n' | grep -qxF "$must" \
     || { fail "PH5-001a: $must is not in the machine-read set — the derivation is wrong, not the repo clean"; lint_bad=1; }
 done
 
@@ -358,7 +358,7 @@ rm -f "$lint_hits" "$lint_reg" "$lint_hf" "$lint_drift"
 # PH5-002 / acceptance row A1: rule COUNTS live only in the registry.
 #
 # Rule text was not the only thing that drifted. Four different Phase 5 counts were
-# in print at once — 14 in plugins/deepgrade/commands/plan.md, 14 and 15 in plugins/deepgrade/agents/plan-auditor.md,
+# in print at once — 14 in plugins/deepgrade/skills/plan/phases/phase-5-audit.md, 14 and 15 in plugins/deepgrade/agents/plan-auditor.md,
 # 16 in the registry, 15 in METHODOLOGY.md — plus a fifth ("13 in Lite mode") in the
 # same METHODOLOGY sentence. A count is a claim about the rule SET, so it belongs
 # where the set is defined.
@@ -472,7 +472,7 @@ done
 # ===========================================================================
 # PH5-010 / acceptance row A3: audit criteria are not in the generator's reach.
 #
-# plugins/deepgrade/commands/plan.md is what the Phase 4 generator reads. It carried a full copy of
+# plugins/deepgrade/skills/plan/phases/phase-5-audit.md is what the Phase 4 generator reads. It carried a full copy of
 # the scoring rubric and the gap matrices — the 1-5 anchors, the Scenario Matrix with
 # its eight scenarios named, the Cross-Cutting Sweep with its concerns named. A
 # generator holding that list writes sections matching the list, which is compliance
@@ -503,7 +503,7 @@ if printf '%s\n' 'Set iterations = 2 when the loop re-runs.' | grep -qE "$anchor
 fi
 
 # --- generator side: the criteria must be absent -------------------------
-GENERATOR_FILES="plugins/deepgrade/commands/plan.md plugins/deepgrade/commands/quick-plan.md plugins/deepgrade/agents/plan-scaffolder.md"
+GENERATOR_FILES="plugins/deepgrade/skills/plan/SKILL.md plugins/deepgrade/skills/plan/phases/*.md plugins/deepgrade/commands/quick-plan.md plugins/deepgrade/agents/plan-scaffolder.md"
 for gf in $GENERATOR_FILES; do
   [ -f "$gf" ] || { fail "PH5-010: generator file $gf not found — the subject set is wrong, not the repo clean"; crit_bad=1; continue; }
   for probe in "$anchor_re:scoring anchor" "$scen_re:Scenario Matrix criteria" "$conc_re:Cross-Cutting criteria"; do
@@ -594,7 +594,7 @@ fi
 # a sentence-initial imperative for the same negation-proofing reason as PH5-011.
 # ===========================================================================
 iso_bad=0
-ISO_FILE="plugins/deepgrade/commands/plan.md"
+ISO_FILE="plugins/deepgrade/skills/plan/phases/phase-5-audit.md"
 iso_re='^SPAWN A NEW plan-auditor INSTANCE'
 
 if ! printf '%s\n' 'SPAWN A NEW plan-auditor INSTANCE for every audit iteration.' | grep -qE "$iso_re"; then
@@ -709,8 +709,8 @@ if ! grep -qxF "$PH5_021_LINE" plugins/deepgrade/agents/plan-auditor.md; then
   fail "PH5-021: plugins/deepgrade/agents/plan-auditor.md does not require emitting evidence records — the validator has no input, so the gate cannot open"
   emit_bad=1
 fi
-if ! grep -qxF "$PH5_022_LINE" plugins/deepgrade/commands/plan.md; then
-  fail "PH5-022: plugins/deepgrade/commands/plan.md does not require committing the evidence directory — evidence that is not committed cannot be re-checked later"
+if ! grep -qxF "$PH5_022_LINE" plugins/deepgrade/skills/plan/phases/phase-5-audit.md; then
+  fail "PH5-022: plugins/deepgrade/skills/plan/phases/phase-5-audit.md does not require committing the evidence directory — evidence that is not committed cannot be re-checked later"
   emit_bad=1
 fi
 
@@ -733,10 +733,10 @@ fi
 # ===========================================================================
 gate_bad=0
 GATE_LINE='PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK'
-gate_block=$(sed -n '/^<gate_expression>$/,/^<\/gate_expression>$/p' plugins/deepgrade/commands/plan.md 2>/dev/null)
+gate_block=$(sed -n '/^<gate_expression>$/,/^<\/gate_expression>$/p' plugins/deepgrade/skills/plan/phases/phase-5-audit.md 2>/dev/null)
 
 if [ -z "$gate_block" ]; then
-  fail "PH5-041: plugins/deepgrade/commands/plan.md has no delimited <gate_expression> block"
+  fail "PH5-041: plugins/deepgrade/skills/plan/phases/phase-5-audit.md has no delimited <gate_expression> block"
   gate_bad=1
 else
   printf '%s\n' "$gate_block" | grep -qxF "$GATE_LINE" \
@@ -753,10 +753,10 @@ else
 fi
 
 # The superseded form must be gone, not merely superseded by a newer block below it.
-if grep -qE '^IF score (>=|<) [0-9]+' plugins/deepgrade/commands/plan.md; then
+if grep -qE '^IF score (>=|<) [0-9]+' plugins/deepgrade/skills/plan/phases/phase-5-audit.md; then
   gate_bad=1
-  fail "PH5-041: the score-based gate branch is still present in plugins/deepgrade/commands/plan.md"
-  grep -nE '^IF score (>=|<) [0-9]+' plugins/deepgrade/commands/plan.md | sed 's/^/           /' | head -4
+  fail "PH5-041: the score-based gate branch is still present in plugins/deepgrade/skills/plan/phases/phase-5-audit.md"
+  grep -nE '^IF score (>=|<) [0-9]+' plugins/deepgrade/skills/plan/phases/phase-5-audit.md | sed 's/^/           /' | head -4
 fi
 
 [ "$gate_bad" -eq 0 ] && pass "PH5-041: the gate keys on canary, evidence, verdicts and infra — not on a score"
@@ -770,7 +770,7 @@ fi
 # UNMET: Phase 2 migration has no rollback step" names a defect it can actually fix.
 # ===========================================================================
 fb_bad=0
-fb_block=$(sed -n '/^<revision_feedback>$/,/^<\/revision_feedback>$/p' plugins/deepgrade/commands/plan.md 2>/dev/null)
+fb_block=$(sed -n '/^<revision_feedback>$/,/^<\/revision_feedback>$/p' plugins/deepgrade/skills/plan/phases/phase-5-audit.md 2>/dev/null)
 fb_forbidden='dimension|score|/40|points|threshold|GREEN|YELLOW|ORANGE'
 
 if ! printf '%s\n' 'Dimension 4 scored 2 — improve rollback coverage.' | grep -qEi "$fb_forbidden"; then
@@ -783,7 +783,7 @@ if printf '%s\n' 'LINT-03 UNMET: Phase 2 migration has no rollback step. Locatio
 fi
 
 if [ -z "$fb_block" ]; then
-  fail "PH5-040: plugins/deepgrade/commands/plan.md has no delimited <revision_feedback> block defining what goes back to the generator"
+  fail "PH5-040: plugins/deepgrade/skills/plan/phases/phase-5-audit.md has no delimited <revision_feedback> block defining what goes back to the generator"
   fb_bad=1
 else
   offend=$(printf '%s\n' "$fb_block" | grep -nEi "$fb_forbidden" || true)
@@ -810,9 +810,9 @@ fi
 # mentions the word "waiver" — a mention survives the rule being deleted.
 # ===========================================================================
 wv_bad=0
-wv_block=$(sed -n '/^<waiver_condition>$/,/^<\/waiver_condition>$/p' plugins/deepgrade/commands/plan.md 2>/dev/null)
+wv_block=$(sed -n '/^<waiver_condition>$/,/^<\/waiver_condition>$/p' plugins/deepgrade/skills/plan/phases/phase-5-audit.md 2>/dev/null)
 if [ -z "$wv_block" ]; then
-  fail "PH5-060: plugins/deepgrade/commands/plan.md has no delimited <waiver_condition> block"
+  fail "PH5-060: plugins/deepgrade/skills/plan/phases/phase-5-audit.md has no delimited <waiver_condition> block"
   wv_bad=1
 else
   for term in 'infra_gaps == 0' 'score >= 35' 'canary_found == true'; do
@@ -832,8 +832,8 @@ fi
 # ===========================================================================
 hol_bad=0
 HOL_LINE='RUN one additional judge with no rubric, no criterion list, and no dimension names.'
-grep -qxF "$HOL_LINE" plugins/deepgrade/commands/plan.md \
-  || { fail "PH5-050: plugins/deepgrade/commands/plan.md does not run a rubric-free pass — nothing checks the criteria for completeness"; hol_bad=1; }
+grep -qxF "$HOL_LINE" plugins/deepgrade/skills/plan/phases/phase-5-audit.md \
+  || { fail "PH5-050: plugins/deepgrade/skills/plan/phases/phase-5-audit.md does not run a rubric-free pass — nothing checks the criteria for completeness"; hol_bad=1; }
 [ -f plugins/deepgrade/docs/planning-techniques/lint-candidates.md ] \
   || { fail "PH5-050: plugins/deepgrade/docs/planning-techniques/lint-candidates.md missing — unmapped findings have nowhere to land"; hol_bad=1; }
 [ "$hol_bad" -eq 0 ] && pass "PH5-050: a rubric-free pass runs and its unmapped findings land in lint-candidates.md"
@@ -846,9 +846,9 @@ grep -qxF "$HOL_LINE" plugins/deepgrade/commands/plan.md \
 # signature of threshold-aiming. Keeping the series costs nothing and is the only
 # way to see that pattern at all.
 # ===========================================================================
-grep -qF 'score_history' plugins/deepgrade/commands/plan.md \
+grep -qF 'score_history' plugins/deepgrade/skills/plan/phases/phase-5-audit.md \
   && pass "PH5-051: audit scores are retained as a series for distribution monitoring" \
-  || fail "PH5-051: plugins/deepgrade/commands/plan.md does not record score_history — threshold-aiming would be invisible"
+  || fail "PH5-051: plugins/deepgrade/skills/plan/phases/phase-5-audit.md does not record score_history — threshold-aiming would be invisible"
 
 # ===========================================================================
 # 16R. Root-doc conformance (§9.2, class G) — the root-level docs.
