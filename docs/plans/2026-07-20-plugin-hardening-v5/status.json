@@ -192,7 +192,7 @@
       "residual_risk_accepted": "bus factor 1 across the 28-34 working-day envelope"
     },
     "build": {
-      "status": "in_progress",
+      "status": "complete",
       "started": "2026-07-29",
       "wave": 8,
       "tickets_complete": [
@@ -561,7 +561,9 @@
       },
       "layer7_part2_2026_08_03": "PHV5-044 Part 2 COMPLETE: prerequisite + checks A-I all recorded in research/layer7-runtime-evidence.md, owner-observed on the INSTALLED 7.0.0 copy (marketplace sha 55dbdeb, hook code byte-identical to HEAD). U4 POSITIVE (SessionStart names real plan/phase/status), U5 POSITIVE (PreCompact line surfaced on /compact), F25 deny+allow both observed (deny names --force-with-lease, settling part 1 PENDING), F22 ask dialog observed on a primed redrive, F24 quoted-mention observed allowed, Stop observed on BOTH branches (summary and no-tests nudge - one message per stop by design), H zero hook errors owner-confirmed, I vendor notice observed verbatim on a node-less host naming event/severity/cause (CR-1 re-confirmed on an installed copy). F06 and F26 closed; F24 narrowed to the U7-floor clause only. Supplementary: ask-on-unparseable and change-tracker notices observed surfacing; [plugin:deepgrade] attribution label on guard dialogs noted as display follow-up.",
       "f05_verified_closed_2026_08_03": "F05 note was STALE: it recorded row 6 (staging-count sanity) as having no test, but 5.0.1 added both directions to tests/layer2-ledger-rows.js \u2014 \"row 6: staging-count check denies 20 staged against 1 edited\" (isolated from row 5 by a fresh build marker, real repo, real staged count) and the proportionate negative. Verified 2026-08-03 before closing: all eleven ledger rows have sections (1-2, 3, 4, 5-6, 7-8, 9-11), the file runs 31/0, and a red-test (threshold neutered to edits*2+5000) failed exactly the row-6 positive check (30/1), restoring to 31/0 - the test provably watches the row. The \"per-row tests for all ELEVEN ledger rows\" clause is met.",
-      "cr7_descope_2026_08_03": "CR-7 RATIFIED (owner: \"descope\", 2026-08-03): the U7 compatibility-floor clause is replaced by current-version verification (hosted ubuntu+windows CI matrix + release-time local runtime evidence; auto-updating Claude Code assumed; no floor declared). F24 -> findings_closed on existing evidence (layer7-runtime-evidence.md check H + green CI). PHV5-003 RETIRED half-executed by design, deliberately NOT in tickets_complete; its artifact research/u7-floor-evidence.md permanently records the auth-free bisection: --strict appears at 2.1.145, git-subdir pinned install works at 2.1.144, 7 probes. The section-10.3 floor CI job is not built, per the same CR."
+      "cr7_descope_2026_08_03": "CR-7 RATIFIED (owner: \"descope\", 2026-08-03): the U7 compatibility-floor clause is replaced by current-version verification (hosted ubuntu+windows CI matrix + release-time local runtime evidence; auto-updating Claude Code assumed; no floor declared). F24 -> findings_closed on existing evidence (layer7-runtime-evidence.md check H + green CI). PHV5-003 RETIRED half-executed by design, deliberately NOT in tickets_complete; its artifact research/u7-floor-evidence.md permanently records the auth-free bisection: --strict appears at 2.1.145, git-subdir pinned install works at 2.1.144, 7 probes. The section-10.3 floor CI job is not built, per the same CR.",
+      "completed": "2026-08-03",
+      "completion_note": "All findings closed (24), findings_partial empty, all tickets complete or retired (PHV5-003 retired via CR-7), PHV5-044 Part 2 recorded A-I, 7.1.0 released and pinned. Later lifecycle phases (impact_review/test/handoff) were superseded by the split program: live install verification, dogfood run, runtime evidence, and two releases served those roles; they remain not_started by design."
     },
     "impact_review": {
       "status": "not_started"
