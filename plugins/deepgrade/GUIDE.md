@@ -2,7 +2,7 @@
 
 # DeepGrade Knowledge Guide v7.1.0
 
-**8 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **4 Skills** &nbsp;&bull;&nbsp; **3 Safety Hooks** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
+**6 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **6 Skills** &nbsp;&bull;&nbsp; **3 Safety Hooks** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/deepgrade)
 [![Version](https://img.shields.io/badge/v7.1.0-stable-2ECC71?style=for-the-badge)](#)
@@ -161,11 +161,15 @@ methodology reference lives in the monorepo's
 | ![p](https://img.shields.io/badge/-%E2%80%8B-9B59B6) | plan-scaffolder | Creates structured technical plans from vague objectives using 3 parallel analysts | quick-plan, plan |
 | ![p](https://img.shields.io/badge/-%E2%80%8B-9B59B6) | plan-auditor | Scores plans across 8 dimensions using parallel specialist subagents | quick-audit, plan |
 
-## The 4 Skills
+## The 6 Skills
 
 Skills are persistent knowledge that loads automatically when relevant — reference books the plugin carries in its back pocket.
 
 **plan** -- The `/deepgrade:plan` workflow itself. `SKILL.md` is a router (identity, lifecycle, workspace layout, Step 0 intent detection) and each of the nine phases lives in its own file under `phases/`, read when the phase is entered. Split this way so the later phases survive context compaction in long planning sessions instead of being silently dropped with the rest of a 1,700-line command.
+
+**troubleshoot** -- The `/deepgrade:troubleshoot` workflow: a router holding identity, timeline logging, plan detection, and Step 0 knowledge-base lookup, with the incident pre-flow, the four phases, multi-agent mode, and the knowledge-base write-back in one file each under `phases/`, read on entry.
+
+**codex-challenge** -- The `/deepgrade:codex-challenge` loop: a router holding the Codex invocation pattern and the eight review dimensions, with the output schema, prompt template, round loop, and report in `phases/`. The schema file is what the parser tests bind to.
 
 **documentation** -- The dispatch hub for document generation. Contains routing logic (first word = subcommand), 6 template references, smart suggestions when audit data exists, and document chain enforcement (a PRD triggers a check for a related BRD, etc.). Loads when you ask for a document, or invoke `/deepgrade:documentation` directly.
 

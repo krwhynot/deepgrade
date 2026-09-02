@@ -22,7 +22,7 @@ atexit.register(lambda: os.path.exists(LOCK) and os.unlink(LOCK))
 
 
 FILES = ['plugins/deepgrade/commands/quick-cleanup.md', 'plugins/deepgrade/commands/plan-status.md', 'plugins/deepgrade/commands/plan-export.md',
-         'plugins/deepgrade-readiness/commands/readiness-generate.md', 'plugins/deepgrade/commands/plan.md', 'plugins/deepgrade/commands/help.md',
+         'plugins/deepgrade-readiness/commands/readiness-generate.md', 'plugins/deepgrade/skills/plan/phases/phase-2-research.md', 'plugins/deepgrade/commands/help.md',
          'plugins/deepgrade-audit/commands/codebase-gates.md',
          'plugins/deepgrade-audit/agents/gate-generator.md', 'plugins/deepgrade/skills/documentation/SKILL.md',
          'plugins/deepgrade/skills/mcp-research/SKILL.md', 'README.md', 'CHANGELOG.md',
@@ -33,7 +33,7 @@ REQUIRED = {
     'plugins/deepgrade/commands/plan-status.md':   'PLANS_DIR="docs/plans"',
     'plugins/deepgrade/commands/quick-cleanup.md': 'No source folder given',
     'plugins/deepgrade-audit/agents/gate-generator.md':  'PowerShell variant',
-    'plugins/deepgrade/commands/plan.md':          'deepgrade:mcp-research',
+    'plugins/deepgrade/skills/plan/phases/phase-2-research.md':          'deepgrade:mcp-research',
 }
 FORBIDDEN = {
     'README.md':    'deepgrade:doc adr topic',
@@ -188,7 +188,7 @@ MUTS = [
  ('Y8  PowerShell instruction inverted to a prohibition', l1, 'F08',
   lambda: patch('plugins/deepgrade-audit/agents/gate-generator.md', 'PowerShell variant', 'do not emit a PowerShell variant'), 'catch'),
  ('Y9  skill wired by PROSE only, not a namespaced name', l1, 'F28',
-  lambda: patch('plugins/deepgrade/commands/plan.md', '`deepgrade:mcp-research` skill', 'mcp-research skill'), 'catch'),
+  lambda: patch('plugins/deepgrade/skills/plan/phases/phase-2-research.md', '`deepgrade:mcp-research` skill', 'mcp-research skill'), 'catch'),
  # --- Codex F4: clauses that previously had no falsifying assertion ---
  ('Y10 drop the ${CLAUDE_PROJECT_DIR} resolution', l1, 'F10',
   lambda: patch('plugins/deepgrade/commands/plan-export.md', '${CLAUDE_PROJECT_DIR:-$OLDPWD}', '$PWD', 2), 'catch'),
@@ -248,7 +248,7 @@ MUTS = [
  ('W4  `tree` after an `if` keyword', l1, 'F15',
   lambda: append_block('plugins/deepgrade-readiness/commands/readiness-generate.md', 'if tree .; then :; fi'), 'catch'),
  ('W5  skill referenced only to FORBID it', l1, 'F28',
-  lambda: patch('plugins/deepgrade/commands/plan.md', 'see the `deepgrade:mcp-research` skill',
+  lambda: patch('plugins/deepgrade/skills/plan/phases/phase-2-research.md', 'see the `deepgrade:mcp-research` skill',
                 'never invoke `deepgrade:mcp-research`; it is deprecated'), 'catch'),
  ('W6  description states it should NOT load', l1, 'F28',
   lambda: patch('plugins/deepgrade/skills/mcp-research/SKILL.md', 'description: ',

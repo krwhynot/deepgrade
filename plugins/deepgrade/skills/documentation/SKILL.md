@@ -21,7 +21,7 @@ With no plan named, use the standard locations only.
 
 ## Resolving template paths
 
-Templates live beside this file. Read them via `${CLAUDE_SKILL_DIR}/resources/<name>`
+Templates live beside this file. Read them via `${CLAUDE_SKILL_DIR}/references/<name>`
 — an installed plugin does not sit at a path this file can assume, and a relative
 read from the session's working directory resolves into the *user's project*, not
 the plugin. The table below uses repo-relative links for human readability; at
@@ -43,12 +43,12 @@ Parse `$ARGUMENTS` to determine the document type and topic:
 
 | Subcommand | Template | Description |
 |------------|----------|-------------|
-| `adr` | [resources/adr-template.md](resources/adr-template.md) | Architecture Decision Record |
-| `brd` | [resources/brd-template.md](resources/brd-template.md) | Business Requirements Document |
-| `prd` | [resources/prd-template.md](resources/prd-template.md) | Product Requirements Document |
-| `readme` | [resources/readme-template.md](resources/readme-template.md) | Project README |
-| `release-notes` | [resources/release-notes-template.md](resources/release-notes-template.md) | Release Notes / Changelog |
-| `spec` | [resources/spec-template.md](resources/spec-template.md) | Technical Specification (extraction, migration, feature, infrastructure) |
+| `adr` | [references/adr-template.md](references/adr-template.md) | Architecture Decision Record |
+| `brd` | [references/brd-template.md](references/brd-template.md) | Business Requirements Document |
+| `prd` | [references/prd-template.md](references/prd-template.md) | Product Requirements Document |
+| `readme` | [references/readme-template.md](references/readme-template.md) | Project README |
+| `release-notes` | [references/release-notes-template.md](references/release-notes-template.md) | Release Notes / Changelog |
+| `spec` | [references/spec-template.md](references/spec-template.md) | Technical Specification (extraction, migration, feature, infrastructure) |
 
 ### Dispatch Logic
 
@@ -163,7 +163,7 @@ This ensures documents don't exist in isolation. Every doc links to related docs
 
 ### Execution
 
-Read the selected `resources/*.md` template file and follow its instructions exactly,
+Read the selected `references/*.md` template file and follow its instructions exactly,
 treating the remaining arguments as the topic (feature, domain, or project name) wherever the template shows its dollar-one placeholder.
 
 ### Command Reference Rule

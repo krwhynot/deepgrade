@@ -10,6 +10,18 @@
   single long command loses its later phases after context compaction in
   exactly the long sessions a nine-phase workflow produces. Tests that read
   Phase 5 content now point at `phases/phase-5-audit.md`.
+- **`/deepgrade:troubleshoot` and `/deepgrade:codex-challenge` are skills**, on
+  the same router-plus-phase-files layout as `plan`. troubleshoot (854 lines)
+  becomes a 256-line router with the incident pre-flow, four phases,
+  multi-agent mode, and knowledge-base write-back in one file each;
+  codex-challenge (533 lines) becomes a 213-line router with the output
+  schema, prompt template, round loop, and report split out. The parser
+  tests now bind to `skills/codex-challenge/phases/output-schema.md`. The
+  three remaining long commands (quick-cleanup, readiness-generate,
+  plan-export) are under the documented 500-line guidance and stay as
+  commands. Closes backlog B07.
+- The documentation skill's bundled templates live in `references/`, the
+  documented convention, instead of `resources/`. Closes backlog B28.
 - The `(deepgrade)` description prefix is stripped from all 23 commands and
   skills. After the monorepo split it mislabelled 11 files owned by
   deepgrade-audit and deepgrade-readiness.

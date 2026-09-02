@@ -880,7 +880,7 @@ rm -f /tmp/dg_valid_agents.$$
 echo ""
 echo "--- Documentation templates (F29/F31) ---"
 
-TPL_DIR="skills/documentation/resources"
+TPL_DIR="skills/documentation/references"
 if [ "$TPL_CHECK" -eq 0 ]; then
   :  # the documentation templates ship with deepgrade only
 elif [ ! -d "$TPL_DIR" ]; then

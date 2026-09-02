@@ -15,7 +15,3 @@ desktop.ini
 # Local overrides
 *.local.md
 *.local.json
-
-# VS Code (keep settings.json and extensions.json, ignore personal)
-.vscode/launch.json
-.vscode/*.code-workspace
