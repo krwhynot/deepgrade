@@ -9,11 +9,11 @@ works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
 
 ## Commands
 
-### Planning (the 9-phase guided workflow)
+### Planning (the six-stage playbook workflow)
 
 | Command | What It Does |
 |---------|-------------|
-| `/deepgrade:plan` | Start or resume a guided plan. 9 phases: Brainstorm, Research, Pre-Plan, Plan, Audit, Build, Impact Review, Test, Handoff. |
+| `/deepgrade:plan` | Start or resume a guided plan on the AI-Native SDLC playbook. Six stages: Plan (intent.md), Design (spec.md + verifier gate), Build (plan.md), Test, Deploy (review.md), Maintain. `intent {name}` captures intent only. |
 | `/deepgrade:plan-status` | Show all active plans or detailed status of one plan with staleness checks. |
 | `/deepgrade:plan-export` | Export a plan as a self-contained zip. Includes all docs, redacts secrets, adds CLAUDE.md for vanilla Claude Code bootstrap. |
 
@@ -31,7 +31,7 @@ works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
 
 | | `/deepgrade:plan` | `/deepgrade:quick-plan` |
 |--|-----------|-----------------|
-| **What** | Guided 9-phase workflow | One-shot plan generation |
+| **What** | Guided six-stage workflow | One-shot plan generation |
 | **Phases** | All 9 (Brainstorm through Handoff) | Phase 4 (Plan) only |
 | **Asks questions?** | Yes, walks you through interactively | No, takes objective and generates immediately |
 | **Creates plan folder?** | Yes: `docs/plans/2026-03-07-{name}/` | No, just writes `docs/specs/{name}.md` |
@@ -185,11 +185,11 @@ Don't know which format? Just say "I need to document X" and the skill will reco
 6. `/deepgrade-audit:codebase-delta` after changes to verify improvement
 7. `/deepgrade-audit:codebase-security` periodically
 
-**For planning any new work (the 9-phase guided workflow):**
+**For planning any new work (the six-stage playbook workflow):**
 ```
 /deepgrade:plan {name}
 ```
-Walks you through: Brainstorm -> Research -> Pre-Plan -> Plan -> Audit -> Build -> Impact Review -> Test -> Handoff
+Walks you through: Plan (intent.md) -> Design (spec.md, gate) -> Build (plan.md, code) -> Test -> Deploy (review.md) -> Maintain
 
 All artifacts go to `docs/plans/{date}-{name}/`. Check progress with `/deepgrade:plan-status`.
 

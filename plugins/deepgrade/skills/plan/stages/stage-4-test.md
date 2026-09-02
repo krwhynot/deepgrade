@@ -1,6 +1,11 @@
-# Phase 8: TEST
+# Stage 4: TEST
 
-Phase file for `/deepgrade:plan`. Loaded by `${CLAUDE_SKILL_DIR}/SKILL.md` when the workflow enters this phase. Do not read ahead to other phase files.
+Stage file for /deepgrade:plan. Loaded by SKILL.md on entry; re-read after compaction. Do not read ahead.
+
+Question: Does it work safely?
+Reads: spec.md (## Verification plan), plan.md (## Proof, ## Verification), audit.md, impact-review.md, status.json
+Produces: docs/plans/{date}-{plan-name}/test-plan.md, status.json test_gate, manifest.md update
+Gate: Hard readiness gate (all Tier 1 automated checks pass AND all Tier 2 manual checks confirmed by a human)
 
 ## Contents
 
@@ -10,8 +15,6 @@ Phase file for `/deepgrade:plan`. Loaded by `${CLAUDE_SKILL_DIR}/SKILL.md` when 
 - Two-tier verification
 - Hard readiness gate
 
-Question: Does it work safely?
-
 DOCUMENT ACTIONS (automatic):
 Write docs/plans/{date}-{plan-name}/test-plan.md with:
 - Per-phase test matrix (test name, type, what it verifies)
@@ -20,9 +23,9 @@ Write docs/plans/{date}-{plan-name}/test-plan.md with:
 - Each criterion categorized as AUTOMATED or MANUAL (see below)
 
 METHODOLOGY-SPECIFIC TEST PROCEDURES:
-Based on the testing methodology assigned in Phase 4, execute the appropriate
-test procedure for each deliverable. Reference the full framework at
-docs/planning-techniques/10-testing-methodology-selection.md.
+Based on the testing methodology assigned in Stage 2 (spec.md ## Verification plan),
+execute the appropriate test procedure for each deliverable. Reference the full
+framework at docs/planning-techniques/10-testing-methodology-selection.md.
 
 IF methodology = expand_contract:
 Execute all 18 steps of the database migration test checklist:
@@ -105,12 +108,13 @@ TIER 1 — AUTOMATED VERIFICATION (run without human intervention):
 - [ ] TypeScript/code compiles with no errors (run build command)
 - [ ] No lint errors in changed files
 - [ ] Characterization baseline captured for any refactored code
-- [ ] Audit score is GREEN with gap-checked = YES, or YELLOW with gap-checked = YES
+- [ ] Design gate passed (audit.md records PASS) and plan.md Status is Approved
+- [ ] Verification commands from plan.md ## Verification run and produce their healthy output
 
 Run all Tier 1 checks. Report results. Then PAUSE:
 
 ```
-Phase 8 — Automated Verification Complete
+Stage 4 — Automated Verification Complete
 
 Automated checks passed:
 - [list each Tier 1 check and its result]
@@ -119,7 +123,7 @@ Ready for manual verification. Please perform these checks:
 - [ ] [Manual item 1]
 - [ ] [Manual item 2]
 
-Let me know when manual testing is complete so I can proceed to Handoff.
+Let me know when manual testing is complete so I can proceed to Deploy.
 ```
 
 TIER 2 — MANUAL VERIFICATION (requires human testing):
@@ -134,11 +138,11 @@ Track which items the human confirmed and when:
   { "test_gate": { "automated": { "passed": 5, "failed": 0 }, "manual": { "verified": 4, "pending": 1, "verified_by": "J. Smith", "date": "..." } } }
 
 HARD READINESS GATE:
-Before proceeding to Handoff, ALL of these must be true:
+Before proceeding to Deploy, ALL of these must be true:
 - All Tier 1 (automated) checks pass
 - All Tier 2 (manual) checks confirmed by a human
 - No Tier 2 items left in "pending" state
 
-If gate fails, report what's missing and stay in Test phase.
+If gate fails, report what's missing and stay in Stage 4.
 
-Update status.json, manifest.md.
+Update status.json (phases.test.status -> complete, completed -> ISO timestamp), manifest.md.

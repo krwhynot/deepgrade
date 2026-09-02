@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### BREAKING
+
+- **`/deepgrade:plan` runs Anthropic's AI-Native SDLC playbook.** Nine phases
+  become six stages, Plan, Design, Build, Test, Deploy, Maintain, each
+  committing one artifact the next stage reads: `intent.md`, `spec.md` (plus
+  `audit.md` from the verifier gate), `plan.md` (the build plan: files, order,
+  risks, proof, verification), `test-plan.md`, `review.md`, and a new
+  `intent.md` proposed from incidents. All artifacts live in the plan folder;
+  `docs/specs/{name}.md`, `brainstorm.md`, `approach.md`, and `confidence.md`
+  are no longer written (the confidence brief is spec.md's Evidence section).
+  `status.json` moves to schema 2 with the six stage keys and per-stage
+  `started`/`completed` timestamps; a schema-1 plan is migrated on resume by a
+  fixed name map and its old artifacts are read where they are. Anything that
+  parsed the old phase names or artifact names breaks.
+- **The audit score is gone.** The design gate keeps the canary, the evidence
+  validator, the criterion registry, and the rubric-free pass; the 8-dimension
+  1-5 score, `/40` totals, bands, `score_history`, and the score clause in the
+  review waiver are removed. plan-auditor returns criterion verdicts only.
+- New: `intent {name}` runs Stage 1 only and stops, so a non-engineer can
+  capture intent for a product owner to accept. Deploy adds a diff-versus-plan
+  check (unplanned and untouched files, intent constraints against the code)
+  that must be acknowledged in plan.md before release, and the skill never runs
+  a release command: it prepares and asks a named human. Troubleshoot proposes
+  a Draft intent for SEV1/SEV2 or recurring incidents linked to a plan.
+  plan-status prints intent-to-spec, spec-to-plan, plan-to-release elapsed.
+
 ### Changed
 - **`/deepgrade:plan` is a skill.** The 1,710-line command is now
   `skills/plan/SKILL.md` (a 319-line router) plus one file per phase under

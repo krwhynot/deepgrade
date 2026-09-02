@@ -48,14 +48,17 @@ with open(sys.argv[1]) as f:
   fi
 
   # Count files per subdirectory
-  BRAINSTORM=$([ -f "$d/brainstorm.md" ] && echo "done" || echo "-")
+  # Artifact names follow the playbook (8.0.0). A schema-1 plan still has
+  # brainstorm.md/approach.md; count either so old folders do not read as empty.
+  INTENT=$({ [ -f "$d/intent.md" ] || [ -f "$d/brainstorm.md" ]; } && echo "done" || echo "-")
   RESEARCH=$(ls "$d/research/" 2>/dev/null | wc -l)
-  APPROACH=$([ -f "$d/approach.md" ] && echo "done" || echo "-")
-  PLAN=$([ -f "$d/plan.md" ] && echo "done" || echo "-")
+  SPEC=$({ [ -f "$d/spec.md" ] || [ -f "$d/approach.md" ]; } && echo "done" || echo "-")
   AUDIT=$([ -f "$d/audit.md" ] && echo "done" || echo "-")
+  PLAN=$([ -f "$d/plan.md" ] && echo "done" || echo "-")
   TEST=$([ -f "$d/test-plan.md" ] && echo "done" || echo "-")
+  REVIEW=$([ -f "$d/review.md" ] && echo "done" || echo "-")
 
-  echo "$NAME | phase: $PHASE | brainstorm: $BRAINSTORM | research: $RESEARCH files | approach: $APPROACH | plan: $PLAN | audit: $AUDIT | test: $TEST"
+  echo "$NAME | stage: $PHASE | intent: $INTENT | research: $RESEARCH files | spec: $SPEC | audit: $AUDIT | plan: $PLAN | test: $TEST | review: $REVIEW"
 done
 ```
 
@@ -65,29 +68,34 @@ Present as a summary table. For each plan, recommend the next action.
 
 Read docs/plans/{date}-{name}/status.json.
 
+If `schema_version` is 1, map the old phase names to stages before reporting
+(brainstorm+research -> plan; pre_plan+plan+audit -> design; build+impact_review
+-> build; test -> test; handoff -> deploy) and say the plan predates 8.0.0.
+
 Show:
-1. Phase-by-phase status with freshness indicators
-2. Any STALE or WARNING phases (check file hashes)
-3. Build progress (if in build phase): tickets done/total/blocked
-4. Audit score (if audit complete)
-5. Recommended next action with reasoning
+1. Stage-by-stage status with freshness indicators
+2. Any STALE or WARNING stages (check file hashes)
+3. Build progress (if in build stage): tickets done/total/blocked
+4. Design gate result (PASS / NOT PASS, unmet criteria count) if audit.md exists
+5. Playbook metrics from the stage timestamps: intent -> spec, spec -> plan,
+   plan -> release elapsed; plan match from review.md if present
+6. Recommended next action with reasoning
 
 ```
 Plan: worldpay-canada
 Created: 2026-03-07
-Current Phase: 6 - Build (in_progress)
-Audit Score: 31/40 (YELLOW)
+Current Stage: 3 - Build (in_progress)
+Design gate: PASS (0 unmet criteria, canary found)
+Intent -> spec: 2d 4h   Spec -> plan: 1d 1h   Plan -> release: pending
 
-| # | Phase | Status | Freshness | File |
-|---|-------|--------|-----------|------|
-| 1 | Brainstorm | Complete | Fresh | brainstorm.md |
-| 2 | Research | Complete | Warning | research/findings.md |
-| 3 | Pre-Plan | Complete | Fresh | approach.md |
-| 4 | Plan | Complete | Fresh | plan.md |
-| 5 | Audit | Complete | Fresh | audit.md (31/40 YELLOW) |
-| 6 | Build | In Progress | - | 2/24 tickets done, 1 blocked |
-| 7 | Test | Not Started | - | - |
-| 8 | Handoff | Not Started | - | - |
+| # | Stage | Status | Freshness | Artifact |
+|---|-------|--------|-----------|----------|
+| 1 | Plan | Complete | Warning | intent.md (Accepted by J. Ortiz), research/findings.md |
+| 2 | Design | Complete | Fresh | spec.md (Approved), audit.md (PASS) |
+| 3 | Build | In Progress | - | plan.md (Approved); 2/24 tickets done, 1 blocked |
+| 4 | Test | Not Started | - | - |
+| 5 | Deploy | Not Started | - | - |
+| 6 | Maintain | Not Started | - | - |
 
 Warning: Research findings may be stale (related files in CreditCard/ changed).
 Consider re-running research if current build work affects payment code.

@@ -1258,7 +1258,7 @@ else
   # followed by the path — keeps this structural. A script named only in a sentence
   # is still an orphan, which is the correct answer.
   inv_re='node[^`]*scripts/[A-Za-z0-9._-]+\.js'
-  inv=$(grep -ohE "$inv_re" commands/*.md agents/*.md skills/*/*.md skills/*/phases/*.md 2>/dev/null | sed 's|.*/||' | sort -u)
+  inv=$(grep -ohE "$inv_re" commands/*.md agents/*.md skills/*/*.md skills/*/phases/*.md skills/*/stages/*.md 2>/dev/null | sed 's|.*/||' | sort -u)
   inv_count=$(echo "$inv" | grep -c . || true)
 
   # Self-tests. The known-positive is the QUOTED form, copied from how the plugin
@@ -1598,7 +1598,7 @@ for d in "$SKILLS_DIR"/*/; do
   # An explicit ${CLAUDE_PLUGIN_ROOT}/skills/<name>/ path is accepted too: it is a real,
   # unambiguous reference, and rejecting it was over-strict (Codex Q3).
   if ! grep -rhE "$OWN_NS:$sk([^A-Za-z0-9_-]|\$)|skills/$sk/SKILL\.md" \
-         "$AGENTS_DIR" "$COMMANDS_DIR" "$SKILLS_DIR"/*/SKILL.md "$SKILLS_DIR"/*/phases/*.md 2>/dev/null \
+         "$AGENTS_DIR" "$COMMANDS_DIR" "$SKILLS_DIR"/*/SKILL.md "$SKILLS_DIR"/*/phases/*.md "$SKILLS_DIR"/*/stages/*.md 2>/dev/null \
        --exclude-dir="$sk" \
        | grep -viE '(never|do not|don'"'"'t|no longer|deprecated|avoid)[^.]{0,60}('"$sk"')' \
        | grep -q .; then

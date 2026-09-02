@@ -12,8 +12,9 @@
 
 > A reference for the deepgrade planning plugin: structured planning with an adversarial audit gate, plan-linked troubleshooting, and documentation generation.
 
-DeepGrade's planning core walks an idea through nine phases from brainstorm to
-handoff, with an adversarial audit gate in the middle: a fresh, isolated
+DeepGrade's planning core walks an idea through the six stages of Anthropic's
+AI-Native SDLC playbook, Plan, Design, Build, Test, Deploy, Maintain, each
+committing one artifact the next stage reads, with an adversarial design gate: a fresh, isolated
 plan-auditor judges every plan against falsifiable criteria, its evidence is
 re-validated byte-for-byte by `scripts/dg-evidence-validate.js`, and a seeded
 canary defect (`scripts/dg-canary.js`) proves the audit can actually see
@@ -45,9 +46,9 @@ methodology reference lives in the monorepo's
 ---
 
 ### `/deepgrade:plan`
-**What it does:** Walks you through a 9-phase guided planning workflow: Brainstorm, Research, Pre-Plan, Plan, Audit, Build, Impact Review, Test, and Handoff.
+**What it does:** Walks you through the six-stage playbook: Plan (intent.md), Design (spec.md plus the verifier gate), Build (plan.md, code, impact review), Test, Deploy (review.md, release authorization), Maintain (incidents become new intents). `intent {name}` captures intent only and stops.
 **When to use it:** For any significant initiative -- migrations, new features, refactoring projects. This is the full workflow.
-**What it produces:** `docs/plans/YYYY-MM-DD-{name}/` folder with manifest, status, brainstorm, approach, research, audit, specs, and more.
+**What it produces:** `docs/plans/YYYY-MM-DD-{name}/` with manifest, status, intent.md, research, spec.md, audit.md, plan.md, impact-review.md, test-plan.md, review.md.
 **Example:**
 ```
 /deepgrade:plan worldpay-canada
@@ -58,7 +59,7 @@ methodology reference lives in the monorepo's
 
 ### `/deepgrade:quick-plan`
 **What it does:** One-shot plan generation from a vague objective. Analyzes the codebase and produces a phased technical plan targeting 32+/40 on audit dimensions.
-**When to use it:** For smaller changes where the full 9-phase workflow is overkill.
+**When to use it:** For smaller changes where the full six-stage workflow is overkill.
 **What it produces:** `docs/specs/{plan-name}.md`
 **Example:**
 ```
@@ -165,7 +166,7 @@ methodology reference lives in the monorepo's
 
 Skills are persistent knowledge that loads automatically when relevant — reference books the plugin carries in its back pocket.
 
-**plan** -- The `/deepgrade:plan` workflow itself. `SKILL.md` is a router (identity, lifecycle, workspace layout, Step 0 intent detection) and each of the nine phases lives in its own file under `phases/`, read when the phase is entered. Split this way so the later phases survive context compaction in long planning sessions instead of being silently dropped with the rest of a 1,700-line command.
+**plan** -- The `/deepgrade:plan` workflow itself. `SKILL.md` is a router (identity, lifecycle, workspace layout, Step 0 intent detection and schema migration) and each of the six stages lives in its own file under `stages/`, with artifact templates under `templates/`, read when the phase is entered. Split this way so the later phases survive context compaction in long planning sessions instead of being silently dropped with the rest of a 1,700-line command.
 
 **troubleshoot** -- The `/deepgrade:troubleshoot` workflow: a router holding identity, timeline logging, plan detection, and Step 0 knowledge-base lookup, with the incident pre-flow, the four phases, multi-agent mode, and the knowledge-base write-back in one file each under `phases/`, read on entry.
 

@@ -9,7 +9,7 @@ marketplace, one release, install any subset:
 
 | Plugin | What it does | Who installs it |
 | ------ | ------------ | --------------- |
-| [`deepgrade`](plugins/deepgrade/) | 9-phase planning with an adversarial verifier-first audit gate, plan-linked troubleshooting, documentation generation | Developers living in `docs/plans/` daily |
+| [`deepgrade`](plugins/deepgrade/) | Six-stage AI-Native SDLC planning (intent, spec, plan, test, release, maintain) with an adversarial verifier-first design gate, plan-linked troubleshooting, documentation generation | Developers living in `docs/plans/` daily |
 | [`deepgrade-readiness`](plugins/deepgrade-readiness/) | AI-readiness scan: 52 checks, 9 categories, composite letter grade A+ to F, generated scaffolding | Consultants and leads grading many repos |
 | [`deepgrade-audit`](plugins/deepgrade-audit/) | Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates | Engineering managers doing due diligence |
 | [`deepgrade-guard`](plugins/deepgrade-guard/) | Always-on safety hooks: force-push and DB-deploy blocking, migration protection, change/test tracking, session summaries | Everyone — recommended universal co-install |

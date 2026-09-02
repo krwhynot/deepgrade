@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "deepgrade",
-      "description": "9-phase planning with an adversarial verifier-first audit gate, plan-linked troubleshooting, and documentation generation.",
+      "description": "Six-stage AI-Native SDLC planning (intent.md, spec.md, plan.md, review.md) with an adversarial verifier-first design gate, plan-linked troubleshooting, and documentation generation.",
       "category": "development",
       "tags": [
         "planning",
