@@ -5,10 +5,10 @@ produces a severity-graded audit report, a security-focused scan, delta/KPI
 tracking against previous baselines, golden-master characterization tests, and
 generated CI quality gates. Stack-agnostic.
 
-This is one of four DeepGrade plugins in the
+This is one of three DeepGrade plugins in the
 [deepgrade monorepo](https://github.com/krwhynot/deepgrade). It pairs with
-`deepgrade-readiness` (run that first for a baseline grade) and
-`deepgrade-guard` (always-on safety rails).
+`deepgrade-readiness` (run that first for a baseline grade) and `deepgrade`
+(planning).
 
 ## Install
 

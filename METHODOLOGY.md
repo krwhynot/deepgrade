@@ -151,8 +151,8 @@ Category 3 produces four deliverables:
   │  3A. GUARDRAIL COVERAGE                                      │
   │  ┌──────────────────────────────────────────────────────┐    │
   │  │ Are automated safety nets installed?                  │    │
-  │  │ Pre-commit hooks, CI gates, force-push guards,       │    │
-  │  │ migration guards, database deploy guards             │    │
+  │  │ Pre-commit hooks, CI gates, permission rules for     │    │
+  │  │ force push, migration edits, database deploys        │    │
   │  └──────────────────────────────────────────────────────┘    │
   │                                                              │
   │  3B. CONTEXT CURRENCY                                        │
@@ -815,7 +815,7 @@ DeepGrade implements safety in three concentric layers. Each layer operates inde
 ```text
  ┌─────────────────────────────────────────────────────────────────────┐
  │                                                                     │
- │  LAYER 1: PLUGIN HOOKS (automatic, deterministic)                  │
+ │  LAYER 1: PERMISSION RULES (automatic, deterministic)              │
  │  ┌───────────────────────────────────────────────────────────────┐  │
  │  │                                                               │  │
  │  │  LAYER 2: CI/CD PIPELINE (automatic, environment-gated)      │  │
@@ -835,18 +835,52 @@ DeepGrade implements safety in three concentric layers. Each layer operates inde
  │  │                                                               │  │
  │  └───────────────────────────────────────────────────────────────┘  │
  │                                                                     │
- │  Force push guard    Migration guard    DB deploy guard            │
- │  Hard reset guard    Change tracker     Test/build tracker         │
- │  Session summary                                                    │
+ │  settings.json deny: force push, direct DB deploy                  │
+ │  settings.json ask:  hard reset, migration edits, git push         │
+ │  (the deepgrade-guard hook plugin that filled this layer           │
+ │   from 5.0.0 to 8.x was retired in 9.0.0; history below)           │
  │                                                                     │
  └─────────────────────────────────────────────────────────────────────┘
 ```
 
-The beauty of this arrangement is redundancy. An AI agent that somehow bypasses the plugin hooks (Layer 1) still hits the CI pipeline (Layer 2). A change that clears CI still goes through human review in the plan workflow (Layer 3). No single failure is catastrophic.
+The beauty of this arrangement is redundancy. An AI agent that somehow bypasses the permission rules (Layer 1) still hits the CI pipeline (Layer 2). A change that clears CI still goes through human review in the plan workflow (Layer 3). No single failure is catastrophic.
 
-### Layer 1: Plugin Hooks
+### Layer 1: Permission Rules
 
-Plugin hooks are the first line of defense. They fire automatically at specific points in the Claude Code lifecycle and require zero human attention. They are declared in [`hooks/hooks.json`](hooks/hooks.json) and execute as Node scripts under [`scripts/`](scripts/), one file per handler.
+Layer 1 is whatever stops a dangerous tool call before it runs, with no human attention and no judgment call by the model. Since 9.0.0 DeepGrade fills this layer with Claude Code's own permission rules rather than with a plugin. A `deny` entry refuses the command outright; an `ask` entry turns it into a confirmation prompt. They live in the project's or the user's `settings.json`, need no runtime, and cannot disagree with a project's own choices the way a second enforcement layer can.
+
+The recommended baseline, which a project adjusts to its stack:
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(supabase db push*)",
+      "Bash(prisma migrate deploy*)",
+      "Bash(dotnet ef database update*)",
+      "Bash(flyway migrate*)",
+      "Bash(rails db:migrate*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(git reset --hard*)",
+      "Edit(supabase/migrations/**)",
+      "Edit(prisma/migrations/**)",
+      "Edit(db/migrate/**)"
+    ]
+  }
+}
+```
+
+`--force-with-lease` is not matched by the deny rules above and stays allowed, which is the correct behavior: it is the safe form. `--dry-run` and `--local` variants of the deploy commands need their own `allow` entries if a project uses them, because a deny rule wins over a wildcard allow.
+
+**Why the plugin was retired.** From 5.0.0 through 8.x this layer shipped as `deepgrade-guard`: five Node hooks (force-push and hard-reset guard, migration guard, DB deploy guard, change and test trackers, session summary). The guards worked and were tested to a corpus of falsifying cases, but three things argued against keeping them. Permission rules had reached parity for every blocking behavior, with zero runtime dependency and no hook-error failure mode. Projects that already carried their own `ask` rules for the same paths ended up with two layers disagreeing, and the block always won silently over the project's deliberate choice. And the trackers, the part permission rules cannot replace, were nudges that the planning plugin's own stage gates and the audit plugin's staleness checks already cover. The historical description follows for the record; the fail-closed principle it established still governs any blocking hook that is ever added back.
+
+#### Historical: the deepgrade-guard hooks (5.0.0 to 8.x)
+
+The hooks were declared in the plugin's `hooks/hooks.json` and executed as Node scripts under its `scripts/`, one file per handler.
 
 ```mermaid
 graph TD
@@ -882,7 +916,7 @@ graph TD
     style SUMMARY fill:#9B59B6,stroke:#8E44AD,color:#fff
 ```
 
-Seven hooks run as part of Layer 1:
+Seven hooks ran as part of Layer 1:
 
 **Force push guard** ([`scripts/dg-git-guard.js`](scripts/dg-git-guard.js), PreToolUse:Bash). Blocks `git push --force` and the bare `-f` form. Force pushes rewrite shared history and can destroy other people's work. Use `--force-with-lease` if you truly need it — the guard genuinely does not block that, which was untrue before v5.0.0: the old pattern matched `--force` inside `--force-with-lease`, so the safe form was denied and the short form was not.
 
@@ -900,7 +934,9 @@ Seven hooks run as part of Layer 1:
 
 ### The Fail-Closed Principle
 
-Guards (migration, force push, hard reset, DB deploy) are fail-closed: if the hook cannot parse its input, it blocks the action. It is better to incorrectly block a safe action than to incorrectly allow a dangerous one.
+This principle outlived the plugin that first embodied it. Permission rules are fail-closed by construction: a `deny` needs no parser, so there is no malformed input that could let a command through. Any blocking hook added in future is held to the same standard.
+
+Guards (migration, force push, hard reset, DB deploy) were fail-closed: if the hook cannot parse its input, it blocks the action. It is better to incorrectly block a safe action than to incorrectly allow a dangerous one.
 
 Trackers (change counter, test/build tracker) are fail-open: if the hook cannot parse its input, it silently does nothing. Missing a count is harmless. Blocking legitimate work because a counter failed is not.
 
@@ -944,7 +980,7 @@ Layer 3 is where a human stays in the loop. The [`/deepgrade:plan`](commands/pla
 
 ### The Single-Dependency Principle
 
-As of v5.0.0 the hooks declare exactly one dependency: **Node.js 18 or later**, which Claude Code itself already requires. There is no `jq`, no POSIX utility chain, and no fallback ladder.
+The three plan-context hooks that remain in `deepgrade`, and the two design-gate tools beside them, declare exactly one dependency: **Node.js 18 or later**, which Claude Code itself already requires. There is no `jq`, no POSIX utility chain, and no fallback ladder.
 
 That is a deliberate reversal of the earlier zero-dependency design, and it is worth being precise about why. The old hooks avoided dependencies by parsing JSON with `grep` and `sed`. That is not a parser, and the difference is not academic — it produced a guard that could not distinguish a command from text mentioning one, so it blocked a read-only `grep` whose search pattern named a deployment, and blocked commit messages that merely referred to a force push. Availability was traded for correctness in a security control, which is the wrong trade.
 
@@ -984,7 +1020,7 @@ Since v5.0.0 every hook is a Node script launched in exec form (`node ${CLAUDE_P
 
 ### Security Guards Must Never Fail-Open
 
-This principle deserves its own heading because it is the one design decision that cannot be compromised. The migration guard, force push guard, hard reset guard, and DB deploy guard all use exit code 2 (block) as their default path. If parsing fails, if the input is garbled, if the session ID is missing, the guard blocks.
+This principle deserves its own heading because it is the one design decision that cannot be compromised. The retired migration guard, force push guard, hard reset guard, and DB deploy guard all used exit code 2 (block) as their default path, and the permission rules that replaced them cannot fail open at all. If parsing fails, if the input is garbled, if the session ID is missing, the guard blocks.
 
 [Shaharia Azam: AI Integration Framework](https://shaharia.com/blog/ai-integration-framework/) calls this the "zero-trust mindset": treat every AI contribution as if it came from a brand-new junior developer. You would not give a junior developer unsupervised force-push access. You should not give it to an AI agent either.
 
@@ -1403,7 +1439,7 @@ DeepGrade checks for three layers of guardrails, generated by the [gate-generato
 
 | Layer | What It Does | Implementation |
 | :------ | :------------- | :--------------- |
-| **Plugin hooks** | Guard against dangerous operations | Force push guard, migration guard, DB deploy guard |
+| **Permission rules** | Refuse or confirm dangerous operations | `deny`/`ask` entries in `settings.json` for force push, migration edits, DB deploys |
 | **CI quality gates** | Check every PR automatically | PR risk scoring, audit staleness check |
 | **Pre-commit hooks** | Catch issues before commit | Risk zone checker for HIGH-risk modules |
 
@@ -1706,6 +1742,8 @@ This conditional escalation avoids the overhead of multi-agent mode for simple b
 
 ## 11. The Dependency Decision (reversed in 5.0.0)
 
+> Most of the handlers this section discusses shipped in `deepgrade-guard`, retired in 9.0.0. The three plan-context handlers still in `deepgrade` follow the same rules, and the rules are kept here because they are the reason a blocking hook is not a small thing to add.
+
 ### Why Dependencies Are the Enemy
 
 Here is a fun rule of thumb: the number of machines where your safety hooks will fail silently is directly proportional to the number of dependencies those hooks require. DeepGrade learned this the hard way, across four painful versions.
@@ -1817,7 +1855,7 @@ These emerged from the failures above, and from the six defects an adversarial r
 ### How Each Hook Implements the Pattern
 
 Every handler follows the same structural template: read stdin, `JSON.parse`, read one
-named field, decide. Here is how it maps across all **eight** handlers. The columns that
+named field, decide. Here is how it mapped across all **eight** handlers as of 8.x; the five marked retired left with `deepgrade-guard` in 9.0.0. The columns that
 used to appear here — "jq Path" and "grep+sed Fallback" — are gone with the ladder they
 described; the deep links formerly pointed at line numbers inside `plugin.json`, which no
 longer contains hooks at all.
@@ -1825,11 +1863,11 @@ longer contains hooks at all.
 | Handler | Event | Matcher | Field it reads | Decision it can return |
 | :------ | :---- | :------ | :------------- | :--------------------- |
 | [dg-session-start.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-session-start.js) | SessionStart | (none) | `source` | JSON `systemMessage` only |
-| [dg-migration-guard.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-migration-guard.js) | PreToolUse | `Write\|Edit` | `tool_input.file_path` | deny (exit 2) / allow |
-| [dg-git-guard.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-git-guard.js) | PreToolUse | `Bash` | `tool_input.command` | deny / **ask** / allow |
-| [dg-track-change.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-track-change.js) | PostToolUse | `Write\|Edit` | `tool_input.file_path`, `session_id` | JSON `systemMessage` only |
-| [dg-track-test.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-track-test.js) | PostToolUse | `Bash` | `tool_input.command`, `session_id` | nothing (writes markers) |
-| [dg-session-stop.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-session-stop.js) | Stop | (none) | `session_id` | JSON `systemMessage` only |
+| dg-migration-guard.js (retired 9.0.0) | PreToolUse | `Write\|Edit` | `tool_input.file_path` | deny (exit 2) / allow |
+| dg-git-guard.js (retired 9.0.0) | PreToolUse | `Bash` | `tool_input.command` | deny / **ask** / allow |
+| dg-track-change.js (retired 9.0.0) | PostToolUse | `Write\|Edit` | `tool_input.file_path`, `session_id` | JSON `systemMessage` only |
+| dg-track-test.js (retired 9.0.0) | PostToolUse | `Bash` | `tool_input.command`, `session_id` | nothing (writes markers) |
+| dg-session-stop.js (retired 9.0.0) | Stop | (none) | `session_id` | JSON `systemMessage` only |
 | [dg-subagent-stop.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-subagent-stop.js) | SubagentStop | (none) | `reason` | nothing (appends to a log) |
 | [dg-pre-compact.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-pre-compact.js) | PreCompact | (none) | (none) | JSON `systemMessage` only |
 
@@ -1861,7 +1899,7 @@ Three failures, all of them silent:
 2. **It truncates at the first quote.** `[^"]*` stops at any escaped quote inside the command, so what gets matched is a prefix of what will actually run.
 3. **It cannot tell a command from text.** Nothing distinguishes an instruction from a quoted mention of one, which over-blocks (a commit message naming a force push) and under-blocks (an exemption token appearing outside the command field suppressing a real denial).
 
-The replacement parses the payload with `JSON.parse`, reads the named field only, and splits the command into shell words so quoted text contributes data rather than structure. See [`scripts/dg-git-guard.js`](scripts/dg-git-guard.js) and the acceptance corpus at [`tests/fixtures/hook-corpus.json`](tests/fixtures/hook-corpus.json), which encodes each of these three failures as a test.
+The replacement parsed the payload with `JSON.parse`, read the named field only, and split the command into shell words so quoted text contributed data rather than structure. That handler (`dg-git-guard.js`) and its acceptance corpus (`tests/fixtures/hook-corpus.json`, which encoded each of these three failures as a test) were retired with `deepgrade-guard` in 9.0.0; the git history at tag `v8.0.0` holds both.
 
 The `head -1` in the grep path handles the case where `"command"` appears multiple times in the JSON (it can, in nested structures). We always take the first match, which corresponds to the top-level field.
 

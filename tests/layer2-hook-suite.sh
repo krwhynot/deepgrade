@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Layer 2 dispatcher — PHV5-042 / PHV5-043.
 #
-#   1. run-hook-corpus.js     — lane N's parser contract (F24/F22/F25/F26), the
-#      acceptance authority for PHV5-041.
-#   2. layer2-ledger-rows.js  — one falsifying test per behaviour-ledger row
-#      (§3.1.4), the acceptance for PHV5-040.
+#   1. layer2-ledger-rows.js  — one falsifying test per behaviour-ledger row
+#      (§3.1.4) for the plan-context handlers that remain in deepgrade.
+#
+# run-hook-corpus.js and tests/fixtures/hook-corpus.json were DELETED in 9.0.0
+# with the deepgrade-guard plugin whose git guard they exercised. The ledger rows
+# for the guard, migration, tracker and stop handlers went with them.
 #
 # layer2-hook-simulation.sh was DELETED at 4b along with the inline hooks it
 # exercised. It drove handlers embedded in plugin.json through positional-index
@@ -28,7 +30,7 @@ run_part() {
   if [ "$runner" = "node" ]; then
     if ! command -v node >/dev/null 2>&1; then
       echo "[FAIL] node is required for Layer 2.$label and was not found on PATH"
-      echo "       (never a silent skip — lane N's guards run ON node, so an absent"
+      echo "       (never a silent skip — the handlers run ON node, so an absent"
       echo "        interpreter means this layer proves nothing, not that it passed)"
       FAILED=1; return
     fi
@@ -46,8 +48,15 @@ if [ -f tests/layer2-hook-simulation.sh ]; then
   FAILED=1
 fi
 
-run_part "1 lane-N parser contract (F24/F22/F25/F26)" node tests/run-hook-corpus.js plugins/deepgrade-guard/scripts/dg-git-guard.js
-run_part "2 lane-N behaviour ledger (rows 1-11)" node tests/layer2-ledger-rows.js
+# Guard against silently losing the retired part the other way round: a resurrected
+# corpus runner with no dispatch would read as coverage too.
+if [ -f tests/run-hook-corpus.js ] || [ -f tests/fixtures/hook-corpus.json ]; then
+  echo "[FAIL] the hook corpus was retired with deepgrade-guard (9.0.0) but a copy is back in the tree —"
+  echo "       either dispatch it against a live handler or delete it."
+  FAILED=1
+fi
+
+run_part "1 plan-context behaviour ledger (rows 4, 10, F26)" node tests/layer2-ledger-rows.js
 
 echo ""
 if [ "$FAILED" -ne 0 ]; then

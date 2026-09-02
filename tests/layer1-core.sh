@@ -105,30 +105,6 @@ case "$PROFILE" in
     F08_CHECK=1; F30_POS=0; F32_CHECK=0; TPL_CHECK=0
     NODE_REQ=0; GUIDE_8E=0
     ;;
-  deepgrade-guard)
-    # Safety rails: hooks ONLY. The complete TMPDIR marker bus lives here.
-    PLUGIN_NAME="deepgrade-guard"
-    OWN_NS="deepgrade-guard"
-    EXPECTED_EVENTS="PreToolUse PostToolUse Stop"
-    FORBIDDEN_EVENTS="SessionStart SubagentStop PreCompact"
-    EXPECT_HOOKS=1
-    F06_REF_FLOOR=5
-    SUBAGENT_WIRED=0
-    MARKER_CHECK=both
-    HAS_HELP=0
-    F02_CHECK=0
-    F03_EXACT=""
-    F07_FLOOR=0
-    F21_FLOOR=0
-    F27_FLOOR=0
-    F14_SET=""
-    EXPECT_COMMANDS=0
-    EXPECT_AGENTS=0
-    F14_PLAN_NEG=0
-    F13_CHECK=0; F09_POS=0; F10_POS=0; F11_ARGHINT=0; F15_ZIP=0
-    F08_CHECK=0; F30_POS=0; F32_CHECK=0; TPL_CHECK=0
-    NODE_REQ=1; GUIDE_8E=0
-    ;;
   *)
     echo "[FAIL] unknown profile '$PROFILE' — refusing to run with undefined floors"
     exit 1
@@ -674,12 +650,13 @@ pj_marker_prefix=$(grep -ohE "dg-(baseline|build|test)-" scripts/*.js 2>/dev/nul
                    | head -1 | sed 's/-[a-z]*-$//')
 
 if [ "$MARKER_CHECK" = "absent" ]; then
-  # The TMPDIR marker bus lives complete in deepgrade-guard. Another plugin
-  # growing a marker surface splits the bus, which is the partition defect.
+  # The TMPDIR marker bus was retired with deepgrade-guard in 9.0.0. No shipped
+  # plugin writes or documents session markers; one growing a marker surface is
+  # reviving a bus with no readers.
   if [ -n "$readme_marker_prefix" ] || [ -n "$pj_marker_prefix" ]; then
-    fail "session markers belong to deepgrade-guard alone — this plugin surfaces prefix '${readme_marker_prefix:-$pj_marker_prefix}-*'"
+    fail "session markers were retired with deepgrade-guard (9.0.0) — this plugin surfaces prefix '${readme_marker_prefix:-$pj_marker_prefix}-*'"
   else
-    pass "no session-marker surface in this plugin (the marker bus is deepgrade-guard's)"
+    pass "no session-marker surface in this plugin (the marker bus was retired in 9.0.0)"
   fi
 elif [ -n "$readme_marker_prefix" ] && [ -n "$pj_marker_prefix" ]; then
   if [ "$readme_marker_prefix" = "$pj_marker_prefix" ]; then
@@ -907,7 +884,7 @@ else
   for tok in $(grep -rhoE '(^|[[:space:]"'"'"'(`])/[a-z][a-z-]*' "$TPL_DIR" 2>/dev/null \
                | tr -d ' "'"'"'(`' | sort -u); do
     case "$tok" in
-      /deepgrade|/deepgrade-readiness|/deepgrade-audit|/deepgrade-guard) ;;
+      /deepgrade|/deepgrade-readiness|/deepgrade-audit) ;;
       *)
         fail "F31: template references dead command '$tok' (only the four DeepGrade namespaces are valid)"
         bad_cmd=$((bad_cmd + 1)) ;;

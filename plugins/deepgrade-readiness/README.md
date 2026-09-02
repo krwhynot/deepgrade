@@ -5,7 +5,7 @@ well an AI coding agent can read, navigate, and safely modify a project. The
 result is a composite letter grade (A+ to F) and a prioritized list of what to
 fix first, with generated scaffolding for the gaps. Stack-agnostic.
 
-This is one of four DeepGrade plugins in the
+This is one of three DeepGrade plugins in the
 [deepgrade monorepo](https://github.com/krwhynot/deepgrade). It pairs with
 `deepgrade-audit` for deeper code-quality audits once readiness is in shape.
 

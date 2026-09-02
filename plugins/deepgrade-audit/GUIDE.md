@@ -18,7 +18,7 @@ catalogs documentation, assesses per-module risk, and flags integration
 touchpoints; a report generator turns their findings into a severity-classified
 report any engineer can act on. Security runs as a separate control loop, and
 delta scans re-measure against previous baselines so improvement is visible.
-It is one of four DeepGrade plugins; run `deepgrade-readiness` first for a
+It is one of three DeepGrade plugins; run `deepgrade-readiness` first for a
 navigability baseline.
 
 ## Commands
