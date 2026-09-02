@@ -383,20 +383,20 @@ test('JSON rejects out-of-range score', () => {
 // THE FIXTURE MUST BE BOUND TO THE SHIPPED ARTIFACT FIRST. Until this binding
 // existed, all five assertions below read only the fixture — a byte-duplicate with
 // nothing tying it to the schema Claude Code actually passes to `--output-schema`.
-// Proven by mutation: gutting the SHIPPED schema in commands/codex-challenge.md
+// Proven by mutation: gutting the SHIPPED schema in skills/codex-challenge/phases/output-schema.md
 // (maxItems 7 -> 99, additionalProperties false -> true, required reduced to
 // ["scores"], a dimension renamed) left 41/41 passing. A third of the suite was
 // validating a copy of itself.
 console.log('\n9. Schema File Validation');
 const schema = JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, 'codex-review-schema.json'), 'utf-8'));
 
-const SHIPPED_CMD = path.join(__dirname, '..', 'plugins', 'deepgrade', 'commands', 'codex-challenge.md');
+const SHIPPED_CMD = path.join(__dirname, '..', 'plugins', 'deepgrade', 'skills', 'codex-challenge', 'phases', 'output-schema.md');
 
-test('fixture schema is byte-equivalent to the schema shipped in commands/codex-challenge.md', () => {
+test('fixture schema is byte-equivalent to the schema shipped in skills/codex-challenge/phases/output-schema.md', () => {
   const md = fs.readFileSync(SHIPPED_CMD, 'utf-8').replace(/\r\n/g, '\n');
   // Take every ```json fence and keep the one that parses as this schema shape.
   const blocks = [...md.matchAll(/```json\n([\s\S]*?)```/g)].map((m) => m[1]);
-  assert(blocks.length > 0, 'no ```json block found in commands/codex-challenge.md');
+  assert(blocks.length > 0, 'no ```json block found in skills/codex-challenge/phases/output-schema.md');
   let shipped = null;
   for (const b of blocks) {
     try {
