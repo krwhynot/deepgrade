@@ -19,8 +19,8 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/deepgrade.git",
         "path": "plugins/deepgrade",
-        "ref": "v7.1.0",
-        "sha": "18490fbb3351ea87927d157893db872b0b1b414b"
+        "ref": "v8.0.0",
+        "sha": "bc75c7861953b5481efaf6928086b69f966d6c67"
       }
     },
     {
@@ -36,8 +36,8 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/deepgrade.git",
         "path": "plugins/deepgrade-readiness",
-        "ref": "v7.1.0",
-        "sha": "18490fbb3351ea87927d157893db872b0b1b414b"
+        "ref": "v8.0.0",
+        "sha": "bc75c7861953b5481efaf6928086b69f966d6c67"
       }
     },
     {
@@ -54,8 +54,8 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/deepgrade.git",
         "path": "plugins/deepgrade-audit",
-        "ref": "v7.1.0",
-        "sha": "18490fbb3351ea87927d157893db872b0b1b414b"
+        "ref": "v8.0.0",
+        "sha": "bc75c7861953b5481efaf6928086b69f966d6c67"
       }
     },
     {
@@ -72,8 +72,8 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/deepgrade.git",
         "path": "plugins/deepgrade-guard",
-        "ref": "v7.1.0",
-        "sha": "18490fbb3351ea87927d157893db872b0b1b414b"
+        "ref": "v8.0.0",
+        "sha": "bc75c7861953b5481efaf6928086b69f966d6c67"
       }
     }
   ]
