@@ -7,13 +7,32 @@
 
 ## Requirements
 
+<Each requirement traces to a line of intent.md and carries a priority and
+acceptance criteria. P0 = cannot ship without; if cutting it still solves the
+core problem, it is not P0. If everything is P0, nothing is P0.>
+
 ### Functional
 
-<What the system must do.>
+- **FR-001 (P0 | P1 | P2):** <what the system must do> — traces to intent.md <line>
+  - Given <precondition>, when <action>, then <outcome>
+  - Given <error or boundary condition>, when <action>, then <outcome>
+  - Must NOT: <negative case>
 
 ### Non-functional
 
-<Performance, security, accessibility, compliance, operability.>
+- **NFR-001 (P0 | P1 | P2):** <performance, security, accessibility, compliance,
+  operability> — measurable: <number and how it is measured>
+
+## Success metrics
+
+<How anyone will know this worked after release. Targets are numbers with a
+window: "50% of eligible users within 30 days", not "high adoption". Name the
+measurement method and when it is evaluated.>
+
+| Metric | Type | Target | Measured by | Evaluate at |
+|---|---|---|---|---|
+| <adoption, task completion, error rate, latency> | Leading | <target> | <tool or query> | <1 week / 1 month> |
+| <retention, cost, support-ticket reduction> | Lagging | <target> | <tool or query> | <1 quarter> |
 
 ## Design
 

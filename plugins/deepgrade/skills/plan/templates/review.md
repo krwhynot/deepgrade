@@ -32,13 +32,44 @@ Nits not listed: <count>
 
 ## Release checklist
 
-- Deployment sequence:
+- Runbook: <path to runbook.md, or "inline below">
+- Owner of the release window: <name>
+
+### Pre-deploy
+
+- [ ] All tests passing in CI at <commit>
+- [ ] Findings above resolved or explicitly accepted by the authorizer
+- [ ] Database migrations tested against a production-shaped copy (or N/A)
+- [ ] Feature flags configured and default state confirmed (or N/A)
+- [ ] Breaking API or contract changes: consumers notified (or N/A)
+- [ ] Rollback steps below rehearsed or dry-run
+- [ ] On-call or owner reachable for the monitoring window
+
+### Deploy
+
+1. <step> — verify: <command, healthy output>
+2. <step> — verify: <command, healthy output>
+- [ ] Staging or canary verified before full rollout (or N/A, with reason)
+- [ ] Smoke tests run: <command>
+- [ ] Key user flows exercised by hand: <list>
+
+### Post-deploy
+
+- [ ] Metrics nominal at end of monitoring window
+- [ ] Release notes or changelog updated
+- [ ] Stakeholders notified
+- [ ] Plan status.json and manifest.md updated
+
+### Rollback
+
+- Triggers (any one trips rollback; numbers, not feelings):
+  - Error rate exceeds <X>% over <N> minutes
+  - P50 or P95 latency exceeds <X> ms over <N> minutes
+  - <critical user flow> fails smoke test
+  - <data integrity check> returns unexpected count
+- Steps:
   1. <step> — verify: <command, healthy output>
-- Rollback trigger: <observable condition>
-- Rollback steps:
-  1. <step>
-- Monitoring: <what to watch, for how long, threshold that trips rollback>
-- Owner: <name>
+- Monitoring: <dashboard or query>, for <duration>, thresholds as above
 
 ## Release authorization
 

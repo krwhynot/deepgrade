@@ -64,9 +64,95 @@ Generate the PRD directly, using:
 
 Steps:
 1. Create `docs/prd/{domain}/` directory
-2. Write the PRD using the standard template
+2. Write the PRD using the skeleton below
 3. Update document-linkage.json and feature-inventory.json
 4. Validate all JSON files
+
+**Document skeleton**
+
+For an existing feature, reverse-engineer each section from entry points,
+DB tables, and tests; tag anything not tool-verified with `[ASSUMPTION]`.
+For a new feature, fill from the developer's answers and leave unknowns in
+Open Questions rather than inventing them.
+
+```markdown
+# PRD: {Feature Name}
+
+**Domain:** {domain} · **Feature ID:** {id or "new"} · **Confidence:** {score or "n/a"}
+**Status:** Draft | Approved · **Date:** {YYYY-MM-DD}
+**Linked:** BRD-{domain} · ADR-{NNN} · Spec {link}
+
+## Problem Statement
+
+{2-3 sentences: the user problem, who experiences it and how often, and the
+cost of not solving it. Ground in evidence: support data, metrics, findings.}
+
+## Goals
+
+{3-5 measurable outcomes, not outputs. "Reduce time to first value by 50%",
+not "build onboarding wizard". Split user goals from business goals.}
+
+## Non-Goals
+
+{3-5 things this feature will NOT do, each with a one-line reason: not enough
+impact, too complex, separate initiative, premature.}
+
+## User Stories
+
+{"As a {specific user type}, I want {capability} so that {benefit}." Grouped
+by persona, ordered by priority. Include error, empty, and boundary states.}
+
+## Requirements
+
+### Must-Have (P0)
+
+{Cannot ship without. Test: "If we cut this, does the feature still solve the
+core problem?" If yes, it is not P0.}
+
+- **REQ-001:** {behavior}
+  - Given {precondition}, when {action}, then {outcome}
+  - Given {error or edge condition}, when {action}, then {outcome}
+  - Depends on: {team, system, or "none"}
+
+### Nice-to-Have (P1)
+
+{Improves the experience; core use case works without it. Likely fast follows.}
+
+### Future Considerations (P2)
+
+{Out of scope for v1, but design must not block them.}
+
+## Success Metrics
+
+| Metric | Type | Target | Measured by | Evaluate at |
+|--------|------|--------|-------------|-------------|
+| {adoption, activation, task completion, error rate} | Leading | {"50% adoption in 30 days", not "high adoption"} | {tool or query} | {1 week / 1 month} |
+| {retention, revenue, support-ticket reduction} | Lagging | {target} | {tool or query} | {1 quarter} |
+
+## Open Questions
+
+| Question | Owner | Blocking? |
+|----------|-------|-----------|
+| {question} | engineering / design / legal / data / stakeholder | Yes / No |
+
+## Timeline Considerations
+
+{Hard deadlines, dependencies on other work, suggested phasing if too large
+for one release.}
+```
+
+**Writing rules**
+
+- If everything is P0, nothing is P0. Challenge each must-have: "Would we
+  really not ship without this?"
+- User stories describe the need, not the widget. "I want a dropdown" is a
+  solution; "I want to pick my region without typing" is a story.
+- A story with no benefit clause ("I want to click a button") is a task.
+- Acceptance criteria cover happy path, error cases, and what must NOT happen.
+  Each is independently testable. Ban "fast", "intuitive", "user-friendly"
+  unless defined with a number.
+- Any scope addition after approval comes with a scope removal or a timeline
+  extension. Park good out-of-scope ideas under Non-Goals.
 
 **Step 4: Post-Generation**
 

@@ -149,7 +149,7 @@ this table.
 
 | Order | Section | When | File |
 |-------|---------|------|------|
-| 0 | Incident pre-flow (severity triage, containment gate) | On intake, right after plan detection and before Step 0 | `${CLAUDE_SKILL_DIR}/phases/incident-preflow.md` |
+| 0 | Incident pre-flow (severity triage, containment gate, status updates) | On intake, right after plan detection and before Step 0 | `${CLAUDE_SKILL_DIR}/phases/incident-preflow.md` |
 | 1 | Phase 1: Root Cause Investigation | After Step 0 / 0.5 / 0.2 below | `${CLAUDE_SKILL_DIR}/phases/phase-1-root-cause.md` |
 | 1b | Multi-agent mode | Only if the Phase 1 escalation check is confirmed; replaces Phases 2-3 | `${CLAUDE_SKILL_DIR}/phases/multi-agent-mode.md` |
 | 2 | Phase 2: Pattern Analysis | Single-agent path after Phase 1 | `${CLAUDE_SKILL_DIR}/phases/phase-2-pattern-analysis.md` |
