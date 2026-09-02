@@ -32,7 +32,7 @@ and produce a structured plan at docs/specs/[plan-name].md.
 <workflow>
 ## Step 1: Understand the Objective
 
-Read $ARGUMENTS to understand what the user wants to accomplish.
+Read the task description you were given to understand what the user wants to accomplish.
 Ask clarifying questions if the objective is too vague:
 - What is the desired end state?
 - What triggers this work? (bug, feature request, tech debt, leadership mandate)

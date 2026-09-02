@@ -91,8 +91,8 @@ Score 4.5: 0 = no agents, 1 = 1-2 agents, 2 = 3+ agents
 - For route files, note whether routes are annotated with descriptions/docs
 
 **Output:**
-Write results as JSON to docs/audit/readability/entry-point-scan.json following the COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
-standard scanner output schema with all 5 checks.
+Write results as JSON to docs/audit/readability/entry-point-scan.json following the standard scanner output schema with all 5 checks.
+COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
 
 **Constraints:**
 - Read-only. Do not modify any source files.

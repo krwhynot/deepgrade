@@ -1,5 +1,5 @@
 ---
-description: (deepgrade) Export a plan as a self-contained zip package that another developer can use with vanilla Claude Code (no plugin required). Copies all referenced documents, redacts secrets, includes a CLAUDE.md that auto-bootstraps context, and verifies codebase compatibility on the receiving end. The developer unzips into their project root and Claude immediately understands the plan.
+description: Export a plan as a self-contained zip package that another developer can use with vanilla Claude Code (no plugin required). Copies all referenced documents, redacts secrets, includes a CLAUDE.md that auto-bootstraps context, and verifies codebase compatibility on the receiving end. The developer unzips into their project root and Claude immediately understands the plan.
 argument-hint: "[plan-name]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 disable-model-invocation: true
@@ -420,8 +420,10 @@ Vanilla Claude Code reads the CLAUDE.md and handles everything.
 </constraints>
 
 <valid_commands>
-/deepgrade:plan, /deepgrade:plan-status, /deepgrade:plan-export, /deepgrade:troubleshoot, /deepgrade:quick-plan,
-/deepgrade:quick-audit, /deepgrade:quick-cleanup, /deepgrade:documentation, /deepgrade-readiness:readiness-scan,
-/deepgrade-readiness:readiness-generate, /deepgrade-audit:codebase-audit, /deepgrade-audit:codebase-security,
-/deepgrade-audit:codebase-delta, /deepgrade-audit:codebase-gates, /deepgrade-audit:codebase-characterize, /deepgrade:help
+/deepgrade:codex-challenge, /deepgrade:documentation, /deepgrade:help, /deepgrade:plan,
+/deepgrade:plan-export, /deepgrade:plan-status, /deepgrade:quick-audit, /deepgrade:quick-cleanup,
+/deepgrade:quick-plan, /deepgrade:troubleshoot, /deepgrade-audit:codebase-audit,
+/deepgrade-audit:codebase-characterize, /deepgrade-audit:codebase-delta,
+/deepgrade-audit:codebase-gates, /deepgrade-audit:codebase-security,
+/deepgrade-readiness:readiness-generate, /deepgrade-readiness:readiness-scan
 </valid_commands>

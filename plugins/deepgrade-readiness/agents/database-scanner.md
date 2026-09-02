@@ -567,8 +567,8 @@ Scoring:
 ---
 
 **Output:**
-Write results as JSON to docs/audit/readability/database-scan.json following the COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
-standard scanner output schema.
+Write results as JSON to docs/audit/readability/database-scan.json following the standard scanner output schema.
+COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
 
 ```json
 {
@@ -585,7 +585,7 @@ standard scanner output schema.
   "checks": [
     {
       "id": "9.1",
-      "name": "Schema source of truth",
+      "name": "Schema source of truth exists",
       "priority": "critical",
       "status": "pass|partial|fail|skipped",
       "points": 0,

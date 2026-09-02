@@ -980,7 +980,7 @@ Node gives real `JSON.parse`, so a named field can be extracted rather than gues
 
 The concern that motivated the old design still stands: a security guard that fails to install is worse than no guard, because it creates a false sense of safety. v5.0.0 answers it differently. Rather than degrade quietly to a weaker parser, a host that cannot run the guards produces a visible hook error on every guarded event. You are told the safety layer is absent instead of being left to assume it is working.
 
-On Windows, where Claude Code runs in Git Bash, `jq` installed via `winget` lands in `$LOCALAPPDATA/Microsoft/WinGet/Links/`, a path Git Bash does not include by default. Every hook starts with `export PATH="$PATH:$LOCALAPPDATA/Microsoft/WinGet/Links:/usr/local/bin"` to ensure `jq` is discoverable regardless of installation method.
+Since v5.0.0 every hook is a Node script launched in exec form (`node ${CLAUDE_PLUGIN_ROOT}/scripts/dg-*.js`), so there is no shell PATH preamble and no `jq` dependency. The v4.x hooks were bash one-liners that prepended `$LOCALAPPDATA/Microsoft/WinGet/Links` to PATH so a winget-installed `jq` could be found under Git Bash; that preamble also broke under Git Bash because the Windows path contains a colon.
 
 ### Security Guards Must Never Fail-Open
 
@@ -1731,7 +1731,7 @@ That is the failure mode we designed the current system to prevent.
 
 ### The Current Solution: Graceful Degradation
 
-The architecture that shipped in v4.27 uses a three-layer fallback chain. Every hook follows the same pattern.
+The architecture that shipped in v4.27 used a three-layer fallback chain, described here for the record. v5.0.0 replaced it with Node handlers and no preamble; the fail-closed principle survived, the mechanism did not.
 
 ```mermaid
 flowchart TD
@@ -1766,7 +1766,7 @@ flowchart TD
 
 The PATH preamble is the first key insight. On Windows, `winget` installs binaries to `$LOCALAPPDATA/Microsoft/WinGet/Links`, which Git Bash does not include in its default PATH. On macOS/Linux, `/usr/local/bin` is the standard location for user-installed tools. By prepending both before every `jq` call, we cover the most common "installed but invisible" scenarios.
 
-Source: [`.claude-plugin/plugin.json`](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json) -- every hook command begins with the PATH preamble.
+Source (historical, v4.x): the inline hook commands in `.claude-plugin/plugin.json` at that time. Current hooks live in `plugins/*/hooks/hooks.json` and `plugins/*/scripts/`.
 
 ### The Five Design Rules
 

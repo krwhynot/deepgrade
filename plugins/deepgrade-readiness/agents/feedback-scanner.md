@@ -103,8 +103,8 @@ Compare the two. Do they match?
 Score: 0 = no CLAUDE.md or no test command in it, 1 = commands exist but don't match (WARN), 2 = commands match
 
 **Output:**
-Write results as JSON to docs/audit/readability/feedback-scan.json following the COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
-standard scanner output schema with all 6 checks.
+Write results as JSON to docs/audit/readability/feedback-scan.json following the standard scanner output schema with all 6 checks.
+COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
 
 **Constraints:**
 - Read-only. Do not modify any source files.

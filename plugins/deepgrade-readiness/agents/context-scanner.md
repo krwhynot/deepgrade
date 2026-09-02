@@ -263,8 +263,8 @@ Step 8 - Context coverage ratio (Check 2.4):
   ```
 
 **Output:**
-Write results as JSON to docs/audit/readability/context-scan.json following the COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
-standard scanner output schema with all 10 checks.
+Write results as JSON to docs/audit/readability/context-scan.json following the standard scanner output schema with all 10 checks.
+COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
 
 Each check must include:
 - id, name, status, points, max, evidence, details, remediation

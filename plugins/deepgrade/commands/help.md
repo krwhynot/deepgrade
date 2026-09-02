@@ -1,8 +1,8 @@
 ---
-description: (deepgrade) Show all DeepGrade Developer Toolkit commands, agents, and capabilities. Use when you need to see what's available or explain the toolkit to someone new.
+description: Show all DeepGrade Developer Toolkit commands, agents, and capabilities. Use when you need to see what's available or explain the toolkit to someone new.
 ---
 
-# DeepGrade Developer Toolkit (/tp)
+# DeepGrade Developer Toolkit
 
 A planning + implementation assistant with codebase auditing. Stack-agnostic:
 works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
@@ -141,15 +141,19 @@ Create and review technical plans for any engineering initiative.
 | plan-auditor | Scores any plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team). Produces go/no-go assessment. |
 | plan-scaffolder | Creates structured plans from vague objectives. Reads codebase + audit data to generate evidence-based phased plans. |
 
-## Knowledge Skills (6)
+## Knowledge Skills (7, across all four plugins)
 
 Auto-loaded contextual knowledge that guides agent behavior during scans and reports.
+`plan` and `documentation` ship in deepgrade; `deepgrade-knowledge`, `governance-knowledge`
+and `self-audit-knowledge` in deepgrade-audit (self-audit also in deepgrade); `readiness-scoring`
+in deepgrade-readiness.
 
 | Skill | What It Provides |
 |-------|-----------------|
 | deepgrade-knowledge | DeepGrade methodology for codebase audit and documentation |
 | documentation | Document generation templates (ADR, BRD, PRD, README, release notes, spec) |
 | governance-knowledge | Enterprise governance patterns, DORA metrics, quality gates, confidence decay |
+| plan | The `/deepgrade:plan` workflow: a router plus one file per phase, loaded on entry so late phases survive compaction |
 | mcp-research | When and how to use external MCP search tools (Ref, Exa, Perplexity): tool selection heuristics, token budget rules, graceful degradation |
 | readiness-scoring | AI readiness scoring methodology, gate thresholds, grading criteria |
 | self-audit-knowledge | LLM epistemic transparency, claim verification tiers (A/B/C), failure mode flags, cascade risk classification, evidence basis formatting |
@@ -161,12 +165,12 @@ Powered by audit data when available. Suggests which document to create if you'r
 
 | Type | Command Example | What It Creates |
 |------|----------------|----------------|
-| ADR | `doc adr credential rotation` | Architecture Decision Record |
-| BRD | `doc brd Ordering` | Business Requirements Document |
-| PRD | `doc prd refund processing` | Product Requirements Document |
-| README | `doc readme BusinessLogic` | Project README |
-| Release Notes | `doc release-notes v2.5.0` | Release notes from git history |
-| Spec | `doc spec pricing engine extraction` | Technical Specification / Engineering Plan |
+| ADR | `/deepgrade:documentation adr credential rotation` | Architecture Decision Record |
+| BRD | `/deepgrade:documentation brd Ordering` | Business Requirements Document |
+| PRD | `/deepgrade:documentation prd refund processing` | Product Requirements Document |
+| README | `/deepgrade:documentation readme BusinessLogic` | Project README |
+| Release Notes | `/deepgrade:documentation release-notes v2.5.0` | Release notes from git history |
+| Spec | `/deepgrade:documentation spec pricing engine extraction` | Technical Specification / Engineering Plan |
 
 Don't know which format? Just say "I need to document X" and the skill will recommend the right type based on your context and audit data.
 

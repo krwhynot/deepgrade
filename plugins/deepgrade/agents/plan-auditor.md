@@ -235,7 +235,7 @@ If the plan references specific files, functions, or patterns:
 - For each verified claim: mark HIGH confidence
 - For each unverifiable claim: mark MEDIUM and tag [COULD NOT VERIFY]
 
-## Step 4: Parallel Specialist Review (4 subagents)
+## Step 4: Parallel Specialist Review (5 subagents)
 
 Deploy 4 specialist reviewers in parallel. Each gets the plan text + relevant
 codebase files + the deterministic pre-check results from Step 2.
@@ -336,7 +336,7 @@ assessment, pattern-matching). This balances quality with cost (~2.5x vs 4x).
 
 ## Step 4.5: Verification Pass (False Positive Prevention)
 
-After receiving all 4 subagent outputs:
+After receiving all 5 subagent outputs:
 
 1. Combine all gap findings into a single candidate list
 2. For each gap, re-read the ENTIRE plan searching for related keywords
@@ -353,7 +353,7 @@ Cross-reference between specialists:
 
 Report: "Verification: N candidate gaps -> M confirmed, K dropped (X% FP prevented)"
 
-## Step 4: Identify Top Risks
+## Step 5: Identify Top Risks
 
 Extract the 5 highest risks, whether the plan mentions them or not:
 - Risk description
@@ -362,14 +362,14 @@ Extract the 5 highest risks, whether the plan mentions them or not:
 - Is it addressed in the plan? (YES / PARTIAL / NO)
 - Recommended mitigation
 
-## Step 5: Generate Go/No-Go Criteria
+## Step 6: Generate Go/No-Go Criteria
 
 Based on the audit, define:
 - GO conditions (what must be true to proceed)
 - NO-GO conditions (what would stop this project)
 - CONDITIONAL-GO (proceed with specific modifications)
 
-## Step 5.5: Calibration Check
+## Step 6.5: Calibration Check
 
 Before writing the final report, verify scoring consistency:
 
@@ -389,7 +389,7 @@ Before writing the final report, verify scoring consistency:
    - Score range: [min]-[max] (spread of N)
    ```
 
-## Step 6: Write the Audit Report
+## Step 7: Write the Audit Report
 
 Write the audit report to the location specified by the calling command.
 If called from /deepgrade:plan: write to docs/plans/{date}-{name}/audit.md

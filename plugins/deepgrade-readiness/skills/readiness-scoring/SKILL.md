@@ -1,6 +1,6 @@
 ---
 name: readiness-scoring
-description: (deepgrade) Knowledge about AI readiness scoring methodology, gate thresholds, confidence levels, and grading criteria. Use when running a readiness scan, interpreting a readiness score or letter grade, deciding whether a check passed, or explaining why a codebase scored the way it did.
+description: Knowledge about AI readiness scoring methodology, gate thresholds, confidence levels, and grading criteria. Use when running a readiness scan, interpreting a readiness score or letter grade, deciding whether a check passed, or explaining why a codebase scored the way it did.
 ---
 
 # AI Readiness Scoring Methodology

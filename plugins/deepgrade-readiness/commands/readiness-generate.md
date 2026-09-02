@@ -1,5 +1,5 @@
 ---
-description: (deepgrade) Generate missing AI readability artifacts based on the latest scan results. Creates CLAUDE.md, slash commands, agent definitions, rules files, and other artifacts that improve the codebase's AI readiness score. Usage - /deepgrade-readiness:readiness-generate [number] for a specific artifact, all-critical for every critical one, all for everything.
+description: Generate missing AI readability artifacts based on the latest scan results. Creates CLAUDE.md, slash commands, agent definitions, rules files, and other artifacts that improve the codebase's AI readiness score. Usage - /deepgrade-readiness:readiness-generate [number] for a specific artifact, all-critical for every critical one, all for everything.
 argument-hint: "[number|all-critical|all]"
 allowed-tools: Read, Write, Glob, Grep, Bash, Task
 disable-model-invocation: true

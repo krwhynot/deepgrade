@@ -10,6 +10,29 @@
   single long command loses its later phases after context compaction in
   exactly the long sessions a nine-phase workflow produces. Tests that read
   Phase 5 content now point at `phases/phase-5-audit.md`.
+- The `(deepgrade)` description prefix is stripped from all 23 commands and
+  skills. After the monorepo split it mislabelled 11 files owned by
+  deepgrade-audit and deepgrade-readiness.
+- Marketplace entries carry `category` and `tags`; the non-deliverable
+  owner email is removed.
+
+### Fixed
+- Backlog triage of the 32 low/info findings recorded against 4.31.0: 13 were
+  already closed by the hardening work; 15 fixed here. Scanner "Output"
+  sentences un-garbled in all 8 readiness scanners; database-scanner check 9.1
+  name matches its contract; plan-auditor steps renumbered 1-7 and its subagent
+  count corrected to 5; gate-generator's duplicate Step 4.5 is now 4.6; every
+  `<valid_commands>` block regenerated from the real 17-entry surface; help.md
+  drops the dead `/tp`, lists the plan skill, and namespaces its documentation
+  examples; the phantom `plan-review.js` reference is gone; two agents no longer
+  read a `$ARGUMENTS` that is never substituted; the documentation skill no
+  longer carries a literal positional placeholder in its body; the two long
+  templates have a Contents list; mcp-research drops a baked-in date;
+  METHODOLOGY.md stops describing the removed bash PATH preamble as current.
+- Stop hooks (guard session-stop, deepgrade subagent-stop) exit silently when
+  `stop_hook_active` is set, so a continued turn cannot re-post the summary.
+  The session-stop hook also sweeps tracker files from other sessions older
+  than a day; before this they accumulated in TMPDIR forever.
 
 ### Internal
 - CR-7 (owner-ratified): the U7 compatibility-floor requirement is descoped.

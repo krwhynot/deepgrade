@@ -15,6 +15,7 @@ function quiet() { process.exit(0); }
 
 let payload = null;
 try { payload = JSON.parse(fs.readFileSync(0, 'utf8')); } catch { payload = null; }
+if (payload && payload.stop_hook_active === true) quiet();
 
 let plansDir = 'docs/plans';
 if (!fs.existsSync(plansDir) && fs.existsSync('plans')) plansDir = 'plans';

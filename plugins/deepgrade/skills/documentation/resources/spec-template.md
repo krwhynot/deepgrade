@@ -1,5 +1,13 @@
 Generate a Technical Specification for "$1".
 
+## Contents
+
+- Step 0: Disambiguate (extraction/migration vs feature)
+- Spec document skeleton: Context, Goal, Architecture, Phases
+- Shadow Mode / Validation Strategy, Risk Assessment, Hidden Dependencies
+- Timeline, Team & Resources, Testing Strategy, Rollback Strategy
+- Success Criteria, Open Questions, Critical Files, Verification
+
 **Step 0: Disambiguate**
 
 Determine what kind of spec this is:
