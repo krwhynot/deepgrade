@@ -910,7 +910,7 @@ if [ -n "$root_auto" ]; then
 else
   pass "F04: no 'picks up changes automatically' claim in root docs"
 fi
-root_bare=$(grep -nE "/plugin install (deepgrade|deepgrade-readiness|deepgrade-audit|deepgrade-guard)([[:space:]]|\$)" $DOC_FILES 2>/dev/null | head -1)
+root_bare=$(grep -nE "/plugin install (deepgrade|deepgrade-readiness|deepgrade-audit)([[:space:]]|\$)" $DOC_FILES 2>/dev/null | head -1)
 if [ -n "$root_bare" ]; then
   fail "F04: unqualified install command in a root doc (missing @deepgrade-marketplace): $root_bare"
 else
@@ -964,13 +964,14 @@ fi
 #
 # The release script enforces this at release time; this copy enforces it on
 # every suite run, so a drifted manifest is caught in the PR that drifts it
-# rather than on release day. The count floor is EXACTLY four — a fifth plugin
-# is a deliberate decision that must update this number in the same commit.
+# rather than on release day. The count is EXACTLY three (four until
+# deepgrade-guard was retired in 9.0.0) — adding or removing a plugin is a
+# deliberate decision that must update this number in the same commit.
 # ===========================================================================
 split_manifests=$(git ls-files '*/.claude-plugin/plugin.json')
 split_mcount=$(echo "$split_manifests" | grep -c . || true)
-if [ "$split_mcount" -ne 4 ]; then
-  fail "SPLIT-2: found $split_mcount plugin manifests, expected exactly 4"
+if [ "$split_mcount" -ne 3 ]; then
+  fail "SPLIT-2: found $split_mcount plugin manifests, expected exactly 3"
 else
   split_vers=$(for m in $split_manifests; do
     grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$m" | head -1 | sed 's/.*"\([0-9][^"]*\)"$/\1/'
@@ -978,7 +979,7 @@ else
   if [ "$(echo "$split_vers" | grep -c .)" -ne 1 ]; then
     fail "SPLIT-2: version lockstep broken across manifests: $(echo $split_vers | tr '\n' ' ')"
   else
-    pass "SPLIT-2: all 4 plugin manifests in lockstep at $split_vers"
+    pass "SPLIT-2: all 3 plugin manifests in lockstep at $split_vers"
   fi
 fi
 
@@ -996,7 +997,7 @@ fi
 # design. Longest-alternative-first is cosmetic — grep -E is leftmost-longest,
 # so 'deepgrade' can never shadow 'deepgrade-audit' at the same position.
 # ===========================================================================
-ns_re='(deepgrade-readiness|deepgrade-audit|deepgrade-guard|deepgrade):[a-z][a-z0-9-]*'
+ns_re='(deepgrade-readiness|deepgrade-audit|deepgrade):[a-z][a-z0-9-]*'
 
 # Self-tests. The known-positive is drawn from the LIVE artifact (help.md), not
 # authored here — a known-positive written alongside the pattern shares its
@@ -1066,8 +1067,8 @@ else
   # Self-test: the extractor must actually read entries out of THIS file, or
   # every per-entry assertion below sweeps an empty set and reports clean.
   cat_n=$(jq '.plugins | length' "$CATALOG" 2>/dev/null | tr -d '\r')
-  if [ "${cat_n:-0}" -ne 4 ]; then
-    fail "SPLIT-4: catalog lists ${cat_n:-0} plugins, expected exactly 4 — a fifth entry is a deliberate decision that updates this number"
+  if [ "${cat_n:-0}" -ne 3 ]; then
+    fail "SPLIT-4: catalog lists ${cat_n:-0} plugins, expected exactly 3 — a fourth entry (or a removal) is a deliberate decision that updates this number"
     cat_bad=1
   fi
 
@@ -1129,9 +1130,9 @@ fi
 # undocumented new edge survives.
 #
 # Subjects are FUNCTIONAL files only (commands/, agents/, skills/, scripts/):
-# README/GUIDE mentions are description, not consumption — the guard README
-# shipped a whole output-table row describing a sibling's writer, which is
-# exactly why prose does not count as an edge.
+# README/GUIDE mentions are description, not consumption — the (since retired)
+# guard README once shipped a whole output-table row describing a sibling's
+# writer, which is exactly why prose does not count as an edge.
 # ===========================================================================
 echo ""
 echo "--- Interop contracts (INTEROP-1/2/3) ---"
@@ -1189,7 +1190,7 @@ else
   #     one. An artifact referenced from functional files of 2+ plugins is an
   #     edge whether or not anyone wrote it down.
   it_tmp=$(mktemp)
-  for it_p in deepgrade deepgrade-readiness deepgrade-audit deepgrade-guard; do
+  for it_p in deepgrade deepgrade-readiness deepgrade-audit; do
     git ls-files -z "plugins/$it_p/commands/*" "plugins/$it_p/agents/*" \
                     "plugins/$it_p/skills/*" "plugins/$it_p/scripts/*" 2>/dev/null \
       | xargs -0 -r grep -ohE "$it_path_re" 2>/dev/null | sort -u | sed "s|^|$it_p |"

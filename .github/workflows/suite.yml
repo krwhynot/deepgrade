@@ -63,4 +63,4 @@ jobs:
             claude plugin validate "$p" --strict
             n=$((n + 1))
           done
-          [ "$n" -eq 4 ] || { echo "validated $n plugin dirs, expected 4"; exit 1; }
+          [ "$n" -eq 3 ] || { echo "validated $n plugin dirs, expected 3"; exit 1; }

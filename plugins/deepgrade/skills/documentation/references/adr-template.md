@@ -54,10 +54,69 @@ Generate the ADR directly, using:
 Steps:
 1. Create `docs/adr/` directory if needed
 2. Read existing ADRs to match style
-3. Write ADR-{NNN}-{topic}.md
+3. Write ADR-{NNN}-{topic}.md using the skeleton below
 4. Update document-linkage.json for related features
 5. Update feature-inventory.json linked_docs
 6. Validate all JSON files
+
+**Document skeleton**
+
+Fill every section. Evaluate at least two options; a one-option ADR is a
+memo, not a decision record. Cite baseline findings by ID where they justify
+an assessment.
+
+```markdown
+# ADR-{NNN}: {Title}
+
+**Status:** Proposed | Accepted | Rejected | Deprecated | Superseded by ADR-{NNN}
+**Date:** {YYYY-MM-DD}
+**Deciders:** {who signs off}
+**Related:** features {IDs} · PRDs {links} · findings {IDs from baseline}
+
+## Context
+
+{The situation and the forces at play: constraints, findings, deadlines,
+what breaks if nothing is decided.}
+
+## Decision
+
+{The change being proposed, in one or two sentences.}
+
+## Options Considered
+
+### Option A: {Name}
+
+| Dimension | Assessment |
+|-----------|------------|
+| Complexity | Low / Med / High |
+| Cost | {money, time, or ops burden} |
+| Scalability | {assessment} |
+| Team familiarity | {assessment} |
+| Rollback | Low / Med / High |
+
+**Pros:** {list}
+**Cons:** {list}
+
+### Option B: {Name}
+
+{Same format.}
+
+## Trade-off Analysis
+
+{Why the chosen option wins against the others, with reasoning tied to the
+dimensions above. Name what was given up.}
+
+## Consequences
+
+- Easier: {what becomes easier}
+- Harder: {what becomes harder}
+- Revisit when: {the condition or date that reopens this decision}
+
+## Action Items
+
+1. [ ] {implementation step}
+2. [ ] {follow-up, e.g. update PRD-{name} to reference this ADR}
+```
 
 **Step 3: Post-Generation**
 

@@ -29,7 +29,6 @@ PARTS=(
   "plugins/deepgrade deepgrade"
   "plugins/deepgrade-readiness deepgrade-readiness"
   "plugins/deepgrade-audit deepgrade-audit"
-  "plugins/deepgrade-guard deepgrade-guard"
 )
 
 COUNTS_FILE=$(mktemp)

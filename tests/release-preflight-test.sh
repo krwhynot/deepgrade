@@ -92,8 +92,8 @@ sed -i "s/^Current: v$CUR_RE/Current: v0.0.1/" plugins/deepgrade/README.md
 git commit -qam "v1b"
 violation "V1b: plugin README version drift refused" "version|drift"
 
-# V2: a manifest disagrees — the lockstep rule, load-bearing at four manifests.
-sed -i "s/\"version\": \"$CUR_RE\"/\"version\": \"0.0.1\"/" plugins/deepgrade-guard/.claude-plugin/plugin.json
+# V2: a manifest disagrees — the lockstep rule, load-bearing at three manifests.
+sed -i "s/\"version\": \"$CUR_RE\"/\"version\": \"0.0.1\"/" plugins/deepgrade-audit/.claude-plugin/plugin.json
 git commit -qam "v2"
 violation "V2: manifest out of lockstep refused" "lockstep|version"
 

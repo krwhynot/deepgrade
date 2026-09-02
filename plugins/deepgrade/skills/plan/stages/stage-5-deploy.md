@@ -77,12 +77,18 @@ Evidence before opinions. Sections, in order:
    Important (would break behavior, leak data, or breach a policy) first, then
    nits. At most 5 nit-level comments; summarize the rest as a count.
    Do not report generated files or anything CI already enforces.
-5. Release checklist —
-   - Deployment sequence with a verification step after each step (what to run,
-     what healthy output looks like; reuse plan.md ## Verification)
-   - Rollback trigger (the observable condition that means "roll back now")
-     and rollback steps
-   - Monitoring to watch, for how long, and the threshold that trips rollback
+5. Release checklist — follow the Pre-deploy / Deploy / Post-deploy / Rollback
+   structure in the review.md template:
+   - Link the plan's runbook if one exists (`/deepgrade:documentation runbook
+     {plan}` writes it); otherwise the deployment sequence lives inline, one
+     verification step after each step (what to run, what healthy output looks
+     like; reuse plan.md ## Verification)
+   - Rollback triggers as numeric thresholds over a window (error rate, latency,
+     a failing smoke test, a data-integrity count). "Looks wrong" is not a
+     trigger. These thresholds are what Stage 6 uses to classify SEV1/SEV2.
+   - Rollback steps, each with its own verification
+   - Monitoring: where to look, for how long, and the thresholds above
+   - Mark checklist items N/A with a reason rather than deleting them
    - Owner of the release window
 6. Release authorization — name, date, decision (Authorized | Rejected | Deferred).
    Leave blank until Step C.

@@ -1,6 +1,6 @@
 # Cross-Plugin Interop Contracts
 
-The four plugins exchange artifacts through the repository they are installed
+The three plugins exchange artifacts through the repository they are installed
 into. SPLIT-3 proves that namespaced *references* resolve; this file is the
 contract for the *artifacts* those plugins hand each other — who writes a file,
 who reads it, and which fields are load-bearing. The INTEROP section of
@@ -74,10 +74,10 @@ field is removed from the templates; module-level confidence is untouched.
 
 ## Deliberate non-edges
 
-- **Session markers (`$TMPDIR/dg-*`) are deepgrade-guard-internal.** The
-  complete marker bus — writers and readers — ships in that one plugin.
-  Layer 1's per-plugin core fails any other plugin that grows a marker
-  surface.
+- **Session markers (`$TMPDIR/dg-*`) no longer exist.** The marker bus shipped
+  inside deepgrade-guard and was retired with it in 9.0.0. Layer 1's per-plugin
+  core fails any plugin that grows a marker surface, so the bus cannot come
+  back by accident.
 - **Plan folders (`docs/plans/{date}-{name}/`) are deepgrade-internal.**
   Written by the planning commands and deepgrade's own hooks
   (dg-subagent-stop appends `subagent-log.txt` there); no other plugin reads

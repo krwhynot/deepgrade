@@ -60,10 +60,79 @@ Generate the BRD directly, using:
 - Links to any existing PRDs and ADRs for cross-referencing
 
 Steps:
-1. Write the BRD to `docs/brd/{domain}.md`
+1. Write the BRD to `docs/brd/{domain}.md` using the skeleton below
 2. Update document-linkage.json for all features in this domain
 3. Update feature-inventory.json linked_docs for all features
 4. Validate all JSON files
+
+**Document skeleton**
+
+A BRD answers *why the business needs this domain to exist*; PRDs answer
+*what each feature does*. Keep requirements at the business-capability level
+(BR-NNN), and point each one at the PRDs that implement it.
+
+```markdown
+# BRD: {Domain}
+
+**Status:** Draft | Approved · **Date:** {YYYY-MM-DD} · **Owner:** {business owner}
+**Covers:** {N} features · **Linked PRDs:** {list} · **Linked ADRs:** {list}
+
+## Business Context
+
+{Why this domain exists: the business process it serves, who depends on it,
+and what it costs when it fails. 3-5 sentences, grounded in baseline data.}
+
+## Objectives
+
+{3-5 business outcomes, each measurable. "Cut order-entry time 30%", not
+"improve ordering".}
+
+## Stakeholders
+
+| Role | Interest | Decision authority |
+|------|----------|--------------------|
+| {role} | {what they need from this domain} | Approves / Consulted / Informed |
+
+## Scope
+
+**In:** {business capabilities covered}
+**Out:** {adjacent capabilities explicitly excluded, with a reason each}
+
+## Business Requirements
+
+| ID | Requirement | Priority | Implemented by |
+|----|-------------|----------|----------------|
+| BR-001 | {business capability, outcome-phrased} | Must / Should / Could | PRD-{name}, PRD-{name} |
+
+## Feature Coverage
+
+| Feature | Confidence | PRD | Test coverage | Notes |
+|---------|-----------|-----|---------------|-------|
+| {name} | {score} | {link or "missing"} | {status} | {[ASSUMPTION] if below 0.90} |
+
+## Success Metrics
+
+| Metric | Baseline | Target | Measured by | Review date |
+|--------|----------|--------|-------------|-------------|
+| {metric} | {today} | {target} | {tool or query} | {date} |
+
+## Assumptions and Constraints
+
+- Assumption: {what is taken as true; tag [ASSUMPTION] if unverified}
+- Constraint: {regulatory, contractual, technical, or budget limit}
+
+## Risks
+
+| Risk | Likelihood | Impact | Mitigation | Owner |
+|------|-----------|--------|------------|-------|
+| {risk} | Low / Med / High | Low / Med / High | {mitigation} | {role} |
+
+## Open Questions
+
+| Question | Owner | Blocking? |
+|----------|-------|-----------|
+| {question} | {role} | Yes / No |
+```
 
 **Step 4: Post-Generation**
 

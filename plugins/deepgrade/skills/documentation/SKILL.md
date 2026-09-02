@@ -1,6 +1,6 @@
 ---
 name: documentation
-description: Generate project documentation (ADR, BRD, PRD, README, release notes, changelog, technical spec). Dispatches to the appropriate template based on document type. Also suggests which document to create based on context. Triggers on - create adr, create brd, create prd, create readme, generate documentation, architecture decision, business requirements, product requirements, release notes, changelog, version notes, release summary, prepare release, generate changelog, version history, release documentation, deployment notes, create spec, technical specification, write spec, engineering plan, design doc, RFC, migration plan.
+description: Generate project documentation (ADR, BRD, PRD, README, runbook, release notes, changelog, technical spec). Dispatches to the appropriate template based on document type. Also suggests which document to create based on context. Triggers on - create adr, create brd, create prd, create readme, generate documentation, architecture decision, business requirements, product requirements, release notes, changelog, version notes, release summary, prepare release, generate changelog, version history, release documentation, deployment notes, create spec, technical specification, write spec, engineering plan, design doc, RFC, migration plan, create runbook, deployment runbook, operational procedure, on-call procedure.
 ---
 
 # Documentation Generator
@@ -36,7 +36,7 @@ Developer Toolkit. Works standalone or powered by Phase 2 audit data when availa
 
 Parse `$ARGUMENTS` to determine the document type and topic:
 
-- **First word = subcommand:** `adr`, `brd`, `prd`, `readme`, `release-notes`, `spec`
+- **First word = subcommand:** `adr`, `brd`, `prd`, `readme`, `runbook`, `release-notes`, `spec`
 - **Rest = topic/argument** passed to the template
 
 ### Routing
@@ -47,6 +47,7 @@ Parse `$ARGUMENTS` to determine the document type and topic:
 | `brd` | [references/brd-template.md](references/brd-template.md) | Business Requirements Document |
 | `prd` | [references/prd-template.md](references/prd-template.md) | Product Requirements Document |
 | `readme` | [references/readme-template.md](references/readme-template.md) | Project README |
+| `runbook` | [references/runbook-template.md](references/runbook-template.md) | Operational runbook (deploy, rotation, backfill, recovery) |
 | `release-notes` | [references/release-notes-template.md](references/release-notes-template.md) | Release Notes / Changelog |
 | `spec` | [references/spec-template.md](references/spec-template.md) | Technical Specification (extraction, migration, feature, infrastructure) |
 
@@ -61,8 +62,9 @@ Parse `$ARGUMENTS` to determine the document type and topic:
      [2] brd <domain>       - Business Requirements Document
      [3] prd <feature>      - Product Requirements Document
      [4] readme <project>   - Project README
-     [5] release-notes <version> - Release Notes / Changelog
-     [6] spec <topic>       - Technical Specification / Engineering Plan
+     [5] runbook <task or plan> - Operational Runbook
+     [6] release-notes <version> - Release Notes / Changelog
+     [7] spec <topic>       - Technical Specification / Engineering Plan
    
    Not sure which one you need? Describe what you're trying to document
    and I'll recommend the right format.
@@ -129,6 +131,7 @@ If you're...
   - Specifying a feature -> PRD (Product Requirements Document)
   - Planning a migration or extraction -> SPEC (Technical Specification)
   - Documenting a project/module -> README
+  - Writing the exact steps for a deploy, rotation, backfill, or recovery -> Runbook
   - Recording what changed in a release -> Release Notes
 
 Describe what you need and I'll pick the right format.
@@ -144,6 +147,7 @@ When audit data is available, documentation templates pull from it automatically
 | BRD | feature-inventory.md domains and feature lists |
 | PRD | feature-inventory.md confidence scores, entry points, DB tables |
 | README | dependency-map.md project dependencies, risk ratings |
+| Runbook | plan.md ## Verification, deploy scripts and CI config (no audit dependency) |
 | Spec | risk-assessment.md risk levels, dependency-map.md coupling data |
 | Release Notes | git log (no audit dependency) |
 
@@ -158,6 +162,7 @@ After generating any document, check the document chain:
 - **BRD created** -> Check if PRDs exist for features in that domain. If not, suggest creating them.
 - **ADR created** -> Check if related PRDs reference this decision. If not, suggest linking.
 - **Spec created** -> Suggest running `/deepgrade:quick-audit` on it. Check for related ADRs.
+- **Runbook created** -> If plan-linked, check review.md ## Release checklist references it and manifest.md has a row.
 
 This ensures documents don't exist in isolation. Every doc links to related docs.
 
@@ -176,7 +181,7 @@ as files in the plugin's commands/ directory. The valid commands are:
 | Cleanup docs | `/deepgrade:quick-cleanup [folder]` |
 | Create plan | `/deepgrade:quick-plan [objective]` |
 | Audit plan | `/deepgrade:quick-audit [file]` |
-| Create document | `/deepgrade:documentation [adr\|brd\|prd\|readme\|release-notes\|spec] [topic]` |
+| Create document | `/deepgrade:documentation [adr\|brd\|prd\|readme\|runbook\|release-notes\|spec] [topic]` |
 | Readiness scan | `/deepgrade-readiness:readiness-scan` |
 | DeepGrade audit | `/deepgrade-audit:codebase-audit` |
 | Delta scan | `/deepgrade-audit:codebase-delta` |

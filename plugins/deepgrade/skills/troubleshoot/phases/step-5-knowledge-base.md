@@ -11,6 +11,8 @@ Phase file for /deepgrade:troubleshoot, loaded by SKILL.md on entry.
 - Detect Guardrail Patterns
 - Detect Recurrence (Correlation-Driven)
 - Flag Impact Review Gaps
+- Write a Postmortem (SEV1/SEV2 only)
+- Close the Loop: Propose a New Intent
 
 ## Step 5: Log and Update Knowledge Base
 
@@ -112,6 +114,12 @@ Derived from raw timestamps above. Do not estimate — calculate from the timeli
 
 ## Prevention
 {1-2 sentence summary of architectural or process-level prevention beyond guardrails}
+
+## Status Updates
+{SEV1/SEV2 only: each Incident Update block from the pre-flow, in order. N/A otherwise.}
+
+## Postmortem
+{SEV1/SEV2 only: path to the postmortem file. N/A otherwise.}
 ```
 
 ### Update Knowledge Base
@@ -192,6 +200,68 @@ same service/module AND same error signature ARE recurrence.
 If the issue reveals something the Impact Review missed:
 "This wasn't caught by the Impact Review. Consider adding
 '{check}' to future reviews for changes in this area."
+
+### Write a Postmortem (SEV1/SEV2 only)
+
+SEV3/SEV4: skip. For SEV1/SEV2, write a blameless postmortem beside the log
+at `{log directory}/YYYY-MM-DD-{issue-slug}-postmortem.md`. Blameless means
+the subject of every sentence is a system, a process, or a gap, never a
+person. Assemble Timeline from the log's Timeline table and the Status
+Updates; assemble Root Cause and 5 Whys from Phase 3; assemble Contributing
+Factors from the KB entry.
+
+```markdown
+# Postmortem: {Incident Title}
+
+**Date:** {date} · **Duration:** {T_FIX_VERIFIED - T_START, or user-facing impact window if longer}
+**Severity:** SEV{N} · **Status:** Draft | Reviewed
+**Plan:** {plan name or "standalone"} · **Log:** {path}
+
+## Summary
+{2-3 sentences in plain language: what broke, who felt it, how it was fixed.}
+
+## Impact
+- Users affected: {who and roughly how many}
+- Duration of impact: {from first symptom to restored service}
+- Business impact: {quantified if possible: failed orders, lost hours, SLA breach}
+
+## Timeline
+| Time | Event |
+|------|-------|
+| {HH:MM} | {first symptom, detection, containment, root cause found, fix verified} |
+
+## Root Cause
+{From Phase 3. One paragraph. What was actually wrong, not what the symptom was.}
+
+## 5 Whys
+1. Why did {symptom}? Because {cause 1}.
+2. Why {cause 1}? Because {cause 2}.
+3. Why {cause 2}? Because {cause 3}.
+4. Why {cause 3}? Because {cause 4}.
+5. Why {cause 4}? {Root cause: the systemic condition.}
+
+## Contributing Factors
+{Conditions that made the incident possible or slower to resolve: missing
+guardrails, gaps in monitoring, unclear ownership, stale runbook.}
+
+## What Went Well
+- {detection, containment, or communication that worked, and why}
+
+## What Went Poorly
+- {what was slow, missing, or misleading, stated as a gap in a system or process}
+
+## Action Items
+| Action | Owner | Priority | Due | Tracked in |
+|--------|-------|----------|-----|------------|
+| {guardrail, fix, or process change} | {person or role} | P0 / P1 / P2 | {date} | {intent path, ticket, or "none yet"} |
+
+## Lessons Learned
+{What this incident teaches that applies beyond this one bug.}
+```
+
+Every P0 action item either becomes part of the proposed intent below or is
+tracked somewhere named in the table. An action item with no owner and no
+tracker is a wish.
 
 ### Close the Loop: Propose a New Intent (Stage 6 of /deepgrade:plan)
 

@@ -141,7 +141,7 @@ Create and review technical plans for any engineering initiative.
 | plan-auditor | Scores any plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team). Produces go/no-go assessment. |
 | plan-scaffolder | Creates structured plans from vague objectives. Reads codebase + audit data to generate evidence-based phased plans. |
 
-## Knowledge Skills (7, across all four plugins)
+## Knowledge Skills (7, across all three plugins)
 
 Auto-loaded contextual knowledge that guides agent behavior during scans and reports.
 `plan` and `documentation` ship in deepgrade; `deepgrade-knowledge`, `governance-knowledge`
@@ -169,6 +169,7 @@ Powered by audit data when available. Suggests which document to create if you'r
 | BRD | `/deepgrade:documentation brd Ordering` | Business Requirements Document |
 | PRD | `/deepgrade:documentation prd refund processing` | Product Requirements Document |
 | README | `/deepgrade:documentation readme BusinessLogic` | Project README |
+| Runbook | `/deepgrade:documentation runbook prod-deploy` | Step-by-step operational procedure with rollback and escalation |
 | Release Notes | `/deepgrade:documentation release-notes v2.5.0` | Release notes from git history |
 | Spec | `/deepgrade:documentation spec pricing engine extraction` | Technical Specification / Engineering Plan |
 

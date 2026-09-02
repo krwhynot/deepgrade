@@ -63,11 +63,22 @@ written only after scope is locked.
 ### Requirements
 
 - ### Functional: what the system must do. Derive from intent.md Proposed outcome;
-  every functional requirement traces to a line of the intent.
+  every functional requirement traces to a line of the intent. Each carries a
+  priority (P0 cannot ship without; P1 fast follow; P2 design must not block)
+  and acceptance criteria in Given/When/Then form covering the happy path, at
+  least one error or boundary case, and one thing that must NOT happen. Each
+  criterion is independently testable; "fast" or "intuitive" without a number
+  is not a criterion. Challenge every P0: "Would we really not ship without
+  this?"
 - ### Non-functional: performance, security, accessibility, compliance,
-  operability. Derive from intent.md Constraints.
+  operability. Derive from intent.md Constraints. Each is measurable.
+- ## Success metrics: leading indicators (adoption, task completion, error
+  rate) and lagging ones (retention, cost, support load), each with a numeric
+  target, a window, a measurement method, and an evaluation date. Stage 6
+  reads these; the plan-auditor scores their presence.
 - Scope: IN list and OUT list. The OUT list starts from intent.md Out of scope and
-  grows with anything ruled out during options analysis.
+  grows with anything ruled out during options analysis. After scope lock, any
+  addition comes with a removal or a timeline change, recorded in a CR.
 
 ### Design
 

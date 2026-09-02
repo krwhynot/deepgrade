@@ -14,15 +14,14 @@
 
 ## Repository Structure
 
-This is a monorepo of four plugins with **lockstep versions** — every manifest
+This is a monorepo of three plugins with **lockstep versions** — every manifest
 carries the same version and `.github/release.sh` bumps them together.
 
 ```
-.claude-plugin/marketplace.json    # Four catalog entries, one shared ref+SHA pin
-plugins/deepgrade/                 # Planning core (9 commands, 2 agents, 3 skills, 3 hooks)
+.claude-plugin/marketplace.json    # Three catalog entries, one shared ref+SHA pin
+plugins/deepgrade/                 # Planning core (6 commands, 2 agents, 6 skills, 3 hooks)
 plugins/deepgrade-readiness/       # Readiness scanners (2 commands, 10 agents, 1 skill)
 plugins/deepgrade-audit/           # Audit team (5 commands, 10 agents, 3 skills)
-plugins/deepgrade-guard/           # Safety hooks only (5 handlers, nothing else)
 tests/                             # One suite for the whole monorepo
 ```
 
@@ -84,13 +83,12 @@ and a test asserts they stay that way. Edit both or neither.
 
 ## Modifying Hooks
 
-Hooks are declared per plugin — `plugins/deepgrade-guard/hooks/hooks.json` for
-the safety rails (PreToolUse, PostToolUse, Stop) and
-`plugins/deepgrade/hooks/hooks.json` for the plan-context handlers
-(SessionStart, SubagentStop, PreCompact) — and implemented as one Node script
-per handler under that plugin's `scripts/`. Requires Node.js 18+. The complete
-TMPDIR marker bus (writers and readers) ships inside deepgrade-guard; do not
-split it.
+Hooks are declared in `plugins/deepgrade/hooks/hooks.json` — the plan-context
+handlers (SessionStart, SubagentStop, PreCompact) — and implemented as one Node
+script per handler under that plugin's `scripts/`. Requires Node.js 18+. The
+safety rails (PreToolUse, PostToolUse, Stop) and their TMPDIR marker bus shipped
+in `deepgrade-guard` until 9.0.0 and are retired; do not reintroduce a blocking
+hook without the fail-closed rules below and a corpus of falsifying cases.
 
 **Never add a `hooks` key back to `.claude-plugin/plugin.json`.** With both a
 `hooks/` folder and a manifest `hooks` key present, Claude Code silently ignores
@@ -106,8 +104,8 @@ Each handler:
 - denies with exit 2, asks with `permissionDecision: "ask"` at exit 0
 
 When editing hooks:
-- add the case to `tests/fixtures/hook-corpus.json` first; it is the acceptance
-  authority, and a change that fails a row fails regardless of how it is written
+- add a falsifying case to `tests/layer2-ledger-rows.js` first; a change that
+  fails a row fails regardless of how it is written
 - security guards must never fail open; informational hooks must never fail closed
 - Stop hooks must use exit 0 (never exit 2, causes an infinite loop)
 - every file in a plugin's `scripts/` must be referenced by that plugin's
@@ -116,8 +114,8 @@ When editing hooks:
 
 ## Versioning
 
-Versions are **lockstep across all four plugins**: one release bumps every
-manifest, the four catalog entries stay on a single tag+SHA, and
+Versions are **lockstep across all three plugins**: one release bumps every
+manifest, the three catalog entries stay on a single tag+SHA, and
 `.github/release.sh` is the only supported way to cut a release. Follow
 semantic versioning (MAJOR.MINOR.PATCH):
 - PATCH: Bug fixes, hook improvements
@@ -138,4 +136,4 @@ Before submitting a PR:
    directory plus the repo-wide sweeps
 2. `claude plugin validate . --strict` and `claude plugin validate plugins/<plugin> --strict`
    (schema only — it never reads agent, command, or skill frontmatter)
-3. For hook changes, add the case to `tests/fixtures/hook-corpus.json` FIRST
+3. For hook changes, add the falsifying case to `tests/layer2-ledger-rows.js` FIRST

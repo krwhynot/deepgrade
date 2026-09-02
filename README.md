@@ -4,7 +4,7 @@ DeepGrade gives your codebase a letter grade. AI-powered codebase auditing,
 planning, operational readiness assessment, and documentation generation for
 Claude Code. Stack-agnostic. Works on any codebase.
 
-This repository is a monorepo of **four plugins with lockstep versions** — one
+This repository is a monorepo of **three plugins with lockstep versions** — one
 marketplace, one release, install any subset:
 
 | Plugin | What it does | Who installs it |
@@ -12,7 +12,6 @@ marketplace, one release, install any subset:
 | [`deepgrade`](plugins/deepgrade/) | Six-stage AI-Native SDLC planning (intent, spec, plan, test, release, maintain) with an adversarial verifier-first design gate, plan-linked troubleshooting, documentation generation | Developers living in `docs/plans/` daily |
 | [`deepgrade-readiness`](plugins/deepgrade-readiness/) | AI-readiness scan: 52 checks, 9 categories, composite letter grade A+ to F, generated scaffolding | Consultants and leads grading many repos |
 | [`deepgrade-audit`](plugins/deepgrade-audit/) | Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates | Engineering managers doing due diligence |
-| [`deepgrade-guard`](plugins/deepgrade-guard/) | Always-on safety hooks: force-push and DB-deploy blocking, migration protection, change/test tracking, session summaries | Everyone — recommended universal co-install |
 
 ## What It Does
 
@@ -24,7 +23,7 @@ DeepGrade asks three questions about your codebase:
 | 2. Phased Delivery Over Big-Bang Releases | What shape is it in? | Present |
 | 3. Operational Readiness | Can we safely change it? | Future |
 
-The methodology behind all four plugins lives in [METHODOLOGY.md](METHODOLOGY.md).
+The methodology behind all three plugins lives in [METHODOLOGY.md](METHODOLOGY.md).
 
 ## Install
 
@@ -36,14 +35,12 @@ The methodology behind all four plugins lives in [METHODOLOGY.md](METHODOLOGY.md
 claude plugin marketplace add krwhynot/deepgrade
 ```
 
-**Step 2:** Install the plugins you want (any subset works; `deepgrade-guard`
-is recommended alongside whichever you pick):
+**Step 2:** Install the plugins you want (any subset works):
 
 ```bash
 claude plugin install deepgrade@deepgrade-marketplace --scope user
 claude plugin install deepgrade-readiness@deepgrade-marketplace --scope user
 claude plugin install deepgrade-audit@deepgrade-marketplace --scope user
-claude plugin install deepgrade-guard@deepgrade-marketplace --scope user
 ```
 
 **Step 3:** Start Claude Code in any project and verify:
@@ -66,25 +63,30 @@ including the commands that belong to the sibling plugins.
 ## Repository Layout
 
 ```
-.claude-plugin/marketplace.json   # the four catalog entries, one shared ref+SHA pin
+.claude-plugin/marketplace.json   # the three catalog entries, one shared ref+SHA pin
 plugins/deepgrade/                # planning core (commands, agents, skills, hooks)
 plugins/deepgrade-readiness/      # readiness scanners
 plugins/deepgrade-audit/          # audit agents
-plugins/deepgrade-guard/          # safety hooks only
 tests/                            # one suite for the whole monorepo (run-all.sh)
 docs/                             # dev-time records: plans, specs, release notes
 METHODOLOGY.md                    # the methodology reference (not shipped by any plugin)
 ```
 
 Every plugin manifest carries the same version, bumped together by
-`.github/release.sh` — the four catalog entries always pin one ref and one SHA.
+`.github/release.sh` — the three catalog entries always pin one ref and one SHA.
 
 ## Dependencies
 
-The `deepgrade` and `deepgrade-guard` plugins run their hooks as Node scripts
-and require [Node.js](https://nodejs.org/) 18 or later — the same runtime
-Claude Code itself needs, so if Claude Code runs, they do too.
+The `deepgrade` plugin runs its hooks and design-gate tools as Node scripts
+and requires [Node.js](https://nodejs.org/) 18 or later — the same runtime
+Claude Code itself needs, so if Claude Code runs, it does too.
 `deepgrade-readiness` and `deepgrade-audit` need nothing beyond Claude Code.
+
+The always-on safety hooks that used to ship as `deepgrade-guard` (force-push
+and DB-deploy blocking, migration protection, change/test tracking) were retired
+in 9.0.0. Claude Code's own permission rules cover the same commands with no
+runtime dependency; see [METHODOLOGY.md §6](METHODOLOGY.md#6-defense-in-depth-safety)
+for the recommended `settings.json` rules.
 
 ## Version History
 

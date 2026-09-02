@@ -57,7 +57,6 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 pass "prerequisite: claude CLI $(claude --version 2>&1 | head -1)"
 
-[ -f plugins/deepgrade-guard/hooks/hooks.json ] || { fail "plugins/deepgrade-guard/hooks/hooks.json missing — nothing to prove"; exit 1; }
 [ -f plugins/deepgrade/hooks/hooks.json ] || { fail "plugins/deepgrade/hooks/hooks.json missing — nothing to prove"; exit 1; }
 
 if [ "${1:-}" = "--manual" ]; then
@@ -70,8 +69,8 @@ fi
 # PART 1 — automated: observable SIDE EFFECTS of hooks firing.
 #
 # Side effects, not captured notices, because notices are suppressed in print mode.
-# A tracker file appearing in TMPDIR is unambiguous proof the PostToolUse handler
-# ran: nothing else in the plugin writes it.
+# A line appearing in a plan's subagent-log.txt is unambiguous proof the
+# SubagentStop handler ran: nothing else in the plugin writes it.
 # ---------------------------------------------------------------------------
 if [ "$MANUAL_ONLY" -eq 0 ]; then
 echo ""
@@ -87,66 +86,11 @@ mkdir -p "$HOOKTMP"
 nested() {
   local prompt=$1
   ( cd "$SCRATCH" && TMPDIR="$HOOKTMP" TEMP="$HOOKTMP" \
-    timeout 180 claude -p --plugin-dir "$ROOT/plugins/deepgrade-guard" --plugin-dir "$ROOT/plugins/deepgrade" "$prompt" 2>&1 ) || true
+    timeout 180 claude -p --plugin-dir "$ROOT/plugins/deepgrade" "$prompt" 2>&1 ) || true
 }
 
-# PostToolUse:Write|Edit -> dg-track-change.js writes a baseline tracker.
-echo "  driving PostToolUse:Write|Edit ..."
-nested "Create a file called probe.txt in the current directory containing the single word ok. Then stop." >/dev/null
-if ls "$HOOKTMP"/dg-baseline-* >/dev/null 2>&1; then
-  pass "PostToolUse:Write|Edit fired — tracker written to \$TMPDIR"
-else
-  fail "PostToolUse:Write|Edit produced NO tracker. The handler did not run (matcher, path, or spawn failure)."
-fi
-
-# PostToolUse:Bash -> dg-track-test.js writes a test marker for a recognised runner.
-#
-# THE RUNNER MUST EXIST ON THE HOST. This probe originally asked the nested session to run
-# `pytest --version`, and reported FAIL on a host with no pytest installed — so it was
-# testing "will Claude run a tool that is absent", not "does the hook fire". The handler
-# was correct all along: fed a pytest payload directly it writes the marker.
-#
-# A runtime probe whose subject may not exist produces a false defect report, which is
-# worse than no probe: it sends you debugging a working component. Preconditioned on the
-# runner being present, and FAILS rather than skips if none is — per the Wave 0 rule that
-# a missing prerequisite must never silently no-op.
-echo "  driving PostToolUse:Bash ..."
-if command -v python >/dev/null 2>&1 && python -m unittest --help >/dev/null 2>&1; then
-  TEST_CMD="python -m unittest --help"
-elif command -v pytest >/dev/null 2>&1; then
-  TEST_CMD="pytest --version"
-elif command -v npx >/dev/null 2>&1; then
-  TEST_CMD="npx --version"   # not a runner; only reached if neither python nor pytest exist
-  TEST_CMD=""
-else
-  TEST_CMD=""
-fi
-if [ -z "$TEST_CMD" ]; then
-  fail "PostToolUse:Bash: no recognised test runner present on this host, so the hook cannot be exercised — install python or pytest and re-run"
-else
-  nested "Run exactly this shell command and nothing else: $TEST_CMD" >/dev/null
-  if ls "$HOOKTMP"/dg-test-* >/dev/null 2>&1; then
-    pass "PostToolUse:Bash fired — test marker written for '$TEST_CMD'"
-  else
-    fail "PostToolUse:Bash produced NO test marker for '$TEST_CMD' — the runner exists, so the handler or the wiring is at fault"
-  fi
-fi
-
-# PreToolUse:Bash deny. The nested session should be PREVENTED from running it, so
-# the evidence is the absence of the side effect plus a refusal in the transcript.
-echo "  driving PreToolUse:Bash (deny path) ..."
-DENY_MARK="$SCRATCH/should-not-exist.txt"
-# Built from fragments so this FILE can be edited and run while the old guard is
-# still installed — it blocks any command whose text contains a trigger string.
-DENYCMD="git push --for""ce origin main; touch '$DENY_MARK'"
-out=$(nested "Run exactly this shell command and nothing else: $DENYCMD")
-if [ -f "$DENY_MARK" ]; then
-  fail "PreToolUse:Bash did NOT block a force push — the compound command ran to completion"
-elif echo "$out" | grep -qiE 'block|denied|not allowed|BLOCKED'; then
-  pass "PreToolUse:Bash blocked the force push and the refusal reached the transcript"
-else
-  pending "PreToolUse:Bash: the command did not run (good) but no refusal text was captured — print mode may have suppressed it. Confirm interactively via --manual."
-fi
+# The PostToolUse tracker and PreToolUse deny probes that used to sit here drove
+# deepgrade-guard handlers, retired in 9.0.0. Only the plan-context hooks remain.
 
 # SubagentStop -> appends to a plan's troubleshooting log. Needs the opt-in folder.
 echo "  driving SubagentStop ..."
@@ -178,10 +122,8 @@ cat <<'CHECKLIST'
 
       /plugin marketplace update deepgrade-marketplace
       /plugin update deepgrade
-      /plugin update deepgrade-guard
       /reload-plugins
       /plugin details deepgrade        -> must report Hooks (3) incl. SubagentStop
-      /plugin details deepgrade-guard  -> must report Hooks (5)
 
   A. SessionStart (F26, settles part of U4)
      Start a fresh session in this repo. Expect a line naming the active plan,
@@ -189,23 +131,7 @@ cat <<'CHECKLIST'
      Pre-5.0.0 this reported "phase: unknown, status: unknown" against a
      pretty-printed status.json, so a real phase name is the proof.
 
-  B. PreToolUse:Bash — deny (F25)
-     Ask Claude to run:  git push --force origin main
-     Expect: blocked, with a message naming --force-with-lease as the alternative.
-
-  C. PreToolUse:Bash — the SAFE form must be ALLOWED (F25, the inverted defect)
-     Ask Claude to run:  git push --force-with-lease --dry-run origin main
-     Expect: NOT blocked. Before 5.0.0 this was denied while bare -f was allowed.
-
-  D. PreToolUse:Bash — ask (F22)
-     Ask Claude to run:  git reset --hard
-     Expect: a CONFIRMATION PROMPT, not a refusal. Record which it was.
-
-  E. PreToolUse:Bash — quoted mention must be allowed (F24)
-     Ask Claude to run:  git commit --allow-empty -m "never git push --force"
-     Expect: NOT blocked. This is the defect that blocked this plan's own commits.
-
-  F. PreCompact (settles U5 — the open question)
+  B. PreCompact (settles U5 — the open question)
      Fill the context until compaction triggers, or run /compact.
      Does a DeepGrade line naming the active plan appear?
        YES -> U5 positive; record verbatim.
@@ -216,27 +142,20 @@ cat <<'CHECKLIST'
               If that also fails, F26's PreCompact half is recorded PARTIAL in the
               release notes — never silently dropped.
 
-  G. Stop (F26)
-     Edit a file, then end the turn without running tests.
-     Expect: the no-tests nudge, naming the change count. The handler emits ONE
-     message per stop — the nudge when no test run was detected, else the summary
-     — never both (notify() exits). Both messages existed pre-5.0.0 but went to
-     stderr at exit 0 and were never surfaced to anyone.
-
-  H. Zero hook errors on a healthy host
+  C. Zero hook errors on a healthy host
      Through all of the above, no "hook error" notice should appear.
      This is the acceptance criterion for the whole wave.
 
-  I. NODE-LESS INSTALLED COPY (CR-1's condition, lane N's honest limit)
+  D. NODE-LESS INSTALLED COPY (CR-1's condition, lane N's honest limit)
      In a shell with node removed from PATH, start an interactive session:
          PATH=$(echo "$PATH" | tr ':' '\n' | grep -v node | paste -sd:) claude
-     Expect the vendor's own hook-error notice — the guards cannot spawn, and
+     Expect the vendor's own hook-error notice — the handlers cannot spawn, and
      that notice is the only in-product signal. Record it VERBATIM; CR-1's
      acceptance is that it is user-visible and names the cause.
 
 CHECKLIST
 
-pending "A-I are owner-observed and unrecorded until pasted into $EVIDENCE"
+pending "A-D are owner-observed and unrecorded until pasted into $EVIDENCE"
 
 # ---------------------------------------------------------------------------
 echo ""

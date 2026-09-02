@@ -2,12 +2,13 @@
 // PHV5-040 acceptance: one falsifying test per behaviour-ledger row (approach.md
 // §3.1.4), plus the F26 output-shape rule across every informational handler.
 //
-// The ledger is BIDIRECTIONAL: rows 1-2 exist only in the inline implementation
-// and rows 3, 5-11 only in scripts/. Migrating either direction naively deletes
-// working guards. Each row below fails if its behaviour is absent.
+// Only the plan-context handlers remain. Rows 1-3, 5-9 and 11 exercised the
+// git guard, migration guard, change/test trackers and the Stop summary, all of
+// which shipped in deepgrade-guard and were RETIRED with it in 9.0.0. The rows
+// that survive (4, 10, F26) are the ones whose subject is still in the tree.
 //
-// Runs in a scratch directory so tracker files and plan fixtures never touch the
-// real repo or the developer's temp state.
+// Runs in a scratch directory so plan fixtures never touch the real repo or the
+// developer's temp state.
 'use strict';
 const fs = require('fs');
 const os = require('os');
@@ -17,9 +18,9 @@ const { spawnSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 
 // Scratch dirs are swept at exit — before this existed every run leaked its
-// dirs into the OS temp (3,000+ had accumulated). force+maxRetries because the
-// row-6 scratch git repos hold read-only objects on Windows; a cleanup failure
-// must never fail the run.
+// dirs into the OS temp (3,000+ had accumulated). force+maxRetries because
+// Windows can hold read-only handles briefly; a cleanup failure must never
+// fail the run.
 const scratchDirs = [];
 function mkScratch(prefix) {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -32,16 +33,12 @@ process.on('exit', () => {
   }
 });
 
-// The split partitions handlers across two plugins: the safety rails live in
-// deepgrade-guard, the plan-context handlers in deepgrade. Resolve each script
-// wherever it ships, and THROW on a miss — a silently-skipped handler would
-// read as a passing row, which is the vacuous-pass species.
+// Resolve each script where it ships, and THROW on a miss — a silently-skipped
+// handler would read as a passing row, which is the vacuous-pass species.
 const S = (n) => {
-  for (const p of ['deepgrade-guard', 'deepgrade']) {
-    const c = path.join(ROOT, 'plugins', p, 'scripts', n);
-    if (fs.existsSync(c)) return c;
-  }
-  throw new Error(`handler ${n} found in no plugin scripts/ dir — the ledger row has no subject`);
+  const c = path.join(ROOT, 'plugins', 'deepgrade', 'scripts', n);
+  if (fs.existsSync(c)) return c;
+  throw new Error(`handler ${n} not found under plugins/deepgrade/scripts/ — the ledger row has no subject`);
 };
 
 let pass = 0;
@@ -51,7 +48,7 @@ function check(name, ok, detail) {
   else { fails.push(name); console.log(`[FAIL] ${name}${detail ? ' — ' + detail : ''}`); }
 }
 
-// Each run gets its own TMPDIR so session markers cannot leak between rows.
+// Each run gets its own TMPDIR so nothing can leak between rows.
 function run(script, payload, opts = {}) {
   const tmp = mkScratch('dg-row-');
   const env = { ...process.env, TMPDIR: tmp, TEMP: tmp, ...(opts.env || {}) };
@@ -63,217 +60,11 @@ function run(script, payload, opts = {}) {
 }
 
 // ---------------------------------------------------------------------------
-console.log('--- Ledger rows 1-2: behaviours that exist ONLY inline today ---');
-
-// Row 1 is covered in depth by tests/fixtures/hook-corpus.json; asserted here too
-// so the ledger has its own evidence and neither file is the sole record.
-const r1 = run('dg-git-guard.js', { session_id: 's', tool_input: { command: 'supabase db push' } });
-check('row 1: database deploy denied', r1.exit === 2 && /BLOCKED/.test(r1.err), `exit ${r1.exit}`);
-const r1b = run('dg-git-guard.js', { session_id: 's', tool_input: { command: 'supabase db diff' } });
-check('row 1: `db diff` (read-only) allowed', r1b.exit === 0, `exit ${r1b.exit}`);
-
-// Row 2: Windows backslash normalization in the migration guard.
-const scratch = mkScratch('dg-mig-');
-fs.mkdirSync(path.join(scratch, 'db', 'migrations'), { recursive: true });
-const migFile = path.join(scratch, 'db', 'migrations', '20240101_init.sql');
-fs.writeFileSync(migFile, 'select 1;\n');
-const backslashPath = migFile.replace(/\//g, '\\');
-const r2 = run('dg-migration-guard.js', { tool_input: { file_path: backslashPath } }, { cwd: scratch });
-check('row 2: backslash path recognized as a migration', r2.exit === 2, `exit ${r2.exit}`);
-const r2b = run('dg-migration-guard.js', { tool_input: { file_path: migFile } }, { cwd: scratch });
-check('row 2: forward-slash path still recognized', r2b.exit === 2, `exit ${r2b.exit}`);
-
-// ---------------------------------------------------------------------------
-console.log('\n--- Ledger row 3: wider migration coverage (script side) ---');
-// Each filename must isolate exactly ONE recognition rule. The first version of
-// this test used `.sql` for every shape, so the `.sql` extension rule caught them
-// all and the prefix rules were never exercised — mutation P2 deleted the Flyway
-// V-prefix pattern and the row stayed green. These are real-world non-SQL
-// migration filenames, one per rule.
-const covered = [
-  ['plain.sql', 'SQL extension'],
-  ['0001_initial.py', 'Django/alembic 4-digit underscore prefix'],
-  ['20240101120000_Init.cs', 'EF Core timestamp prefix'],
-  ['V2__Add_index.java', 'Flyway V-prefix (Java migration, so .sql cannot mask it)'],
-  ['AppDbContextModelSnapshot.cs', 'EF Core snapshot'],
-];
-let row3 = true;
-for (const [name, rule] of covered) {
-  const f = path.join(scratch, 'db', 'migrations', name);
-  fs.writeFileSync(f, 'x\n');
-  const r = run('dg-migration-guard.js', { tool_input: { file_path: f } }, { cwd: scratch });
-  if (r.exit !== 2) { row3 = false; console.log(`        ${name} (${rule}) -> exit ${r.exit}, expected 2`); }
-}
-check(`row 3: all ${covered.length} migration filename shapes caught, each isolating one rule`, row3);
-const newFile = path.join(scratch, 'db', 'migrations', '9999_brand_new.sql');
-const r3neg = run('dg-migration-guard.js', { tool_input: { file_path: newFile } }, { cwd: scratch });
-check('row 3 negative: a NEW migration is never blocked', r3neg.exit === 0, `exit ${r3neg.exit}`);
-
-// The three positives above plus that negative are ALL satisfied by "deny iff the
-// file exists", because every positive fixture is an existing file inside a
-// migration directory and the negative is a path that was never created. Proven by
-// mutation: deleting MIGRATION_DIRS and the whole IS_MIGRATION filename block left
-// 25/25 passing. These two negatives are what force the directory and filename
-// logic to exist — both files EXIST, so existsSync alone cannot discriminate them.
-const existsOutsideDir = path.join(scratch, 'src', '20240101_init.sql');
-fs.mkdirSync(path.dirname(existsOutsideDir), { recursive: true });
-fs.writeFileSync(existsOutsideDir, 'select 1;\n');
-const rOut = run('dg-migration-guard.js', { tool_input: { file_path: existsOutsideDir } }, { cwd: scratch });
-check('row 3 negative: an EXISTING migration-shaped file outside a migration dir is allowed',
-  rOut.exit === 0, `exit ${rOut.exit} — the directory check is doing no work`);
-
-const existsWrongShape = path.join(scratch, 'db', 'migrations', 'README.md');
-fs.writeFileSync(existsWrongShape, '# notes\n');
-const rShape = run('dg-migration-guard.js', { tool_input: { file_path: existsWrongShape } }, { cwd: scratch });
-check('row 3 negative: an EXISTING non-migration file inside a migration dir is allowed',
-  rShape.exit === 0, `exit ${rShape.exit} — the filename-shape check is doing no work`);
-
-// ---------------------------------------------------------------------------
-console.log('\n--- Ledger rows 5-6: opt-in, DG_STRICT_GIT default OFF (F05c) ---');
-// Row 5 only has something to say where a build command is DETECTABLE. The first
-// version of this test ran in a bare scratch dir with no package.json, so the
-// guard correctly found nothing to require and returned 0 — the test was wrong,
-// not the code. Give it a project shape so the assertion means something.
-const proj = mkScratch('dg-proj-');
-fs.writeFileSync(path.join(proj, 'package.json'), JSON.stringify({ scripts: { build: 'tsc' } }));
-
-const r5off = run('dg-git-guard.js', { session_id: 's', tool_input: { command: 'git commit -m "x"' } }, { cwd: proj });
-check('rows 5-6: inactive with DG_STRICT_GIT unset (default-off negative)',
-  r5off.exit === 0 && !r5off.err, `exit ${r5off.exit} ${r5off.err}`);
-
-const r5on = run('dg-git-guard.js', { session_id: 's', tool_input: { command: 'git commit -m "x"' } },
-  { env: { DG_STRICT_GIT: '1' }, cwd: proj });
-check('rows 5-6: active when DG_STRICT_GIT=1', r5on.exit === 2 && /npm run build/.test(r5on.err),
-  `exit ${r5on.exit} ${r5on.err}`);
-
-// Row 6: staging-count sanity check. This had NO test — the two rows-5/6 assertions
-// above both assert row 5's build message, so the row shipped untested and F05 was
-// marked closed on "tests for all ELEVEN ledger rows". The behaviour is live: it
-// denies when far more files are staged than were edited this session, which catches
-// an accidental `git add -A` over unrelated work.
-(() => {
-  const tmp = mkScratch('dg-row6-');
-  // 1 file edited this session...
-  fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), '{"session_changes":1,"total_changes_since_audit":1}');
-  // ...and a fresh build marker, so the check under test is row 6 and not row 5.
-  fs.writeFileSync(path.join(tmp, 'dg-build-s'), '1');
-
-  // A real repo with many staged files, so `git diff --cached` returns a big number.
-  const repo = mkScratch('dg-row6repo-');
-  const git = (...a) => spawnSync('git', a, { cwd: repo, encoding: 'utf8' });
-  git('init', '-q');
-  git('config', 'user.email', 'x@example.com');
-  git('config', 'user.name', 'x');
-  for (let i = 0; i < 20; i++) fs.writeFileSync(path.join(repo, `f${i}.txt`), 'x\n');
-  git('add', '-A');
-  fs.writeFileSync(path.join(repo, 'package.json'), JSON.stringify({ scripts: { build: 'tsc' } }));
-
-  const r = spawnSync(process.execPath, [S('dg-git-guard.js')], {
-    input: JSON.stringify({ session_id: 's', tool_input: { command: 'git commit -m wip' } }),
-    encoding: 'utf8', cwd: repo,
-    env: { ...process.env, TMPDIR: tmp, TEMP: tmp, DG_STRICT_GIT: '1' },
-  });
-  check('row 6: staging-count check denies 20 staged against 1 edited',
-    r.status === 2 && /Staging check/.test(r.stderr || ''),
-    `exit ${r.status} stderr=${(r.stderr || '').trim().slice(0, 70)}`);
-
-  // Negative: a proportionate staged count must pass. The threshold is edits*2+5, so
-  // 1 edit tolerates up to 7 staged files.
-  const tmp2 = mkScratch('dg-row6b-');
-  fs.writeFileSync(path.join(tmp2, 'dg-baseline-s'), '{"session_changes":1,"total_changes_since_audit":1}');
-  fs.writeFileSync(path.join(tmp2, 'dg-build-s'), '1');
-  const repo2 = mkScratch('dg-row6repo2-');
-  const git2 = (...a) => spawnSync('git', a, { cwd: repo2, encoding: 'utf8' });
-  git2('init', '-q');
-  git2('config', 'user.email', 'x@example.com');
-  git2('config', 'user.name', 'x');
-  for (let i = 0; i < 3; i++) fs.writeFileSync(path.join(repo2, `g${i}.txt`), 'x\n');
-  git2('add', '-A');
-  fs.writeFileSync(path.join(repo2, 'package.json'), JSON.stringify({ scripts: { build: 'tsc' } }));
-  const r2 = spawnSync(process.execPath, [S('dg-git-guard.js')], {
-    input: JSON.stringify({ session_id: 's', tool_input: { command: 'git commit -m wip' } }),
-    encoding: 'utf8', cwd: repo2,
-    env: { ...process.env, TMPDIR: tmp2, TEMP: tmp2, DG_STRICT_GIT: '1' },
-  });
-  check('row 6 negative: 3 staged against 1 edited is proportionate and passes',
-    r2.status === 0, `exit ${r2.status} stderr=${(r2.stderr || '').trim().slice(0, 70)}`);
-})();
-
-// A recorded build inside the 120-minute window satisfies it.
-const buildTmp = mkScratch('dg-bld-');
-fs.writeFileSync(path.join(buildTmp, 'dg-build-s'), '1');
-const r5marker = spawnSync(process.execPath, [S('dg-git-guard.js')], {
-  input: JSON.stringify({ session_id: 's', tool_input: { command: 'git commit -m "x"' } }),
-  encoding: 'utf8', cwd: proj,
-  env: { ...process.env, TMPDIR: buildTmp, TEMP: buildTmp, DG_STRICT_GIT: '1' },
-});
-check('row 5: a fresh build marker satisfies the check', r5marker.status === 0, `exit ${r5marker.status}`);
-
-// ---------------------------------------------------------------------------
-console.log('\n--- Ledger rows 7-8: tracker threshold and tolerant key read ---');
-function trackerRun(seed, threshold) {
-  const tmp = mkScratch('dg-trk-');
-  if (seed) fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), seed);
-  const r = spawnSync(process.execPath, [S('dg-track-change.js')], {
-    input: JSON.stringify({ session_id: 's', tool_input: { file_path: 'a.ts' } }),
-    encoding: 'utf8', cwd: ROOT,
-    env: { ...process.env, TMPDIR: tmp, TEMP: tmp, DG_CHANGE_THRESHOLD: String(threshold) },
-  });
-  return { out: (r.stdout || '').trim(), exit: r.status, tmp };
-}
-const r7 = trackerRun('{"session_changes":14,"total_changes_since_audit":14}', 15);
-check('row 7: nudge fires at the threshold', /files changed since the last audit/.test(r7.out), r7.out || '(no output)');
-const r7b = trackerRun('{"session_changes":1,"total_changes_since_audit":1}', 15);
-check('row 7 negative: silent below the threshold', r7b.out === '', r7b.out);
-
-// Row 8 is the whole point: a reader that knows only ONE key name sees 0.
-const r8old = trackerRun('{"total":14}', 15);
-check('row 8: legacy `total` key read (inline generation)', /14 files|15 files/.test(r8old.out), r8old.out || '(no output)');
-const r8new = trackerRun('{"total_changes_since_audit":14}', 15);
-check('row 8: `total_changes_since_audit` key read (script generation)', /15 files/.test(r8new.out), r8new.out || '(no output)');
-const r8write = trackerRun('', 999);
-const written = fs.readFileSync(path.join(r8write.tmp, 'dg-baseline-s'), 'utf8');
-check('row 8: writes BOTH key names', /total_changes_since_audit/.test(written) && /"total"/.test(written), written);
-
-// ---------------------------------------------------------------------------
-console.log('\n--- Ledger rows 9-11: Stop verification, SessionStart, runner detection ---');
-function stopRun(seed, markTest) {
-  const tmp = mkScratch('dg-stop-');
-  fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), seed);
-  if (markTest) fs.writeFileSync(path.join(tmp, 'dg-test-s'), '1');
-  const r = spawnSync(process.execPath, [S('dg-session-stop.js')], {
-    input: JSON.stringify({ session_id: 's' }), encoding: 'utf8', cwd: ROOT,
-    env: { ...process.env, TMPDIR: tmp, TEMP: tmp },
-  });
-  return { out: (r.stdout || '').trim(), err: (r.stderr || '').trim(), exit: r.status };
-}
-const r9 = stopRun('{"session_changes":3}', false);
-check('row 9: warns when files changed and no tests ran', /no test run was detected/.test(r9.out), r9.out || '(no output)');
-const r9b = stopRun('{"session_changes":3}', true);
-check('row 9 negative: silent about tests once a test run is recorded',
-  !/no test run/.test(r9b.out) && /Session summary/.test(r9b.out), r9b.out || '(no output)');
-
-// Row 11: the runner list must recognize THIS repo's suite, which the .sh list
-// did not — so a green `bash tests/run-all.sh` recorded nothing and row 9 nagged.
-function trackTest(cmd) {
-  const tmp = mkScratch('dg-tt-');
-  spawnSync(process.execPath, [S('dg-track-test.js')], {
-    input: JSON.stringify({ session_id: 's', tool_input: { command: cmd } }),
-    encoding: 'utf8', cwd: ROOT, env: { ...process.env, TMPDIR: tmp, TEMP: tmp },
-  });
-  return { test: fs.existsSync(path.join(tmp, 'dg-test-s')), build: fs.existsSync(path.join(tmp, 'dg-build-s')) };
-}
-check('row 11: `bash tests/run-all.sh` recorded as a test run', trackTest('bash tests/run-all.sh').test);
-check('row 11: `pytest -q` recorded', trackTest('pytest -q').test);
-check('row 11: `cargo test` recorded', trackTest('cargo test').test);
-check('row 11: `npm run build` recorded as a build, not a test',
-  (() => { const m = trackTest('npm run build'); return m.build && !m.test; })());
-check('row 11 negative: a quoted mention does not record a test run',
-  !trackTest('git commit -m "ran npm test earlier"').test);
+console.log('--- Ledger row 10: SessionStart reads a pretty-printed status.json ---');
 
 // Row 10: SessionStart must report the phase from a PRETTY-PRINTED status.json.
-// dg-session-start.sh reports "phase: unknown" here because its grep pattern
-// requires no space after the colon.
+// dg-session-start.sh reported "phase: unknown" here because its grep pattern
+// required no space after the colon.
 const planRoot = mkScratch('dg-plan-');
 const planDir = path.join(planRoot, 'docs', 'plans', '2026-01-01-demo');
 fs.mkdirSync(planDir, { recursive: true });
@@ -291,23 +82,17 @@ check('row 10: reports the PHASE\'s own status, not the first one in the file',
 // ---------------------------------------------------------------------------
 console.log('\n--- F26: every exit-0 emission is JSON, and stderr stays empty ---');
 const f26Cases = [
-  ['dg-track-change.js', { session_id: 's', tool_input: { file_path: 'a.ts' } }],
-  ['dg-session-stop.js', { session_id: 's' }],
   ['dg-subagent-stop.js', { session_id: 's', reason: 'done' }],
   ['dg-pre-compact.js', { session_id: 's' }],
   ['dg-session-start.js', { source: 'startup' }],
 ];
-// Each case must reach its EMITTING path, not an early exit. `run()` hands every
-// call a fresh empty TMPDIR, so dg-session-stop and dg-track-change previously
-// found no tracker, returned silently, and the F26 assertion inspected nothing —
-// mutation P8 made the stop hook write to stderr and this row stayed green.
-// Seed a tracker so both actually emit.
+// Each case must reach its EMITTING path, not an early exit, so every handler
+// runs against the plan fixture above rather than an empty directory.
 function runEmitting(script, payload) {
   const tmp = mkScratch('dg-f26-');
-  fs.writeFileSync(path.join(tmp, 'dg-baseline-s'), '{"session_changes":3,"total_changes_since_audit":99}');
   const r = spawnSync(process.execPath, [S(script)], {
     input: JSON.stringify(payload), encoding: 'utf8', cwd: planRoot,
-    env: { ...process.env, TMPDIR: tmp, TEMP: tmp, DG_CHANGE_THRESHOLD: '1' },
+    env: { ...process.env, TMPDIR: tmp, TEMP: tmp },
   });
   return { exit: r.status, out: (r.stdout || '').trim(), err: (r.stderr || '').trim() };
 }
@@ -315,14 +100,9 @@ function runEmitting(script, payload) {
 let f26 = true;
 for (const [script, payload] of f26Cases) {
   const r = runEmitting(script, payload);
-  // Proving the case is not vacuous. This floor originally covered only two of the
-  // five handlers, so `dg-subagent-stop.js` and `dg-pre-compact.js` could be
-  // replaced with `process.exit(0)` and the whole suite stayed green — both
-  // assertions naming them are satisfied by emitting nothing at all. Every handler
-  // that has something to say under this fixture must now say it.
-  //
-  // Two exclusions, both because the handler is covered more strictly elsewhere
-  // rather than because it is allowed to do nothing:
+  // Proving the case is not vacuous: every handler that has something to say
+  // under this fixture must say it. Two exclusions, both because the handler is
+  // covered more strictly elsewhere rather than because it may do nothing:
   //   dg-session-start.js  — row 10 asserts the phase and status it reports
   //   dg-subagent-stop.js  — its output channel is a LOG FILE, not stdout, so
   //                          emitting nothing here is correct. Its real effect is

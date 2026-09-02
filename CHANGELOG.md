@@ -1,5 +1,51 @@
 # Changelog
 
+## Unreleased (next: 9.0.0)
+
+### BREAKING
+
+- **`deepgrade-guard` is retired.** The always-on safety plugin (force-push and
+  hard-reset guard, migration guard, DB deploy guard, change and test trackers,
+  session summary) is removed from the marketplace and the tree. Claude Code
+  permission rules cover every blocking behavior with no runtime dependency and
+  no second enforcement layer silently overriding a project's own `ask` rules;
+  the recommended `settings.json` baseline is in METHODOLOGY.md §6. Installed
+  copies keep working from the plugin cache but receive no further updates.
+  With it go `tests/run-hook-corpus.js`, `tests/fixtures/hook-corpus.json`, the
+  guard rows of `tests/layer2-ledger-rows.js`, and the `$TMPDIR/dg-*` session
+  marker bus. Three plugins remain in lockstep.
+
+### Added
+
+- **Document skeletons in every documentation template.** `adr`, `brd`, `prd`,
+  and `readme` templates now carry a fill-in document body; the PRD template
+  previously pointed at a "standard template" that did not exist. The PRD
+  skeleton has P0/P1/P2 requirements with Given/When/Then acceptance criteria
+  and a leading/lagging success-metrics table.
+- **`/deepgrade:documentation runbook`.** New `runbook-template.md`: prerequisites,
+  exact steps each with expected result and failure action, verification,
+  troubleshooting table, rollback trigger and steps, escalation, run history.
+  Plan-linked runbooks land in the plan folder and are referenced from
+  review.md; Stage 4 already gated on a reviewed runbook without defining one.
+- **Spec requirements carry priority and acceptance criteria.** `templates/spec.md`
+  requirements are P0/P1/P2, trace to a line of intent.md, and have
+  Given/When/Then criteria including a negative case. New `## Success metrics`
+  section with numeric targets, windows, and measurement method.
+- **Release checklist with numeric rollback triggers.** `templates/review.md` has
+  pre-deploy, deploy, post-deploy, and rollback sections; triggers are
+  thresholds over a window, and Stage 6 uses them to classify severity.
+- **Incident status updates and blameless postmortems.** The troubleshoot
+  pre-flow emits a status update on a fixed cadence for SEV1/SEV2; Step 5
+  writes a postmortem beside the log whose action items feed the proposed
+  intent.
+
+### Changed
+
+- `GUIDE.md` and `README.md` for the planning plugin document the design gate
+  (canary classes, evidence-validator flags, the pass expression), the
+  six-stage artifact chain, the two gate tools as distinct from the hooks, and
+  every output location.
+
 ## 8.0.0 (2026-09-02)
 
 ### BREAKING

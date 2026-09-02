@@ -1,4 +1,4 @@
-# Incident Pre-Flow (Phase 0: Severity / Triage and Containment Gate)
+# Incident Pre-Flow (Phase 0: Severity / Triage, Containment Gate, Status Updates)
 
 Phase file for /deepgrade:troubleshoot, loaded by SKILL.md on entry.
 
@@ -74,4 +74,38 @@ Record `T_CONTAINED` after containment (or "N/A" if skipped or no mitigation ava
 
 LOG the containment action, what was mitigated, and any temporary tradeoffs
 (e.g., "new feature disabled until permanent fix").
+
+### Status Updates (SEV1/SEV2 only)
+
+While an incident is open, people who are not in the investigation need to
+know four things: what is happening, who is affected, what is being done, and
+when the next update comes. Produce the first update immediately after the
+Containment Gate and repeat on a fixed cadence (SEV1: every 30 minutes;
+SEV2: every 60 minutes) until Status is Resolved. Keep updates factual. No
+speculation about cause until Phase 3 confirms it.
+
+```markdown
+## Incident Update: {title}
+**Severity:** SEV{N} · **Status:** Investigating | Identified | Monitoring | Resolved
+**Impact:** {who or what is affected, in plain terms}
+**Last Updated:** {timestamp} · **Next Update:** {timestamp}
+
+### Current Status
+{What is known now. Verified facts only.}
+
+### Actions Taken
+- {containment applied, with time}
+- {investigation step completed}
+
+### Next Steps
+- {what happens next and its ETA}
+
+### Timeline
+| Time | Event |
+|------|-------|
+| {HH:MM} | {event} |
+```
+
+Append each update to the troubleshooting log under `## Status Updates` so
+the postmortem timeline in Step 5 can be assembled from them.
 </incident_preflow>
