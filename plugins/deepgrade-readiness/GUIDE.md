@@ -1,11 +1,11 @@
 <div align="center">
 
-# DeepGrade Readiness Guide v8.0.0
+# DeepGrade Readiness Guide v9.0.0
 
 **2 Commands** &nbsp;&bull;&nbsp; **10 Agents** &nbsp;&bull;&nbsp; **1 Skill**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/deepgrade)
-[![Version](https://img.shields.io/badge/v8.0.0-stable-2ECC71?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/v9.0.0-stable-2ECC71?style=for-the-badge)](#)
 [![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
 
 </div>

@@ -92,7 +92,7 @@ for the recommended `settings.json` rules.
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
-Current: v8.0.0
+Current: v9.0.0
 
 ## Contributing
 
