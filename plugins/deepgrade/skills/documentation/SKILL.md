@@ -1,6 +1,6 @@
 ---
 name: documentation
-description: (deepgrade) Generate project documentation (ADR, BRD, PRD, README, release notes, changelog, technical spec). Dispatches to the appropriate template based on document type. Also suggests which document to create based on context. Triggers on - create adr, create brd, create prd, create readme, generate documentation, architecture decision, business requirements, product requirements, release notes, changelog, version notes, release summary, prepare release, generate changelog, version history, release documentation, deployment notes, create spec, technical specification, write spec, engineering plan, design doc, RFC, migration plan.
+description: Generate project documentation (ADR, BRD, PRD, README, release notes, changelog, technical spec). Dispatches to the appropriate template based on document type. Also suggests which document to create based on context. Triggers on - create adr, create brd, create prd, create readme, generate documentation, architecture decision, business requirements, product requirements, release notes, changelog, version notes, release summary, prepare release, generate changelog, version history, release documentation, deployment notes, create spec, technical specification, write spec, engineering plan, design doc, RFC, migration plan.
 ---
 
 # Documentation Generator
@@ -52,7 +52,7 @@ Parse `$ARGUMENTS` to determine the document type and topic:
 
 ### Dispatch Logic
 
-1. If `$ARGUMENTS` starts with a known subcommand, read the corresponding template and execute with the remaining text as the topic (`$1`).
+1. If `$ARGUMENTS` starts with a known subcommand, read the corresponding template and execute with the remaining text as the topic. Templates refer to that topic with a literal dollar-one placeholder; substitute the remaining text wherever it appears.
 
 2. If `$ARGUMENTS` is empty, show this menu:
    ```
@@ -164,7 +164,7 @@ This ensures documents don't exist in isolation. Every doc links to related docs
 ### Execution
 
 Read the selected `resources/*.md` template file and follow its instructions exactly,
-treating the remaining arguments as `$1` (the topic/feature/domain/project name).
+treating the remaining arguments as the topic (feature, domain, or project name) wherever the template shows its dollar-one placeholder.
 
 ### Command Reference Rule
 

@@ -1,5 +1,5 @@
 ---
-description: (deepgrade) AI-guided troubleshooting using the 4-phase systematic debugging framework with severity-driven incident triage and containment. Enforces root cause investigation before suggesting fixes. For SEV1/SEV2 production incidents, temporary containment is allowed before investigation. Logs every step, builds a project knowledge base. Auto-links to active plan. Pass an error message, issue description, or just say what broke.
+description: AI-guided troubleshooting using the 4-phase systematic debugging framework with severity-driven incident triage and containment. Enforces root cause investigation before suggesting fixes. For SEV1/SEV2 production incidents, temporary containment is allowed before investigation. Logs every step, builds a project knowledge base. Auto-links to active plan. Pass an error message, issue description, or just say what broke.
 argument-hint: "[error message or issue description] [--plan plan-name] [--severity SEV1|SEV2|SEV3|SEV4]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
@@ -845,9 +845,10 @@ STOP and follow the 4-phase process if you catch yourself:
 </constraints>
 
 <valid_commands>
-/deepgrade:plan, /deepgrade:plan-status, /deepgrade:codex-challenge, /deepgrade:troubleshoot,
-/deepgrade:quick-plan, /deepgrade:quick-audit, /deepgrade:quick-cleanup, /deepgrade:documentation,
-/deepgrade-readiness:readiness-scan, /deepgrade-readiness:readiness-generate, /deepgrade-audit:codebase-audit,
-/deepgrade-audit:codebase-security, /deepgrade-audit:codebase-delta, /deepgrade-audit:codebase-gates,
-/deepgrade-audit:codebase-characterize, /deepgrade:help
+/deepgrade:codex-challenge, /deepgrade:documentation, /deepgrade:help, /deepgrade:plan,
+/deepgrade:plan-export, /deepgrade:plan-status, /deepgrade:quick-audit, /deepgrade:quick-cleanup,
+/deepgrade:quick-plan, /deepgrade:troubleshoot, /deepgrade-audit:codebase-audit,
+/deepgrade-audit:codebase-characterize, /deepgrade-audit:codebase-delta,
+/deepgrade-audit:codebase-gates, /deepgrade-audit:codebase-security,
+/deepgrade-readiness:readiness-generate, /deepgrade-readiness:readiness-scan
 </valid_commands>

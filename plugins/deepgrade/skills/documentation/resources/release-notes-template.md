@@ -1,5 +1,14 @@
 # Release Notes Generator
 
+## Contents
+
+- Workflow
+- Phase 1: Gather Context
+- Phase 2: Analyze Git History
+- Phase 3: Generate Draft (section skeleton)
+- Phase 4: Refine
+- Audience Customization, Integration Patterns, Best Practices, Example Commands
+
 **Purpose:** Generate professional release notes by analyzing git history and commits. Interactive workflow allows refinement and customization.
 
 ## Workflow

@@ -255,7 +255,7 @@ IMPORTANT: The DO_NOT_TOUCH_ZONES array must be populated with ACTUAL paths
 from risk-assessment.md. Read the HIGH-risk modules and do-not-touch zones
 from the audit data. Do not use placeholder paths.
 
-## Step 4.5: Generate Baseline Tracker Script
+## Step 4.6: Generate Baseline Tracker Script
 
 Create .claude/scripts/baseline-tracker.sh:
 

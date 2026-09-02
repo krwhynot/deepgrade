@@ -1,6 +1,6 @@
 ---
 name: plan
-description: (deepgrade) Start or resume a guided plan. Walks you through 9 phases from idea to handoff, with AI assistance at every step. Produces documents by default; codebase writes require your approval. Pass a plan name to start new or resume existing. Optionally pass source material with 'from'. Use when the user asks to plan a feature, start or resume a plan, or take an idea through brainstorm, research, audit, build, and handoff.
+description: Start or resume a guided plan. Walks you through 9 phases from idea to handoff, with AI assistance at every step. Produces documents by default; codebase writes require your approval. Pass a plan name to start new or resume existing. Optionally pass source material with 'from'. Use when the user asks to plan a feature, start or resume a plan, or take an idea through brainstorm, research, audit, build, and handoff.
 argument-hint: "[plan-name] [from docs/path or 'idea: description']"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
@@ -309,11 +309,11 @@ On resume, check freshness of all completed phases and report any staleness.
 </error_handling>
 
 <valid_commands>
-Only suggest these commands (all verified to exist as command files):
-/deepgrade:plan, /deepgrade:plan-status, /deepgrade:quick-audit,
-/deepgrade:quick-plan, /deepgrade:quick-cleanup, /deepgrade:documentation,
-/deepgrade-audit:codebase-characterize, /deepgrade-readiness:readiness-scan,
-/deepgrade-audit:codebase-audit, /deepgrade-audit:codebase-delta,
-/deepgrade-audit:codebase-security, /deepgrade-audit:codebase-gates,
-/deepgrade-readiness:readiness-generate, /deepgrade:help
+Only suggest these (each exists as a command file or a skill):
+/deepgrade:codex-challenge, /deepgrade:documentation, /deepgrade:help, /deepgrade:plan,
+/deepgrade:plan-export, /deepgrade:plan-status, /deepgrade:quick-audit, /deepgrade:quick-cleanup,
+/deepgrade:quick-plan, /deepgrade:troubleshoot, /deepgrade-audit:codebase-audit,
+/deepgrade-audit:codebase-characterize, /deepgrade-audit:codebase-delta,
+/deepgrade-audit:codebase-gates, /deepgrade-audit:codebase-security,
+/deepgrade-readiness:readiness-generate, /deepgrade-readiness:readiness-scan
 </valid_commands>

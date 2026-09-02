@@ -1,6 +1,6 @@
 ---
 name: mcp-research
-description: (deepgrade) Knowledge about when and how to use external MCP search tools (Ref, Exa, Perplexity) for documentation lookup, best practices search, code example discovery, and deep research. Use when looking up framework or library documentation, searching for how others solved a problem, finding code examples, checking whether an MCP search tool is available, or deciding which search tool fits a question. Teaches tool selection heuristics, token budget rules, suffix-matching for server-qualified tool names, and graceful degradation patterns.
+description: Knowledge about when and how to use external MCP search tools (Ref, Exa, Perplexity) for documentation lookup, best practices search, code example discovery, and deep research. Use when looking up framework or library documentation, searching for how others solved a problem, finding code examples, checking whether an MCP search tool is available, or deciding which search tool fits a question. Teaches tool selection heuristics, token budget rules, suffix-matching for server-qualified tool names, and graceful degradation patterns.
 ---
 
 # MCP Research Tool Selection Guide
@@ -99,7 +99,7 @@ three are the same tool. Comparing against the bare string `perplexity_search`
 matches nothing and wrongly triggers the graceful-degradation path below even
 when the server is connected.
 
-## Tool Name Suffixes (verified 2026-07-29)
+## Tool Name Suffixes (verify against the live tool listing at run time)
 
 **Ref Tools MCP:**
 - `ref_search_documentation` — search docs with a natural language query

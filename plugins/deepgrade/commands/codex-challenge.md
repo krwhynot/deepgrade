@@ -1,5 +1,5 @@
 ---
-description: (deepgrade) Adversarial review loop between Claude and OpenAI Codex CLI. Codex scores your plan across 8 dimensions (max 40), Claude optimizes until score reaches 36/40 GREEN. Implements the Evaluator-Optimizer pattern with score-driven convergence. Pass a plan name, file path, or leave empty for auto-detect.
+description: Adversarial review loop between Claude and OpenAI Codex CLI. Codex scores your plan across 8 dimensions (max 40), Claude optimizes until score reaches 36/40 GREEN. Implements the Evaluator-Optimizer pattern with score-driven convergence. Pass a plan name, file path, or leave empty for auto-detect.
 argument-hint: "[plan-name or file-path] [--rounds N] [--model gpt-5.3-codex]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
@@ -20,8 +20,7 @@ training biases. Cross-model adversarial review catches gaps that same-model
 review misses. Codex operates independently (different training data, different
 architecture), providing a genuinely orthogonal perspective.
 
-This command extends the existing one-shot `plan-review.js` hook into a multi-round
-score-driven optimization loop following the Evaluator-Optimizer pattern from
+This command runs a multi-round score-driven optimization loop following the Evaluator-Optimizer pattern from
 `docs/planning-techniques/02-evaluator-optimizer-loop.md`.
 
 The loop targets **36/40** (upper GREEN threshold from DeepGrade's plan-auditor rubric):
@@ -525,9 +524,10 @@ Security layers:
 </constraints>
 
 <valid_commands>
-/deepgrade:plan, /deepgrade:plan-status, /deepgrade:codex-challenge, /deepgrade:troubleshoot,
-/deepgrade:quick-plan, /deepgrade:quick-audit, /deepgrade:quick-cleanup, /deepgrade:documentation,
-/deepgrade-readiness:readiness-scan, /deepgrade-readiness:readiness-generate, /deepgrade-audit:codebase-audit,
-/deepgrade-audit:codebase-security, /deepgrade-audit:codebase-delta, /deepgrade-audit:codebase-gates,
-/deepgrade-audit:codebase-characterize, /deepgrade:help
+/deepgrade:codex-challenge, /deepgrade:documentation, /deepgrade:help, /deepgrade:plan,
+/deepgrade:plan-export, /deepgrade:plan-status, /deepgrade:quick-audit, /deepgrade:quick-cleanup,
+/deepgrade:quick-plan, /deepgrade:troubleshoot, /deepgrade-audit:codebase-audit,
+/deepgrade-audit:codebase-characterize, /deepgrade-audit:codebase-delta,
+/deepgrade-audit:codebase-gates, /deepgrade-audit:codebase-security,
+/deepgrade-readiness:readiness-generate, /deepgrade-readiness:readiness-scan
 </valid_commands>

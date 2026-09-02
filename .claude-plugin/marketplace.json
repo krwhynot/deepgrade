@@ -2,13 +2,19 @@
   "name": "deepgrade-marketplace",
   "description": "Developer toolkit for codebase auditing, AI-readiness scanning, structured planning, and operational readiness. Four plugins, one lockstep release. Works on any stack.",
   "owner": {
-    "name": "Kyle Whynot",
-    "email": "krwhynot@github.com"
+    "name": "Kyle Whynot"
   },
   "plugins": [
     {
       "name": "deepgrade",
       "description": "9-phase planning with an adversarial verifier-first audit gate, plan-linked troubleshooting, and documentation generation.",
+      "category": "development",
+      "tags": [
+        "planning",
+        "audit-gate",
+        "troubleshooting",
+        "documentation"
+      ],
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/deepgrade.git",
@@ -20,6 +26,12 @@
     {
       "name": "deepgrade-readiness",
       "description": "AI-readiness scanning: 52 checks, 9 categories, composite letter grade, generated scaffolding for the gaps.",
+      "category": "development",
+      "tags": [
+        "ai-readiness",
+        "codebase-grading",
+        "scanning"
+      ],
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/deepgrade.git",
@@ -31,6 +43,13 @@
     {
       "name": "deepgrade-audit",
       "description": "Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates.",
+      "category": "development",
+      "tags": [
+        "audit",
+        "codebase",
+        "security",
+        "quality-gates"
+      ],
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/deepgrade.git",
@@ -42,6 +61,13 @@
     {
       "name": "deepgrade-guard",
       "description": "Always-on safety hooks: force-push and DB-deploy blocking, migration protection, change/test tracking, session summaries.",
+      "category": "development",
+      "tags": [
+        "safety",
+        "hooks",
+        "git-guard",
+        "migration-guard"
+      ],
       "source": {
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/deepgrade.git",

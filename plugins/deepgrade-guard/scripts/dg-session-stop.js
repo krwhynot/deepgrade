@@ -21,6 +21,9 @@ function notify(message) {
 
 let payload = null;
 try { payload = JSON.parse(fs.readFileSync(0, 'utf8')); } catch { payload = null; }
+// A Stop fired because a previous Stop hook already continued the turn. Emitting again
+// would re-post the same summary every cycle; exit before doing anything.
+if (payload && payload.stop_hook_active === true) quiet();
 
 
 // A session id is interpolated into a filename, so it is validated before use.
@@ -34,6 +37,19 @@ function safeSessionId(v) {
 
 const sessionId = safeSessionId(payload && payload.session_id);
 const tmp = process.env.TMPDIR || process.env.TEMP || os.tmpdir();
+
+// Tracker files (dg-baseline/dg-test/dg-build-<session>) were never removed, so they
+// accumulated in TMPDIR forever. This session's files stay (Stop fires per turn and the
+// runtime proof reads them afterwards); anything from other sessions older than a day
+// is swept. Fail-open: a sweep error must never affect the Stop verdict.
+try {
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  for (const name of fs.readdirSync(tmp)) {
+    if (!/^dg-(baseline|test|build)-/.test(name) || name.endsWith('-' + sessionId)) continue;
+    const full = path.join(tmp, name);
+    try { if (fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full); } catch {}
+  }
+} catch {}
 
 let text = '', obj = null;
 try { text = fs.readFileSync(path.join(tmp, `dg-baseline-${sessionId}`), 'utf8'); } catch { quiet(); }

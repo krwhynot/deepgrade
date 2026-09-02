@@ -37,7 +37,7 @@ appropriate test project directory.
 <workflow>
 ## Step 1: Understand the Target
 
-Read $ARGUMENTS to determine what to characterize. The user may specify:
+Read the task description you were given to determine what to characterize. The user may specify:
 - A module name: "BusinessLogic" -> characterize all public methods
 - A file path: "POSetcPOS/ReportsDB.vb" -> characterize key functions in file
 - A specific function: "ReportsDB.GetSalesReport" -> characterize that function

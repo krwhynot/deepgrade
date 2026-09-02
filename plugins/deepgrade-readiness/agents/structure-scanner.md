@@ -211,8 +211,8 @@ done | sort -rn
 Score: 0 = no barrel files, 1 = barrel files with 20+ exports (bloated), 2 = barrel files with < 20 exports (clean)
 
 **Output:**
-Write results as JSON to docs/audit/readability/structure-scan.json following the COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
-standard scanner output schema with all 8 checks.
+Write results as JSON to docs/audit/readability/structure-scan.json following the standard scanner output schema with all 8 checks.
+COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
 
 **Constraints:**
 - NEVER use Read tool on source files. Only Bash and Glob.

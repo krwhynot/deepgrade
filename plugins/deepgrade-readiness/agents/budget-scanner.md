@@ -425,8 +425,8 @@ Scoring:
 - 0 = 3+ anti-patterns (significant context waste)
 
 **Output:**
-Write results as JSON to docs/audit/readability/context-budget-scan.json following COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
-the standard scanner output schema with all 8 checks.
+Write results as JSON to docs/audit/readability/context-budget-scan.json following the standard scanner output schema with all 8 checks.
+COPY THE CHECK ID AND NAME FIELDS EXACTLY from the check list above. Do NOT rename any check. Fill in only score, evidence, and remediation values.
 
 Each check must include:
 - id, name, status, points, max, evidence, details, remediation
