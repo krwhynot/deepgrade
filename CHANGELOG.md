@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.0.0 (2026-09-02)
 
 ### BREAKING
 
