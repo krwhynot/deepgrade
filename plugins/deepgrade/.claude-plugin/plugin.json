@@ -1,6 +1,6 @@
 {
   "name": "deepgrade",
-  "version": "7.1.0",
+  "version": "8.0.0",
   "description": "DeepGrade planning: six-stage AI-Native SDLC planning (intent, spec, plan, test, release, maintain) with an adversarial verifier-first design gate, plan-linked troubleshooting, and documentation generation. Stack-agnostic.",
   "author": {
     "name": "Kyle Whynot",

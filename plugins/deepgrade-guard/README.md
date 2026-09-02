@@ -73,7 +73,7 @@ Stop-time summary always sees what the trackers wrote.
 
 See the monorepo [CHANGELOG](https://github.com/krwhynot/deepgrade/blob/main/CHANGELOG.md).
 
-Current: v7.1.0
+Current: v8.0.0
 
 ## License
 

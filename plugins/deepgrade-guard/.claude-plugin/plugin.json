@@ -1,6 +1,6 @@
 {
   "name": "deepgrade-guard",
-  "version": "7.1.0",
+  "version": "8.0.0",
   "description": "DeepGrade safety rails: always-on hooks that block force pushes and direct DB deploys, protect existing migrations, track changes and test runs, and summarize each session. Zero commands, zero context cost.",
   "author": {
     "name": "Kyle Whynot",
