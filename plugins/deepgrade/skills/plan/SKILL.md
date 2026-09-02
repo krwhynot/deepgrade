@@ -225,11 +225,24 @@ schema 2, keeping every other field:
 | test | test |
 | handoff | deploy |
 
-A stage is `complete` only when every old phase mapped into it was complete;
-otherwise it takes the most advanced old status. Old artifacts keep their old
-names (brainstorm.md, approach.md, confidence.md, docs/specs/{name}.md); read
-them where the stage file asks for intent.md or spec.md, and say so in the
-resume summary. Do not rewrite old artifacts.
+Status rules for the mapped stage, applied in this order:
+1. Any old status whose text ends in `complete` (for example `v17_complete`)
+   counts as complete.
+2. Every mapped old phase complete -> stage `complete`, with `started` from
+   the earliest and `completed` from the latest old dates available.
+3. Otherwise, if any mapped old phase is complete or in_progress -> stage
+   `in_progress` (a stage with one finished half and one unstarted half is
+   in progress, not complete).
+4. Otherwise -> `not_started`.
+Keep the entire old `phases` object verbatim under `phases_schema1`, including
+any keys the table does not name (such as a `review` gate), and add a
+`schema1_migration` block with the date and the old `current_phase`. Old
+artifacts keep their old names (brainstorm.md, approach.md, confidence.md,
+docs/specs/{name}.md); read them where the stage file asks for intent.md or
+spec.md, and say so in the resume summary. Do not rewrite old artifacts. If a
+later stage is complete while an earlier one is not (a plan closed by
+decision rather than by sequence), say that in the summary rather than
+inventing progress.
 
 Then find the current stage. Show progress and offer to continue:
 ```
