@@ -70,8 +70,10 @@ Copy everything from the plan homebase:
 cp -r "$PLAN_DIR"/* "$EXPORT_DIR/plans/${PLAN_NAME}/"
 ```
 
-This includes: brainstorm.md, approach.md, audit.md, impact-review.md,
-test-plan.md, research/, troubleshooting/, manifest.md, status.json.
+This includes: intent.md, spec.md, audit.md, evidence/, plan.md, impact-review.md,
+test-plan.md, review.md, research/, changes/, troubleshooting/, manifest.md, status.json.
+(A plan started before 8.0.0 has brainstorm.md and approach.md instead of
+intent.md and spec.md; copy whatever is present.)
 
 ## Step 4: Copy Referenced Project Documents
 
@@ -167,9 +169,9 @@ VERIFICATION RULE:
 ## Referenced Files ({N} total)
 | # | File Path | Phase Referenced | Found? | Notes |
 |---|-----------|----------------|--------|-------|
-| 1 | {path} | brainstorm | [CHECK] | |
-| 2 | {path} | research | [CHECK] | |
-| 3 | {path} | plan | [CHECK] | |
+| 1 | {path} | plan (intent) | [CHECK] | |
+| 2 | {path} | plan (research) | [CHECK] | |
+| 3 | {path} | design (spec) | [CHECK] | |
 [every file path mentioned in any plan document]
 
 MATCH SUMMARY:
@@ -318,14 +320,15 @@ Suggested next steps:
   {context-aware based on phase + verification results}"
 
 ## Plan Summary
-{Auto-generated from brainstorm.md: problem statement, goals, current phase}
+{Auto-generated from intent.md: problem, proposed outcome, current stage}
 
 ## Key Documents in This Package
 | Document | Purpose | Path |
 |----------|---------|------|
 | manifest.md | Index of all plan files and project docs | docs/plans/{name}/manifest.md |
-| brainstorm.md | Problem definition and goals | docs/plans/{name}/brainstorm.md |
-| approach.md | Scope, risks, and approach | docs/plans/{name}/approach.md |
+| intent.md | Problem, proposed outcome, constraints | docs/plans/{name}/intent.md |
+| spec.md | Requirements, design, evidence, delivery | docs/plans/{name}/spec.md |
+| plan.md | Build plan: files, order, risks, proof | docs/plans/{name}/plan.md |
 | status.json | Machine-readable progress | docs/plans/{name}/status.json |
 | codebase-verification.md | File/function reference checklist | docs/plans/{name}/codebase-verification.md |
 | redaction-log.md | What secrets were removed | docs/plans/{name}/redaction-log.md |
@@ -380,11 +383,13 @@ Package contents:
     CLAUDE.md                  <- Auto-loads in vanilla Claude Code
     manifest.md                <- Plan index
     status.json                <- Current progress
-    brainstorm.md              <- Problem + goals
-    approach.md                <- Scope + risks
-    [audit.md]                 <- Plan audit (if exists)
+    intent.md                  <- Problem + proposed outcome
+    spec.md                    <- Requirements + design + evidence
+    [audit.md]                 <- Design gate result (if exists)
+    [plan.md]                  <- Build plan (if exists)
     [impact-review.md]         <- Impact review (if exists)
     [test-plan.md]             <- Test plan (if exists)
+    [review.md]                <- Release review (if exists)
     research/                  <- Research findings + cleaned source docs
     [troubleshooting/]         <- Debug logs (if any)
     referenced-docs/           <- Copies of all linked project docs

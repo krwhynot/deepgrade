@@ -1,7 +1,8 @@
 # DeepGrade (planning core)
 
-DeepGrade's planning plugin: a 9-phase idea-to-handoff planning workflow with an
-adversarial, verifier-first audit gate, plan-linked troubleshooting, and
+DeepGrade's planning plugin: a six-stage idea-to-release workflow on Anthropic's
+AI-Native SDLC playbook (intent.md, spec.md, plan.md, review.md) with an
+adversarial, verifier-first design gate, plan-linked troubleshooting, and
 documentation generation. Stack-agnostic. Works on any codebase.
 
 This is one of four DeepGrade plugins in the
@@ -30,7 +31,7 @@ Verify inside a Claude Code session:
 
 | Command | Description |
 | ------- | ----------- |
-| `/deepgrade:plan` | 9-phase structured planning workflow |
+| `/deepgrade:plan` | Six-stage playbook workflow: Plan, Design, Build, Test, Deploy, Maintain |
 | `/deepgrade:quick-plan` | Lightweight plan for small changes |
 | `/deepgrade:plan-status` | Check plan progress and phase status |
 | `/deepgrade:plan-export` | Export a plan as a portable package |

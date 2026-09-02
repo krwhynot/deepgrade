@@ -192,3 +192,22 @@ same service/module AND same error signature ARE recurrence.
 If the issue reveals something the Impact Review missed:
 "This wasn't caught by the Impact Review. Consider adding
 '{check}' to future reviews for changes in this area."
+
+### Close the Loop: Propose a New Intent (Stage 6 of /deepgrade:plan)
+
+The playbook's Maintain stage feeds incidents back into planning as intent, never
+as a silent patch. When BOTH hold: (a) the incident is linked to a plan
+(`--plan {name}` or detected via plan_detection) and (b) severity is SEV1 or SEV2,
+OR the recurrence count for this pattern reached 3+:
+
+1. Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/templates/intent.md`.
+2. Write `docs/plans/{today}-{issue-slug}/intent.md` pre-filled from this log:
+   Problem = root cause and impact; Proposed outcome = the fix or the guardrail
+   that prevents the class; Affected users and systems = the incident scope;
+   Constraints = what must not change; Open questions = every hypothesis that
+   was not verified; header `Status: Draft`, `Source: incident {log path}`.
+3. Append to the originating plan's status.json `phases.maintain`:
+   `incidents_linked`, `intents_proposed` (path), `repeat_incidents`.
+4. Tell the user: "Proposed a new intent at {path}. It re-enters Stage 1 of
+   /deepgrade:plan for acceptance; nothing is accepted automatically."
+
