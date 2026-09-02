@@ -3,7 +3,7 @@
   "plan_name": "plugin-hardening-v5",
   "plan_dir": "docs/plans/2026-07-20-plugin-hardening-v5",
   "created": "2026-07-20",
-  "current_phase": "build",
+  "current_phase": "handoff",
   "mode": "solo",
   "source": {
     "type": "structural_audit",
@@ -563,7 +563,7 @@
       "f05_verified_closed_2026_08_03": "F05 note was STALE: it recorded row 6 (staging-count sanity) as having no test, but 5.0.1 added both directions to tests/layer2-ledger-rows.js \u2014 \"row 6: staging-count check denies 20 staged against 1 edited\" (isolated from row 5 by a fresh build marker, real repo, real staged count) and the proportionate negative. Verified 2026-08-03 before closing: all eleven ledger rows have sections (1-2, 3, 4, 5-6, 7-8, 9-11), the file runs 31/0, and a red-test (threshold neutered to edits*2+5000) failed exactly the row-6 positive check (30/1), restoring to 31/0 - the test provably watches the row. The \"per-row tests for all ELEVEN ledger rows\" clause is met.",
       "cr7_descope_2026_08_03": "CR-7 RATIFIED (owner: \"descope\", 2026-08-03): the U7 compatibility-floor clause is replaced by current-version verification (hosted ubuntu+windows CI matrix + release-time local runtime evidence; auto-updating Claude Code assumed; no floor declared). F24 -> findings_closed on existing evidence (layer7-runtime-evidence.md check H + green CI). PHV5-003 RETIRED half-executed by design, deliberately NOT in tickets_complete; its artifact research/u7-floor-evidence.md permanently records the auth-free bisection: --strict appears at 2.1.145, git-subdir pinned install works at 2.1.144, 7 probes. The section-10.3 floor CI job is not built, per the same CR.",
       "completed": "2026-08-03",
-      "completion_note": "All findings closed (24), findings_partial empty, all tickets complete or retired (PHV5-003 retired via CR-7), PHV5-044 Part 2 recorded A-I, 7.1.0 released and pinned. Later lifecycle phases (impact_review/test/handoff) were superseded by the split program: live install verification, dogfood run, runtime evidence, and two releases served those roles; they remain not_started by design."
+      "completion_note": "All findings closed (24), findings_partial empty, all tickets complete or retired (PHV5-003 retired via CR-7), PHV5-044 Part 2 recorded A-I, 7.1.0 released and pinned. Later lifecycle phases (impact_review/test/handoff) were superseded by the split program: live install verification, dogfood run, runtime evidence, and two releases served those roles; impact_review and test remain not_started by design; handoff was marked complete 2026-09-01 to close the plan."
     },
     "impact_review": {
       "status": "not_started"
@@ -572,7 +572,9 @@
       "status": "not_started"
     },
     "handoff": {
-      "status": "not_started"
+      "status": "complete",
+      "completed": "2026-09-01",
+      "note": "Plan closed. No separate handoff document: the 7.0.0/7.1.0 releases, CHANGELOG, interop.md, and research/layer7-runtime-evidence.md are the handoff record. impact_review and test were superseded by the split program (see build.completion_note)."
     }
   },
   "test_baseline_at_head": {
