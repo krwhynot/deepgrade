@@ -24,7 +24,7 @@ Verify inside a Claude Code session:
 /deepgrade:help
 ```
 
-## Commands (9)
+## Commands (8)
 
 ### Planning
 
@@ -51,7 +51,7 @@ Verify inside a Claude Code session:
 | `/deepgrade:troubleshoot` | 4-phase debugging framework with incident triage and containment |
 | `/deepgrade:help` | Show all commands and usage |
 
-`/deepgrade:documentation` is a skill surface; the other entries are command files.
+`/deepgrade:plan` and `/deepgrade:documentation` are skill surfaces; the other entries are command files.
 
 ## Safety Hooks (3)
 
@@ -92,7 +92,7 @@ present and wrong.
 ## Architecture
 
 - **2 agents** - plan-auditor (the isolated judge) and plan-scaffolder
-- **3 skills** - documentation, MCP research, self-audit knowledge
+- **4 skills** - plan (router plus one file per phase), documentation, MCP research, self-audit knowledge
 - **6 doc templates** - ADR, BRD, PRD, README, release notes, spec
 - **3 hook handlers** - `scripts/dg-*.js` plan-context layer, plus the
   `dg-canary.js` / `dg-evidence-validate.js` audit tooling invoked by `/deepgrade:plan`

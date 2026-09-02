@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Changed
+- **`/deepgrade:plan` is a skill.** The 1,710-line command is now
+  `skills/plan/SKILL.md` (a 319-line router) plus one file per phase under
+  `skills/plan/phases/`, read on entry to that phase. Invocation, arguments,
+  and `status.json` are unchanged. Closes F12 (deferred since 5.0.0): a
+  single long command loses its later phases after context compaction in
+  exactly the long sessions a nine-phase workflow produces. Tests that read
+  Phase 5 content now point at `phases/phase-5-audit.md`.
+
 ### Internal
 - CR-7 (owner-ratified): the U7 compatibility-floor requirement is descoped.
   Verification is on the current Claude Code version at each release (hosted
