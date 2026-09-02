@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (next: 9.0.0)
+## 9.0.0 (2026-09-02)
 
 ### BREAKING
 
