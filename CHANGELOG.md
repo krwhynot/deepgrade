@@ -4,30 +4,26 @@
 
 ### BREAKING
 
-- **DeepGrade is renamed Toque.** Every plugin, command, skill, agent, hook
+- **The project is renamed Toque.** Every plugin, command, skill, agent, hook
   script, and environment variable takes the new name. Nothing about behavior
   changes; this release is the rename and nothing else.
 
-  | Was | Now |
-  | --- | --- |
-  | `deepgrade` (plugin) | `toque` |
-  | `deepgrade-audit` | `toque-audit` |
-  | `deepgrade-readiness` | `toque-readiness` |
-  | `deepgrade-marketplace` | `toque-marketplace` |
-  | `/deepgrade:*` (commands) | `/toque:*` |
-  | `deepgrade-knowledge` (skill) | `toque-knowledge` |
-  | `deepgrade-report-generator` (agent) | `toque-report-generator` |
-  | `scripts/dg-*.js` (hooks) | `scripts/tq-*.js` |
-  | `DG_STRICT_GIT`, `DG_DISABLE_GUARDS`, `DG_CHANGE_THRESHOLD`, `DG_COUNTS_FILE` | `TQ_STRICT_GIT`, `TQ_DISABLE_GUARDS`, `TQ_CHANGE_THRESHOLD`, `TQ_COUNTS_FILE` |
-  | `github.com/krwhynot/deepgrade` | `github.com/krwhynot/toque` |
+  The three plugins are `toque`, `toque-audit`, and `toque-readiness`,
+  published from the `toque-marketplace` catalog at
+  `https://github.com/krwhynot/toque`. Commands are `/toque:*`. The audit
+  plugin's knowledge skill is `toque-knowledge` and its report agent is
+  `toque-report-generator`. Hook scripts are `scripts/tq-*.js`. The four
+  environment variables are `TQ_STRICT_GIT`, `TQ_DISABLE_GUARDS`,
+  `TQ_CHANGE_THRESHOLD`, and `TQ_COUNTS_FILE`.
 
-  **Migration.** Remove the three old plugins and the old marketplace, then add
-  the marketplace at its new URL and install the three renamed plugins. Any
-  `DG_*` variable you set in a shell profile or CI config must be respelled
-  `TQ_*`; the old spellings are not read and fail silently. Slash commands you
-  have written into scripts, prompts, or `CLAUDE.md` files need `/deepgrade:`
-  rewritten to `/toque:`. Plan folders under `docs/plans/` are untouched and
-  need no migration.
+  **Migration.** Remove the three previously installed plugins and the previous
+  marketplace entry, then add the marketplace at the URL above and install the
+  three plugins under the names above. Environment variables set in a shell
+  profile or CI config must be respelled to the `TQ_` prefix; the former
+  spellings are not read and fail silently. Slash commands written into
+  scripts, prompts, or `CLAUDE.md` files must be respelled to the `/toque:`
+  prefix. Plan folders under `docs/plans/` are untouched and need no
+  migration.
 
 ### Changed
 

@@ -1855,7 +1855,7 @@ These emerged from the failures above, and from the six defects an adversarial r
 ### How Each Hook Implements the Pattern
 
 Every handler follows the same structural template: read stdin, `JSON.parse`, read one
-named field, decide. Here is how it mapped across all **eight** handlers as of 8.x; the five marked retired left with `toque-guard` in 9.0.0. Handler filenames and the plugin name are given in their **current** spelling; at the tags where these files actually exist the prefix is `dg-` and the plugin is `deepgrade-guard`, renamed in 10.0.0. The columns that
+named field, decide. Here is how it mapped across all **eight** handlers as of 8.x; the five marked retired left with `toque-guard` in 9.0.0. Handler filenames and the retired plugin's name are given throughout in their **current** spelling; the 10.0.0 rename changed both, so at the older tags where these files still exist they carry their pre-rename names. The columns that
 used to appear here — "jq Path" and "grep+sed Fallback" — are gone with the ladder they
 described; the deep links formerly pointed at line numbers inside `plugin.json`, which no
 longer contains hooks at all.
@@ -1899,7 +1899,7 @@ Three failures, all of them silent:
 2. **It truncates at the first quote.** `[^"]*` stops at any escaped quote inside the command, so what gets matched is a prefix of what will actually run.
 3. **It cannot tell a command from text.** Nothing distinguishes an instruction from a quoted mention of one, which over-blocks (a commit message naming a force push) and under-blocks (an exemption token appearing outside the command field suppressing a real denial).
 
-The replacement parsed the payload with `JSON.parse`, read the named field only, and split the command into shell words so quoted text contributed data rather than structure. That handler (`tq-git-guard.js`) and its acceptance corpus (`tests/fixtures/hook-corpus.json`, which encoded each of these three failures as a test) were retired with `toque-guard` in 9.0.0; the git history at tag `v8.0.0` holds both, under their pre-rename names (`dg-git-guard.js`, `deepgrade-guard`).
+The replacement parsed the payload with `JSON.parse`, read the named field only, and split the command into shell words so quoted text contributed data rather than structure. That handler (`tq-git-guard.js`) and its acceptance corpus (`tests/fixtures/hook-corpus.json`, which encoded each of these three failures as a test) were retired with `toque-guard` in 9.0.0; the git history at tag `v8.0.0` holds both, under their pre-rename names.
 
 The `head -1` in the grep path handles the case where `"command"` appears multiple times in the JSON (it can, in nested structures). We always take the first match, which corresponds to the top-level field.
 

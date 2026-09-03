@@ -6,7 +6,7 @@
 # which is what the CR-4 truthful-rewording practice requires.
 # Registering a NEW entry is a provenance claim — it belongs in a change
 # record or a plan's own history, never in the same commit as a feature.
-# Rehashed for the 10.0.0 DeepGrade->Toque rename: the token spelling in every
+# Rehashed for the 10.0.0 rename: the token spelling in every
 # ledgered line changed, so every hash changed. The occurrence SET is unchanged
 # (same 39 lines, same files) — verified by per-file count diff against the 9.0.0
 # ledger. No new provenance claim is being made here.
