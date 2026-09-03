@@ -19,8 +19,8 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/toque.git",
         "path": "plugins/toque",
-        "ref": "v9.0.0",
-        "sha": "c5514ef9c1126dfe5e6c67a31fa30991fdf49d33"
+        "ref": "v10.0.0",
+        "sha": "debe96e6aa1a1e9e25f026bd95c46c4c30de7d17"
       }
     },
     {
@@ -36,8 +36,8 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/toque.git",
         "path": "plugins/toque-readiness",
-        "ref": "v9.0.0",
-        "sha": "c5514ef9c1126dfe5e6c67a31fa30991fdf49d33"
+        "ref": "v10.0.0",
+        "sha": "debe96e6aa1a1e9e25f026bd95c46c4c30de7d17"
       }
     },
     {
@@ -54,8 +54,8 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/toque.git",
         "path": "plugins/toque-audit",
-        "ref": "v9.0.0",
-        "sha": "c5514ef9c1126dfe5e6c67a31fa30991fdf49d33"
+        "ref": "v10.0.0",
+        "sha": "debe96e6aa1a1e9e25f026bd95c46c4c30de7d17"
       }
     }
   ]
