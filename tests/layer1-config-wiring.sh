@@ -21,18 +21,18 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.." || exit 1
 
-echo "=== DeepGrade Plugin: Layer 1 - Config/Wiring Tests ==="
+echo "=== Toque Plugin: Layer 1 - Config/Wiring Tests ==="
 echo ""
 
 # Parts: one core run per plugin profile, then the repo-wide sweeps.
 PARTS=(
-  "plugins/deepgrade deepgrade"
-  "plugins/deepgrade-readiness deepgrade-readiness"
-  "plugins/deepgrade-audit deepgrade-audit"
+  "plugins/toque toque"
+  "plugins/toque-readiness toque-readiness"
+  "plugins/toque-audit toque-audit"
 )
 
 COUNTS_FILE=$(mktemp)
-export DG_COUNTS_FILE="$COUNTS_FILE"
+export TQ_COUNTS_FILE="$COUNTS_FILE"
 
 OVERALL=0
 DISPATCHED=0

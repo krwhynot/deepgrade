@@ -139,10 +139,10 @@ assertion alone, and nothing was defended on authorship pride. Results below.
 ## Evidence — What Verification Confirmed
 
 **GAP-1 (both halves confirmed, one worse than reported).**
-`scripts/dg-git-guard.sh` contains **no** database-deploy logic (`grep` for `supabase|prisma|dotnet ef|flyway|rails db`
+`scripts/tq-git-guard.sh` contains **no** database-deploy logic (`grep` for `supabase|prisma|dotnet ef|flyway|rails db`
 across all of `scripts/` returns zero), while `.claude-plugin/plugin.json:49` **does** guard all five. Line 27
 (`grep -qE 'git\s+(commit|push)' || exit 0`) exits early for non-git commands, so logic appended below it would be
-dead. `scripts/dg-migration-guard.sh` has no `tr` backslash normalization; the inline version does. **Migrating as v1
+dead. `scripts/tq-migration-guard.sh` has no `tr` backslash normalization; the inline version does. **Migrating as v1
 specified would have deleted a working production guard.** The v1 claim "restored by construction" is retracted —
 drift is bidirectional and v1 modeled only one direction.
 
@@ -250,7 +250,7 @@ which left mutually exclusive execution contracts in the same document.
 | GAP-3 | Architecture (3/5) | "SubagentStop has no finding ID" is factually wrong; behavior union incomplete | **AGREE** | §3.1.5 wires it (count 7→8, with the three dependent counts updated); ledger expanded to 11 rows |
 | GAP-4 | Testing (3/5) | Baseline still wrong; research called "authoritative" despite superseded fixes | **AGREE** | §10.1 corrected to **115/4** before Wave 0, **156/4** after; §10.2 explicitly supersedes the research fix-recommendations |
 | GAP-5 | Architecture (3/5) | Standalone generation has no reproducible delivery topology | **AGREE** | §3.3 tracked neutral source → deterministic renderer with product-specific transforms → **tracked `dist/`** → semantic gate |
-| GAP-6 | Rollback (3/5) | Rehearsal impossible as written; kill switch unproven; no standalone restore | **AGREE** | §8.5 disposable rehearsal channel (0.0.1→0.0.2); §8.3 states `DG_DISABLE_GUARDS` limits honestly; snapshot restore added |
+| GAP-6 | Rollback (3/5) | Rehearsal impossible as written; kill switch unproven; no standalone restore | **AGREE** | §8.5 disposable rehearsal channel (0.0.1→0.0.2); §8.3 states `TQ_DISABLE_GUARDS` limits honestly; snapshot restore added |
 | GAP-7 | Omissions (2/5) | F30 undecided; audit prompt embeds v1 claims | **AGREE** | §3.8 locks F30 (keep skill, delete command); `codex-audit-prompt.md` regenerated from v3 |
 
 ## Evidence — Round 2 Verification
@@ -419,7 +419,7 @@ floor is credible only when CI actually runs that version").
 
 **Claims verified without error:** the missing `validate --strict` gate (§10.3 had none), the node-guarantee gap
 (vendor docs present node as a pattern, not a guarantee), and the repo/Actions availability
-(`github.com/krwhynot/deepgrade`, workflow permission present, no workflows yet — per owner).
+(`github.com/krwhynot/toque`, workflow permission present, no workflows yet — per owner).
 
 ## Changes Made to the Plan
 

@@ -69,7 +69,7 @@ Stated precisely, because "5 passed" reads as more coverage than it is:
 
 `PostToolUse:Bash` was originally driven with `pytest --version`. There is no pytest on this host, so
 the nested session never ran the command and the probe reported the hook dead. Fed a pytest payload
-directly, `dg-track-test.js` wrote the marker correctly — the handler had been right the whole time.
+directly, `tq-track-test.js` wrote the marker correctly — the handler had been right the whole time.
 The probe was testing *"will Claude run an absent tool"*, not *"does the hook fire"*. It is now
 preconditioned on a runner that exists (`python -m unittest`, `pytest` as fallback) and **fails rather
 than skips** when none does, per the Wave 0 rule that a missing prerequisite never silently no-ops.
@@ -88,45 +88,45 @@ repo — claude CLI 2.1.220, node v24.12.0, Windows 11 Pro 10.0.26200. Checks B�
 assistant through its Bash tool at the owner's direction ("execute"); hook responses are quoted
 verbatim from the tool results the hooks produced, which is the same interception surface a
 user-typed command hits. A and F are surfaces this same session emitted on its own (session start;
-an owner-run `/compact`). Copy under test: the plugins INSTALLED from deepgrade-marketplace —
+an owner-run `/compact`). Copy under test: the plugins INSTALLED from toque-marketplace —
 `installed_plugins.json` records gitCommitSha `55dbdeb2fd18e4a50b3ac93e7a66e1f6893c2390` (the
 v7.0.0 pin) for both — while the working tree stood at `e6a4e01` with
-`git diff v7.0.0 HEAD -- plugins/deepgrade/hooks plugins/deepgrade/scripts
-plugins/deepgrade-guard/hooks plugins/deepgrade-guard/scripts` empty, so the pinned copy under test
+`git diff v7.0.0 HEAD -- plugins/toque/hooks plugins/toque/scripts
+plugins/toque-guard/hooks plugins/toque-guard/scripts` empty, so the pinned copy under test
 and HEAD agree byte-for-byte on everything exercised (the caveat below, satisfied).
 
 ### Prerequisite before running A–I
 
 > **Procedure refreshed 2026-08-03 (post-split, catalog at v7.0.0).** The plugin split (7.0.0)
 > moved the hooks under test: the five safety handlers (both PreToolUse, both PostToolUse, Stop)
-> now ship in `deepgrade-guard`; `deepgrade` retains SessionStart, SubagentStop and PreCompact.
-> Checks B–E and G below therefore exercise `deepgrade-guard`'s handlers; A and F exercise
-> `deepgrade`'s. The slots below remain EMPTY — nothing about the observations themselves is
+> now ship in `toque-guard`; `toque` retains SessionStart, SubagentStop and PreCompact.
+> Checks B–E and G below therefore exercise `toque-guard`'s handlers; A and F exercise
+> `toque`'s. The slots below remain EMPTY — nothing about the observations themselves is
 > carried over or inferred. `tests/layer7-runtime-proof.sh --manual` prints this same checklist
 > and was retargeted with the split.
 
 ```
-/plugin marketplace update deepgrade-marketplace
-/plugin update deepgrade
-/plugin update deepgrade-guard
+/plugin marketplace update toque-marketplace
+/plugin update toque
+/plugin update toque-guard
 /reload-plugins
-/plugin details deepgrade        -> must report Hooks (3) incl. SubagentStop
-/plugin details deepgrade-guard  -> must report Hooks (5)
+/plugin details toque        -> must report Hooks (3) incl. SubagentStop
+/plugin details toque-guard  -> must report Hooks (5)
 ```
 
 > The catalog pins a GitHub source object (v7.0.0 @ `55dbdeb`), so these commands install
 > **from the pinned SHA, not from this working copy**. That is harmless only while hook code is
 > byte-identical between the pin and HEAD — it stops being harmless the moment you edit anything
-> under `plugins/deepgrade/scripts/`, `plugins/deepgrade-guard/scripts/` or either `hooks/` and
+> under `plugins/toque/scripts/`, `plugins/toque-guard/scripts/` or either `hooks/` and
 > re-run this checklist. Release (or test via `--plugin-dir` against the working copy) first, or
 > the copy under test is not the copy you changed.
 
-> **Prerequisite RECORDED (2026-08-03).** `deepgrade-guard` was NOT installed when Part 2 began —
-> `claude plugin list` showed only `deepgrade@7.0.0` enabled. The catalog was refreshed
-> (`claude plugin marketplace update deepgrade-marketplace`) and the guard installed
-> (`claude plugin install deepgrade-guard@deepgrade-marketplace` — user scope, 7.0.0,
+> **Prerequisite RECORDED (2026-08-03).** `toque-guard` was NOT installed when Part 2 began —
+> `claude plugin list` showed only `toque@7.0.0` enabled. The catalog was refreshed
+> (`claude plugin marketplace update toque-marketplace`) and the guard installed
+> (`claude plugin install toque-guard@toque-marketplace` — user scope, 7.0.0,
 > gitCommitSha `55dbdeb…`). Handler counts read from the installed manifests rather than the
-> `/plugin details` UI: deepgrade 3 (SessionStart, SubagentStop, PreCompact), deepgrade-guard 5
+> `/plugin details` UI: toque 3 (SessionStart, SubagentStop, PreCompact), toque-guard 5
 > (PreToolUse `Write|Edit` + `Bash`, PostToolUse `Write|Edit` + `Bash`, Stop `*`) — the
 > Hooks (3) / Hooks (5) expectation holds. Notable observed behavior: the guard's hooks went LIVE
 > mid-session immediately after the CLI install — check B was intercepted with no
@@ -140,7 +140,7 @@ real phase name is the proof.
 
 ```
 OBSERVED (verbatim):
-Active DeepGrade plan: 2026-07-20-plugin-hardening-v5, phase build (in_progress).
+Active Toque plan: 2026-07-20-plugin-hardening-v5, phase build (in_progress).
 ```
 
 Recorded 2026-08-03 — the SessionStart hook's additional-context line exactly as this session
@@ -154,7 +154,7 @@ Run: `git push --force origin main` — expect blocked, with a message naming `-
 
 ```
 OBSERVED (verbatim):
-PreToolUse:Bash hook error: [node ${CLAUDE_PLUGIN_ROOT}/scripts/dg-git-guard.js]: [DeepGrade] BLOCKED: Force push is not allowed. Use --force-with-lease if you must overwrite a remote branch.
+PreToolUse:Bash hook error: [node ${CLAUDE_PLUGIN_ROOT}/scripts/tq-git-guard.js]: [Toque] BLOCKED: Force push is not allowed. Use --force-with-lease if you must overwrite a remote branch.
 ```
 
 Recorded 2026-08-03 — BLOCKED; the command never ran (local and origin `main` were verified
@@ -192,15 +192,15 @@ tree freshly committed. The owner's paste of the UI, verbatim:
 
 ```
 Hook PreToolUse:Bash requires confirmation for this command:
-A hard reset discards every uncommitted change in the working tree. Confirm this is intended. [plugin:deepgrade]
+A hard reset discards every uncommitted change in the working tree. Confirm this is intended. [plugin:toque]
 ```
 
 **A CONFIRMATION PROMPT, not a refusal** — the owner approved it and the command then executed
-(`HEAD is now at 292d1db …`). The handler's ask JSON (`dg-git-guard.js:201`,
+(`HEAD is now at 292d1db …`). The handler's ask JSON (`tq-git-guard.js:201`,
 `permissionDecision: "ask"`) surfaces as a user-visible confirmation carrying the handler's exact
-message. One oddity recorded as seen: the UI attributes the hook `[plugin:deepgrade]` although the
-handler ships in `deepgrade-guard` — display attribution only (the message text is uniquely
-dg-git-guard.js's, and core deepgrade has no PreToolUse handler); noted as a possible
+message. One oddity recorded as seen: the UI attributes the hook `[plugin:toque]` although the
+handler ships in `toque-guard` — display attribution only (the message text is uniquely
+tq-git-guard.js's, and core toque has no PreToolUse handler); noted as a possible
 vendor-display or naming follow-up, not a guard defect.
 
 ### E. PreToolUse:Bash — quoted mention must be allowed (F24)
@@ -219,19 +219,19 @@ removed afterwards with a mixed reset; `main` returned to `e6a4e01`, clean and i
 
 ### F. PreCompact (settles U5)
 
-Fill the context until compaction triggers, or run `/compact`. Does a DeepGrade line naming the active
+Fill the context until compaction triggers, or run `/compact`. Does a Toque line naming the active
 plan appear? YES → U5 positive. NO → U5 negative, and the locked §3.1.6 fallback applies: the
 compact-resume message moves to the SessionStart `compact` source path, already implemented in
-`dg-session-start.js`. Verify by resuming after compaction. If that also fails, F26's PreCompact half
+`tq-session-start.js`. Verify by resuming after compaction. If that also fails, F26's PreCompact half
 is recorded PARTIAL — never silently dropped.
 
 ```
 OBSERVED (verbatim):
-PreCompact [node ${CLAUDE_PLUGIN_ROOT}/scripts/dg-pre-compact.js] completed successfully: {"systemMessage":"[DeepGrade] Compacting. Active plan: 2026-07-20-plugin-hardening-v5 at phase: build. Resume with /deepgrade:plan 2026-07-20-plugin-hardening-v5"}
+PreCompact [node ${CLAUDE_PLUGIN_ROOT}/scripts/tq-pre-compact.js] completed successfully: {"systemMessage":"[Toque] Compacting. Active plan: 2026-07-20-plugin-hardening-v5 at phase: build. Resume with /toque:plan 2026-07-20-plugin-hardening-v5"}
 ```
 
 Recorded 2026-08-03 — the owner ran `/compact` in this session and the line above appeared in
-their terminal's command output: a DeepGrade line naming the active plan and its phase.
+their terminal's command output: a Toque line naming the active plan and its phase.
 **U5 settles POSITIVE.** The locked §3.1.6 fallback (compact-resume via the SessionStart `compact`
 source) is implemented but NOT needed.
 
@@ -243,7 +243,7 @@ surfaced to anyone.
 
 ```
 OBSERVED (verbatim):
-[DeepGrade] Session summary: 115 files changed.
+[Toque] Session summary: 115 files changed.
 ```
 
 Recorded 2026-08-03 — the owner saw the line above surface at the end of the recording turn.
@@ -253,24 +253,24 @@ both messages went to stderr at exit 0 and were seen by no one).
 Two things this observation taught, recorded so the checklist's expectation reads correctly:
 
 - **This check's "a summary AND a nudge" expectation is unsatisfiable as written.**
-  `dg-session-stop.js` emits exactly ONE message per stop — `notify()` exits — so a session shows
+  `tq-session-stop.js` emits exactly ONE message per stop — `notify()` exits — so a session shows
   the no-tests nudge OR the summary, never both. The expectation predates reading the one-message
   design.
 - **The summary branch (not the nudge) was the CORRECT branch here:** the recording turn ran
   `bash tests/layer7-runtime-proof.sh --manual`, which matches the test tracker's
-  `/\bbash\s+tests\/layer\d/` pattern, so a `dg-test-<session>` marker existed and the session
+  `/\bbash\s+tests\/layer\d/` pattern, so a `tq-test-<session>` marker existed and the session
   genuinely counted as having run a suite script. The count (115) is the session-cumulative
   change tracker across the whole day's session, not the single turn.
 
-Nudge branch: the session's `dg-test-*` marker was then deliberately removed and the file edited
+Nudge branch: the session's `tq-test-*` marker was then deliberately removed and the file edited
 again, staging the no-tests branch for the next turn boundary.
 
 ```
 NUDGE BRANCH OBSERVED (verbatim):
-[DeepGrade] 118 files changed this session but no test run was detected. Run the suite before finishing.
+[Toque] 118 files changed this session but no test run was detected. Run the suite before finishing.
 ```
 
-Recorded 2026-08-03 — after the session's `dg-test-*` marker was cleared and further recording
+Recorded 2026-08-03 — after the session's `tq-test-*` marker was cleared and further recording
 edits were made, the next turn boundary produced the line above in the owner's UI. **Both Stop
 branches are now user-observed live.** The count moving 115 → 118 across the two observations
 confirms both branches read the same session-cumulative change counter.
@@ -337,20 +337,20 @@ automated layer proves:
 
   ```
   Hook PreToolUse:Bash requires confirmation for this command:
-  This command contains a shell construct the guard cannot evaluate (a variable, a substitution, or a nested shell), so its real effect is unknown. Confirm it does not force-push or deploy to a remote database. [plugin:deepgrade]
+  This command contains a shell construct the guard cannot evaluate (a variable, a substitution, or a nested shell), so its real effect is unknown. Confirm it does not force-push or deploy to a remote database. [plugin:toque]
   ```
 
   The owner approved and the commit ran — ask, not deny, exactly as locked. (Practical corollary:
   every heredoc-style commit in a guarded session asks for confirmation.)
 
-- **The change tracker's threshold notice** (`dg-track-change.js:74`) surfaced after an edit:
+- **The change tracker's threshold notice** (`tq-track-change.js:74`) surfaced after an edit:
 
   ```
-  PostToolUse:Edit says: [DeepGrade] 118 files changed since the last audit. Consider /deepgrade:codebase-delta.
+  PostToolUse:Edit says: [Toque] 118 files changed since the last audit. Consider /toque:codebase-delta.
   ```
 
-- The `[plugin:deepgrade]` attribution label appears on every guard dialog although these handlers
-  ship in `deepgrade-guard` (see check D's note) — display attribution, tracked as a possible
+- The `[plugin:toque]` attribution label appears on every guard dialog although these handlers
+  ship in `toque-guard` (see check D's note) — display attribution, tracked as a possible
   follow-up, not a defect in the handlers.
 
 ---

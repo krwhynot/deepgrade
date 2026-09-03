@@ -30,12 +30,12 @@ cd "$PLUGIN_DIR" || { echo "[FAIL] plugin dir '$PLUGIN_DIR' does not exist"; exi
 # here so a new plugin cannot inherit floors it never earned.
 # ---------------------------------------------------------------------------
 case "$PROFILE" in
-  deepgrade)
+  toque)
     # Planning core: 8 commands, the two planner agents, 4 skills, the three
     # plan-context hooks, and the canary/evidence audit tooling wired from
     # skills/plan/ (F06's command-wired mechanism).
-    PLUGIN_NAME="deepgrade"
-    OWN_NS="deepgrade"
+    PLUGIN_NAME="toque"
+    OWN_NS="toque"
     EXPECTED_EVENTS="SessionStart SubagentStop PreCompact"
     FORBIDDEN_EVENTS="PreToolUse PostToolUse Stop"
     EXPECT_HOOKS=1            # 1: hooks/hooks.json + scripts/ required; 0: both must be ABSENT
@@ -56,10 +56,10 @@ case "$PROFILE" in
     F08_CHECK=0; F30_POS=1; F32_CHECK=1; TPL_CHECK=1
     NODE_REQ=1; GUIDE_8E=1
     ;;
-  deepgrade-readiness)
+  toque-readiness)
     # Readiness scanners: 2 commands, 10 agents, 1 skill, ZERO hooks by design.
-    PLUGIN_NAME="deepgrade-readiness"
-    OWN_NS="deepgrade-readiness"
+    PLUGIN_NAME="toque-readiness"
+    OWN_NS="toque-readiness"
     EXPECTED_EVENTS=""
     FORBIDDEN_EVENTS=""
     EXPECT_HOOKS=0
@@ -80,11 +80,11 @@ case "$PROFILE" in
     F08_CHECK=0; F30_POS=0; F32_CHECK=0; TPL_CHECK=0
     NODE_REQ=0; GUIDE_8E=0
     ;;
-  deepgrade-audit)
+  toque-audit)
     # Audit team: 5 codebase-* commands, 10 agents, 3 skills (incl. the
     # byte-identical self-audit-knowledge mirror), ZERO hooks by design.
-    PLUGIN_NAME="deepgrade-audit"
-    OWN_NS="deepgrade-audit"
+    PLUGIN_NAME="toque-audit"
+    OWN_NS="toque-audit"
     EXPECTED_EVENTS=""
     FORBIDDEN_EVENTS=""
     EXPECT_HOOKS=0
@@ -523,7 +523,7 @@ else
   fail "Command count mismatch: commands/ has $cmd_count files, README says $readme_cmd_count"
 fi
 
-# 5c. Every `/deepgrade:X` in help.md must RESOLVE — to a command file OR to a skill.
+# 5c. Every `/toque:X` in help.md must RESOLVE — to a command file OR to a skill.
 #     A skill is a user-addressable surface too (`plugin:skill`), so requiring
 #     commands/X.md would have been wrong once F30 replaced commands/doc.md with the
 #     documentation skill. The assertion is widened to both surfaces, NOT relaxed:
@@ -536,7 +536,7 @@ if [ -f "$HELP_MD" ]; then
     elif [ -f "$SKILLS_DIR/$hcmd/SKILL.md" ]; then
       pass "help.md '$hcmd' resolves to the $hcmd skill"
     else
-      fail "help.md references /deepgrade:$hcmd but neither commands/$hcmd.md nor $SKILLS_DIR/$hcmd/SKILL.md exists"
+      fail "help.md references /toque:$hcmd but neither commands/$hcmd.md nor $SKILLS_DIR/$hcmd/SKILL.md exists"
     fi
   done
 else
@@ -637,24 +637,24 @@ pj_marker_prefix=""
 
 if [ -f "$README" ]; then
   # Look for /tmp/XX- patterns in README
-  # Accepts either a $TMPDIR/dg-* or a legacy /tmp/dg-* spelling; only the prefix matters.
+  # Accepts either a $TMPDIR/tq-* or a legacy /tmp/tq-* spelling; only the prefix matters.
   readme_marker_prefix=$(grep -ohE '(\$TMPDIR|/tmp)/[a-z]+-' "$README" | head -1 | sed 's|.*/||;s/-$//')
 fi
 
 # The handlers are what write the markers, so compare against THEM. This used to read
 # plugin.json, which stopped containing hooks at 4b — so the check silently degraded to
 # a warn and verified nothing. The handlers build paths as
-# `path.join(tmp, 'dg-<kind>-<session>')` where tmp resolves TMPDIR/TEMP/os.tmpdir(),
-# so the literal string to look for is the `dg-` filename prefix, not a /tmp path.
-pj_marker_prefix=$(grep -ohE "dg-(baseline|build|test)-" scripts/*.js 2>/dev/null \
+# `path.join(tmp, 'tq-<kind>-<session>')` where tmp resolves TMPDIR/TEMP/os.tmpdir(),
+# so the literal string to look for is the `tq-` filename prefix, not a /tmp path.
+pj_marker_prefix=$(grep -ohE "tq-(baseline|build|test)-" scripts/*.js 2>/dev/null \
                    | head -1 | sed 's/-[a-z]*-$//')
 
 if [ "$MARKER_CHECK" = "absent" ]; then
-  # The TMPDIR marker bus was retired with deepgrade-guard in 9.0.0. No shipped
+  # The TMPDIR marker bus was retired with toque-guard in 9.0.0. No shipped
   # plugin writes or documents session markers; one growing a marker surface is
   # reviving a bus with no readers.
   if [ -n "$readme_marker_prefix" ] || [ -n "$pj_marker_prefix" ]; then
-    fail "session markers were retired with deepgrade-guard (9.0.0) — this plugin surfaces prefix '${readme_marker_prefix:-$pj_marker_prefix}-*'"
+    fail "session markers were retired with toque-guard (9.0.0) — this plugin surfaces prefix '${readme_marker_prefix:-$pj_marker_prefix}-*'"
   else
     pass "no session-marker surface in this plugin (the marker bus was retired in 9.0.0)"
   fi
@@ -689,10 +689,10 @@ if [ ! -f "$GUIDE" ]; then
   fail "F20A: $GUIDE does not exist"
 else
   # 8a. Version in the H1 heading must equal plugin.json's
-  guide_version=$(grep -oE "^# DeepGrade[A-Za-z ]* Guide v[0-9]+\.[0-9]+\.[0-9]+" "$GUIDE" \
+  guide_version=$(grep -oE "^# Toque[A-Za-z ]* Guide v[0-9]+\.[0-9]+\.[0-9]+" "$GUIDE" \
                   | head -1 | grep -oE "[0-9]+\.[0-9]+\.[0-9]+")
   if [ -z "$guide_version" ]; then
-    fail "F20A: no '# DeepGrade ... Guide vX.Y.Z' heading found in $GUIDE"
+    fail "F20A: no '# Toque ... Guide vX.Y.Z' heading found in $GUIDE"
   elif [ "$guide_version" = "$pj_version" ]; then
     pass "F20A: GUIDE version matches plugin.json ($guide_version)"
   else
@@ -700,7 +700,7 @@ else
   fi
 
   # 8b. Any version badge must agree with the heading (they drifted together before)
-  badge_mismatch=$(grep -oE "v[0-9]+\.[0-9]+\.[0-9]+-stable|DeepGrade_v[0-9]+\.[0-9]+\.[0-9]+" "$GUIDE" \
+  badge_mismatch=$(grep -oE "v[0-9]+\.[0-9]+\.[0-9]+-stable|Toque_v[0-9]+\.[0-9]+\.[0-9]+" "$GUIDE" \
                    | grep -oE "[0-9]+\.[0-9]+\.[0-9]+" | grep -vxF "$pj_version" | head -1)
   if [ -n "$badge_mismatch" ]; then
     fail "F20A: GUIDE badge shows $badge_mismatch but plugin.json is $pj_version"
@@ -764,7 +764,7 @@ fi
 bare_install=$(grep -rnE "/plugin install $PLUGIN_NAME([[:space:]]|\$)" --include='*.md' . 2>/dev/null \
                | grep -v '^\./docs/plans/' | head -1)
 if [ -n "$bare_install" ]; then
-  fail "F04: unqualified install command (missing @deepgrade-marketplace): $bare_install"
+  fail "F04: unqualified install command (missing @toque-marketplace): $bare_install"
 else
   pass "F04: all install commands are marketplace-qualified"
 fi
@@ -787,7 +787,7 @@ fi
 # 10. Agent identity + reverse reference resolution (F17, F01, F29) — PHV5-010/011/012
 #
 # The 4.27.0 release renamed the agent FILES but never their frontmatter, so
-# every user-facing name (deepgrade:context-scanner, etc.) failed to resolve at
+# every user-facing name (toque:context-scanner, etc.) failed to resolve at
 # runtime while the orchestrating commands quietly kept working off the old
 # names. Two agents also shared the name "report-generator", so one was
 # permanently shadowed. These assertions make both classes impossible to
@@ -832,23 +832,23 @@ fi
 for af in agents/*.md "$REPO_ROOT"/plugins/*/agents/*.md; do
   [ -f "$af" ] || continue
   grep -m1 '^name:' "$af" | sed 's/^name:[[:space:]]*//;s/[[:space:]]*$//'
-done | sort -u > /tmp/dg_valid_agents.$$
+done | sort -u > /tmp/tq_valid_agents.$$
 unresolved=0
 # Extract MAXIMAL hyphenated tokens, then keep those with an agent-shaped suffix.
 # Do NOT anchor with \b around the suffix: grep treats '-' as a word boundary, so
-# '\breport-generator\b' matches INSIDE 'deepgrade-report-generator' and reports a
+# '\breport-generator\b' matches INSIDE 'toque-report-generator' and reports a
 # phantom unresolved name. Leftmost-longest matching on the whole token avoids this.
 for ref in $(grep -rhoE '\b[a-z][a-z-]*[a-z]\b' commands/ agents/ skills/ 2>/dev/null \
              | grep -E -- '-(scanner|generator|auditor|mapper|assessor|scaffolder)$' | sort -u); do
   # "ai-readiness-scanner" is a tool-name string inside the readability-score.json
   # output schema, not an agent invocation. Excluded deliberately.
   [ "$ref" = "ai-readiness-scanner" ] && continue
-  if ! grep -qxF "$ref" /tmp/dg_valid_agents.$$; then
+  if ! grep -qxF "$ref" /tmp/tq_valid_agents.$$; then
     fail "F17/F29: '$ref' is referenced but no agent declares that name"
     unresolved=$((unresolved + 1))
   fi
 done
-rm -f /tmp/dg_valid_agents.$$
+rm -f /tmp/tq_valid_agents.$$
 [ "$unresolved" -eq 0 ] && pass "F17/F29: every referenced agent name resolves to a real agent"
 
 # ===========================================================================
@@ -859,7 +859,7 @@ echo "--- Documentation templates (F29/F31) ---"
 
 TPL_DIR="skills/documentation/references"
 if [ "$TPL_CHECK" -eq 0 ]; then
-  :  # the documentation templates ship with deepgrade only
+  :  # the documentation templates ship with toque only
 elif [ ! -d "$TPL_DIR" ]; then
   fail "F29: $TPL_DIR does not exist"
 else
@@ -873,7 +873,7 @@ else
     pass "F29: no phantom 'Deploy the **X** agent' instructions in templates"
   fi
 
-  # 11b. Only namespaced /deepgrade:* commands may appear, and each must resolve.
+  # 11b. Only namespaced /toque:* commands may appear, and each must resolve.
   #      Path fragments (docs/audit/...) are excluded by requiring the slash to
   #      follow whitespace, a quote, or a paren — never a path character.
   #
@@ -884,9 +884,9 @@ else
   for tok in $(grep -rhoE '(^|[[:space:]"'"'"'(`])/[a-z][a-z-]*' "$TPL_DIR" 2>/dev/null \
                | tr -d ' "'"'"'(`' | sort -u); do
     case "$tok" in
-      /deepgrade|/deepgrade-readiness|/deepgrade-audit) ;;
+      /toque|/toque-readiness|/toque-audit) ;;
       *)
-        fail "F31: template references dead command '$tok' (only the four DeepGrade namespaces are valid)"
+        fail "F31: template references dead command '$tok' (only the four Toque namespaces are valid)"
         bad_cmd=$((bad_cmd + 1)) ;;
     esac
   done
@@ -1243,13 +1243,13 @@ else
   # excluded '"' from the pattern, so the self-test passed while every real
   # invocation went unrecognised. A known-positive that is not drawn from the real
   # artifact tests the pattern against the author's imagination.
-  if ! printf '%s\n' 'node "${CLAUDE_PLUGIN_ROOT}/scripts/dg-example.js" \' | grep -qE "$inv_re"; then
+  if ! printf '%s\n' 'node "${CLAUDE_PLUGIN_ROOT}/scripts/tq-example.js" \' | grep -qE "$inv_re"; then
     fail "F06: invocation pattern fails its known-positive — command-wired scripts cannot be recognised"
   fi
-  if ! printf '%s\n' 'Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/dg-example.js` on the records.' | grep -qE "$inv_re"; then
+  if ! printf '%s\n' 'Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/tq-example.js` on the records.' | grep -qE "$inv_re"; then
     fail "F06: invocation pattern misses the unquoted form"
   fi
-  if printf '%s\n' 'See scripts/dg-example.js for the validation rules.' | grep -qE "$inv_re"; then
+  if printf '%s\n' 'See scripts/tq-example.js for the validation rules.' | grep -qE "$inv_re"; then
     fail "F06: invocation pattern matches a bare prose mention — a script named in a sentence would count as wired"
   fi
 
@@ -1354,7 +1354,7 @@ done
 # --- F09 positive: the zero-argument case must degrade safely, which means a
 #     sentinel plus a guard rather than an unchecked substitution.
 if [ "$F09_POS" -eq 0 ]; then
-  :  # quick-cleanup ships with deepgrade only
+  :  # quick-cleanup ships with toque only
 elif grep -q '<source-folder>' "$COMMANDS_DIR/quick-cleanup.md" \
    && grep -qE 'if \[ "\$FOLDER" = "<source-folder>" \]' "$COMMANDS_DIR/quick-cleanup.md"; then
   pass "F09: quick-cleanup guards the unsubstituted sentinel (zero-arg degrades safely)"
@@ -1378,7 +1378,7 @@ if [ -n "$f11_hits" ]; then
   echo "$f11_hits" | while IFS= read -r l; do
     echo "[FAIL] F11: dead command name — $(echo "$l" | cut -c1-100)"
   done
-  fail "F11: /ai-readiness-* references survive (see above); the real commands are /deepgrade:readiness-*"
+  fail "F11: /ai-readiness-* references survive (see above); the real commands are /toque:readiness-*"
 else
   pass "F11: no /ai-readiness-* references in commands/ or agents/"
 fi
@@ -1386,7 +1386,7 @@ fi
 # satisfied by `argument-hint: "[decoy-in-body]"` written into the body with the real
 # frontmatter key deleted (Codex N2).
 if [ "$F11_ARGHINT" -eq 0 ]; then
-  :  # readiness-generate ships with deepgrade-readiness only
+  :  # readiness-generate ships with toque-readiness only
 elif fm_has "$COMMANDS_DIR/readiness-generate.md" 'argument-hint'; then
   pass "F11: readiness-generate declares a non-empty argument-hint in frontmatter"
 else
@@ -1569,7 +1569,7 @@ for d in "$SKILLS_DIR"/*/; do
   # is the same class of defect F28 exists to remove. Namespaced form only; a skill name
   # is also required to be a whole token, so `documentation` cannot be satisfied by
   # `documentation-extras`.
-  # NEGATED references do not count. "Never invoke `deepgrade:mcp-research`; it is
+  # NEGATED references do not count. "Never invoke `toque:mcp-research`; it is
   # deprecated" satisfied the previous form (Codex N5) — a mention that FORBIDS the skill
   # was read as wiring it. Negated lines are dropped before the search.
   # An explicit ${CLAUDE_PLUGIN_ROOT}/skills/<name>/ path is accepted too: it is a real,
@@ -1595,7 +1595,7 @@ done
 # demanding the exact `:-$OLDPWD` fallback rejected a plain `${CLAUDE_PROJECT_DIR}`,
 # which is all the row actually requires (Q3).
 if [ "$F10_POS" -eq 0 ]; then
-  :  # plan-export ships with deepgrade only
+  :  # plan-export ships with toque only
 elif awk '/^```bash/{inb=1; next} /^```/{inb=0} inb' "$COMMANDS_DIR/plan-export.md" \
      | grep -v '^[[:space:]]*#' | grep -qE '\$\{CLAUDE_PROJECT_DIR(:-[^}]*)?\}'; then
   pass "F10: plan-export resolves the destination through \${CLAUDE_PROJECT_DIR} in an executable line"
@@ -1654,8 +1654,8 @@ echo "==========================================="
 echo "Subtotal (core:$PLUGIN_NAME): $PASS passed, $FAIL failed, $WARN warnings"
 echo "==========================================="
 
-if [ -n "${DG_COUNTS_FILE:-}" ]; then
-  printf 'core:%s %s %s\n' "$PLUGIN_NAME" "$PASS" "$FAIL" >> "$DG_COUNTS_FILE"
+if [ -n "${TQ_COUNTS_FILE:-}" ]; then
+  printf 'core:%s %s %s\n' "$PLUGIN_NAME" "$PASS" "$FAIL" >> "$TQ_COUNTS_FILE"
 fi
 
 if [ "$FAIL" -gt 0 ]; then

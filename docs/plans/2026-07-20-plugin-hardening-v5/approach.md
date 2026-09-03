@@ -118,7 +118,7 @@ findings and asserts two defects as correct. **Would revisit if** a hard deadlin
 
 | Lane | Launcher | Parser | Portability basis |
 |------|----------|--------|-------------------|
-| **N — Node exec form** *(preferred)* | `"command":"node","args":["${CLAUDE_PLUGIN_ROOT}/scripts/dg-*.js"]` | native `JSON.parse` | Vendor-documented: *"The `node` plus script-path pattern works on every platform because `node.exe` is a real binary"* (hooks reference) |
+| **N — Node exec form** *(preferred)* | `"command":"node","args":["${CLAUDE_PLUGIN_ROOT}/scripts/tq-*.js"]` | native `JSON.parse` | Vendor-documented: *"The `node` plus script-path pattern works on every platform because `node.exe` is a real binary"* (hooks reference) |
 | **B — Bash scripts** | shell form (rides Claude Code's own Git Bash detection), or exec form if proven | ladder: `jq` → `node -e`; **no parser → enforcement inactive, reported loudly** (§3.1.6) | Git Bash present on the reference host; on Windows *without* Git Bash, shell form falls back to PowerShell, where a bash script cannot run |
 | **I — Inline one-liners** *(status quo, contingency)* | manifest `hooks` key, shell form | same ladder as B | Proven: the live inline handlers fire today (F22 was confirmed by a live denial) |
 
@@ -184,7 +184,7 @@ covered by Ubuntu CI); row 2 is reasoned, release-noted, and handler-simulated i
 #### 3.1.2 Lanes N and B — script-canonical
 
 The scripts become canonical **after** the behavior ledger (§3.1.4) is satisfied in the surviving implementation
-(lane N: ported `scripts/dg-*.js`; lane B: the existing `.sh` set plus ledger rows 1–2). Create `hooks/hooks.json` in
+(lane N: ported `scripts/tq-*.js`; lane B: the existing `.sh` set plus ledger rows 1–2). Create `hooks/hooks.json` in
 the proven form and delete the inline `hooks` key **in the same commit** — atomicity is forced, not stylistic: with
 both a `hooks/` folder and a manifest `hooks` key present, Claude Code v2.1.140+ **silently ignores the folder**.
 
@@ -211,13 +211,13 @@ Drift is **bidirectional**. Every row must be satisfied by the surviving impleme
 
 | # | Behavior | Inline | Script | Required action |
 |---|----------|:------:|:------:|-----------------|
-| 1 | Database-deploy guard (`supabase db push`, `prisma migrate deploy`, `dotnet ef database update`, `flyway`, `rails db:migrate`) | **yes** `:49` | **NO** | **Port to surviving impl** — must run **before** the non-git early-exit (`dg-git-guard.sh:27` pattern: `grep -qE 'git\s+(commit\|push)' \|\| exit 0` makes anything below it dead code) |
+| 1 | Database-deploy guard (`supabase db push`, `prisma migrate deploy`, `dotnet ef database update`, `flyway`, `rails db:migrate`) | **yes** `:49` | **NO** | **Port to surviving impl** — must run **before** the non-git early-exit (`tq-git-guard.sh:27` pattern: `grep -qE 'git\s+(commit\|push)' \|\| exit 0` makes anything below it dead code) |
 | 2 | Windows backslash normalization (`tr`) in migration guard | **yes** `:39` | **NO** | **Port to surviving impl** |
 | 3 | Wider migration coverage (alembic, drizzle, changelog, numeric-prefix, Flyway V-prefix, `ModelSnapshot.cs`) | no | yes | Keep script's |
 | 4 | **SubagentStop handler** | no | yes (orphaned) | **WIRE IT** — F06's own fix text says "add the missing SubagentStop entry" (§3.1.5) |
-| 5 | Build verification before commit | no | yes | Keep, gated `DG_STRICT_GIT` |
-| 6 | Staging-count sanity check | no | yes | Keep, gated `DG_STRICT_GIT` |
-| 7 | Audit-staleness nudge at `DG_CHANGE_THRESHOLD` (15) | no | yes | Keep script's |
+| 5 | Build verification before commit | no | yes | Keep, gated `TQ_STRICT_GIT` |
+| 6 | Staging-count sanity check | no | yes | Keep, gated `TQ_STRICT_GIT` |
+| 7 | Audit-staleness nudge at `TQ_CHANGE_THRESHOLD` (15) | no | yes | Keep script's |
 | 8 | Tracker key name | `total` | `total_changes_since_audit` | Keep script's; **tolerant read both** (§8.4) |
 | 9 | **Stop-hook test verification** ("N files changed but no tests ran") | no | yes | Keep script's |
 | 10 | **SessionStart status reporting** (expanded) | partial | yes | Keep script's |
@@ -291,7 +291,7 @@ Raw-payload denial is deleted entirely.** The v5 contract:
   compact-resume message to the SessionStart handler's `compact`-source path; if that also fails empirically, F26's
   PreCompact half is recorded PARTIAL — never silently dropped.
 
-**Sub-decision F05(c):** `DG_STRICT_GIT` defaults **OFF**; ledger rows 5–6 ship documented as opt-in rather than
+**Sub-decision F05(c):** `TQ_STRICT_GIT` defaults **OFF**; ledger rows 5–6 ship documented as opt-in rather than
 advertised as active.
 
 ### 3.2 `plan.md` → skill
@@ -299,7 +299,7 @@ advertised as active.
 Split into `skills/plan/SKILL.md` (router under 500 lines) plus one bundled file per phase. This is a **correctness**
 defect: skill content enters the conversation once and is never re-read, and after auto-compaction Claude Code
 re-attaches only **the first 5,000 tokens of each skill** — so at 16–19K tokens the later phases are silently
-discarded, in exactly the long sessions a 9-phase workflow produces. Invocation is unchanged (`/deepgrade:plan`), and
+discarded, in exactly the long sessions a 9-phase workflow produces. Invocation is unchanged (`/toque:plan`), and
 the vendor has merged commands into skills, directing new plugins to `skills/`. Authoring constraints: references one
 level deep, `${CLAUDE_SKILL_DIR}` anchors, forward slashes, Phase 5's sub-templates stay inside `phase-5-audit.md`.
 Reconcile the Step 0 boundary disagreement before implementation. Activation is governed by the Wave 7 contract
@@ -427,7 +427,7 @@ is optional and non-required (R15).
 **Release identity — full-SHA-pinned GitHub source object** *(v9 — round 8: tags are movable, so v8's ref-only pin
 was not immutable; and the vendor schema is an object, with `sha` controlling when both are present)*: at release,
 the marketplace entry's plugin source becomes
-`{"source": "github", "repo": "krwhynot/deepgrade", "ref": "v5.0.0", "sha": "<full 40-char SHA>"}` — the `sha` is
+`{"source": "github", "repo": "krwhynot/toque", "ref": "v5.0.0", "sha": "<full 40-char SHA>"}` — the `sha` is
 the pin, the `ref` is for humans. **Two-commit sequence, stated as such** *(v8's "same commit" claim was
 impossible: the catalog cannot contain the SHA of the commit it is part of)*: (1) release commit + tag `v5.0.0`;
 (2) catalog commit pinning the source object to that tag's full SHA; push both. The same two-step applies to every
@@ -440,7 +440,7 @@ source object at the floor version — an older floor that validates hooks but c
 not a floor.
 
 A **4.x migration note is required** — third-party marketplace auto-update is off by default, and hooks keep the old
-version's path mid-session. It carries: `/plugin marketplace update deepgrade-marketplace` → `/plugin update deepgrade`
+version's path mid-session. It carries: `/plugin marketplace update toque-marketplace` → `/plugin update toque`
 → `/reload-plugins` → `/plugin list`, plus the lane's prerequisite and first-use check, the F24 PARTIAL disposition,
 the §8.3 disable procedure, and the temp-file disposal note. **The version is the cache key** — without the bump,
 none of this reaches any existing user, silently.
@@ -456,7 +456,7 @@ The floor is declared in README and the migration note, and pinned as a required
 
 **Verified:** `WslService` is **Stopped**, `StartType=Disabled` (v2's "WSL is present" came from `command -v wsl`
 locating a stub); Docker not installed; `shellcheck` out of scope. **New (round 4):** the repo is
-`github.com/krwhynot/deepgrade` with Actions available and no workflows yet — a hosted matrix is adoptable.
+`github.com/krwhynot/toque` with Actions available and no workflows yet — a hosted matrix is adoptable.
 
 - **Automatic baseline (Wave 0 CI, §10.3):** `windows-latest` + `ubuntu-latest` jobs run the full suite and
   `claude plugin validate --strict` on the compatibility floor (U7) and current versions, plus a non-blocking
@@ -476,7 +476,7 @@ locating a stub); Docker not installed; `shellcheck` out of scope. **New (round 
 set on `plan` — disabling strips its description from context and breaks the discovery path `help.md` advertises;
 that outweighs listing-budget relief. Read-only scans untouched.
 
-**F30 — locked (v2 left it open):** `/deepgrade:doc` (command) and `/deepgrade:documentation` (skill) are duplicate
+**F30 — locked (v2 left it open):** `/toque:doc` (command) and `/toque:documentation` (skill) are duplicate
 competing surfaces. **Keep the skill, delete the command.** Skills are the successor format (§3.2 rationale), the
 skill already owns the routing table and templates, and deleting the command removes the duplicate entry rather than
 merely renaming it. Update `help.md` and the README/GUIDE command counts accordingly.
@@ -580,7 +580,7 @@ each in its own profile (§9):**
 (A) *existing-user upgrade*, entirely in the **credentialed** scratch profile: `/plugin marketplace update` →
 `/plugin update` → `/reload-plugins` → `claude plugin list --json` asserts version + marketplace-qualified id →
 guarded-command smoke **in that same profile**; (B) *first-time install*: fresh isolated `CLAUDE_CONFIG_DIR` →
-`claude plugin marketplace add krwhynot/deepgrade` → install (auth-free) → assertions via the two commands that
+`claude plugin marketplace add krwhynot/toque` → install (auth-free) → assertions via the two commands that
 actually expose them — `claude plugin list --json` (version, qualified id) and `claude plugin marketplace list
 --json` (repo/source) — then **authenticate that same profile** and run the smoke on **its** installed copy. The
 identity assertion is the **normalized installed-tree comparison** against the **catalog's authoritative `sha`**
@@ -603,7 +603,7 @@ optional and non-required.
 | Windows host, Git Bash, `core.autocrlf=true`, no Docker | `.gitattributes` in Wave 0; G0 probe from PowerShell |
 | WSL disabled | G1 terminal states (§3.7) |
 | `node` is a documented pattern, not a vendor-guaranteed runtime | Lane N declares it a prerequisite with a first-use check (§3.1.6); node-less case probed in Wave 0 and 4c |
-| Repo at `github.com/krwhynot/deepgrade`, Actions available, no workflows yet | Hosted Windows+Ubuntu CI matrix is the Wave 0 verification backbone (§10.3) |
+| Repo at `github.com/krwhynot/toque`, Actions available, no workflows yet | Hosted Windows+Ubuntu CI matrix is the Wave 0 verification backbone (§10.3) |
 | Hook semantics proven locally only on Claude Code 2.1.216 | Empirical compatibility floor U7, pinned as a CI job (§3.6) |
 | The plugin audits itself | Verification leans on `run-all.sh` + shell verify commands, never agent self-report |
 | `GUIDE.md` touched by 11 findings | Single serialized branch |
@@ -655,7 +655,7 @@ nothing propagates), CHANGELOG entry naming the regression, publish, then instru
 
 ### 8.3 Immediate disablement — honest about its limits *(corrected in v4)*
 
-`DG_DISABLE_GUARDS=1` short-circuits each blocking guard at its first executable line. Two limits stand from v3: a
+`TQ_DISABLE_GUARDS=1` short-circuits each blocking guard at its first executable line. Two limits stand from v3: a
 process already running does not observe a newly-set environment variable, and under lane I there are no scripts to
 host the switch, so it is implemented inline.
 
@@ -663,9 +663,9 @@ host the switch, so it is implemented inline.
 by itself relieve a running session either — *"hook commands … keep using the previous version's path. Run
 `/reload-plugins` to switch"* (plugins reference). The documented immediate procedure is therefore, in order:
 
-1. `/plugin uninstall deepgrade` (or disable) **followed by `/reload-plugins`** — verify by attempting a guarded
+1. `/plugin uninstall toque` (or disable) **followed by `/reload-plugins`** — verify by attempting a guarded
    command and observing no denial; restart the session if any handler is still live.
-2. `DG_DISABLE_GUARDS=1` in the environment **plus restart the session**.
+2. `TQ_DISABLE_GUARDS=1` in the environment **plus restart the session**.
 
 Both appear in the migration note, with the verification step included.
 
@@ -673,7 +673,7 @@ Both appear in the migration note, with the verification step included.
 
 Inline and script trackers write different keys (`total` vs `total_changes_since_audit`), so a user mid-upgrade can
 hold a stale-schema temp file. Readers must accept both and treat missing/unparseable as `0`. State files are
-disposable — deleting `dg-*` temp files is always a safe recovery step, stated in the migration note.
+disposable — deleting `tq-*` temp files is always a safe recovery step, stated in the migration note.
 
 ### 8.5 Rehearsal — Wave 8 gate, on a disposable channel
 
@@ -724,7 +724,7 @@ proven **before** the command is removed, and the recovery path must be explicit
 1. **Build** `skills/plan/` completely in the branch; `commands/plan.md` stays live and untouched.
 2. **Pre-activation staging proof, out-of-band** *(expanded in v5 — round 4: "a router that drops Phase 8 content
    could pass" the v4 smoke)*: a scratch copy of the repo with `commands/plan.md` removed, launched via
-   `claude --plugin-dir <scratch>` — the true `/deepgrade:plan` surface with no collision; the working tree never
+   `claude --plugin-dir <scratch>` — the true `/toque:plan` surface with no collision; the working tree never
    hosts both surfaces live. Proof set: (a) fresh session starts Phase 1; (b) a fixture `status.json` mid-plan
    resumes at the correct phase — the state file is surface-agnostic; (c) `${CLAUDE_SKILL_DIR}` references resolve;
    (d) **all nine phase boundaries** load their phase file (one fixture per phase); (e) **forced compaction**
@@ -923,7 +923,7 @@ of the real file cannot silently no-op them; order-insensitivity now holds end-t
 |-----|---------|----------------------|
 | v1 | — | Initial scope lock |
 | v2 | Codex 19/40 | Launcher unproven → G0; behavior union (rows 1–2); WSL retracted → G1; §8 rollback added; F28/F30/F32 assigned; Wave 7 reordered |
-| v3 | Codex 25/40 | Full rewrite — §9/§10 single authorities; G0-FAIL made scope-preserving; SubagentStop wired; ledger completed (rows 9–11); parser contract locked; baseline corrected to 115/4; `dist/` topology + semantic gate; F30 locked; disposable rehearsal channel; `DG_DISABLE_GUARDS` limits stated; independent review mandated; research fixes superseded |
+| v3 | Codex 25/40 | Full rewrite — §9/§10 single authorities; G0-FAIL made scope-preserving; SubagentStop wired; ledger completed (rows 9–11); parser contract locked; baseline corrected to 115/4; `dist/` topology + semantic gate; F30 locked; disposable rehearsal channel; `TQ_DISABLE_GUARDS` limits stated; independent review mandated; research fixes superseded |
 | **v4** | Codex 23/40 | **Architecture-level response** — vendor-documented **Node exec-form** adopted as preferred lane with distributability clause and supported-host matrix (§3.1.0–3.1.1); parser contract rewritten to eliminate blanket denial (lane N native parse; B/I ladder + degraded raw-payload match + first-use check + honest spawn limit; §3.1.6); lane I made executable with its own 4a/4b/4c steps and **F23 honestly recorded NOT MET** under it (§3.1.3, §9); F26 implementation moved to 4a; **[`acceptance-matrix.md`](acceptance-matrix.md) created** (§10.2 now points at a real file); §3.3 bundle input manifest (13 files, sibling-only sources imported in Wave 6) + no-unledgered-loss gate; R8/R9 added; §10.4 enforceable review contract; §8.3 corrected per vendor reference (uninstall requires `/reload-plugins`; rehearsed in §8.5); §9.3 sizing bands for all introduced work incl. lane deltas; Layer-5 double-assignment fixed (L5/L6/L7). One round-3 citation corrected: the hooks reference does **not** advise first-use dependency provisioning — that mechanism is this plan's own addition, adopted on merit. |
 | **v5** | Codex 26/40 (gpt-5.6-sol @ xhigh — first pinned round) | **Two owner decisions resolved the contested middle grounds** — (1) F24: a blocking guard never denies on an unparsed payload; raw-payload denial deleted; parser-less hosts = inactive-but-loud (static JSON `systemMessage`, never stderr-on-exit-0) with F24 recorded **PARTIAL** (§3.1.6, §1); (2) hosted **Windows+Ubuntu CI matrix** + `claude plugin validate --strict` + empirical compatibility floor **U7** adopted (§3.6, §10.3), demoting G1 to optional runtime-dispatch proof (§3.7). Also: 13-input snapshot + hashing moved to **Wave 0** (drift proven: 296 recorded vs 300 measured; counting method pinned; §3.3, R11); ledger made hunk-level/content-addressed; Wave 4 review moved **after 4c** with runtime artifacts pinned (§9, §10.4); Wave 7 staging proof expanded (9 phase boundaries, forced compaction, completeness manifest, installed copy; §9.1); dual-form SessionStart check (§3.1.6); F26 locked fallback chain; R10–R13 added; §9.3 re-banded (reviews medium+, remediation and second rounds budgeted, lane N decomposed); node-less probe cases in Wave 0 and 4c. |
 | **v6** | Codex 26/40 flat (same gpt-5.6-sol @ xhigh — **first controlled delta: 0**; gap class shifted from trade-offs to execution defects) | **Reconciliation + mechanics pass** — stale raw-payload/"degraded mode" text removed from §3.1.0/§3.6/§9.2 (the locked F24 contract now reads consistently everywhere); §3.6 MAJOR justification corrected; snapshot arithmetic fixed to **22 pre-reconciliation sources** at named tracked paths (13 = output bundle; §3.3, A4); `marketplace.json` missing-`description` fixed **inside Wave 0 before the CI gate it blocks** (reproduced strict-validation failure; A3 expanded); Wave 0 internally ordered (snapshot → schema fix → U7/G0/G1 → enable CI); U7 execution model pinned (local authenticated discovery, auth-free required CI jobs, fork-safe; §3.6, R15); inventory/ledger/checker mechanics specified for Waves 6+7 with the "structurally impossible" overclaim corrected to explicit-and-reviewable (§3.3, §9.1, R9); SessionStart exclusion designed as a predicate with exactly-one-warning tests (§3.1.6); **Wave 8 publication gate** added (push/tag/catalog/clean-profile public install; R14); F15 hole closed (`readiness-generate.md` `tree -d`), F09 zero-arg negative test added; `plan.md` count corrected 1,529→1,528; scope arithmetic clarified (36 = 33+3, ride-along uncounted); R14/R15 added; §9.3 bands for U7 discovery vs recurring, checker implementation, scratch bootstrap, publication, local authenticated evidence. |

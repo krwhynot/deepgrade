@@ -1,8 +1,8 @@
-# Test Suite Baseline — DeepGrade Plugin
+# Test Suite Baseline — Toque Plugin
 
 **Date:** 2026-07-20
 **Host:** Windows 11 Pro 26200, Git Bash, jq 1.8.1, node v24.12.0
-**Repo:** `C:/Users/NewAdmin/Projects/plugin/deepgrade-plugin`
+**Repo:** `C:/Users/NewAdmin/Projects/plugin/toque-plugin`
 **Commit:** `4fb4b644b4f690500e937c91b547d1fd336a6c71`
 **Shipped version:** plugin.json `4.31.0`
 
@@ -16,7 +16,7 @@ All six files were read end to end before execution.
 |---|---|---|
 | `tests/run-all.sh` | none | Safe — `cd` + dispatch only |
 | `tests/layer1-config-wiring.sh` | none | Safe — pure `grep`/`sed`/`jq` reads |
-| `tests/layer2-hook-simulation.sh` | `/tmp/dg-*`, `mktemp -d`, `mktemp` | Safe — temp only, `trap cleanup EXIT` |
+| `tests/layer2-hook-simulation.sh` | `/tmp/tq-*`, `mktemp -d`, `mktemp` | Safe — temp only, `trap cleanup EXIT` |
 | `tests/layer3-fixture-lint.sh` | none | Safe — reads fixtures |
 | `tests/layer4-behavioral-smoke.sh` | none | Safe — `find`/`grep` only |
 | `tests/codex-challenge-test.js` | none | Safe — `readFileSync` only |
@@ -25,10 +25,10 @@ All six files were read end to end before execution.
 
 - `PreToolUse[0]` (Write|Edit migration guard) — reads stdin, echoes stderr, `exit 2`. No writes.
 - `PreToolUse[1]` (Bash git/db guard) — greps, echoes stderr. No writes.
-- `PostToolUse[0]` (change tracker) — writes `/tmp/dg-baseline-$SESSION` only.
-- `PostToolUse[1]` (test/build tracker) — writes `/tmp/dg-test-$S`, `/tmp/dg-build-$S` only.
+- `PostToolUse[0]` (change tracker) — writes `/tmp/tq-baseline-$SESSION` only.
+- `PostToolUse[1]` (test/build tracker) — writes `/tmp/tq-test-$S`, `/tmp/tq-build-$S` only.
 
-No hook touches a repo path. `rm -rf` in Layer 2 is scoped to a `mktemp -d` result; `rm -f` is scoped to `/tmp/dg-*-test-session-*`. **Cleared to run.**
+No hook touches a repo path. `rm -rf` in Layer 2 is scoped to a `mktemp -d` result; `rm -f` is scoped to `/tmp/tq-*-test-session-*`. **Cleared to run.**
 
 **Verified post-run:** `git status --porcelain` and `git diff --stat` are identical before and after. The only entry is the untracked `docs/plans/2026-07-20-plugin-hardening-v5/` directory, which pre-existed. **Zero repo files modified.**
 
@@ -113,7 +113,7 @@ Layer 1 and Layer 4 verify a `name:` key *exists*; neither checks uniqueness nor
 
 ```
 duplicate frontmatter name:  report-generator
-  agents/deepgrade-report-generator.md  → name: report-generator
+  agents/toque-report-generator.md  → name: report-generator
   agents/readiness-report-generator.md  → name: report-generator
 ```
 
@@ -124,7 +124,7 @@ Seven filename↔frontmatter mismatches (F17), all passing today:
 ```
 budget-scanner            → context-budget-scanner
 context-scanner           → context-file-scanner
-deepgrade-report-generator→ report-generator
+toque-report-generator→ report-generator
 doc-auditor               → documentation-auditor
 entry-scanner             → entry-point-scanner
 feedback-scanner          → feedback-loop-scanner
@@ -177,14 +177,14 @@ No negative tests for safer alternatives. Confirmed live — this session's own 
 
 ```
 git push --force-with-lease origin main
-→ [DeepGrade] BLOCKED: Force push not allowed.
+→ [Toque] BLOCKED: Force push not allowed.
 ```
 
 `--force-with-lease` matches `git\s+push.*--force`. The scripted guard version explicitly *recommends* it. Layer 2 tests only that force push is blocked and normal push is allowed; nothing asserts that safe variants stay permitted.
 
 #### Blind class 6 — Orphan / unwired assets (F06)
 
-`scripts/` contains 8 shipped guard scripts (`dg-git-guard.sh`, `dg-migration-guard.sh`, `dg-session-start.sh`, …). `grep -c "scripts/" .claude-plugin/plugin.json` → **0**. Nothing is wired; no test notices. `tests/hooks/` is likewise an empty directory.
+`scripts/` contains 8 shipped guard scripts (`tq-git-guard.sh`, `tq-migration-guard.sh`, `tq-session-start.sh`, …). `grep -c "scripts/" .claude-plugin/plugin.json` → **0**. Nothing is wired; no test notices. `tests/hooks/` is likewise an empty directory.
 
 #### Blind class 7 — Remaining medium/low (F04, F05, F08–F16, F20, F26, F28, F32, F33)
 
@@ -208,7 +208,7 @@ No test reads `GUIDE.md` (F04, F20), executes or lints embedded command bash blo
 2. **Layer 4 B4 is dead code** (loop computes and discards; only 2 hardcoded pairs assert).
 3. **Layer 1 7a is hardcoded** to 2 of 22 agents.
 4. **Layer 2 is coupled to inline-hook positional indices**, blocking the F23 refactor.
-5. **Layer 4 B1 regex `'/deepgrade:[a-z-]*'`** omits `0-9`, so any command name with a digit would be silently truncated.
+5. **Layer 4 B1 regex `'/toque:[a-z-]*'`** omits `0-9`, so any command name with a digit would be silently truncated.
 6. **No uniqueness, shape, or reverse-reference validation anywhere** — the three defect classes that produced the critical and all five high findings.
 
 ---
@@ -217,7 +217,7 @@ No test reads `GUIDE.md` (F04, F20), executes or lints embedded command bash blo
 
 1. Assert agent `name:` uniqueness **and** filename↔`name:` equality → catches F01 (critical) + F17.
 2. Parse `tools:`/`allowed-tools:` — validate YAML shape, and cross-check against verbs in the agent body ("write", "spawn", "run") → catches F02, F03, F07, F21 + the `security-scanner` nested-array bug.
-3. Reverse reference sweep over `commands/`, `skills/`, `templates/`, `resources/` for `/deepgrade:*`, `/audit`, `/create-*`, and `@agent-name` tokens → catches F11, F29, F31.
+3. Reverse reference sweep over `commands/`, `skills/`, `templates/`, `resources/` for `/toque:*`, `/audit`, `/create-*`, and `@agent-name` tokens → catches F11, F29, F31.
 4. Run every Layer 2 hook case **twice — with and without jq on PATH** → catches F24.
 5. Add negative guard tests: `--force-with-lease` must pass, `--dry-run` variants must pass → catches F25.
 6. Assert every script in `scripts/` is referenced by hook config → catches F06.

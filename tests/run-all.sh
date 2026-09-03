@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DeepGrade Plugin Test Runner
+# Toque Plugin Test Runner
 # Run from plugin root: bash tests/run-all.sh
 #
 # Layers:
@@ -98,7 +98,7 @@ fi
 EXPECTED_LAYERS=$(echo $RUN_LAYERS | wc -w | tr -d ' ')
 
 echo "============================================"
-echo "  DeepGrade Plugin Test Suite"
+echo "  Toque Plugin Test Suite"
 echo "  $(date '+%Y-%m-%d %H:%M:%S')"
 echo "  Layers: $RUN_LAYERS"
 echo "============================================"

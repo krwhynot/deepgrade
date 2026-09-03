@@ -123,7 +123,7 @@ Applying the §3.1.1 outcome table in order; the first matching row wins:
 
 ### SELECTED LANE: **N — node-canonical**
 
-- Guards become `scripts/dg-*.js`, parsed with native `JSON.parse` — the entire jq debate dissolves
+- Guards become `scripts/tq-*.js`, parsed with native `JSON.parse` — the entire jq debate dissolves
   rather than being mitigated (F24's fail-open hole and round 3's DoS objection both disappear).
 - No executable-bit problem (`node script.js` needs no `+x`), and F23's escaping/CRLF/unlintability
   substance goes away.

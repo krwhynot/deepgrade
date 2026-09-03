@@ -1,10 +1,52 @@
 # Changelog
 
+## Unreleased
+
+### BREAKING
+
+- **DeepGrade is renamed Toque.** Every plugin, command, skill, agent, hook
+  script, and environment variable takes the new name. Nothing about behavior
+  changes; this release is the rename and nothing else.
+
+  | Was | Now |
+  | --- | --- |
+  | `deepgrade` (plugin) | `toque` |
+  | `deepgrade-audit` | `toque-audit` |
+  | `deepgrade-readiness` | `toque-readiness` |
+  | `deepgrade-marketplace` | `toque-marketplace` |
+  | `/deepgrade:*` (commands) | `/toque:*` |
+  | `deepgrade-knowledge` (skill) | `toque-knowledge` |
+  | `deepgrade-report-generator` (agent) | `toque-report-generator` |
+  | `scripts/dg-*.js` (hooks) | `scripts/tq-*.js` |
+  | `DG_STRICT_GIT`, `DG_DISABLE_GUARDS`, `DG_CHANGE_THRESHOLD`, `DG_COUNTS_FILE` | `TQ_STRICT_GIT`, `TQ_DISABLE_GUARDS`, `TQ_CHANGE_THRESHOLD`, `TQ_COUNTS_FILE` |
+  | `github.com/krwhynot/deepgrade` | `github.com/krwhynot/toque` |
+
+  **Migration.** Remove the three old plugins and the old marketplace, then add
+  the marketplace at its new URL and install the three renamed plugins. Any
+  `DG_*` variable you set in a shell profile or CI config must be respelled
+  `TQ_*`; the old spellings are not read and fail silently. Slash commands you
+  have written into scripts, prompts, or `CLAUDE.md` files need `/deepgrade:`
+  rewritten to `/toque:`. Plan folders under `docs/plans/` are untouched and
+  need no migration.
+
+### Changed
+
+- The rename is applied to the whole tree, historical documents included, so a
+  single spelling is greppable everywhere. Where a document points at an
+  artifact by name *at an older tag* — the retired guard handlers in
+  METHODOLOGY.md §"one named field, decide" — the pre-rename spelling is given
+  alongside, because that is the name the file actually has at `v8.0.0`.
+- `tests/fixtures/f30-provenance-ledger.tsv` is rehashed. The ledger addresses
+  occurrences by `sha256(line)`, and the rename changed the token in all 39
+  ledgered lines. The occurrence set is unchanged — same 39 lines in the same
+  files, verified by a per-file count diff against the 9.0.0 ledger — so no new
+  provenance claim is registered here.
+
 ## 9.0.0 (2026-09-02)
 
 ### BREAKING
 
-- **`deepgrade-guard` is retired.** The always-on safety plugin (force-push and
+- **`toque-guard` is retired.** The always-on safety plugin (force-push and
   hard-reset guard, migration guard, DB deploy guard, change and test trackers,
   session summary) is removed from the marketplace and the tree. Claude Code
   permission rules cover every blocking behavior with no runtime dependency and
@@ -12,7 +54,7 @@
   the recommended `settings.json` baseline is in METHODOLOGY.md §6. Installed
   copies keep working from the plugin cache but receive no further updates.
   With it go `tests/run-hook-corpus.js`, `tests/fixtures/hook-corpus.json`, the
-  guard rows of `tests/layer2-ledger-rows.js`, and the `$TMPDIR/dg-*` session
+  guard rows of `tests/layer2-ledger-rows.js`, and the `$TMPDIR/tq-*` session
   marker bus. Three plugins remain in lockstep.
 
 ### Added
@@ -22,7 +64,7 @@
   previously pointed at a "standard template" that did not exist. The PRD
   skeleton has P0/P1/P2 requirements with Given/When/Then acceptance criteria
   and a leading/lagging success-metrics table.
-- **`/deepgrade:documentation runbook`.** New `runbook-template.md`: prerequisites,
+- **`/toque:documentation runbook`.** New `runbook-template.md`: prerequisites,
   exact steps each with expected result and failure action, verification,
   troubleshooting table, rollback trigger and steps, escalation, run history.
   Plan-linked runbooks land in the plan folder and are referenced from
@@ -50,7 +92,7 @@
 
 ### BREAKING
 
-- **`/deepgrade:plan` runs Anthropic's AI-Native SDLC playbook.** Nine phases
+- **`/toque:plan` runs Anthropic's AI-Native SDLC playbook.** Nine phases
   become six stages, Plan, Design, Build, Test, Deploy, Maintain, each
   committing one artifact the next stage reads: `intent.md`, `spec.md` (plus
   `audit.md` from the verifier gate), `plan.md` (the build plan: files, order,
@@ -75,14 +117,14 @@
   plan-status prints intent-to-spec, spec-to-plan, plan-to-release elapsed.
 
 ### Changed
-- **`/deepgrade:plan` is a skill.** The 1,710-line command is now
+- **`/toque:plan` is a skill.** The 1,710-line command is now
   `skills/plan/SKILL.md` (a 319-line router) plus one file per phase under
   `skills/plan/phases/`, read on entry to that phase. Invocation, arguments,
   and `status.json` are unchanged. Closes F12 (deferred since 5.0.0): a
   single long command loses its later phases after context compaction in
   exactly the long sessions a nine-phase workflow produces. Tests that read
   Phase 5 content now point at `phases/phase-5-audit.md`.
-- **`/deepgrade:troubleshoot` and `/deepgrade:codex-challenge` are skills**, on
+- **`/toque:troubleshoot` and `/toque:codex-challenge` are skills**, on
   the same router-plus-phase-files layout as `plan`. troubleshoot (854 lines)
   becomes a 256-line router with the incident pre-flow, four phases,
   multi-agent mode, and knowledge-base write-back in one file each;
@@ -94,9 +136,9 @@
   commands. Closes backlog B07.
 - The documentation skill's bundled templates live in `references/`, the
   documented convention, instead of `resources/`. Closes backlog B28.
-- The `(deepgrade)` description prefix is stripped from all 23 commands and
+- The `(toque)` description prefix is stripped from all 23 commands and
   skills. After the monorepo split it mislabelled 11 files owned by
-  deepgrade-audit and deepgrade-readiness.
+  toque-audit and toque-readiness.
 - Marketplace entries carry `category` and `tags`; the non-deliverable
   owner email is removed.
 
@@ -113,7 +155,7 @@
   longer carries a literal positional placeholder in its body; the two long
   templates have a Contents list; mcp-research drops a baked-in date;
   METHODOLOGY.md stops describing the removed bash PATH preamble as current.
-- Stop hooks (guard session-stop, deepgrade subagent-stop) exit silently when
+- Stop hooks (guard session-stop, toque subagent-stop) exit silently when
   `stop_hook_active` is set, so a continued turn cannot re-post the summary.
   The session-stop hook also sweeps tracker files from other sessions older
   than a day; before this they accumulated in TMPDIR forever.
@@ -161,33 +203,33 @@
 
 ## 7.0.0 (2026-08-03)
 
-The monolith is now four plugins. Updating `deepgrade` alone does NOT keep the
+The monolith is now four plugins. Updating `toque` alone does NOT keep the
 toolkit you had — read the BREAKING section before updating.
 
 ### BREAKING
 
-- **One plugin is now four.** `deepgrade` keeps only the planning core (plan,
+- **One plugin is now four.** `toque` keeps only the planning core (plan,
   plan-status, plan-export, quick-plan, quick-audit, quick-cleanup,
   troubleshoot, codex-challenge, help). Auditing, readiness scanning, and the
   safety hooks moved to plugins that must be installed separately:
-  `/plugin install deepgrade-audit@deepgrade-marketplace`,
-  `deepgrade-readiness@deepgrade-marketplace`, and
-  `deepgrade-guard@deepgrade-marketplace`.
+  `/plugin install toque-audit@toque-marketplace`,
+  `toque-readiness@toque-marketplace`, and
+  `toque-guard@toque-marketplace`.
 - **Audit and readiness commands renamespace to their plugin.**
-  `/deepgrade:codebase-audit` → `/deepgrade-audit:codebase-audit` (same for
+  `/toque:codebase-audit` → `/toque-audit:codebase-audit` (same for
   codebase-characterize, codebase-delta, codebase-gates, codebase-security);
-  `/deepgrade:readiness-scan` → `/deepgrade-readiness:readiness-scan` (same for
+  `/toque:readiness-scan` → `/toque-readiness:readiness-scan` (same for
   readiness-generate). Anything scripted against the old names breaks.
-- **Skills renamespace with their plugin.** `deepgrade-knowledge` and
-  `governance-knowledge` load as `deepgrade-audit:*`; `readiness-scoring` as
-  `deepgrade-readiness:readiness-scoring`. `self-audit-knowledge` resolves under
-  BOTH `deepgrade:` (canonical) and `deepgrade-audit:` (byte-identical mirror,
+- **Skills renamespace with their plugin.** `toque-knowledge` and
+  `governance-knowledge` load as `toque-audit:*`; `readiness-scoring` as
+  `toque-readiness:readiness-scoring`. `self-audit-knowledge` resolves under
+  BOTH `toque:` (canonical) and `toque-audit:` (byte-identical mirror,
   guarded by the suite).
-- **The safety hooks ship only in `deepgrade-guard`.** The git/DB deploy guard,
+- **The safety hooks ship only in `toque-guard`.** The git/DB deploy guard,
   migration guard, change/test trackers, and the Stop-time session summary
-  (PreToolUse ×2, PostToolUse ×2, Stop) are no longer part of `deepgrade`,
+  (PreToolUse ×2, PostToolUse ×2, Stop) are no longer part of `toque`,
   which retains only SessionStart, SubagentStop, and PreCompact. An update that
-  does not add `deepgrade-guard` silently loses force-push and DB-deploy
+  does not add `toque-guard` silently loses force-push and DB-deploy
   blocking.
 - **The monolith GUIDE is retired.** Each plugin ships its own README and
   GUIDE; METHODOLOGY.md remains the deep reference for the audit methodology.
@@ -219,7 +261,7 @@ assigned to itself. Full design: `docs/specs/phase5-verifier-gate.md`.
   rung; either every applicable criterion is satisfied and evidenced, or the
   specific unmet ones are named. Anything scripted against the GREEN/YELLOW/ORANGE
   bands must read the gate verdict instead.
-- **`/deepgrade:quick-plan` uses the same gate.** It previously accepted a plan at
+- **`/toque:quick-plan` uses the same gate.** It previously accepted a plan at
   `score >= 32/40` on its own; a lighter command with a score gate was a way
   around the main one.
 - **The solo-mode review waiver is conditional.** Blocked when infra gaps exist,
@@ -238,10 +280,10 @@ assigned to itself. Full design: `docs/specs/phase5-verifier-gate.md`.
 
 ### Added
 
-- `scripts/dg-evidence-validate.js` — re-reads every cited artifact, verifies the
+- `scripts/tq-evidence-validate.js` — re-reads every cited artifact, verifies the
   hash, slices the cited line range, and compares byte-for-byte with the quote.
   Validation only ever demotes; the judge's MET is a proposal. Suite layer 6.
-- `scripts/dg-canary.js` — injects one known defect (5 classes, seeded rotation)
+- `scripts/tq-canary.js` — injects one known defect (5 classes, seeded rotation)
   into a working copy before the audit; an audit that misses it twice fails as
   untrustworthy and does NOT trigger the revision loop. Suite layer 7.
 - A rubric-free holistic judge whose unmapped findings land in
@@ -320,8 +362,8 @@ previous version's path mid-session. An upgrade will not reach you without these
 commands:
 
 ```
-/plugin marketplace update deepgrade-marketplace
-/plugin update deepgrade
+/plugin marketplace update toque-marketplace
+/plugin update toque
 /reload-plugins
 /plugin list
 ```
@@ -331,16 +373,16 @@ commands:
 
 **To turn the guards off immediately**, in order of preference:
 
-1. `/plugin uninstall deepgrade` (or disable it) **followed by `/reload-plugins`**. Verify by
+1. `/plugin uninstall toque` (or disable it) **followed by `/reload-plugins`**. Verify by
    attempting a guarded command and confirming it is not stopped, and restart the session if
    any handler is still live. Uninstalling alone does not relieve a running session — hook
    commands keep using the previous version's path until `/reload-plugins` runs.
-2. Set `DG_DISABLE_GUARDS=1` in the environment **and restart the session**. A process that
+2. Set `TQ_DISABLE_GUARDS=1` in the environment **and restart the session**. A process that
    is already running does not observe a newly-set environment variable.
 
-**The `dg-*` temp files are disposable.** The plugin writes them to track state across a
+**The `tq-*` temp files are disposable.** The plugin writes them to track state across a
 session. A stale-schema file left by a mid-upgrade session is read as zero, and deleting any
-`dg-*` temp file is always a safe recovery step.
+`tq-*` temp file is always a safe recovery step.
 
 ### Verification scope
 
@@ -356,20 +398,20 @@ Stated plainly so it is not read as more than it is:
   rather than implying one that has not been tested.
 
 ### Fixed
-- `/deepgrade:codebase-gates` told users their generated hooks were written to
+- `/toque:codebase-gates` told users their generated hooks were written to
   `.claude/hooks/hooks.json` — a location Claude Code never reads from a project. The feature
   silently did nothing. Hooks are now correctly targeted at the `hooks` key of
   `.claude/settings.json`, merged rather than overwritten.
-- `/deepgrade:plan-status` with no argument reported "No plans found." on a normal project
+- `/toque:plan-status` with no argument reported "No plans found." on a normal project
   layout, because its existence check and its listing loop referenced different directories.
-- `/deepgrade:quick-cleanup`'s Word-document fallback printed a "no pandoc and no python
+- `/toque:quick-cleanup`'s Word-document fallback printed a "no pandoc and no python
   interpreter" error on a **successful** conversion, due to a shell operator-precedence bug.
-- `/deepgrade:plan-export`'s Windows fallback (no `zip` on stock Windows) is now verified to
+- `/toque:plan-export`'s Windows fallback (no `zip` on stock Windows) is now verified to
   actually create an archive, not merely to mention the right PowerShell cmdlet.
-- `/deepgrade:readiness-generate` no longer shells out to `tree`, which is absent from Git
+- `/toque:readiness-generate` no longer shells out to `tree`, which is absent from Git
   Bash; several commands' temp-file handling is now portable across Windows and Linux.
 - Removed dead `/ai-readiness-*` command references left over from an earlier rename; the
-  real commands are `/deepgrade:readiness-*`.
+  real commands are `/toque:readiness-*`.
 - Several skills carried thin or absent trigger descriptions and could not reliably load;
   descriptions now carry concrete trigger phrasing.
 - The `mcp-research` skill was referenced only in prose ("see the mcp-research skill") with
@@ -398,7 +440,7 @@ underlying product change was independently verified by reading the actual file.
 these into genuine runtime tests is ongoing.
 
 ### Deferred to 5.1.0
-- Converting the 1,528-line `/deepgrade:plan` command into a skill (better survival across
+- Converting the 1,528-line `/toque:plan` command into a skill (better survival across
   context compaction in long planning sessions). This is an improvement to a command that
   works today, not a fix, and is being done separately with its own staging and rollback
   proof.
@@ -411,16 +453,16 @@ these into genuine runtime tests is ongoing.
   connected.**
 - New knowledge skill: `skills/mcp-research/SKILL.md` — tool selection heuristics and tier mapping
   (Ref → Exa → Perplexity), token budget rules, and graceful degradation patterns
-- `/deepgrade:plan`: tiered Ref → Exa → Perplexity search in Phase 2 Track 3, plus URL verification
+- `/toque:plan`: tiered Ref → Exa → Perplexity search in Phase 2 Track 3, plus URL verification
   for HIGH-impact confidence entries
-- `/deepgrade:troubleshoot`: Step 0.2 external documentation and issue lookup (Ref + Exa)
+- `/toque:troubleshoot`: Step 0.2 external documentation and issue lookup (Ref + Exa)
 - The documentation command and skill: external enrichment for specs, ADRs, and READMEs
 - `integration-scanner`: API validation against external documentation via Ref
 - `dependency-mapper`: deprecation checking via Ref documentation
 
 ### Changed
 - `METHODOLOGY.md`: Track 3 tools table updated for the tiered search strategy
-- `/deepgrade:readiness-generate`: now offers to generate a research MCP server `.mcp.json`
+- `/toque:readiness-generate`: now offers to generate a research MCP server `.mcp.json`
 
 ## 4.30.0 (2026-03-31)
 
@@ -436,7 +478,7 @@ these into genuine runtime tests is ongoing.
 ## 4.29.0 (2026-03-22)
 
 ### Added
-- New command: `/deepgrade:codex-challenge` — Evaluator-Optimizer loop between Claude and OpenAI Codex CLI
+- New command: `/toque:codex-challenge` — Evaluator-Optimizer loop between Claude and OpenAI Codex CLI
 - Score-driven convergence: Codex scores plan (8 dimensions × 5 = max 40), Claude optimizes until 36/40 GREEN achieved
 - 8 adversarial review dimensions (problem, architecture, sequencing, risk, rollback, timeline, testing, omissions)
 - Model escalation: auto-upgrades to gpt-5.4 when score < 24/40 (RED)
@@ -479,12 +521,12 @@ these into genuine runtime tests is ongoing.
 
 ### Breaking Changes
 - Converted from standalone `.claude/` format to Claude Code plugin
-- All commands now namespaced: `/deepgrade:command-name`
+- All commands now namespaced: `/toque:command-name`
 - File names changed (see migration guide below)
 
 ### Added
 - Plugin manifest (`.claude-plugin/plugin.json`)
-- `/deepgrade:help` command listing all capabilities
+- `/toque:help` command listing all capabilities
 - Stack-agnostic Phase 2 agents (React/TS, C#/.NET, Python, Rust, Go)
 - Phase 0 stack detection in Phase 2 orchestrator
 - Fan-in/fan-out coupling metrics in risk-assessor (from PViz research)
@@ -492,10 +534,10 @@ these into genuine runtime tests is ongoing.
 - SCC (circular dependency) detection in dependency-mapper
 - "Outcomes that cannot fail" identification in feature-scanner
 - Business outcome narrative in report-generator
-- Two skills: readiness-scoring, deepgrade-knowledge
+- Two skills: readiness-scoring, toque-knowledge
 
 ### Changed
-- report-generator split into readiness-report-generator (Phase 1) and deepgrade-report-generator (Phase 2)
+- report-generator split into readiness-report-generator (Phase 1) and toque-report-generator (Phase 2)
 - context-file-scanner renamed to context-scanner
 - entry-point-scanner renamed to entry-scanner
 - feedback-loop-scanner renamed to feedback-scanner
@@ -507,13 +549,13 @@ these into genuine runtime tests is ongoing.
 If upgrading from the standalone `.claude/` version:
 
 1. Remove old files from `.claude/agents/` and `.claude/commands/`
-2. Install the plugin: `claude --plugin-dir ./deepgrade`
-3. Commands change from `/ai-readiness-scan` to `/deepgrade:readiness-scan`
-4. Commands change from `/deepgrade-audit` to `/deepgrade:codebase-audit`
+2. Install the plugin: `claude --plugin-dir ./toque`
+3. Commands change from `/ai-readiness-scan` to `/toque:readiness-scan`
+4. Commands change from `/toque-audit` to `/toque:codebase-audit`
 
 ## 4.26.0 (2026-02-xx)
 
 ### Added
 - Phase 1: 10 AI Readiness scanner agents + 2 commands
-- Phase 2: 6 DeepGrade audit agents + 1 command (C#/.NET only)
+- Phase 2: 6 Toque audit agents + 1 command (C#/.NET only)
 - Hardened deterministic scoring (7 unstable checks fixed)

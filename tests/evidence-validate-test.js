@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Tests for scripts/dg-evidence-validate.js  (PH5-020, spec §5.3)
+ * Tests for scripts/tq-evidence-validate.js  (PH5-020, spec §5.3)
  *
  * Unlike tests/codex-challenge-test.js, which mirrors logic that lives in markdown,
  * this file requires the real module. There is no second copy of the rules to drift.
@@ -9,7 +9,7 @@
  */
 
 const path = require('path');
-const { validateRecord } = require('../plugins/deepgrade/scripts/dg-evidence-validate.js');
+const { validateRecord } = require('../plugins/toque/scripts/tq-evidence-validate.js');
 
 const ROOT = __dirname;
 const ARTIFACT = 'fixtures/evidence/spec-sample.md';
@@ -147,7 +147,7 @@ console.log('\n3. Staleness');
 {
   const os = require('os');
   const fs = require('fs');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-evidence-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-evidence-'));
   process.on('exit', () => { try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 3 }); } catch { /* leave it */ } });
   const crlfDir = path.join(tmp, 'fixtures', 'evidence');
   fs.mkdirSync(crlfDir, { recursive: true });
@@ -236,7 +236,7 @@ console.log('\n5. CLI contract');
   const os = require('os');
   const fs = require('fs');
   const { execFileSync } = require('child_process');
-  const CLI = path.join(__dirname, '..', 'plugins', 'deepgrade', 'scripts', 'dg-evidence-validate.js');
+  const CLI = path.join(__dirname, '..', 'plugins', 'toque', 'scripts', 'tq-evidence-validate.js');
 
   const run = (args) => {
     try {
@@ -247,7 +247,7 @@ console.log('\n5. CLI contract');
     }
   };
 
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-cli-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-cli-'));
   process.on('exit', () => { try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 3 }); } catch { /* leave it */ } });
   const evd = path.join(tmp, 'evidence');
   fs.mkdirSync(evd, { recursive: true });

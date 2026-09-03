@@ -11,11 +11,11 @@ Purpose: settle **U1** (does agent frontmatter accept a `skills:` key?) before c
 
 ```
 $ claude plugin validate . --strict
-Validating marketplace manifest: C:\Users\NewAdmin\Projects\plugin\deepgrade-plugin\.claude-plugin\marketplace.json
+Validating marketplace manifest: C:\Users\NewAdmin\Projects\plugin\toque-plugin\.claude-plugin\marketplace.json
 ✔ Validation passed
 
 $ claude plugin validate .claude-plugin/plugin.json --strict
-Validating plugin manifest: C:\Users\NewAdmin\Projects\plugin\deepgrade-plugin\.claude-plugin\plugin.json
+Validating plugin manifest: C:\Users\NewAdmin\Projects\plugin\toque-plugin\.claude-plugin\plugin.json
 ✔ Validation passed
 ```
 
@@ -80,8 +80,8 @@ error. It does not:
 
 A definitely-invalid name behaves exactly like a valid one, so this distinguishes nothing.
 
-**4b. `claude --plugin-dir . plugin details deepgrade`.** This *does* read the working tree
-(`Source: deepgrade@inline`) and reports `Agents (22)`, which looked like a loader check. It
+**4b. `claude --plugin-dir . plugin details toque`.** This *does* read the working tree
+(`Source: toque@inline`) and reports `Agents (22)`, which looked like a loader check. It
 is not — the count tracks files, not parse success:
 
 | mutation to `agents/risk-assessor.md` | reported count |
@@ -100,8 +100,8 @@ runtime tolerates it, since the inventory is derived from filenames.
 
 Both clauses of the finding's fix ship, and **both** access mechanisms:
 
-- `Skill` in `tools:`, and `skills: ["deepgrade:self-audit-knowledge"]` in frontmatter
-- the seven agent bodies now name the skill as `deepgrade:self-audit-knowledge`
+- `Skill` in `tools:`, and `skills: ["toque:self-audit-knowledge"]` in frontmatter
+- the seven agent bodies now name the skill as `toque:self-audit-knowledge`
 
 **Neither mechanism is verifiable on this machine.** The first revision of this document claimed
 `Skill` was "spec-confirmed" and rejected `skills:` as unverifiable. That was an asymmetric
@@ -122,7 +122,7 @@ skill that may never load — but worth revisiting if agent invocation cost beco
 
 **The clause that was missed.** Commit `103574e` marked F27 closed having done only the first
 clause. The finding's fix text reads "add `Skill` to their tools allowlists **and** reference the
-namespaced name `deepgrade:self-audit-knowledge`". All seven bodies still said
+namespaced name `toque:self-audit-knowledge`". All seven bodies still said
 `self-audit-knowledge`, unqualified — F21's own defect (bare names do not resolve) in a different
 field, shipped in the same commit that fixed F21. The Layer-1 assertion passed throughout because
 it checked whether the agent *could* load a skill, never whether the name it was told to load was

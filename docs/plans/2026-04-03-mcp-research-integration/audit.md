@@ -1,12 +1,12 @@
 # Plan Audit Report
 Generated: 2026-04-03
 Plan reviewed: MCP Research Integration (docs/specs/mcp-research-integration.md)
-Auditor: DeepGrade Plan Auditor v1.0
+Auditor: Toque Plan Auditor v1.0
 Audit mode: FULL (brainstorm.md, approach.md, confidence.md, findings.md available)
 
 ## Executive Summary
 
-This is a well-structured, low-risk plan to add optional MCP search tool integrations across the DeepGrade plugin. Its greatest strength is the consistent graceful degradation pattern -- every integration is additive with explicit fallback behavior, meaning the blast radius of any failure is zero. The biggest gap is the absence of automated testing: every ticket uses "Manual" testing with no regression strategy to ensure future changes don't break the conditional logic. The plan is recommended for CONDITIONAL-GO with the addition of a smoke test checklist artifact.
+This is a well-structured, low-risk plan to add optional MCP search tool integrations across the Toque plugin. Its greatest strength is the consistent graceful degradation pattern -- every integration is additive with explicit fallback behavior, meaning the blast radius of any failure is zero. The biggest gap is the absence of automated testing: every ticket uses "Manual" testing with no regression strategy to ensure future changes don't break the conditional logic. The plan is recommended for CONDITIONAL-GO with the addition of a smoke test checklist artifact.
 
 ## Overall Score: 30/40
 Interpretation: YELLOW (24-31 range) -- solid plan with addressable gaps

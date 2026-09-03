@@ -21,8 +21,8 @@ Date: 2026-04-03
 
 ## Tier 2 — Manual Verification (User)
 
-- [ ] Run `/deepgrade:plan test` WITHOUT MCP servers → verify no errors, Track 3 skips gracefully
-- [ ] Run `/deepgrade:plan test from "idea: test"` WITH Ref MCP connected → verify Track 3 uses ref_search_documentation
-- [ ] Run `/deepgrade:troubleshoot "test error"` WITHOUT MCP → verify Step 0.2 is skipped
-- [ ] Run `/deepgrade:codebase-audit` on a project → verify integration-scanner includes [API-UNVERIFIED] tags
-- [ ] Verify plugin loads cleanly: `claude plugin install deepgrade@deepgrade-marketplace --scope user`
+- [ ] Run `/toque:plan test` WITHOUT MCP servers → verify no errors, Track 3 skips gracefully
+- [ ] Run `/toque:plan test from "idea: test"` WITH Ref MCP connected → verify Track 3 uses ref_search_documentation
+- [ ] Run `/toque:troubleshoot "test error"` WITHOUT MCP → verify Step 0.2 is skipped
+- [ ] Run `/toque:codebase-audit` on a project → verify integration-scanner includes [API-UNVERIFIED] tags
+- [ ] Verify plugin loads cleanly: `claude plugin install toque@toque-marketplace --scope user`

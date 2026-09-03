@@ -223,7 +223,7 @@ Every `MET` verdict carries at least one record:
 }
 ```
 
-A new validator, `scripts/dg-evidence-validate.js`, enforces four rules:
+A new validator, `scripts/tq-evidence-validate.js`, enforces four rules:
 
 1. **Quote equality.** Re-read `artifact`, confirm its hash equals `sha256`,
    slice `line_start..line_end`, assert byte-equality with `exact_quote`.
@@ -251,7 +251,7 @@ not a completed audit.
 
 ### 5.4 Seeded canary (PH5-030 … PH5-033)
 
-Before the audit, `scripts/dg-canary.js` copies the spec to a working path and
+Before the audit, `scripts/tq-canary.js` copies the spec to a working path and
 injects exactly one surgical defect, recording which criterion it violates.
 Bank of defect classes:
 
@@ -273,7 +273,7 @@ The judge audits the mutated copy. Afterwards:
    one criterion against the unmutated original**. Without this step the plan
    would be gated on an audit of a document differing from the real one.
 
-> **Known limitation.** The judge can read `scripts/dg-canary.js`. The canary
+> **Known limitation.** The judge can read `scripts/tq-canary.js`. The canary
 > therefore detects a *lazy* audit reliably and an *adversarial* one only
 > incidentally. Defects are drawn pseudo-randomly per run and the class is
 > rotated, which raises the cost of pre-empting it, but the honest claim is:
@@ -349,11 +349,11 @@ A gameable signal is safe to use in the direction that adds friction.
 | PH5-012 | 1 | Fresh judge instance per revision iteration | PH5-011 |
 | PH5-013 | 1 | Remove threshold and band table from all generator-visible and judge-visible text | PH5-010 |
 | PH5-014 | 1 | Judge output schema: verdicts + evidence, no total field | PH5-011 |
-| PH5-020 | 2 | `scripts/dg-evidence-validate.js` — the four rules of §5.3 | PH5-014 |
+| PH5-020 | 2 | `scripts/tq-evidence-validate.js` — the four rules of §5.3 | PH5-014 |
 | PH5-021 | 2 | Evidence record emission in `plan-auditor.md` | PH5-014 |
 | PH5-022 | 2 | `evidence/` directory convention + commit requirement | PH5-021 |
 | PH5-023 | 2 | Unverifiable-claim policy wired into verdict resolution | PH5-020 |
-| PH5-030 | 3 | `scripts/dg-canary.js` — 5 defect classes, injection + record | PH5-020 |
+| PH5-030 | 3 | `scripts/tq-canary.js` — 5 defect classes, injection + record | PH5-020 |
 | PH5-031 | 3 | Canary detection check + single re-run on miss | PH5-030 |
 | PH5-032 | 3 | Canary strip + single-criterion recheck against the original | PH5-031 |
 | PH5-033 | 3 | `CANARY-MISSED` twice ⇒ gate fails, no revision attempted | PH5-031 |
@@ -514,7 +514,7 @@ older readers ignore.
 
 ## 11. Out of scope
 
-- Cross-model judging. `/deepgrade:codex-challenge` already exists for that and
+- Cross-model judging. `/toque:codex-challenge` already exists for that and
   is unchanged; making it the default Phase 5 judge is a separate decision.
 - Multi-judge panels and verdict aggregation.
 - Variance re-runs.

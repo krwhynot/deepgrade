@@ -1,6 +1,6 @@
 # Plan Audit — Plugin Hardening v5 (Phase 5)
 
-Generated: 2026-07-29 · Auditor: DeepGrade Plan Auditor
+Generated: 2026-07-29 · Auditor: Toque Plan Auditor
 **Current audit version: v2** (revision iteration 1 of max 2) · v1 findings retained below as RESOLVED / UNRESOLVED
 Primary target: [`docs/specs/plugin-hardening-v5.md`](../../specs/plugin-hardening-v5.md) — **spec v2** (working tree, `+76 / −9` vs committed v1)
 Scored jointly with: [`approach.md`](approach.md) v17 · [`acceptance-matrix.md`](acceptance-matrix.md) · [`brainstorm.md`](brainstorm.md) · [`status.json`](status.json) · [`changes/CR-1.md`](changes/CR-1.md)
@@ -11,7 +11,7 @@ Audit mode: **FULL**
 
 ## Executive Summary (v2)
 
-The spec's v2 revision closes all three top-priority v1 gaps with verifiable, mechanism-level fixes rather than acknowledgements. Every new codebase citation the revision introduced resolves correctly at HEAD — `commands/help.md:16`, `:30–:52`, `:185–:189` bracket **every** `/deepgrade:plan` occurrence in the file (16, 30, 32, 48, 49, 52, 185; the residual matches at 17/18/189 are `plan-status`/`plan-export`, which survive); `tests/layer1-config-wiring.sh:344-354` is the complete command-count assertion block, a **more accurate** range than the `:345-353` I cited in v1; and the new Wave-4b sweep `grep -rn "scripts/dg-.*\.sh"` demonstrably surfaces `METHODOLOGY.md:1811`, the one stale-reference site v1 flagged as unswept.
+The spec's v2 revision closes all three top-priority v1 gaps with verifiable, mechanism-level fixes rather than acknowledgements. Every new codebase citation the revision introduced resolves correctly at HEAD — `commands/help.md:16`, `:30–:52`, `:185–:189` bracket **every** `/toque:plan` occurrence in the file (16, 30, 32, 48, 49, 52, 185; the residual matches at 17/18/189 are `plan-status`/`plan-export`, which survive); `tests/layer1-config-wiring.sh:344-354` is the complete command-count assertion block, a **more accurate** range than the `:345-353` I cited in v1; and the new Wave-4b sweep `grep -rn "scripts/tq-.*\.sh"` demonstrably surfaces `METHODOLOGY.md:1811`, the one stale-reference site v1 flagged as unswept.
 
 The regression check is clean. `git diff` against committed v1 is **+76 insertions / −9 deletions**, and all nine deleted lines are replaced by strictly stronger versions (the Wave 7 go/no-go gains a suite criterion; the activation ticket gains a file list; the critical-path sentence gains its reconciliation). **No acceptance criterion was weakened, no content dropped without replacement, and no previously-passing element now fails. Zero regressions.**
 
@@ -61,7 +61,7 @@ Method: `git diff HEAD -- docs/specs/plugin-hardening-v5.md`, isolating deleted 
 | 6 | `G0 = BLOCKED` scope contested across four documents; class-C acceptance unsatisfiable without CI | **MOSTLY RESOLVED** | `spec:316`: *"Wave 0 pauses before CI-enable; Waves 1/3 may proceed; Wave 4 does not start"*; `spec:327` answers the class-C question — *"Local suite runs remain authoritative interim; CI-enable is Wave 0's *last* step by design"*. *Residual:* Waves 2 and 5 unmentioned (`approach.md:625` says 0/1/3/5 are unblocked), and the class-C answer sits in the dependency row rather than the BLOCKED row |
 | 7 | Ticket count: 32 headers / 33 IDs vs `status.json:114` "27"; F05/F06 never named by ID | **RESOLVED (spec)** | `spec:437-459` Traceability table maps every matrix item to its owning ticket; `spec:453` *"F05 ledger (11 rows) \| PHV5-040"*, `spec:456` *"F06 F23 SubagentStop (4b) \| PHV5-043"*. Verified: **all 33 F-IDs now present**, 33 unique ticket IDs. `status.json:114` is orchestrator-owned — flagged, not scored |
 | 8 | `tools:` flow arrays: 7 claimed, 6 measured | **RESOLVED** | `spec:103-106` records *"measured at HEAD: 6 agents carry flow arrays"* naming `characterization-generator`, `delta-scanner`, `plan-scaffolder`, `gate-generator`, `plan-auditor`, `security-scanner` — **the exact set my v1 measurement produced** — and classes it a measurement note flagged for the Wave 2 review, not a scope change |
-| 9 | Stale-reference sweep missing at `METHODOLOGY.md:1811` (3 `scripts/dg-*.sh` GitHub links) | **RESOLVED** | `spec:376-377` adds a Wave-4b sweep `grep -rn "scripts/dg-.*\.sh"`. **Verified by execution:** that pattern returns exactly one live non-plan hit — `METHODOLOGY.md:1811` |
+| 9 | Stale-reference sweep missing at `METHODOLOGY.md:1811` (3 `scripts/tq-*.sh` GitHub links) | **RESOLVED** | `spec:376-377` adds a Wave-4b sweep `grep -rn "scripts/tq-.*\.sh"`. **Verified by execution:** that pattern returns exactly one live non-plan hit — `METHODOLOGY.md:1811` |
 | 10 | External reviewer dependency unowned (round-14 policy abort precedent) | **RESOLVED** | `spec:326` owner Kyle, fallback *"§10.4: max 2 rounds → owner override CR, named in release notes"*; `spec:318` contingency branch cites the round-14 precedent and the de-escalated-prompt fix |
 | 11 | npm retention of old client versions had no fallback | **RESOLVED** | `spec:328`: *"If a candidate is unpublished, the floor is the oldest *installable* version — recorded as such, honestly narrower claim"* |
 | 12 | **`.gitattributes` AC is not falsifying at HEAD** | **UNRESOLVED** | `spec:44` unchanged. Re-verified at HEAD: no `.gitattributes` file, `core.autocrlf=true`, and **all 14 tracked `.sh` files already report `w/lf`**. The matrix's falsifying half (`acceptance-matrix.md:30`, *"fresh clone on a `core.autocrlf=true` host checks out LF"*) is still absent from the spec |
@@ -97,7 +97,7 @@ Both v1 gaps closed:
 - HIGH [B]: The F24 mechanism gap is closed at the right level of abstraction. `spec:150-156` names the failure I reproduced (*"reproduced live: the current hook denies a read-only `grep` whose search *pattern* contains a DB-deploy string"*), states the requirement (*"strip or tokenize quoted substrings before pattern matching (or equivalent)"*), and — crucially — makes the corpus binding rather than the implementation: *"the acceptance corpus is the falsifier — a mechanism that fails any corpus row fails PHV5-041, whatever its implementation. Design freedom stays in 4a; the corpus does not."* That is the correct contract shape: it constrains the outcome, not the code, which is a stronger fix than the one I proposed.
 - HIGH [A]: The count error is corrected with the measured set named, and I confirmed the six names match my measurement exactly.
 
-Retained strengths: two independent options analyses (`approach.md` §2 weighted 20/11/17; §3.1.0 three lanes); Option C disqualified *"on correctness, not preference"*; ledger row 1 verified absent from `scripts/`; `scripts/dg-git-guard.sh:17` confirms F25 (`git\s+push.*--force\b` matches `--force-with-lease`, while line 18 recommends the flag it blocks); vendor-cited technology choice with honest Tier A/B sourcing in `confidence.md`.
+Retained strengths: two independent options analyses (`approach.md` §2 weighted 20/11/17; §3.1.0 three lanes); Option C disqualified *"on correctness, not preference"*; ledger row 1 verified absent from `scripts/`; `scripts/tq-git-guard.sh:17` confirms F25 (`git\s+push.*--force\b` matches `--force-with-lease`, while line 18 recommends the flag it blocks); vendor-cited technology choice with honest Tier A/B sourcing in `confidence.md`.
 
 Rubric match: 5/5 — mechanism-level closure with the falsifier pinned.
 
@@ -105,7 +105,7 @@ Rubric match: 5/5 — mechanism-level closure with the falsifier pinned.
 
 Resolved: the Wave 7 suite break (v1's most serious finding), the count-edit ownership across Waves 3/5/7, the ticket-count/traceability drift, and the BLOCKED wave scope.
 
-- HIGH [A]: `spec:234-241` now folds the surface updates into the activation commit and cites both tripwires. I verified the citations are not merely plausible but **complete**: every `/deepgrade:plan` occurrence in `commands/help.md` (lines 16, 30, 32, 48, 49, 52, 185) falls inside the cited ranges `{16} ∪ [30,52] ∪ [185,189]`. The three matches outside the concern (17, 18, 189) are `plan-status`/`plan-export`, whose files survive — correctly excluded.
+- HIGH [A]: `spec:234-241` now folds the surface updates into the activation commit and cites both tripwires. I verified the citations are not merely plausible but **complete**: every `/toque:plan` occurrence in `commands/help.md` (lines 16, 30, 32, 48, 49, 52, 185) falls inside the cited ranges `{16} ∪ [30,52] ∪ [185,189]`. The three matches outside the concern (17, 18, 189) are `plan-status`/`plan-export`, whose files survive — correctly excluded.
 - HIGH [A]: `tests/layer1-config-wiring.sh:344-354` is the complete assertion block (`readme_cmd_count=0` through the closing `fi`). v2's range is **more precise than my v1 citation** of `:345-353`.
 - HIGH [B]: `spec:243-245` adds the missing gate criterion; `spec:396-397` mirrors it in the working checklist with a dedicated stale-reference sweep.
 - HIGH [B]: `spec:316` resolves the BLOCKED scope and `spec:327` answers the class-C acceptance question.
@@ -181,7 +181,7 @@ The v1 premortem stands except where the revision changed the answer. Re-running
 
 **"What did we assume would be true but isn't?"** — v1's answer (the F24 corpus is satisfiable by field extraction) is now the spec's own stated problem, with the corpus made binding. The assumption is retired. The *new* soft assumption is N1: that adding quote-tokenisation to the matcher fits inside an unchanged "medium" band.
 
-**"What changed in one layer but not another?"** — v1's two instances are both closed and I verified the sweeps actually bite: `grep -rn "scripts/dg-.*\.sh"` returns exactly one live non-plan hit (`METHODOLOGY.md:1811`), so the Wave-4b checklist item will surface it; and Wave 7's file list plus its own `commands/plan.md` sweep (`spec:397`) covers the command-surface layer. The residual asymmetry is N2 — the BLOCKED branch enumerates Waves 1/3 while the sequencing authority enumerates 0/1/3/5.
+**"What changed in one layer but not another?"** — v1's two instances are both closed and I verified the sweeps actually bite: `grep -rn "scripts/tq-.*\.sh"` returns exactly one live non-plan hit (`METHODOLOGY.md:1811`), so the Wave-4b checklist item will surface it; and Wave 7's file list plus its own `commands/plan.md` sweep (`spec:397`) covers the command-surface layer. The residual asymmetry is N2 — the BLOCKED branch enumerates Waves 1/3 while the sequencing authority enumerates 0/1/3/5.
 
 **"What works in tests but fails at runtime?"** — v1's answer is **still live**. The `.gitattributes` criterion is green at HEAD and would be green in CI both before and after the fix, proving nothing about the behaviour it guards (what a fresh clone on an autocrlf host checks out). Of all v1 findings this was the cheapest to fix and it is the one that did not land.
 
@@ -199,17 +199,17 @@ The v1 premortem stands except where the revision changed the answer. Re-running
 
 ## CHECK 3 — Codebase Verification (v2)
 
-v1's 26 checks stand (25 confirmed, 96%): `dg-git-guard.sh:27`, `run-all.sh` 4-layer structure, the unwired `codex-challenge-test.js`, `marketplace.json` duplicate version + missing description, `plan.md` 1,528 lines, `security-scanner.md:11`, `README.md:84`, `GUIDE.md:5`, `help.md:144`, the 4 templates, the 115/4 baseline, the 300-line drift, the 22 sources, 304 blocks/max 22, 847 blocks, F17/F01/F25, the Layer 2 enshrinements, ledger row 1, absent `.gitattributes`/`.github`/`dist`/`hooks`, and every spec §-reference resolving into `approach.md`.
+v1's 26 checks stand (25 confirmed, 96%): `tq-git-guard.sh:27`, `run-all.sh` 4-layer structure, the unwired `codex-challenge-test.js`, `marketplace.json` duplicate version + missing description, `plan.md` 1,528 lines, `security-scanner.md:11`, `README.md:84`, `GUIDE.md:5`, `help.md:144`, the 4 templates, the 115/4 baseline, the 300-line drift, the 22 sources, 304 blocks/max 22, 847 blocks, F17/F01/F25, the Layer 2 enshrinements, ledger row 1, absent `.gitattributes`/`.github`/`dist`/`hooks`, and every spec §-reference resolving into `approach.md`.
 
 Seven **new** checks were run against citations the revision introduced:
 
 | # | v2 claim (source) | Verification | Result |
 |---|------------------|-------------|--------|
-| 27 | `commands/help.md` `/deepgrade:plan` refs at `:16`, `:30–:52`, `:185–:189` (`spec:237-238`) | All `/deepgrade:plan` occurrences are at 16, 30, 32, 48, 49, 52, 185 — **every one inside the cited ranges**. Matches at 17/18/189 are `plan-status`/`plan-export` (files survive), correctly excluded | **EXACT & COMPLETE** HIGH [A] |
+| 27 | `commands/help.md` `/toque:plan` refs at `:16`, `:30–:52`, `:185–:189` (`spec:237-238`) | All `/toque:plan` occurrences are at 16, 30, 32, 48, 49, 52, 185 — **every one inside the cited ranges**. Matches at 17/18/189 are `plan-status`/`plan-export` (files survive), correctly excluded | **EXACT & COMPLETE** HIGH [A] |
 | 28 | `tests/layer4-behavioral-smoke.sh:48-54` fails on a help.md command without a file (`spec:238`) | `:50-51` — `if [[ ! -f "$PLUGIN_ROOT/commands/$CMD_NAME.md" ]]; then fail …` | **EXACT** HIGH [A] |
 | 29 | `tests/layer1-config-wiring.sh:344-354` compares README count to `commands/` file count (`spec:239`) | `:344` `readme_cmd_count=0` … `:354` `fi`; assertion at `:350-353` | **EXACT — more precise than v1's `:345-353`** HIGH [A] |
 | 30 | 6 agents carry `tools:` flow arrays, named (`spec:103-105`) | `grep -l '^tools: \[' agents/*.md` → exactly the six named files | **EXACT** HIGH [A] |
-| 31 | Wave-4b sweep `grep -rn "scripts/dg-.*\.sh"` catches retired-path references (`spec:376-377`) | Returns exactly one live non-plan hit: `METHODOLOGY.md:1811` (three GitHub links) — the v1 gap site | **CONFIRMED — sweep bites** HIGH [A] |
+| 31 | Wave-4b sweep `grep -rn "scripts/tq-.*\.sh"` catches retired-path references (`spec:376-377`) | Returns exactly one live non-plan hit: `METHODOLOGY.md:1811` (three GitHub links) — the v1 gap site | **CONFIRMED — sweep bites** HIGH [A] |
 | 32 | Traceability covers all 33 findings + additions + gates (`spec:459`) | All 33 F-IDs present in the spec (F05/F06 added); 33 unique `PHV5-NNN` IDs; every matrix row maps to a named ticket | **CONFIRMED** (nit N3: F12 → two tickets) HIGH [A] |
 | 33 | `.gitattributes` AC still falsifiable? (`spec:44`, unchanged) | `.gitattributes` **absent**; `core.autocrlf=true`; all **14** tracked `.sh` report `w/lf` — AC green before the fix | **STILL NON-FALSIFYING** HIGH [A] |
 
@@ -261,7 +261,7 @@ Seven **new** checks were run against citations the revision introduced:
 | A4 | The 22 sources still exist to snapshot | Wave 6 loses its baseline; R9/R11 unmitigable | Verified by audit: 9 pairs + 4 sibling-only; 300-line drift reproduced | — | auditor | **VERIFIED** HIGH [A] |
 | A5 | Solo capacity fits the envelope | Slippage concentrates at the end (Waves 6/7 are largest and last) | `spec:306` states solo=serial; `spec:319` buffers +20% → 28–34 d | — | Kyle | **PARTIALLY VERIFIED v2** — stated and buffered, not measured |
 | A6 | Independent reviewer available for 3 waves × ≤2 rounds | Waves 4/6/7 cannot GO → release blocked | Owner + fallback + policy-abort branch (`spec:318`, `:326`) | per wave | **Kyle** | **RESOLVED v2** — was the un-designed HIGH-impact gap |
-| A7 | GitHub Actions available on `krwhynot/deepgrade` | Wave 0 GO unreachable; class-C rows unsatisfiable | Owner + interim fallback (`spec:327`) | Wave 0 | Kyle | **RESOLVED v2** |
+| A7 | GitHub Actions available on `krwhynot/toque` | Wave 0 GO unreachable; class-C rows unsatisfiable | Owner + interim fallback (`spec:327`) | Wave 0 | Kyle | **RESOLVED v2** |
 | A8 | F24 corpus satisfiable by field extraction + regex | Corpus row unpassable or silently dropped | Falsified by audit (live grep denial) | — | auditor | **RETIRED v2** — `spec:150-156` replaces the assumption with a mechanism requirement |
 | A9 | `.gitattributes` AC fails at HEAD | A green-before-and-after gate ships | Falsified by audit — 14/14 `.sh` already `w/lf` | — | auditor | **STILL FALSIFIED — UNRESOLVED** |
 | A10 | Wave 6 auto-seeding leaves a tractable remainder | Wave 6 overruns on the critical path | 275/45 vs 847 ⇒ ≈572 manual | Wave 6 | Kyle | UNVERIFIED — MEDIUM; `[VERIFY WITH AUTHOR]`; now covered by the +20% buffer |
@@ -293,9 +293,9 @@ Seven **new** checks were run against citations the revision introduced:
 | API contract (hook payload) | PARTIAL | **ADDRESSED** | `spec:150-156` mechanism requirement; corpus binding |
 | UI behavior | N/A | N/A | CLI plugin; only `systemMessage` + doc text, both in scope |
 | Auth / authz | ADDRESSED | ADDRESSED | R15; §8.5 profile kit; PHV5-083 Flow A/B isolation |
-| Config | ADDRESSED | ADDRESSED | `plugin.json`, `marketplace.json`, `hooks.json`, `.claude/settings.json`, `.gitattributes`, `DG_*` |
+| Config | ADDRESSED | ADDRESSED | `plugin.json`, `marketplace.json`, `hooks.json`, `.claude/settings.json`, `.gitattributes`, `TQ_*` |
 | CORS / network / browser | N/A | N/A | Only npm (PHV5-003) and GitHub (PHV5-083), both covered |
-| Data model / query limits | N/A (DB) | N/A (DB) | No database — Expand/Contract N/A verified; `dg-*` tracker governed by §8.4 |
+| Data model / query limits | N/A (DB) | N/A (DB) | No database — Expand/Contract N/A verified; `tq-*` tracker governed by §8.4 |
 | Pagination | N/A | N/A | No list/API surface |
 | **Caching (plugin cache semantics)** | ADDRESSED | ADDRESSED | §8.1 versioned cache; *"the version is the cache key"*; PHV5-044 installed-copy; PHV5-083 excludes `.in_use`; §8.3 `/reload-plugins` |
 | Observability | PARTIAL | PARTIAL | `spec:463-465` — CI + comparator + canary + hook-error notices. **Warning persists: no post-release feedback loop** |
@@ -475,4 +475,4 @@ Three gaps remain and all three are cheap. The `.gitattributes` criterion should
 | Ver | Date | Trigger | Result | Principal changes |
 |-----|------|---------|--------|-------------------|
 | v1 | 2026-07-29 | Phase 5 audit of spec v1 (`c183880`) | **30/40 YELLOW** · gap-checked YES · lint 10/15 | Initial audit. Four gap-verification outputs produced. 26 codebase checks, 25 confirmed. Top 3 gaps: Wave 7 suite break (`layer4:48-54`, `layer1:345-353`); F24 in-field-quotation mechanism (reproduced live); timeline BLOCKED branch / buffer / external dependencies. Recommendation: CONDITIONAL-GO → auto-revision triggered (score < 32). |
-| **v2** | 2026-07-29 | Re-audit of spec v2 (revision iteration 1 of 2; `+76/−9` vs v1) | **34/40 GREEN** · gap-checked YES · lint **15/15** · **regressions 0** | All three top-priority v1 gaps RESOLVED with verified mechanisms; all 5 failing lint rules flipped to PASS on independently verified evidence; 7 new codebase citations checked, all exact (`help.md` ranges bracket every `/deepgrade:plan` occurrence; `layer1:344-354` more precise than v1's citation; the W4b sweep confirmed to catch `METHODOLOGY.md:1811`). Dimensions moved: Architecture 4→5, Phasing 3→4, Timeline 3→4, Team 2→3; Testing held at 4 on the unresolved `.gitattributes` AC. v1 findings: 11 resolved, 1 mostly, 1 partially, 4 unresolved. 4 new LOW/MEDIUM items. Recommendation: **GO — clears the Build gate.** |
+| **v2** | 2026-07-29 | Re-audit of spec v2 (revision iteration 1 of 2; `+76/−9` vs v1) | **34/40 GREEN** · gap-checked YES · lint **15/15** · **regressions 0** | All three top-priority v1 gaps RESOLVED with verified mechanisms; all 5 failing lint rules flipped to PASS on independently verified evidence; 7 new codebase citations checked, all exact (`help.md` ranges bracket every `/toque:plan` occurrence; `layer1:344-354` more precise than v1's citation; the W4b sweep confirmed to catch `METHODOLOGY.md:1811`). Dimensions moved: Architecture 4→5, Phasing 3→4, Timeline 3→4, Team 2→3; Testing held at 4 on the unresolved `.gitattributes` AC. v1 findings: 11 resolved, 1 mostly, 1 partially, 4 unresolved. 4 new LOW/MEDIUM items. Recommendation: **GO — clears the Build gate.** |

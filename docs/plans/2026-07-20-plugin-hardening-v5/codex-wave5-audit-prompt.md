@@ -47,8 +47,8 @@ matched the keyword `merge`, satisfied by an unrelated line elsewhere in the fil
 matched `powershell`, satisfied by the prose explaining the rule it was guarding. Assume
 more of that shape survives. Look specifically for:
 
-- assertions satisfied by a substring of an unrelated token (`/deepgrade:documentation`
-  contains `deepgrade:doc`)
+- assertions satisfied by a substring of an unrelated token (`/toque:documentation`
+  contains `toque:doc`)
 - assertions whose subject set can be empty, so they pass vacuously
 - assertions that check a string appears rather than that a thing is done
 - `grep` patterns that behave differently on the CRLF files in this tree
@@ -56,7 +56,7 @@ more of that shape survives. Look specifically for:
 ### 2. Is the F30 sweep's exemption structure sound, or does it have a hole?
 
 Section 18. It exempts two files from a rule that the acceptance row states absolutely
-("no `/deepgrade:doc` or `commands/doc.md` string survives anywhere"). The reasoning is in
+("no `/toque:doc` or `commands/doc.md` string survives anywhere"). The reasoning is in
 `docs/plans/2026-07-20-plugin-hardening-v5/changes/CR-4.md`.
 
 - Is the `CHANGELOG.md` released-version-heading test correct? The `awk` decides whether a

@@ -15,15 +15,15 @@ script. The file says so in its own rationale, verbatim:
 > unresolvable ("/bin/bash^M: bad interpreter"). **The hook guards and the test suite are shell
 > scripts**, so this is a silent, host-dependent breakage of the plugin's safety layer.
 
-G0 selected **lane N**, so the surviving hook implementation is `scripts/dg-*.js`. The bolded
+G0 selected **lane N**, so the surviving hook implementation is `scripts/tq-*.js`. The bolded
 sentence is now false, and the policy no longer covers the files it exists to protect:
 
 ```
-$ git check-attr text eol -- scripts/dg-git-guard.js scripts/dg-git-guard.sh
-scripts/dg-git-guard.js: text: unspecified
-scripts/dg-git-guard.js: eol: unspecified
-scripts/dg-git-guard.sh: text: set
-scripts/dg-git-guard.sh: eol: lf
+$ git check-attr text eol -- scripts/tq-git-guard.js scripts/tq-git-guard.sh
+scripts/tq-git-guard.js: text: unspecified
+scripts/tq-git-guard.js: eol: unspecified
+scripts/tq-git-guard.sh: text: set
+scripts/tq-git-guard.sh: eol: lf
 ```
 
 `tests/run-hook-corpus.js` is in the same position.
@@ -51,10 +51,10 @@ Control: clone `HEAD` (before this CR) with `core.autocrlf=true`, the reference 
 
 ```
 $ git -c core.autocrlf=true clone -q . /c/t/a
-$ file /c/t/a/scripts/dg-git-guard.js /c/t/a/tests/codex-challenge-test.js /c/t/a/scripts/dg-git-guard.sh
-scripts/dg-git-guard.js:       Node.js script executable, Unicode text, UTF-8 text, with CRLF line terminators
+$ file /c/t/a/scripts/tq-git-guard.js /c/t/a/tests/codex-challenge-test.js /c/t/a/scripts/tq-git-guard.sh
+scripts/tq-git-guard.js:       Node.js script executable, Unicode text, UTF-8 text, with CRLF line terminators
 tests/codex-challenge-test.js: Node.js script executable, Unicode text, UTF-8 text, with CRLF line terminators
-scripts/dg-git-guard.sh:       Bourne-Again shell script, ASCII text executable
+scripts/tq-git-guard.sh:       Bourne-Again shell script, ASCII text executable
 ```
 
 Two things the proposal understated:
@@ -71,7 +71,7 @@ The `.sh` beside them is clean, which is the whole point: the policy protected t
 and silently stopped at the new one.
 
 Severity is therefore **comparable to CR-2's**, not below it. What remains true from the proposal
-is that the *shipped hook invocation path* (`node scripts/dg-*.js`, per lane N) is unaffected,
+is that the *shipped hook invocation path* (`node scripts/tq-*.js`, per lane N) is unaffected,
 because node tolerates CRLF. The exposure is everything else:
 
 1. Anyone who marks a guard executable and runs it directly on POSIX hits
@@ -115,11 +115,11 @@ Control at `HEAD` before the fix is quoted under "Severity" above: both `.js` fi
 
 ```
 $ git -c core.autocrlf=true clone -q . /c/t/b
-$ file /c/t/b/scripts/*.js /c/t/b/tests/*.js /c/t/b/scripts/dg-git-guard.sh
-scripts/dg-git-guard.js:       Node.js script executable, Unicode text, UTF-8 text
+$ file /c/t/b/scripts/*.js /c/t/b/tests/*.js /c/t/b/scripts/tq-git-guard.sh
+scripts/tq-git-guard.js:       Node.js script executable, Unicode text, UTF-8 text
 tests/codex-challenge-test.js: Node.js script executable, Unicode text, UTF-8 text
 tests/run-hook-corpus.js:      Node.js script executable, Unicode text, UTF-8 text
-scripts/dg-git-guard.sh:       Bourne-Again shell script, ASCII text executable
+scripts/tq-git-guard.sh:       Bourne-Again shell script, ASCII text executable
 ```
 
 No CRLF on any of them. The check is falsifying in both directions: it failed before the change
@@ -130,7 +130,7 @@ weaker claim than "it runs":
 
 ```
 $ cd /c/t/b && bash tests/run-all.sh      -> Layers failed: 0 / Status: ALL PASSED
-$ cd /c/t/b && node tests/run-hook-corpus.js scripts/dg-git-guard.js
+$ cd /c/t/b && node tests/run-hook-corpus.js scripts/tq-git-guard.js
                                           -> 18/18 corpus rows pass
 ```
 

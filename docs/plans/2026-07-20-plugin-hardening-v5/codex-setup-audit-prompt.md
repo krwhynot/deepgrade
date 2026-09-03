@@ -49,7 +49,7 @@ what the documented requirement is.
      Both spellings exist in the wild; this repo just normalised everything to the string
      form and I want to know if that was a mistake.
    - is `skills:` a real agent frontmatter key? Seven agents now carry
-     `skills: ["deepgrade:self-audit-knowledge"]`. If it is not a real key, say so —
+     `skills: ["toque:self-audit-knowledge"]`. If it is not a real key, say so —
      they also list `Skill` in `tools` as a fallback, but I would rather delete a key
      that does nothing than ship it.
 
@@ -62,9 +62,9 @@ what the documented requirement is.
    `${CLAUDE_SKILL_DIR}` the correct variable for a skill to reference its own bundled
    files, or is it something else?
 
-7. **Namespacing** — the plugin is `deepgrade`. Commands are referenced as
-   `/deepgrade:<command>`. One command was just deleted and replaced by a skill, and
-   references were repointed to `/deepgrade:documentation`. **Is a plugin skill actually
+7. **Namespacing** — the plugin is `toque`. Commands are referenced as
+   `/toque:<command>`. One command was just deleted and replaced by a skill, and
+   references were repointed to `/toque:documentation`. **Is a plugin skill actually
    addressable that way by a user?** If not, those references are dead and I need to know.
 
 8. **Anything else about the setup that is simply wrong** — a field that does not exist,

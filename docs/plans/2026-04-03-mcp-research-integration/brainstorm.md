@@ -3,7 +3,7 @@ Date: 2026-04-03
 
 ## Problem Statement
 
-The DeepGrade plugin currently relies exclusively on Claude Code's built-in tools (Read, Write, Grep, Glob, Bash, Task). The only external search integration is in `/deepgrade:plan` Phase 2 Track 3, which conditionally uses generic `WebSearch` and `WebFetch` — tools that lack specialization for documentation lookup, semantic code search, or grounded research.
+The Toque plugin currently relies exclusively on Claude Code's built-in tools (Read, Write, Grep, Glob, Bash, Task). The only external search integration is in `/toque:plan` Phase 2 Track 3, which conditionally uses generic `WebSearch` and `WebFetch` — tools that lack specialization for documentation lookup, semantic code search, or grounded research.
 
 Three specialized MCP search tools exist that would significantly improve evidence quality:
 - **Ref** — Documentation search with smart 5K token extraction and session deduplication

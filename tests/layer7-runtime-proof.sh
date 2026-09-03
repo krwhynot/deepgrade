@@ -57,7 +57,7 @@ if ! command -v claude >/dev/null 2>&1; then
 fi
 pass "prerequisite: claude CLI $(claude --version 2>&1 | head -1)"
 
-[ -f plugins/deepgrade/hooks/hooks.json ] || { fail "plugins/deepgrade/hooks/hooks.json missing — nothing to prove"; exit 1; }
+[ -f plugins/toque/hooks/hooks.json ] || { fail "plugins/toque/hooks/hooks.json missing — nothing to prove"; exit 1; }
 
 if [ "${1:-}" = "--manual" ]; then
   MANUAL_ONLY=1
@@ -76,7 +76,7 @@ if [ "$MANUAL_ONLY" -eq 0 ]; then
 echo ""
 echo "--- Part 1: automated (nested session via --plugin-dir) ---"
 
-SCRATCH=$(mktemp -d 2>/dev/null || echo "${TMPDIR:-/tmp}/dg-l7-$$")
+SCRATCH=$(mktemp -d 2>/dev/null || echo "${TMPDIR:-/tmp}/tq-l7-$$")
 mkdir -p "$SCRATCH"
 HOOKTMP="$SCRATCH/hooktmp"
 mkdir -p "$HOOKTMP"
@@ -86,11 +86,11 @@ mkdir -p "$HOOKTMP"
 nested() {
   local prompt=$1
   ( cd "$SCRATCH" && TMPDIR="$HOOKTMP" TEMP="$HOOKTMP" \
-    timeout 180 claude -p --plugin-dir "$ROOT/plugins/deepgrade" "$prompt" 2>&1 ) || true
+    timeout 180 claude -p --plugin-dir "$ROOT/plugins/toque" "$prompt" 2>&1 ) || true
 }
 
 # The PostToolUse tracker and PreToolUse deny probes that used to sit here drove
-# deepgrade-guard handlers, retired in 9.0.0. Only the plan-context hooks remain.
+# toque-guard handlers, retired in 9.0.0. Only the plan-context hooks remain.
 
 # SubagentStop -> appends to a plan's troubleshooting log. Needs the opt-in folder.
 echo "  driving SubagentStop ..."
@@ -120,10 +120,10 @@ cat <<'CHECKLIST'
   PREREQUISITE — install the working copy so the hooks under test are the ones
   in this repo, not the stale marketplace copy:
 
-      /plugin marketplace update deepgrade-marketplace
-      /plugin update deepgrade
+      /plugin marketplace update toque-marketplace
+      /plugin update toque
       /reload-plugins
-      /plugin details deepgrade        -> must report Hooks (3) incl. SubagentStop
+      /plugin details toque        -> must report Hooks (3) incl. SubagentStop
 
   A. SessionStart (F26, settles part of U4)
      Start a fresh session in this repo. Expect a line naming the active plan,
@@ -133,11 +133,11 @@ cat <<'CHECKLIST'
 
   B. PreCompact (settles U5 — the open question)
      Fill the context until compaction triggers, or run /compact.
-     Does a DeepGrade line naming the active plan appear?
+     Does a Toque line naming the active plan appear?
        YES -> U5 positive; record verbatim.
        NO  -> U5 negative. The locked §3.1.6 fallback then applies: the
               compact-resume message moves to the SessionStart `compact` source
-              path, which is ALREADY IMPLEMENTED in dg-session-start.js. Verify it
+              path, which is ALREADY IMPLEMENTED in tq-session-start.js. Verify it
               by resuming after the compaction and checking for the resume line.
               If that also fails, F26's PreCompact half is recorded PARTIAL in the
               release notes — never silently dropped.

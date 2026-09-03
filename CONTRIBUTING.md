@@ -1,14 +1,14 @@
-# Contributing to DeepGrade
+# Contributing to Toque
 
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/deepgrade.git`
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/toque.git`
 3. Create a feature branch: `git checkout -b feature/your-feature`
 4. Make changes
-5. Test with Claude Code: `claude --plugin-dir /path/to/deepgrade/plugins/<plugin>` (live-edit: your
+5. Test with Claude Code: `claude --plugin-dir /path/to/toque/plugins/<plugin>` (live-edit: your
    working tree is read directly, so changes take effect on the next session). To test the *installed*
-   path instead: `/plugin install <plugin>@deepgrade-marketplace --scope user`
+   path instead: `/plugin install <plugin>@toque-marketplace --scope user`
 6. Run the suite: `bash tests/run-all.sh` (all layers must pass)
 7. Submit a pull request
 
@@ -19,15 +19,15 @@ carries the same version and `.github/release.sh` bumps them together.
 
 ```
 .claude-plugin/marketplace.json    # Three catalog entries, one shared ref+SHA pin
-plugins/deepgrade/                 # Planning core (6 commands, 2 agents, 6 skills, 3 hooks)
-plugins/deepgrade-readiness/       # Readiness scanners (2 commands, 10 agents, 1 skill)
-plugins/deepgrade-audit/           # Audit team (5 commands, 10 agents, 3 skills)
+plugins/toque/                 # Planning core (6 commands, 2 agents, 6 skills, 3 hooks)
+plugins/toque-readiness/       # Readiness scanners (2 commands, 10 agents, 1 skill)
+plugins/toque-audit/           # Audit team (5 commands, 10 agents, 3 skills)
 tests/                             # One suite for the whole monorepo
 ```
 
 Each plugin directory holds its own `.claude-plugin/plugin.json`, `README.md`,
 `GUIDE.md`, and its `commands/`, `agents/`, `skills/`, `hooks/`, `scripts/` as
-applicable. `deepgrade-readiness` and `deepgrade-audit` ship ZERO hooks and
+applicable. `toque-readiness` and `toque-audit` ship ZERO hooks and
 ZERO scripts by design — layer 1 enforces that partition.
 
 ## Adding a Command
@@ -72,8 +72,8 @@ file missing its `name:` passes clean.
 The same rule applies to **skill** names, which are not MCP tools but fail the
 same way: plugin skills address as `plugin:skill`, so an agent that says
 "reference the `self-audit-knowledge` skill" is naming something unresolvable.
-Qualify with the agent's OWN plugin namespace — `deepgrade:self-audit-knowledge`
-in the planning plugin, `deepgrade-audit:self-audit-knowledge` in the audit
+Qualify with the agent's OWN plugin namespace — `toque:self-audit-knowledge`
+in the planning plugin, `toque-audit:self-audit-knowledge` in the audit
 plugin (which ships a byte-identical mirror; layer 1 keeps the two copies
 identical — edit both or neither). Nothing in the toolchain catches an
 unqualified skill reference either.
@@ -83,11 +83,11 @@ and a test asserts they stay that way. Edit both or neither.
 
 ## Modifying Hooks
 
-Hooks are declared in `plugins/deepgrade/hooks/hooks.json` — the plan-context
+Hooks are declared in `plugins/toque/hooks/hooks.json` — the plan-context
 handlers (SessionStart, SubagentStop, PreCompact) — and implemented as one Node
 script per handler under that plugin's `scripts/`. Requires Node.js 18+. The
 safety rails (PreToolUse, PostToolUse, Stop) and their TMPDIR marker bus shipped
-in `deepgrade-guard` until 9.0.0 and are retired; do not reintroduce a blocking
+in `toque-guard` until 9.0.0 and are retired; do not reintroduce a blocking
 hook without the fail-closed rules below and a corpus of falsifying cases.
 
 **Never add a `hooks` key back to `.claude-plugin/plugin.json`.** With both a

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# DeepGrade Plugin: Layer 3 - Fixture Lint Tests
+# Toque Plugin: Layer 3 - Fixture Lint Tests
 #
 # Tests lint rules against fixture plans with known gaps.
 # Each fixture is a plan with specific, deliberate defects.
@@ -81,7 +81,7 @@ json_field() {
 # TEST EXECUTION
 # ============================================================================
 
-echo "=== DeepGrade Plugin: Layer 3 - Fixture Lint Tests ==="
+echo "=== Toque Plugin: Layer 3 - Fixture Lint Tests ==="
 echo ""
 
 # ---------------------------------------------------------------------------

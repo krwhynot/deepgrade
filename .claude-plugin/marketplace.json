@@ -1,12 +1,12 @@
 {
-  "name": "deepgrade-marketplace",
+  "name": "toque-marketplace",
   "description": "Developer toolkit for codebase auditing, AI-readiness scanning, structured planning, and operational readiness. Three plugins, one lockstep release. Works on any stack.",
   "owner": {
     "name": "Kyle Whynot"
   },
   "plugins": [
     {
-      "name": "deepgrade",
+      "name": "toque",
       "description": "Six-stage AI-Native SDLC planning (intent.md, spec.md, plan.md, review.md) with an adversarial verifier-first design gate, plan-linked troubleshooting, and documentation generation.",
       "category": "development",
       "tags": [
@@ -17,14 +17,14 @@
       ],
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/krwhynot/deepgrade.git",
-        "path": "plugins/deepgrade",
+        "url": "https://github.com/krwhynot/toque.git",
+        "path": "plugins/toque",
         "ref": "v9.0.0",
         "sha": "c5514ef9c1126dfe5e6c67a31fa30991fdf49d33"
       }
     },
     {
-      "name": "deepgrade-readiness",
+      "name": "toque-readiness",
       "description": "AI-readiness scanning: 52 checks, 9 categories, composite letter grade, generated scaffolding for the gaps.",
       "category": "development",
       "tags": [
@@ -34,14 +34,14 @@
       ],
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/krwhynot/deepgrade.git",
-        "path": "plugins/deepgrade-readiness",
+        "url": "https://github.com/krwhynot/toque.git",
+        "path": "plugins/toque-readiness",
         "ref": "v9.0.0",
         "sha": "c5514ef9c1126dfe5e6c67a31fa30991fdf49d33"
       }
     },
     {
-      "name": "deepgrade-audit",
+      "name": "toque-audit",
       "description": "Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates.",
       "category": "development",
       "tags": [
@@ -52,8 +52,8 @@
       ],
       "source": {
         "source": "git-subdir",
-        "url": "https://github.com/krwhynot/deepgrade.git",
-        "path": "plugins/deepgrade-audit",
+        "url": "https://github.com/krwhynot/toque.git",
+        "path": "plugins/toque-audit",
         "ref": "v9.0.0",
         "sha": "c5514ef9c1126dfe5e6c67a31fa30991fdf49d33"
       }

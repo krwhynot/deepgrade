@@ -4,7 +4,7 @@
 //
 // Only the plan-context handlers remain. Rows 1-3, 5-9 and 11 exercised the
 // git guard, migration guard, change/test trackers and the Stop summary, all of
-// which shipped in deepgrade-guard and were RETIRED with it in 9.0.0. The rows
+// which shipped in toque-guard and were RETIRED with it in 9.0.0. The rows
 // that survive (4, 10, F26) are the ones whose subject is still in the tree.
 //
 // Runs in a scratch directory so plan fixtures never touch the real repo or the
@@ -36,9 +36,9 @@ process.on('exit', () => {
 // Resolve each script where it ships, and THROW on a miss — a silently-skipped
 // handler would read as a passing row, which is the vacuous-pass species.
 const S = (n) => {
-  const c = path.join(ROOT, 'plugins', 'deepgrade', 'scripts', n);
+  const c = path.join(ROOT, 'plugins', 'toque', 'scripts', n);
   if (fs.existsSync(c)) return c;
-  throw new Error(`handler ${n} not found under plugins/deepgrade/scripts/ — the ledger row has no subject`);
+  throw new Error(`handler ${n} not found under plugins/toque/scripts/ — the ledger row has no subject`);
 };
 
 let pass = 0;
@@ -50,7 +50,7 @@ function check(name, ok, detail) {
 
 // Each run gets its own TMPDIR so nothing can leak between rows.
 function run(script, payload, opts = {}) {
-  const tmp = mkScratch('dg-row-');
+  const tmp = mkScratch('tq-row-');
   const env = { ...process.env, TMPDIR: tmp, TEMP: tmp, ...(opts.env || {}) };
   const r = spawnSync(process.execPath, [S(script)], {
     input: typeof payload === 'string' ? payload : JSON.stringify(payload),
@@ -63,15 +63,15 @@ function run(script, payload, opts = {}) {
 console.log('--- Ledger row 10: SessionStart reads a pretty-printed status.json ---');
 
 // Row 10: SessionStart must report the phase from a PRETTY-PRINTED status.json.
-// dg-session-start.sh reported "phase: unknown" here because its grep pattern
+// tq-session-start.sh reported "phase: unknown" here because its grep pattern
 // required no space after the colon.
-const planRoot = mkScratch('dg-plan-');
+const planRoot = mkScratch('tq-plan-');
 const planDir = path.join(planRoot, 'docs', 'plans', '2026-01-01-demo');
 fs.mkdirSync(planDir, { recursive: true });
 fs.writeFileSync(path.join(planDir, 'status.json'), JSON.stringify({
   current_phase: 'build', phases: { brainstorm: { status: 'complete' }, build: { status: 'in_progress' } },
 }, null, 2));
-const r10 = run('dg-session-start.js', { source: 'startup' }, { cwd: planRoot });
+const r10 = run('tq-session-start.js', { source: 'startup' }, { cwd: planRoot });
 let r10json = null; try { r10json = JSON.parse(r10.out); } catch {}
 check('row 10: phase read from pretty-printed JSON (not "unknown")',
   !!r10json && /phase: build/.test(r10json.systemMessage), r10.out || '(no output)');
@@ -82,14 +82,14 @@ check('row 10: reports the PHASE\'s own status, not the first one in the file',
 // ---------------------------------------------------------------------------
 console.log('\n--- F26: every exit-0 emission is JSON, and stderr stays empty ---');
 const f26Cases = [
-  ['dg-subagent-stop.js', { session_id: 's', reason: 'done' }],
-  ['dg-pre-compact.js', { session_id: 's' }],
-  ['dg-session-start.js', { source: 'startup' }],
+  ['tq-subagent-stop.js', { session_id: 's', reason: 'done' }],
+  ['tq-pre-compact.js', { session_id: 's' }],
+  ['tq-session-start.js', { source: 'startup' }],
 ];
 // Each case must reach its EMITTING path, not an early exit, so every handler
 // runs against the plan fixture above rather than an empty directory.
 function runEmitting(script, payload) {
-  const tmp = mkScratch('dg-f26-');
+  const tmp = mkScratch('tq-f26-');
   const r = spawnSync(process.execPath, [S(script)], {
     input: JSON.stringify(payload), encoding: 'utf8', cwd: planRoot,
     env: { ...process.env, TMPDIR: tmp, TEMP: tmp },
@@ -103,12 +103,12 @@ for (const [script, payload] of f26Cases) {
   // Proving the case is not vacuous: every handler that has something to say
   // under this fixture must say it. Two exclusions, both because the handler is
   // covered more strictly elsewhere rather than because it may do nothing:
-  //   dg-session-start.js  — row 10 asserts the phase and status it reports
-  //   dg-subagent-stop.js  — its output channel is a LOG FILE, not stdout, so
+  //   tq-session-start.js  — row 10 asserts the phase and status it reports
+  //   tq-subagent-stop.js  — its output channel is a LOG FILE, not stdout, so
   //                          emitting nothing here is correct. Its real effect is
   //                          asserted separately below (row 4 log append).
-  const FILE_CHANNEL = script === 'dg-subagent-stop.js';
-  if (script !== 'dg-session-start.js' && !FILE_CHANNEL && !r.out && !r.err) {
+  const FILE_CHANNEL = script === 'tq-subagent-stop.js';
+  if (script !== 'tq-session-start.js' && !FILE_CHANNEL && !r.out && !r.err) {
     f26 = false;
     console.log(`        ${script} produced NO output at all — this F26 case is vacuous (a no-op handler would pass it)`);
   }
@@ -118,25 +118,25 @@ for (const [script, payload] of f26Cases) {
 }
 check('F26: all informational handlers exit 0, JSON-only, no stderr', f26);
 
-// Ledger row 4: dg-subagent-stop.js writes to a log rather than to stdout, so the
+// Ledger row 4: tq-subagent-stop.js writes to a log rather than to stdout, so the
 // F26 loop above cannot detect a no-op version of it. Assert the actual effect.
 // Without this, replacing the file with `process.exit(0)` left the whole suite green.
 (() => {
-  const root = mkScratch('dg-sub-');
+  const root = mkScratch('tq-sub-');
   const dir = path.join(root, 'docs', 'plans', '2026-01-01-demo', 'troubleshooting');
   fs.mkdirSync(dir, { recursive: true });
   const log = path.join(dir, 'subagent-log.txt');
-  const r = run('dg-subagent-stop.js', { session_id: 's', reason: 'unit-probe' }, { cwd: root });
+  const r = run('tq-subagent-stop.js', { session_id: 's', reason: 'unit-probe' }, { cwd: root });
   const wrote = fs.existsSync(log) ? fs.readFileSync(log, 'utf8') : '';
-  check('row 4: dg-subagent-stop appends the stop reason to the plan log',
+  check('row 4: tq-subagent-stop appends the stop reason to the plan log',
     r.exit === 0 && /unit-probe/.test(wrote), `exit ${r.exit}, log=${JSON.stringify(wrote.slice(0, 60))}`);
 
   // Negative: no troubleshooting/ directory means the plan has not opted in, and the
   // handler must NOT create one. A stop hook silently making directories in someone
   // else's repo is a surprise.
-  const root2 = mkScratch('dg-sub2-');
+  const root2 = mkScratch('tq-sub2-');
   fs.mkdirSync(path.join(root2, 'docs', 'plans', '2026-01-01-demo'), { recursive: true });
-  const r2 = run('dg-subagent-stop.js', { session_id: 's', reason: 'x' }, { cwd: root2 });
+  const r2 = run('tq-subagent-stop.js', { session_id: 's', reason: 'x' }, { cwd: root2 });
   check('row 4 negative: no troubleshooting/ dir means no log and no directory created',
     r2.exit === 0 && !fs.existsSync(path.join(root2, 'docs', 'plans', '2026-01-01-demo', 'troubleshooting')),
     `exit ${r2.exit}`);

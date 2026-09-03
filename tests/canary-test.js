@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Tests for scripts/dg-canary.js  (PH5-030..033, spec §5.4)
+ * Tests for scripts/tq-canary.js  (PH5-030..033, spec §5.4)
  *
  * The canary checks the AUDITOR, not the plan: inject a known defect, and an audit
  * that fails to report it is not a clean audit, it is a broken one.
@@ -10,7 +10,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const canary = require('../plugins/deepgrade/scripts/dg-canary.js');
+const canary = require('../plugins/toque/scripts/tq-canary.js');
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'canary', 'spec-full.md');
 const SPEC = fs.readFileSync(FIXTURE, 'utf8').replace(/\r\n/g, '\n');
@@ -153,13 +153,13 @@ console.log('\n6. CLI contract');
 {
   const os = require('os');
   const { execFileSync } = require('child_process');
-  const CLI = path.join(__dirname, '..', 'plugins', 'deepgrade', 'scripts', 'dg-canary.js');
+  const CLI = path.join(__dirname, '..', 'plugins', 'toque', 'scripts', 'tq-canary.js');
   const run = (args) => {
     try { return { code: 0, out: execFileSync('node', [CLI].concat(args), { encoding: 'utf8' }) }; }
     catch (e) { return { code: e.status, out: String(e.stdout || '') + String(e.stderr || '') }; }
   };
 
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dg-canary-'));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-canary-'));
   process.on('exit', () => { try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 3 }); } catch { /* leave it */ } });
   const specCopy = path.join(tmp, 'spec.md');
   fs.writeFileSync(specCopy, SPEC);

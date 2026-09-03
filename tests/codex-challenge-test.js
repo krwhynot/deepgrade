@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Parser regression tests for /deepgrade:codex-challenge
+ * Parser regression tests for /toque:codex-challenge
  *
  * Tests the SCORES/GAPS response parsing logic against fixture files.
  * Run with: node tests/codex-challenge-test.js
@@ -390,7 +390,7 @@ test('JSON rejects out-of-range score', () => {
 console.log('\n9. Schema File Validation');
 const schema = JSON.parse(fs.readFileSync(path.join(FIXTURES_DIR, 'codex-review-schema.json'), 'utf-8'));
 
-const SHIPPED_CMD = path.join(__dirname, '..', 'plugins', 'deepgrade', 'skills', 'codex-challenge', 'phases', 'output-schema.md');
+const SHIPPED_CMD = path.join(__dirname, '..', 'plugins', 'toque', 'skills', 'codex-challenge', 'phases', 'output-schema.md');
 
 test('fixture schema is byte-equivalent to the schema shipped in skills/codex-challenge/phases/output-schema.md', () => {
   const md = fs.readFileSync(SHIPPED_CMD, 'utf-8').replace(/\r\n/g, '\n');

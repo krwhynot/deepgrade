@@ -23,19 +23,19 @@ Format rules (the sweep depends on them):
 
 | Artifact | Producer | Consumers |
 | -------- | -------- | --------- |
-| docs/audit/readability/readability-score.json | plugins/deepgrade-readiness/commands/readiness-scan.md | plugins/deepgrade-audit/agents/gate-generator.md, plugins/deepgrade-audit/agents/delta-scanner.md, plugins/deepgrade-audit/commands/codebase-delta.md |
-| docs/audit/readability/readability-report.md | plugins/deepgrade-readiness/agents/readiness-report-generator.md | plugins/deepgrade-audit/commands/codebase-audit.md, plugins/deepgrade-audit/agents/delta-scanner.md, plugins/deepgrade/skills/documentation/references/spec-template.md |
-| docs/audit/deepgrade-report.md | plugins/deepgrade-audit/agents/deepgrade-report-generator.md | plugins/deepgrade/scripts/dg-session-start.js |
-| docs/audit/risk-assessment.md | plugins/deepgrade-audit/agents/risk-assessor.md | plugins/deepgrade/agents/plan-scaffolder.md, plugins/deepgrade/agents/plan-auditor.md, plugins/deepgrade/commands/quick-plan.md, plugins/deepgrade/skills/documentation/SKILL.md, plugins/deepgrade/skills/documentation/references/spec-template.md |
-| docs/audit/dependency-map.md | plugins/deepgrade-audit/agents/dependency-mapper.md | plugins/deepgrade/agents/plan-scaffolder.md, plugins/deepgrade/agents/plan-auditor.md, plugins/deepgrade/commands/quick-plan.md, plugins/deepgrade/skills/plan/stages/stage-3-build.md, plugins/deepgrade/skills/documentation/references/spec-template.md |
-| docs/audit/feature-inventory.md | plugins/deepgrade-audit/agents/feature-scanner.md | plugins/deepgrade/commands/quick-plan.md, plugins/deepgrade/skills/documentation/SKILL.md, plugins/deepgrade/skills/documentation/references/spec-template.md |
-| docs/audit/integration-scan.md | plugins/deepgrade-audit/agents/integration-scanner.md | plugins/deepgrade/agents/plan-auditor.md, plugins/deepgrade/commands/quick-plan.md, plugins/deepgrade/skills/plan/stages/stage-3-build.md, plugins/deepgrade/skills/documentation/references/spec-template.md |
-| docs/audit/audit-progress.md | plugins/deepgrade-audit/commands/codebase-audit.md | plugins/deepgrade-readiness/agents/baseline-scanner.md |
+| docs/audit/readability/readability-score.json | plugins/toque-readiness/commands/readiness-scan.md | plugins/toque-audit/agents/gate-generator.md, plugins/toque-audit/agents/delta-scanner.md, plugins/toque-audit/commands/codebase-delta.md |
+| docs/audit/readability/readability-report.md | plugins/toque-readiness/agents/readiness-report-generator.md | plugins/toque-audit/commands/codebase-audit.md, plugins/toque-audit/agents/delta-scanner.md, plugins/toque/skills/documentation/references/spec-template.md |
+| docs/audit/toque-report.md | plugins/toque-audit/agents/toque-report-generator.md | plugins/toque/scripts/tq-session-start.js |
+| docs/audit/risk-assessment.md | plugins/toque-audit/agents/risk-assessor.md | plugins/toque/agents/plan-scaffolder.md, plugins/toque/agents/plan-auditor.md, plugins/toque/commands/quick-plan.md, plugins/toque/skills/documentation/SKILL.md, plugins/toque/skills/documentation/references/spec-template.md |
+| docs/audit/dependency-map.md | plugins/toque-audit/agents/dependency-mapper.md | plugins/toque/agents/plan-scaffolder.md, plugins/toque/agents/plan-auditor.md, plugins/toque/commands/quick-plan.md, plugins/toque/skills/plan/stages/stage-3-build.md, plugins/toque/skills/documentation/references/spec-template.md |
+| docs/audit/feature-inventory.md | plugins/toque-audit/agents/feature-scanner.md | plugins/toque/commands/quick-plan.md, plugins/toque/skills/documentation/SKILL.md, plugins/toque/skills/documentation/references/spec-template.md |
+| docs/audit/integration-scan.md | plugins/toque-audit/agents/integration-scanner.md | plugins/toque/agents/plan-auditor.md, plugins/toque/commands/quick-plan.md, plugins/toque/skills/plan/stages/stage-3-build.md, plugins/toque/skills/documentation/references/spec-template.md |
+| docs/audit/audit-progress.md | plugins/toque-audit/commands/codebase-audit.md | plugins/toque-readiness/agents/baseline-scanner.md |
 
 ## The readability-score.json schema
 
 The producer's schema lives in
-`plugins/deepgrade-readiness/commands/readiness-scan.md` (the fenced block
+`plugins/toque-readiness/commands/readiness-scan.md` (the fenced block
 after "must follow this schema"). The canonical valid instance is
 `tests/fixtures/interop/readability-score.sample.json`; the INTEROP sweep
 verifies the fixture parses, carries every load-bearing key, and agrees with
@@ -43,7 +43,7 @@ the schema block's top-level key set.
 
 Load-bearing keys — fields a cross-plugin consumer actually extracts:
 
-- `timestamp` — deepgrade-audit's delta-scanner greps it for scan age.
+- `timestamp` — toque-audit's delta-scanner greps it for scan age.
 - `overall.score`, `overall.grade` — gate-generator and codebase-delta read
   the current score and grade.
 - `categories.*` — all nine category keys (manifest, context_files,
@@ -74,13 +74,13 @@ field is removed from the templates; module-level confidence is untouched.
 
 ## Deliberate non-edges
 
-- **Session markers (`$TMPDIR/dg-*`) no longer exist.** The marker bus shipped
-  inside deepgrade-guard and was retired with it in 9.0.0. Layer 1's per-plugin
+- **Session markers (`$TMPDIR/tq-*`) no longer exist.** The marker bus shipped
+  inside toque-guard and was retired with it in 9.0.0. Layer 1's per-plugin
   core fails any plugin that grows a marker surface, so the bus cannot come
   back by accident.
-- **Plan folders (`docs/plans/{date}-{name}/`) are deepgrade-internal.**
-  Written by the planning commands and deepgrade's own hooks
-  (dg-subagent-stop appends `subagent-log.txt` there); no other plugin reads
+- **Plan folders (`docs/plans/{date}-{name}/`) are toque-internal.**
+  Written by the planning commands and toque's own hooks
+  (tq-subagent-stop appends `subagent-log.txt` there); no other plugin reads
   or writes them.
 - **Single-plugin artifacts are not contracts.** Files under `docs/audit/`
   referenced by only one plugin (documentation-audit.md, security-scan.md,

@@ -4,7 +4,7 @@ Plan: docs/plans/2026-04-03-mcp-research-integration/
 
 ## Leadership Summary
 
-Integrate three specialized MCP search tools (Ref, Exa, Perplexity) into the DeepGrade plugin as optional enhancements. Every integration degrades gracefully — the plugin works identically without any MCP servers connected. The integration improves evidence quality in planning, troubleshooting, documentation, and audit workflows.
+Integrate three specialized MCP search tools (Ref, Exa, Perplexity) into the Toque plugin as optional enhancements. Every integration degrades gracefully — the plugin works identically without any MCP servers connected. The integration improves evidence quality in planning, troubleshooting, documentation, and audit workflows.
 
 **Timeline:** 3 phases over 1-2 sessions
 **Risk:** LOW — all changes are additive, no existing behavior modified
@@ -30,7 +30,7 @@ Integrate three specialized MCP search tools (Ref, Exa, Perplexity) into the Dee
 **Files:** `commands/plan.md` (EDIT — frontmatter only)
 **Acceptance Criteria:**
 - [ ] Add one MCP tool name to plan.md `allowed-tools` (e.g., `ref_search_documentation`)
-- [ ] Run `/deepgrade:plan test` WITHOUT Ref MCP connected
+- [ ] Run `/toque:plan test` WITHOUT Ref MCP connected
 - [ ] Verify: no error, plan proceeds normally, Track 3 skips gracefully
 - [ ] If verified: proceed with remaining tickets. If fails: fall back to Option C (ambient-only)
 **Testing:** Manual — empirical test of Claude Code behavior
@@ -80,7 +80,7 @@ Integrate three specialized MCP search tools (Ref, Exa, Perplexity) into the Dee
 - [ ] URL verification references MCP tools alongside WebSearch/WebFetch
 - [ ] Fallback behavior explicitly documented for no-MCP case
 - [ ] Error handling row (line 1497) updated to enumerate tool names
-**Testing:** Manual — run `/deepgrade:plan test-mcp from "idea: add caching"` with and without MCP servers
+**Testing:** Manual — run `/toque:plan test-mcp from "idea: add caching"` with and without MCP servers
 **Rollback:** Revert plan.md to previous version
 
 ### MCP-004: Enhance `commands/troubleshoot.md` — Step 0.2
@@ -124,7 +124,7 @@ Integrate three specialized MCP search tools (Ref, Exa, Perplexity) into the Dee
 - [ ] External findings tagged with evidence tiers
 - [ ] Warning reinforces "verify against local code" principle
 - [ ] Graceful skip when no MCP tools available
-**Testing:** Manual — run `/deepgrade:troubleshoot "test error"` with and without MCP
+**Testing:** Manual — run `/toque:troubleshoot "test error"` with and without MCP
 **Rollback:** Revert troubleshoot.md
 
 ### MCP-005: Enhance `skills/documentation/SKILL.md` + the documentation command
@@ -204,7 +204,7 @@ connected. Today: invoke the documentation skill for the same topic.
 - [ ] External validation runs after main scan
 - [ ] Three tag levels: CURRENT, DEPRECATED, UNKNOWN
 - [ ] Graceful skip with UNKNOWN tags when no Ref
-**Testing:** Run `/deepgrade:codebase-audit` on a project with known API integrations
+**Testing:** Run `/toque:codebase-audit` on a project with known API integrations
 **Rollback:** Revert integration-scanner.md
 
 ### MCP-007: Enhance `agents/dependency-mapper.md`
@@ -233,7 +233,7 @@ connected. Today: invoke the documentation skill for the same topic.
 - [ ] Deprecation check runs after main dependency mapping
 - [ ] Tags for DEPRECATED, EOL, and VERSION-CHECK-UNAVAILABLE
 - [ ] Graceful skip when no Ref
-**Testing:** Run `/deepgrade:codebase-audit` on a project with outdated packages
+**Testing:** Run `/toque:codebase-audit` on a project with outdated packages
 **Rollback:** Revert dependency-mapper.md
 
 ---
@@ -277,7 +277,7 @@ Template:
 - [ ] Stack detection influences which servers are recommended
 - [ ] Budget-aware: respects Check 8.5 (<5 servers)
 - [ ] Template uses correct MCP server URLs
-**Testing:** Run `/deepgrade:readiness-generate 5.7` on a project with no .mcp.json
+**Testing:** Run `/toque:readiness-generate 5.7` on a project with no .mcp.json
 **Rollback:** Revert readiness-generate.md
 
 ### MCP-009: Update `METHODOLOGY.md`

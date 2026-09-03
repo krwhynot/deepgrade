@@ -11,14 +11,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-DG="$PLUGIN_ROOT/plugins/deepgrade"
+DG="$PLUGIN_ROOT/plugins/toque"
 PASS=0; FAIL=0; SKIP=0
 
 pass() { echo "[PASS] $1"; PASS=$((PASS + 1)); }
 fail() { echo "[FAIL] $1"; FAIL=$((FAIL + 1)); }
 skip() { echo "[SKIP] $1"; SKIP=$((SKIP + 1)); }
 
-echo "=== DeepGrade Plugin: Layer 4 - Behavioral Smoke Tests ==="
+echo "=== Toque Plugin: Layer 4 - Behavioral Smoke Tests ==="
 echo ""
 
 DRY_RUN=false
@@ -43,7 +43,7 @@ if [[ -f "$HELP_FILE" ]]; then
 
     # Count commands listed vs command files that exist
     CMD_FILES=$(find "$DG/commands" -name "*.md" ! -name "help.md" | wc -l | tr -d ' ')
-    CMD_LISTED=$(grep -c "/deepgrade:" "$HELP_FILE" | head -1 || echo 0)
+    CMD_LISTED=$(grep -c "/toque:" "$HELP_FILE" | head -1 || echo 0)
     # Commands in help should reference actual command files
     MISSING_REFS=0
     while IFS= read -r CMD_NAME; do
@@ -54,11 +54,11 @@ if [[ -f "$HELP_FILE" ]]; then
         # reference. Widened, not relaxed — an unresolvable name still fails.
         if [[ ! -f "$DG/commands/$CMD_NAME.md" ]] \
            && [[ ! -f "$DG/skills/$CMD_NAME/SKILL.md" ]]; then
-            fail "B1: help.md references /deepgrade:$CMD_NAME but it resolves to neither a command nor a skill"
+            fail "B1: help.md references /toque:$CMD_NAME but it resolves to neither a command nor a skill"
             MISSING_REFS=$((MISSING_REFS + 1))
         fi
-    done < <(grep -o '/deepgrade:[a-z-]*' "$HELP_FILE" | sed 's|/deepgrade:||' | sort -u)
-    [[ $MISSING_REFS -eq 0 ]] && pass "B1: every /deepgrade: reference in help.md resolves to a command or a skill"
+    done < <(grep -o '/toque:[a-z-]*' "$HELP_FILE" | sed 's|/toque:||' | sort -u)
+    [[ $MISSING_REFS -eq 0 ]] && pass "B1: every /toque: reference in help.md resolves to a command or a skill"
 else
     fail "B1: help.md does not exist"
 fi
@@ -194,9 +194,9 @@ PS_MD="$DG/commands/plan-status.md"
 if [[ ! -f "$PS_MD" ]]; then
     fail "B6: commands/plan-status.md is missing"
 else
-    # mktemp -d, not a predictable dg-b6-$$: PIDs recycle, and cleanup is `rm -rf`, so a
+    # mktemp -d, not a predictable tq-b6-$$: PIDs recycle, and cleanup is `rm -rf`, so a
     # stale directory at the reused name would have its contents deleted (Codex F7).
-    B6_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/dg-b6-XXXXXX") || B6_TMP=""
+    B6_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/tq-b6-XXXXXX") || B6_TMP=""
     if [[ -z "$B6_TMP" || ! -d "$B6_TMP" ]]; then
         fail "B6: could not create a temp dir"
     else
@@ -232,10 +232,10 @@ else
     # selected while the real overview was broken (N7). Content-matching is a guess about
     # which block is executable; a marker is a declaration. Requiring exactly one turns an
     # ambiguous refactor into a loud failure instead of a silent wrong subject.
-    b6_marked=$(grep -c '^# dg-test-marker: plan-status-overview' "$PS_MD" || true)
+    b6_marked=$(grep -c '^# tq-test-marker: plan-status-overview' "$PS_MD" || true)
     awk '/^```bash/{inb=1; buf=""; next}
          inb && /^```/{
-           if (buf ~ /^# dg-test-marker: plan-status-overview/) { printf "%s", buf; exit }
+           if (buf ~ /^# tq-test-marker: plan-status-overview/) { printf "%s", buf; exit }
            inb=0; next }
          inb { buf = buf $0 "\n" }' "$PS_MD" > "$B6_TMP/overview.sh"
     if [[ "$b6_marked" -ne 1 ]]; then
@@ -262,7 +262,7 @@ else
             pass "B6: no-arg overview lists the live plan '$B6_PLAN_NAME' and reads phase '$B6_WANT_PHASE' (executed, rc gated)"
         fi
         # Negative direction: with NO plans dir at all, the guard must fire AND exit 0.
-        B6_EMPTY=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/dg-b6e-XXXXXX")
+        B6_EMPTY=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/tq-b6e-XXXXXX")
         cp "$B6_TMP/overview.sh" "$B6_EMPTY/"
         B6_OUT2=$(cd "$B6_EMPTY" && bash overview.sh 2>&1) && B6_RC2=0 || B6_RC2=$?
         if [[ $B6_RC2 -ne 0 ]]; then
@@ -296,7 +296,7 @@ QC_MD="$DG/commands/quick-cleanup.md"
 if [[ ! -f "$QC_MD" ]]; then
     fail "B7: commands/quick-cleanup.md is missing"
 else
-    B7_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/dg-b7-XXXXXX") || B7_TMP=""
+    B7_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/tq-b7-XXXXXX") || B7_TMP=""
     if [[ -z "$B7_TMP" || ! -d "$B7_TMP" ]]; then
         fail "B7: could not create a temp dir"
     else
@@ -392,7 +392,7 @@ PE_MD="$DG/commands/plan-export.md"
 if [[ ! -f "$PE_MD" ]]; then
     fail "B8: commands/plan-export.md is missing"
 else
-    B8_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/dg-b8-XXXXXX") || B8_TMP=""
+    B8_TMP=$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/tq-b8-XXXXXX") || B8_TMP=""
     if [[ -z "$B8_TMP" || ! -d "$B8_TMP" ]]; then
         fail "B8: could not create a temp dir"
     else

@@ -1,7 +1,7 @@
 # Brainstorm: Plugin Hardening v5
 
 Created: 2026-07-20 (Phase 1)
-Source material: structural audit of `deepgrade-plugin` + `troubleshooting-skill` against the
+Source material: structural audit of `toque-plugin` + `troubleshooting-skill` against the
 official Claude Code plugin/skill specification (workflow `wf_f737844e-590`, 142 agents,
 every finding adversarially verified; 88 raw confirmations → 65 unique findings after merging
 cross-auditor duplicates, 4 candidates refuted).
@@ -10,7 +10,7 @@ cross-auditor duplicates, 4 candidates refuted).
 
 ## Problem Statement
 
-DeepGrade v4.31.0 passes `claude plugin validate` and installs cleanly, but a layer of
+Toque v4.31.0 passes `claude plugin validate` and installs cleanly, but a layer of
 **declaration/execution drift** sits on top of a structurally correct plugin. Components are
 registered by frontmatter rather than filename, hooks execute only what is *wired* rather than
 what ships, and tools resolve only by exact identifier — so the plugin can validate, install,
@@ -49,7 +49,7 @@ to signal the gap.
 4. **Honest self-description.** README, GUIDE, CHANGELOG, and `help` state the shipped version,
    the real component counts, and an update procedure that actually delivers updates.
 5. **Resolve the plugin/skill duplication.** The nine troubleshooting technique files that exist
-   in both `deepgrade-plugin/docs/troubleshooting-techniques/` and
+   in both `toque-plugin/docs/troubleshooting-techniques/` and
    `troubleshooting-skill/resources/techniques/` get one canonical source with a defined
    derivation, ending the diverging phase numbering and incompatible KB schemas.
 6. **Prove it.** The existing four-layer test suite passes at HEAD and gains assertions that
@@ -61,7 +61,7 @@ to signal the gap.
 - **Not a feature release.** No new commands, agents, or skills. Scope is conformance and
   correctness only.
 - **Not the low/info backlog.** 32 low/info findings (legacy flat `commands/` layout, ~700 KB of
-  inert payload shipped to installers, TOCs on long reference files, the `(deepgrade)` description
+  inert payload shipped to installers, TOCs on long reference files, the `(toque)` description
   prefix, marketplace discovery metadata) are documented in `research/reference-data.json` under
   `backlog` and deliberately deferred.
 - **Not a methodology rewrite.** `METHODOLOGY.md` and the planning/troubleshooting technique
@@ -73,7 +73,7 @@ to signal the gap.
 
 | # | Question | Why it matters | Resolve in |
 |---|----------|----------------|------------|
-| 1 | Do the `scripts/dg-*.sh` implementations or the inline `plugin.json` one-liners become the source of truth? | Determines whether the drifted features (SubagentStop, build-verify, audit nudge, wider migration coverage) are restored or dropped. Largest single decision in the plan. | Phase 3 options analysis |
+| 1 | Do the `scripts/tq-*.sh` implementations or the inline `plugin.json` one-liners become the source of truth? | Determines whether the drifted features (SubagentStop, build-verify, audit nudge, wider migration coverage) are restored or dropped. Largest single decision in the plan. | Phase 3 options analysis |
 | 2 | Is `plan.md` (F12, 1,529 lines) split into a skill, trimmed in place, or left alone? | Splitting is the spec-idiomatic fix but changes how the flagship workflow is invoked. | Phase 3 options analysis |
 | 3 | Which copy of the nine troubleshooting techniques is canonical — plugin `docs/` or the standalone skill? | Sets the direction of the de-duplication and which phase numbering survives. | Phase 3 options analysis |
 | 4 | Does v5.0.0 signal breaking changes, and do 4.x users need a migration note? | The chosen name implies a major bump; hook relocation and any command changes are user-visible. | Phase 3 / Phase 4 |
@@ -82,7 +82,7 @@ to signal the gap.
 
 ## Constraints
 
-- **Bootstrapping constraint.** `/deepgrade:plan` (`commands/plan.md`) is simultaneously the tool
+- **Bootstrapping constraint.** `/toque:plan` (`commands/plan.md`) is simultaneously the tool
   executing this plan and an in-scope defect (F12, plus stale `valid_commands` allowlists).
   Modifying it mid-plan swaps the workflow out from under the work in progress. It must be
   sequenced last, or executed from a pinned copy while being edited.

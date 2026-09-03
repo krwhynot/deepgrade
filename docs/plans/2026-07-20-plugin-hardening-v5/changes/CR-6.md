@@ -17,7 +17,7 @@ and both controls. F30 accordingly moves into `findings_closed` and PHV5-053 int
 `tickets_complete`.
 **Replaces:** Wave 5 acceptance row 3, verbatim:
 
-> - [ ] F30 stale-reference sweep — no `/deepgrade:doc` or `commands/doc.md` string survives anywhere [G]
+> - [ ] F30 stale-reference sweep — no `/toque:doc` or `commands/doc.md` string survives anywhere [G]
 
 ## The conflict
 
@@ -53,7 +53,7 @@ No **registered command, live product surface, template, agent, or skill referen
 the deleted command. This tests the shipping defect — a user or agent being pointed at something
 that no longer exists — rather than the presence of a byte sequence.
 
-Enforced by resolution, not by string search: every `/deepgrade:*` reference in shipping surfaces
+Enforced by resolution, not by string search: every `/toque:*` reference in shipping surfaces
 must resolve to a `commands/*.md` or `skills/*/SKILL.md` that exists.
 
 ### 2. Occurrence-addressed historical provenance
@@ -88,7 +88,7 @@ Falsifying in both directions, with the control being the half that matters:
 
 | Probe | Required |
 |---|---|
-| Add `/deepgrade:doc` to a shipping surface (README, a template, a skill) | **FAIL** — semantic absence |
+| Add `/toque:doc` to a shipping surface (README, a template, a skill) | **FAIL** — semantic absence |
 | Add a stale instruction under this plan's own directory | **FAIL** — unregistered occurrence |
 | Edit a ledgered file so the recorded hash no longer matches | **FAIL** — stale ledger |
 | Remove a ledgered occurrence but leave the ledger entry | **FAIL** — stale ledger |

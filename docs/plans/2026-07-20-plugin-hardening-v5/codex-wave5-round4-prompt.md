@@ -23,7 +23,7 @@ whether round 3's fixes did better.
 |---|---|
 | N5 — live defect: `commands/codebase-gates.md` named the inert plugin-side hooks path | Path corrected; the F08 sweep now **derives** every component referencing `gate-generator` or `codebase-gates` instead of naming one file |
 | N2 — canary printed *after* the `if`, so it only fired when the condition was true | Printed **before** the matched line; every occurrence instrumented; exactly one marker required or the test fails |
-| N6/N7 — block selection defeated by a decoy | Unique `# dg-test-marker: plan-status-overview` in the product; **exactly one** must match |
+| N6/N7 — block selection defeated by a decoy | Unique `# tq-test-marker: plan-status-overview` in the product; **exactly one** must match |
 | N8 — F15 wrongly routed to PHV5-044 | New **B8** executes the archive branch with `zip` absent and `powershell.exe` stubbed, asserting an archive file exists |
 | N3 — loose harness oracle | Crash detection (`Results:` must appear); controls require **zero** failures, not merely none bearing their tag; a red **final** baseline now fails the run; all mutators refuse a target absent from `FILES` |
 | Over-strict F08 imperative | Now per-line and negation-aware; accepts "For every generated hook, also emit a PowerShell variant" (control Z6) |
@@ -40,7 +40,7 @@ Seven questions. Where you find nothing wrong, say so explicitly rather than pad
 Round 3 listed nine findings as STILL OPEN under a variant, specifically:
 `FOLDER="${@:1:1}"` (F09), `echo '${CLAUDE_PROJECT_DIR}'` (F10), `nice tree .` /
 `builtin tree .` (F15), `Write-Output Compress-Archive` (F15), postposed negation in F28
-("The `deepgrade:mcp-research` skill must never be invoked"), F08 accepting fenced examples,
+("The `toque:mcp-research` skill must never be invoked"), F08 accepting fenced examples,
 `fm_get` on no-frontmatter files with body horizontal rules, `argument-hint: # TODO` and
 `argument-hint: ""`.
 
@@ -87,7 +87,7 @@ I removed `F08`, `F30`, `PHV5-050`, `PHV5-052`, `PHV5-053`.
 
 ### 7. The F30 row conflict — adjudicate it.
 
-The row (`docs/specs/plugin-hardening-v5.md:392`) says no `/deepgrade:doc` or
+The row (`docs/specs/plugin-hardening-v5.md:392`) says no `/toque:doc` or
 `commands/doc.md` string survives **anywhere**. The guard allowlists this plan's own directory
 and spec, because those records quote the strings in order to document the deletion. Both
 cannot be true.

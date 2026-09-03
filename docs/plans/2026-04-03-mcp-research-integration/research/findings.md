@@ -3,7 +3,7 @@ Date: 2026-04-03
 
 ## Summary
 
-Three MCP search tools (Ref, Exa, Perplexity) can be integrated into the DeepGrade plugin as optional enhancements. The plugin's architecture already supports conditional tool usage via prose-fallback patterns. The primary risk is token budget at runtime (3,150 tokens for tool descriptions), but plugin-level overhead stays under 200 tokens.
+Three MCP search tools (Ref, Exa, Perplexity) can be integrated into the Toque plugin as optional enhancements. The plugin's architecture already supports conditional tool usage via prose-fallback patterns. The primary risk is token budget at runtime (3,150 tokens for tool descriptions), but plugin-level overhead stays under 200 tokens.
 
 ## Codebase
 

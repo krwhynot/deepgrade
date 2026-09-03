@@ -1,0 +1,18 @@
+{
+  "name": "toque-readiness",
+  "version": "9.0.0",
+  "description": "Toque AI-readiness scanning: 52 checks across 9 categories score how well an AI agent can read and navigate a codebase, with a composite letter grade and generated scaffolding for the gaps. Stack-agnostic.",
+  "author": {
+    "name": "Kyle Whynot",
+    "url": "https://github.com/krwhynot"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ai-readiness",
+    "codebase-grading",
+    "scanning",
+    "developer-toolkit"
+  ],
+  "repository": "https://github.com/krwhynot/toque",
+  "homepage": "https://github.com/krwhynot/toque#readme"
+}

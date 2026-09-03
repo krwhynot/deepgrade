@@ -47,10 +47,10 @@ BASE=$(git rev-parse HEAD)
 # into every violation's sed; the first release bump would have turned each sed
 # into a no-op, every "violation" into a clean tree that check rightly accepts,
 # and layer 8 red — aborting release.sh mid-run on a half-bumped tree.
-CUR=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' plugins/deepgrade/.claude-plugin/plugin.json | head -1 | sed 's/.*"\([0-9][^"]*\)"$/\1/')
+CUR=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' plugins/toque/.claude-plugin/plugin.json | head -1 | sed 's/.*"\([0-9][^"]*\)"$/\1/')
 CUR_RE=${CUR//./\\.}
 if [ -z "$CUR" ]; then
-  fail "current version not derivable from plugins/deepgrade manifest — every violation below would be vacuous"
+  fail "current version not derivable from plugins/toque manifest — every violation below would be vacuous"
   echo "Results: $PASS passed, $((FAIL)) failed"
   exit 1
 fi
@@ -88,12 +88,12 @@ violation "V1: root README version drift refused" "version|drift"
 
 # V1b: a PLUGIN's README drifts — the split's per-plugin quartet loop must
 # refuse this on its own; the root README is clean in this case.
-sed -i "s/^Current: v$CUR_RE/Current: v0.0.1/" plugins/deepgrade/README.md
+sed -i "s/^Current: v$CUR_RE/Current: v0.0.1/" plugins/toque/README.md
 git commit -qam "v1b"
 violation "V1b: plugin README version drift refused" "version|drift"
 
 # V2: a manifest disagrees — the lockstep rule, load-bearing at three manifests.
-sed -i "s/\"version\": \"$CUR_RE\"/\"version\": \"0.0.1\"/" plugins/deepgrade-audit/.claude-plugin/plugin.json
+sed -i "s/\"version\": \"$CUR_RE\"/\"version\": \"0.0.1\"/" plugins/toque-audit/.claude-plugin/plugin.json
 git commit -qam "v2"
 violation "V2: manifest out of lockstep refused" "lockstep|version"
 

@@ -47,7 +47,7 @@ authoritative anywhere.**
 
 | Side | Captured from | Tracked before this commit? |
 |------|---------------|-----------------------------|
-| `plugin-side/` | `deepgrade-plugin/docs/troubleshooting-techniques/` | Yes (tracked in this repo) |
+| `plugin-side/` | `toque-plugin/docs/troubleshooting-techniques/` | Yes (tracked in this repo) |
 | `skill-side/` | `Projects/plugin/troubleshooting-skill/` — **outside this repo, unversioned** | **No — this is the R11 exposure these snapshots close** |
 
 Both copies verified **byte-identical** to their sources at capture (`diff -r`, clean on both sides).

@@ -5,7 +5,7 @@
 #   - line-ending policy (§14, A1/CR-2/CR-3) — derived from the tracked tree
 #   - F30 stale-reference sweep (§18) — every tracked .md
 #   - the PH5 sentinels (PH5-001..PH5-060) — the verifier-gate invariants; their
-#     subject files live in the deepgrade plugin but the restatement/count sweeps
+#     subject files live in the toque plugin but the restatement/count sweeps
 #     cover every tracked doc across all plugin dirs
 #   - the root-doc claim sweep (§16) — root-level docs sit outside every plugin,
 #     so the per-plugin core pass cannot see them
@@ -119,7 +119,7 @@ fi
 # ===========================================================================
 # 18. F30 stale-reference sweep — enforced LITERALLY, no exemptions.
 #
-# The acceptance row is class G and absolute: "no `/deepgrade:doc` or `commands/doc.md`
+# The acceptance row is class G and absolute: "no `/toque:doc` or `commands/doc.md`
 # string survives anywhere". No guard existed; I had closed F30 on having deleted the
 # file, and three references survived.
 #
@@ -162,14 +162,14 @@ done
 # fails both directions at once. The ledger stores hashes, never the tokens, so it
 # is not an occurrence; this script is not swept (subjects are tracked .md).
 F30_LEDGER="tests/fixtures/f30-provenance-ledger.tsv"
-f30_re='/deepgrade:doc\b|commands/doc\.md'
+f30_re='/toque:doc\b|commands/doc\.md'
 f30_hash() { printf '%s' "$1" | tr -d '\r' | sha256sum | cut -d' ' -f1; }
 
 # Instruments proven before their silence is trusted: the regex must fire on the
 # real token and stay quiet on the near-miss; the hasher must distinguish lines.
-printf '%s\n' 'see /deepgrade:doc for usage' | grep -qE "$f30_re" \
+printf '%s\n' 'see /toque:doc for usage' | grep -qE "$f30_re" \
   || { fail "F30: token regex fails its known-positive — the sweep would be vacuous"; f30_bad=1; }
-printf '%s\n' 'see /deepgrade:documentation for usage' | grep -qE "$f30_re" \
+printf '%s\n' 'see /toque:documentation for usage' | grep -qE "$f30_re" \
   && { fail "F30: token regex matches the LIVE documentation skill name — it would flag legitimate references"; f30_bad=1; }
 [ "$(f30_hash 'line A')" != "$(f30_hash 'line B')" ] \
   || { fail "F30: line hasher cannot distinguish lines — ledger lookups would be vacuous"; f30_bad=1; }
@@ -246,7 +246,7 @@ fi
 # ===========================================================================
 lint_hits=$(mktemp)
 lint_bad=0
-LINT_REGISTRY="plugins/deepgrade/docs/planning-techniques/lint-registry.md"
+LINT_REGISTRY="plugins/toque/docs/planning-techniques/lint-registry.md"
 
 # Subject set: tracked .md that GOVERNS behaviour, minus the registry itself.
 # Files under docs/plans/ are records of audits that already ran; they restate the
@@ -307,7 +307,7 @@ fi
 # text a judge actually applies, so nothing may follow a LINT id but the id.
 git ls-files -z 'plugins/*/commands/*.md' 'plugins/*/agents/*.md' 'plugins/*/skills/plan/*.md' 'plugins/*/skills/plan/stages/*.md' 2>/dev/null | lint_extract | sort -u > "$lint_hits"
 
-for must in plugins/deepgrade/skills/plan/stages/stage-2-design.md plugins/deepgrade/agents/plan-auditor.md; do
+for must in plugins/toque/skills/plan/stages/stage-2-design.md plugins/toque/agents/plan-auditor.md; do
   git ls-files -z 'plugins/*/commands/*.md' 'plugins/*/agents/*.md' 'plugins/*/skills/plan/*.md' 'plugins/*/skills/plan/stages/*.md' 2>/dev/null | tr '\0' '\n' | grep -qxF "$must" \
     || { fail "PH5-001a: $must is not in the machine-read set — the derivation is wrong, not the repo clean"; lint_bad=1; }
 done
@@ -358,7 +358,7 @@ rm -f "$lint_hits" "$lint_reg" "$lint_hf" "$lint_drift"
 # PH5-002 / acceptance row A1: rule COUNTS live only in the registry.
 #
 # Rule text was not the only thing that drifted. Four different Phase 5 counts were
-# in print at once — 14 in plugins/deepgrade/skills/plan/stages/stage-2-design.md, 14 and 15 in plugins/deepgrade/agents/plan-auditor.md,
+# in print at once — 14 in plugins/toque/skills/plan/stages/stage-2-design.md, 14 and 15 in plugins/toque/agents/plan-auditor.md,
 # 16 in the registry, 15 in METHODOLOGY.md — plus a fifth ("13 in Lite mode") in the
 # same METHODOLOGY sentence. A count is a claim about the rule SET, so it belongs
 # where the set is defined.
@@ -425,7 +425,7 @@ rm -f "$lint_counts"
 # ===========================================================================
 # PH5-013 / acceptance row A3: the judge is never told what passing costs.
 #
-# plugins/deepgrade/agents/plan-auditor.md used to carry the band table verbatim — "Interpret: 32-40
+# plugins/toque/agents/plan-auditor.md used to carry the band table verbatim — "Interpret: 32-40
 # = Green, 24-31 = Yellow" — so the evaluator knew the exact total the plan needed.
 # Naming the desired outcome to a grader is the sycophancy channel: an instruction-
 # following model produces a justification for the wanted verdict rather than a
@@ -452,7 +452,7 @@ if printf '%s\n' 'Rate each dimension 1-5 and give reasoning before the score.' 
 fi
 
 # Judge-visible set. Anything the evaluator reads as instructions belongs here.
-JUDGE_FILES="plugins/deepgrade/agents/plan-auditor.md"
+JUDGE_FILES="plugins/toque/agents/plan-auditor.md"
 for jf in $JUDGE_FILES; do
   if [ ! -f "$jf" ]; then
     fail "PH5-013: judge file $jf not found — the subject set is wrong, not the repo clean"
@@ -472,7 +472,7 @@ done
 # ===========================================================================
 # PH5-010 / acceptance row A3: audit criteria are not in the generator's reach.
 #
-# plugins/deepgrade/skills/plan/stages/stage-2-design.md is what the Phase 4 generator reads. It carried a full copy of
+# plugins/toque/skills/plan/stages/stage-2-design.md is what the Phase 4 generator reads. It carried a full copy of
 # the scoring rubric and the gap matrices — the 1-5 anchors, the Scenario Matrix with
 # its eight scenarios named, the Cross-Cutting Sweep with its concerns named. A
 # generator holding that list writes sections matching the list, which is compliance
@@ -503,7 +503,7 @@ if printf '%s\n' 'Set iterations = 2 when the loop re-runs.' | grep -qE "$anchor
 fi
 
 # --- generator side: the criteria must be absent -------------------------
-GENERATOR_FILES="plugins/deepgrade/skills/plan/SKILL.md plugins/deepgrade/skills/plan/stages/*.md plugins/deepgrade/commands/quick-plan.md plugins/deepgrade/agents/plan-scaffolder.md"
+GENERATOR_FILES="plugins/toque/skills/plan/SKILL.md plugins/toque/skills/plan/stages/*.md plugins/toque/commands/quick-plan.md plugins/toque/agents/plan-scaffolder.md"
 for gf in $GENERATOR_FILES; do
   [ -f "$gf" ] || { fail "PH5-010: generator file $gf not found — the subject set is wrong, not the repo clean"; crit_bad=1; continue; }
   for probe in "$anchor_re:scoring anchor" "$scen_re:Scenario Matrix criteria" "$conc_re:Cross-Cutting criteria"; do
@@ -521,16 +521,16 @@ done
 # 8.0.0: the 1-5 anchors are gone with the score. The judge-side floor is now the
 # eight review dimensions themselves (numbered H2 headings with their question
 # lists), which is where the criteria moved to.
-ja=$(grep -cE '^## [1-8]\. ' plugins/deepgrade/agents/plan-auditor.md || true)
+ja=$(grep -cE '^## [1-8]\. ' plugins/toque/agents/plan-auditor.md || true)
 if [ "${ja:-0}" -lt 8 ]; then
   crit_bad=1
-  fail "PH5-010: plugins/deepgrade/agents/plan-auditor.md holds only ${ja:-0} of 8 review dimensions — the criteria were deleted, not moved"
+  fail "PH5-010: plugins/toque/agents/plan-auditor.md holds only ${ja:-0} of 8 review dimensions — the criteria were deleted, not moved"
 fi
 for probe in "$scen_re:Scenario Matrix" "$conc_re:Cross-Cutting Sweep"; do
   re="${probe%:*}"; what="${probe##*:}"
-  if ! grep -qE "$re" plugins/deepgrade/agents/plan-auditor.md; then
+  if ! grep -qE "$re" plugins/toque/agents/plan-auditor.md; then
     crit_bad=1
-    fail "PH5-010: plugins/deepgrade/agents/plan-auditor.md no longer defines the $what — the criteria were deleted, not moved"
+    fail "PH5-010: plugins/toque/agents/plan-auditor.md no longer defines the $what — the criteria were deleted, not moved"
   fi
 done
 
@@ -557,7 +557,7 @@ done
 # The count floor is what stops an empty block from passing.
 # ===========================================================================
 fi_bad=0
-FI_FILE="plugins/deepgrade/agents/plan-auditor.md"
+FI_FILE="plugins/toque/agents/plan-auditor.md"
 fi_open=$(grep -c '^<forbidden_inputs>$' "$FI_FILE" || true)
 fi_close=$(grep -c '^</forbidden_inputs>$' "$FI_FILE" || true)
 fi_rules=$(grep -cE '^NEVER read: ' "$FI_FILE" || true)
@@ -597,7 +597,7 @@ fi
 # a sentence-initial imperative for the same negation-proofing reason as PH5-011.
 # ===========================================================================
 iso_bad=0
-ISO_FILE="plugins/deepgrade/skills/plan/stages/stage-2-design.md"
+ISO_FILE="plugins/toque/skills/plan/stages/stage-2-design.md"
 iso_re='^SPAWN A NEW plan-auditor INSTANCE'
 
 if ! printf '%s\n' 'SPAWN A NEW plan-auditor INSTANCE for every audit iteration.' | grep -qE "$iso_re"; then
@@ -618,8 +618,8 @@ fi
 # Cross-side floor: the command's respawn is worth little if the agent will happily
 # read the prior audit anyway. That rule is PH5-011's third entry; assert it is still
 # there, so removing it cannot leave this guard green.
-if ! grep -qE '^NEVER read: scores, verdicts or audit\.md files from a previous iteration' plugins/deepgrade/agents/plan-auditor.md; then
-  fail "PH5-012: plugins/deepgrade/agents/plan-auditor.md no longer refuses prior-iteration scores — the respawn alone does not isolate the judge"
+if ! grep -qE '^NEVER read: scores, verdicts or audit\.md files from a previous iteration' plugins/toque/agents/plan-auditor.md; then
+  fail "PH5-012: plugins/toque/agents/plan-auditor.md no longer refuses prior-iteration scores — the respawn alone does not isolate the judge"
   iso_bad=1
 fi
 
@@ -642,7 +642,7 @@ fi
 # rather than merely requested.
 # ===========================================================================
 vs_bad=0
-VS_FILE="plugins/deepgrade/agents/plan-auditor.md"
+VS_FILE="plugins/toque/agents/plan-auditor.md"
 vs_block=$(sed -n '/^<verdict_schema>$/,/^<\/verdict_schema>$/p' "$VS_FILE" 2>/dev/null)
 forbidden_key='"(total|total_score|points|points_awarded|pass_threshold|overall)"[[:space:]]*:'
 
@@ -708,12 +708,12 @@ emit_bad=0
 PH5_021_LINE='WRITE one evidence record per criterion to evidence/{criterion_id}.json before reporting anything.'
 PH5_022_LINE='COMMIT the evidence directory together with audit.md. An audit whose evidence is not committed did not happen.'
 
-if ! grep -qxF "$PH5_021_LINE" plugins/deepgrade/agents/plan-auditor.md; then
-  fail "PH5-021: plugins/deepgrade/agents/plan-auditor.md does not require emitting evidence records — the validator has no input, so the gate cannot open"
+if ! grep -qxF "$PH5_021_LINE" plugins/toque/agents/plan-auditor.md; then
+  fail "PH5-021: plugins/toque/agents/plan-auditor.md does not require emitting evidence records — the validator has no input, so the gate cannot open"
   emit_bad=1
 fi
-if ! grep -qxF "$PH5_022_LINE" plugins/deepgrade/skills/plan/stages/stage-2-design.md; then
-  fail "PH5-022: plugins/deepgrade/skills/plan/stages/stage-2-design.md does not require committing the evidence directory — evidence that is not committed cannot be re-checked later"
+if ! grep -qxF "$PH5_022_LINE" plugins/toque/skills/plan/stages/stage-2-design.md; then
+  fail "PH5-022: plugins/toque/skills/plan/stages/stage-2-design.md does not require committing the evidence directory — evidence that is not committed cannot be re-checked later"
   emit_bad=1
 fi
 
@@ -736,10 +736,10 @@ fi
 # ===========================================================================
 gate_bad=0
 GATE_LINE='PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK'
-gate_block=$(sed -n '/^<gate_expression>$/,/^<\/gate_expression>$/p' plugins/deepgrade/skills/plan/stages/stage-2-design.md 2>/dev/null)
+gate_block=$(sed -n '/^<gate_expression>$/,/^<\/gate_expression>$/p' plugins/toque/skills/plan/stages/stage-2-design.md 2>/dev/null)
 
 if [ -z "$gate_block" ]; then
-  fail "PH5-041: plugins/deepgrade/skills/plan/stages/stage-2-design.md has no delimited <gate_expression> block"
+  fail "PH5-041: plugins/toque/skills/plan/stages/stage-2-design.md has no delimited <gate_expression> block"
   gate_bad=1
 else
   printf '%s\n' "$gate_block" | grep -qxF "$GATE_LINE" \
@@ -756,10 +756,10 @@ else
 fi
 
 # The superseded form must be gone, not merely superseded by a newer block below it.
-if grep -qE '^IF score (>=|<) [0-9]+' plugins/deepgrade/skills/plan/stages/stage-2-design.md; then
+if grep -qE '^IF score (>=|<) [0-9]+' plugins/toque/skills/plan/stages/stage-2-design.md; then
   gate_bad=1
-  fail "PH5-041: the score-based gate branch is still present in plugins/deepgrade/skills/plan/stages/stage-2-design.md"
-  grep -nE '^IF score (>=|<) [0-9]+' plugins/deepgrade/skills/plan/stages/stage-2-design.md | sed 's/^/           /' | head -4
+  fail "PH5-041: the score-based gate branch is still present in plugins/toque/skills/plan/stages/stage-2-design.md"
+  grep -nE '^IF score (>=|<) [0-9]+' plugins/toque/skills/plan/stages/stage-2-design.md | sed 's/^/           /' | head -4
 fi
 
 [ "$gate_bad" -eq 0 ] && pass "PH5-041: the gate keys on canary, evidence, verdicts and infra — not on a score"
@@ -773,7 +773,7 @@ fi
 # UNMET: Phase 2 migration has no rollback step" names a defect it can actually fix.
 # ===========================================================================
 fb_bad=0
-fb_block=$(sed -n '/^<revision_feedback>$/,/^<\/revision_feedback>$/p' plugins/deepgrade/skills/plan/stages/stage-2-design.md 2>/dev/null)
+fb_block=$(sed -n '/^<revision_feedback>$/,/^<\/revision_feedback>$/p' plugins/toque/skills/plan/stages/stage-2-design.md 2>/dev/null)
 fb_forbidden='dimension|score|/40|points|threshold|GREEN|YELLOW|ORANGE'
 
 if ! printf '%s\n' 'Dimension 4 scored 2 — improve rollback coverage.' | grep -qEi "$fb_forbidden"; then
@@ -786,7 +786,7 @@ if printf '%s\n' 'LINT-03 UNMET: Phase 2 migration has no rollback step. Locatio
 fi
 
 if [ -z "$fb_block" ]; then
-  fail "PH5-040: plugins/deepgrade/skills/plan/stages/stage-2-design.md has no delimited <revision_feedback> block defining what goes back to the generator"
+  fail "PH5-040: plugins/toque/skills/plan/stages/stage-2-design.md has no delimited <revision_feedback> block defining what goes back to the generator"
   fb_bad=1
 else
   offend=$(printf '%s\n' "$fb_block" | grep -nEi "$fb_forbidden" || true)
@@ -818,9 +818,9 @@ fi
 # mentions the word "waiver" — a mention survives the rule being deleted.
 # ===========================================================================
 wv_bad=0
-wv_block=$(sed -n '/^<waiver_condition>$/,/^<\/waiver_condition>$/p' plugins/deepgrade/skills/plan/stages/stage-2-design.md 2>/dev/null)
+wv_block=$(sed -n '/^<waiver_condition>$/,/^<\/waiver_condition>$/p' plugins/toque/skills/plan/stages/stage-2-design.md 2>/dev/null)
 if [ -z "$wv_block" ]; then
-  fail "PH5-060: plugins/deepgrade/skills/plan/stages/stage-2-design.md has no delimited <waiver_condition> block"
+  fail "PH5-060: plugins/toque/skills/plan/stages/stage-2-design.md has no delimited <waiver_condition> block"
   wv_bad=1
 else
   for term in 'infra_gaps == 0' 'evidence_demotions == 0' 'canary_found == true'; do
@@ -840,10 +840,10 @@ fi
 # ===========================================================================
 hol_bad=0
 HOL_LINE='RUN one additional judge with no rubric, no criterion list, and no dimension names.'
-grep -qxF "$HOL_LINE" plugins/deepgrade/skills/plan/stages/stage-2-design.md \
-  || { fail "PH5-050: plugins/deepgrade/skills/plan/stages/stage-2-design.md does not run a rubric-free pass — nothing checks the criteria for completeness"; hol_bad=1; }
-[ -f plugins/deepgrade/docs/planning-techniques/lint-candidates.md ] \
-  || { fail "PH5-050: plugins/deepgrade/docs/planning-techniques/lint-candidates.md missing — unmapped findings have nowhere to land"; hol_bad=1; }
+grep -qxF "$HOL_LINE" plugins/toque/skills/plan/stages/stage-2-design.md \
+  || { fail "PH5-050: plugins/toque/skills/plan/stages/stage-2-design.md does not run a rubric-free pass — nothing checks the criteria for completeness"; hol_bad=1; }
+[ -f plugins/toque/docs/planning-techniques/lint-candidates.md ] \
+  || { fail "PH5-050: plugins/toque/docs/planning-techniques/lint-candidates.md missing — unmapped findings have nowhere to land"; hol_bad=1; }
 [ "$hol_bad" -eq 0 ] && pass "PH5-050: a rubric-free pass runs and its unmapped findings land in lint-candidates.md"
 
 # ===========================================================================
@@ -853,7 +853,7 @@ grep -qxF "$HOL_LINE" plugins/deepgrade/skills/plan/stages/stage-2-design.md \
 # asserts the removal held.
 # ===========================================================================
 score_bad=0
-for sf in plugins/deepgrade/skills/plan/SKILL.md plugins/deepgrade/skills/plan/stages/*.md plugins/deepgrade/agents/plan-auditor.md; do
+for sf in plugins/toque/skills/plan/SKILL.md plugins/toque/skills/plan/stages/*.md plugins/toque/agents/plan-auditor.md; do
   hits=$(grep -nE 'score_history|/40\b|[0-9]+-[0-9]+ = (GREEN|YELLOW|ORANGE|RED)' "$sf" || true)
   [ -n "$hits" ] && { fail "PH5-051: $sf still carries scoring vocabulary: $(printf '%s' "$hits" | head -1)"; score_bad=1; }
 done
@@ -898,7 +898,7 @@ claim_absent "root docs: no jq/grep+sed fallback ladder as current" \
 claim_absent "root docs: no hooks-inline-in-plugin.json claim" \
   'hooks are (defined |declared )?inline|inline hook definitions|inline in .?plugin\.json' || conf_bad=1
 claim_absent "root docs: no reference to a deleted .sh handler" \
-  'scripts/dg-[a-z-]+\.sh' || conf_bad=1
+  'scripts/tq-[a-z-]+\.sh' || conf_bad=1
 claim_absent "root docs: no untrue force-with-lease claim" \
   'does not block .?--force-with-lease.? \(untrue\)' || conf_bad=1
 
@@ -910,9 +910,9 @@ if [ -n "$root_auto" ]; then
 else
   pass "F04: no 'picks up changes automatically' claim in root docs"
 fi
-root_bare=$(grep -nE "/plugin install (deepgrade|deepgrade-readiness|deepgrade-audit)([[:space:]]|\$)" $DOC_FILES 2>/dev/null | head -1)
+root_bare=$(grep -nE "/plugin install (toque|toque-readiness|toque-audit)([[:space:]]|\$)" $DOC_FILES 2>/dev/null | head -1)
 if [ -n "$root_bare" ]; then
-  fail "F04: unqualified install command in a root doc (missing @deepgrade-marketplace): $root_bare"
+  fail "F04: unqualified install command in a root doc (missing @toque-marketplace): $root_bare"
 else
   pass "F04: all install commands in root docs are marketplace-qualified"
 fi
@@ -920,7 +920,7 @@ fi
 # ===========================================================================
 # SPLIT-1: the self-audit-knowledge mirror is byte-identical (split step 4).
 #
-# deepgrade-audit ships a MIRROR of deepgrade's self-audit-knowledge skill so
+# toque-audit ships a MIRROR of toque's self-audit-knowledge skill so
 # each plugin resolves the skill under its own namespace. Two copies of one
 # text is exactly the drift species PH5-001 exists to kill, so the mirror is
 # tolerated only under a byte-identity guard: edit both or neither.
@@ -936,8 +936,8 @@ fi
 echo ""
 echo "--- Split invariants ---"
 
-SAK_A="plugins/deepgrade/skills/self-audit-knowledge"
-SAK_B="plugins/deepgrade-audit/skills/self-audit-knowledge"
+SAK_A="plugins/toque/skills/self-audit-knowledge"
+SAK_B="plugins/toque-audit/skills/self-audit-knowledge"
 sak_bad=0
 for d in "$SAK_A" "$SAK_B"; do
   [ -f "$d/SKILL.md" ] || { fail "SPLIT-1: $d/SKILL.md is missing — the mirror pair is broken, not clean"; sak_bad=1; }
@@ -965,7 +965,7 @@ fi
 # The release script enforces this at release time; this copy enforces it on
 # every suite run, so a drifted manifest is caught in the PR that drifts it
 # rather than on release day. The count is EXACTLY three (four until
-# deepgrade-guard was retired in 9.0.0) — adding or removing a plugin is a
+# toque-guard was retired in 9.0.0) — adding or removing a plugin is a
 # deliberate decision that must update this number in the same commit.
 # ===========================================================================
 split_manifests=$(git ls-files '*/.claude-plugin/plugin.json')
@@ -986,7 +986,7 @@ fi
 # ===========================================================================
 # SPLIT-3: every namespaced reference resolves against its own plugin.
 #
-# After the split, `/deepgrade-audit:codebase-audit` is a claim that a file
+# After the split, `/toque-audit:codebase-audit` is a claim that a file
 # exists in ANOTHER plugin's directory — nothing else checks cross-plugin
 # references (help.md's 5c and the template check resolve only same-plugin
 # names). A rename on one side of the boundary must fail every referring
@@ -995,23 +995,23 @@ fi
 # Subjects: every tracked .md under plugins/ plus the root README. docs/plans
 # and the CHANGELOG are historical records; docs/specs quote old namespaces by
 # design. Longest-alternative-first is cosmetic — grep -E is leftmost-longest,
-# so 'deepgrade' can never shadow 'deepgrade-audit' at the same position.
+# so 'toque' can never shadow 'toque-audit' at the same position.
 # ===========================================================================
-ns_re='(deepgrade-readiness|deepgrade-audit|deepgrade):[a-z][a-z0-9-]*'
+ns_re='(toque-readiness|toque-audit|toque):[a-z][a-z0-9-]*'
 
 # Self-tests. The known-positive is drawn from the LIVE artifact (help.md), not
 # authored here — a known-positive written alongside the pattern shares its
 # blind spots (the F06 lesson). The known-negative proves the resolver can
 # refuse: a real namespace with a sibling's command name must NOT resolve.
-ns_kp=$(grep -ohE "$ns_re" plugins/deepgrade/commands/help.md 2>/dev/null | grep -m1 '^deepgrade-readiness:')
+ns_kp=$(grep -ohE "$ns_re" plugins/toque/commands/help.md 2>/dev/null | grep -m1 '^toque-readiness:')
 if [ -z "$ns_kp" ]; then
   fail "SPLIT-3: extractor finds no cross-plugin token in help.md, which maps the whole toolkit — the pattern collapsed, so a clean sweep would be vacuous"
 fi
 ns_resolves() {  # ns_resolves <ns> <name> -> 0 if the name exists in that plugin
   [ -f "plugins/$1/commands/$2.md" ] || [ -f "plugins/$1/skills/$2/SKILL.md" ]
 }
-if ns_resolves "deepgrade-readiness" "plan"; then
-  fail "SPLIT-3: resolver accepts deepgrade-readiness:plan, which does not exist — it can no longer refuse anything"
+if ns_resolves "toque-readiness" "plan"; then
+  fail "SPLIT-3: resolver accepts toque-readiness:plan, which does not exist — it can no longer refuse anything"
 fi
 
 ns_bad=0
@@ -1190,7 +1190,7 @@ else
   #     one. An artifact referenced from functional files of 2+ plugins is an
   #     edge whether or not anyone wrote it down.
   it_tmp=$(mktemp)
-  for it_p in deepgrade deepgrade-readiness deepgrade-audit; do
+  for it_p in toque toque-readiness toque-audit; do
     git ls-files -z "plugins/$it_p/commands/*" "plugins/$it_p/agents/*" \
                     "plugins/$it_p/skills/*" "plugins/$it_p/scripts/*" 2>/dev/null \
       | xargs -0 -r grep -ohE "$it_path_re" 2>/dev/null | sort -u | sed "s|^|$it_p |"
@@ -1225,7 +1225,7 @@ fi
 #     is the one MACHINE-read cross-plugin artifact, so its contract is keys,
 #     not prose: the fixture must parse, carry every load-bearing key a
 #     consumer extracts, and agree with the producer's schema block.
-IT_SCAN="plugins/deepgrade-readiness/commands/readiness-scan.md"
+IT_SCAN="plugins/toque-readiness/commands/readiness-scan.md"
 if [ ! -f "$IT_FIX" ]; then
   fail "INTEROP-3: fixture $IT_FIX is missing"
 elif ! command -v jq >/dev/null 2>&1; then
@@ -1254,7 +1254,7 @@ else
   # an LLM-to-LLM contract are tolerant, so the drift had no symptom. The
   # templates now say points/max; this ban keeps the dead vocabulary from
   # creeping back in either the templates or the fixture.
-  it_vocab=$(grep -rln 'max_score' plugins/deepgrade-readiness/ tests/fixtures/interop/ 2>/dev/null)
+  it_vocab=$(grep -rln 'max_score' plugins/toque-readiness/ tests/fixtures/interop/ 2>/dev/null)
   if [ -n "$it_vocab" ]; then
     for it_v in $it_vocab; do
       fail "INTEROP-3: $it_v says 'max_score' — the ratified check-element vocabulary is points/max"
@@ -1279,7 +1279,7 @@ else
   fi
 
   # The consumer's extraction must name a key the schema still declares.
-  if ! grep -q 'timestamp' plugins/deepgrade-audit/agents/delta-scanner.md; then
+  if ! grep -q 'timestamp' plugins/toque-audit/agents/delta-scanner.md; then
     fail "INTEROP-3: delta-scanner no longer extracts 'timestamp' — the scan-age contract is broken on the consumer side"
   elif ! echo "$it_fix_keys" | grep -qx 'timestamp'; then
     fail "INTEROP-3: 'timestamp' missing from the fixture keys — the scan-age contract is broken on the producer side"
@@ -1295,8 +1295,8 @@ echo "==========================================="
 echo "Subtotal (repo): $PASS passed, $FAIL failed, $WARN warnings"
 echo "==========================================="
 
-if [ -n "${DG_COUNTS_FILE:-}" ]; then
-  printf 'repo %s %s\n' "$PASS" "$FAIL" >> "$DG_COUNTS_FILE"
+if [ -n "${TQ_COUNTS_FILE:-}" ]; then
+  printf 'repo %s %s\n' "$PASS" "$FAIL" >> "$TQ_COUNTS_FILE"
 fi
 
 if [ "$FAIL" -gt 0 ]; then

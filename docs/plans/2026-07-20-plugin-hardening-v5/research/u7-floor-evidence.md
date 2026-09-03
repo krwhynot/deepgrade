@@ -18,7 +18,7 @@ eight behaviors, so it can only be ≥ 2.1.145.
 Behavior 8 was pinned in v9 as "pinned **GitHub source object** resolution". The catalog moved
 to **`git-subdir` sources with explicit https URLs** after the 7.0.0 install verification
 (PR #3), so behavior 8 is probed as what users actually install today: `plugin marketplace add
-krwhynot/deepgrade` followed by `plugin install deepgrade@deepgrade-marketplace`, verified by
+krwhynot/toque` followed by `plugin install toque@toque-marketplace`, verified by
 the scratch registry recording the current pin's `gitCommitSha`
 (`18490fbb3351ea87927d157893db872b0b1b414b`, the v7.1.0 release commit). The v9 rule carries
 over unchanged: a floor that validates hooks but cannot install the pinned source is not a floor.
@@ -54,8 +54,8 @@ Representative verbatim outputs (2.1.145):
 ```
 version: 2.1.145 (Claude Code)
 validate root: ✔ Validation passed
-mkt add: ✔ Successfully added marketplace: deepgrade-marketplace (declared in user settings)
-install: Installing plugin "deepgrade@deepgrade-marketplace"...✔ Successfully installed plugin: deepgrade@deepgrade-marketplace (scope: user)
+mkt add: ✔ Successfully added marketplace: toque-marketplace (declared in user settings)
+install: Installing plugin "toque@toque-marketplace"...✔ Successfully installed plugin: toque@toque-marketplace (scope: user)
 VERDICT 2.1.145 B5:PASS B8:PASS
 ```
 

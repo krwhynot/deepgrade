@@ -85,7 +85,7 @@ recorded · CI green under the comparator · all 22 snapshots + hashes committed
 **PHV5-010 — F29 + F31: template phantom agents + dead commands** · Band: small
 4 template files under `skills/documentation/resources/`. AC: every "Deploy the X agent" names an agent existing
 in `agents/` (fails at HEAD on 4 names); no `/audit`, `/create-prd`, `/create-brd`, `/create-adr` — only
-namespaced `/deepgrade:*` from the SKILL.md whitelist.
+namespaced `/toque:*` from the SKILL.md whitelist.
 
 **PHV5-011 — F17: agent name/filename drift (atomic)** · Band: small
 5 agent files + callers `readiness-scan.md`, `codebase-audit.md`. Frontmatter `name` == filename for every
@@ -121,7 +121,7 @@ rule remains; **convention text matches F21's (same-string check) or the defect 
 stays — it is correct). `layer1:248` cross-checks README↔CHANGELOG, so the pair is atomic. **Then empty
 `tests/expected-failures.txt`** — CI becomes plainly green.
 **PHV5-031 — F20A + F04** · Band: small — GUIDE version/counts/"9-phase"; update-flow docs: no "picks up changes
-automatically", installs use `@deepgrade-marketplace`, live-edit only for `--plugin-dir`.
+automatically", installs use `@toque-marketplace`, live-edit only for `--plugin-dir`.
 
 **Wave 3 go/no-go:** suite green with an **empty** expected-failures file (the 4 baseline reds cleared, no new ones).
 
@@ -130,13 +130,13 @@ automatically", installs use `@deepgrade-marketplace`, live-edit only for `--plu
 Rollback: 4a is inert until 4b; 4b is **one commit** — single revert + `/reload-plugins` restores the old hooks.
 Independent review (§10.4) runs **after 4c**, covering 4a–4c with runtime artifacts pinned.
 
-**PHV5-040 — 4a: port + behavior ledger (lane N: 8 scripts → `scripts/dg-*.js`)** · Band: large (decomposed §9.3:
+**PHV5-040 — 4a: port + behavior ledger (lane N: 8 scripts → `scripts/tq-*.js`)** · Band: large (decomposed §9.3:
 blocking guards medium + informational handlers medium + host/degradation proof small)
 All 11 ledger rows (§3.1.4) satisfied in the surviving implementation — including row 1 (DB-deploy guard runs
-**before** the non-git early-exit; `dg-git-guard.sh:27` pattern makes anything below it dead code), row 2
+**before** the non-git early-exit; `tq-git-guard.sh:27` pattern makes anything below it dead code), row 2
 (backslash normalization), row 4 (SubagentStop — handler count becomes **8**), row 8 (tolerant read of both
 tracker keys, §8.4). Per-row falsifying tests (e.g. `supabase db push` denied / `supabase db diff` allowed;
-`DG_STRICT_GIT` default-off negative). Lane B alt: port rows 1–2 into `.sh` set. Lane I alt: consolidated inline
+`TQ_STRICT_GIT` default-off negative). Lane B alt: port rows 1–2 into `.sh` set. Lane I alt: consolidated inline
 fixtures + quoting-lint test, **not yet in `plugin.json`**.
 
 **PHV5-041 — 4a: parser contract F24 + F22 + F25 + F26 implementation** · Band: **medium–large** *(re-estimated
@@ -195,7 +195,7 @@ observed (incl. node-less case) · review GO artifact committed. NO-GO on any re
 `.claude/hooks/hooks.json` reference, PowerShell variant for Windows.
 **PHV5-053 — F28 + F30** · Band: small — no "Auto-invoked" phrasing, concrete triggers, reverse-reference sweep;
 delete `commands/doc.md`, keep `skills/documentation` (skill carries `${CLAUDE_SKILL_DIR}` dispatch), no dangling
-`/deepgrade:doc` references, counts updated.
+`/toque:doc` references, counts updated.
 
 **Wave 5 go/no-go:** hygiene sweeps green; command-count assertions consistent.
 
@@ -237,7 +237,7 @@ phase · (c) `${CLAUDE_SKILL_DIR}` resolves · (d) **all nine phase boundaries**
 **PHV5-071 — Activation + recovery + review** · Band: small + medium–large review
 One commit: add skill, delete `commands/plan.md`, **and update every surface that asserts the command exists —
 in the same commit** *(audit v1 gap 1: deleting the file alone turns the suite red with no owning ticket)*:
-`commands/help.md` (all `/deepgrade:plan` references at `:16`, `:30–:52`, `:185–:189` repointed to the skill
+`commands/help.md` (all `/toque:plan` references at `:16`, `:30–:52`, `:185–:189` repointed to the skill
 surface — `tests/layer4-behavioral-smoke.sh:48-54` fails on any help.md command without a file), README
 "Commands (N)" count (`tests/layer1-config-wiring.sh:344-354` compares it to the `commands/` file count), and
 GUIDE command counts. §10.4 review before merge; recovery = **single revert** + `/reload-plugins`, in-flight plan
@@ -261,7 +261,7 @@ Disposable channel, versions 0.0.1→0.0.2: forward rollback executed; `dist/` r
 executed; **uninstall + `/reload-plugins` → guarded command no longer denied** (hook-silence check).
 **PHV5-083 — Publication gate (R14)** · Band: small each flow
 Two-commit sequence: (1) release commit + tag `v5.0.0` → (2) catalog commit pinning
-`{"source":"github","repo":"krwhynot/deepgrade","ref":"v5.0.0","sha":"<full 40-char SHA>"}` → push both.
+`{"source":"github","repo":"krwhynot/toque","ref":"v5.0.0","sha":"<full 40-char SHA>"}` → push both.
 Flow A (credentialed profile, end-to-end): marketplace update → plugin update → reload → `plugin list --json`
 asserts version + qualified id → guarded smoke in the same profile. Flow B (fresh `CLAUDE_CONFIG_DIR`):
 marketplace add → install auth-free → list assertions → authenticate that profile → smoke on **its** copy.
@@ -277,7 +277,7 @@ holds. This is the ship decision.
 
 ## View 2 — Leadership Summary
 
-**What this is.** The deepgrade Claude Code plugin (v4.31.0) passed a structural audit that verified 33 defects —
+**What this is.** The toque Claude Code plugin (v4.31.0) passed a structural audit that verified 33 defects —
 none architectural, all *wiring*: hooks defined in one place but implemented in another, docs asserting counts the
 code contradicts, a test suite that covers 2 of 33 defects and actively asserts two of them as correct. v5.0.0
 closes all 33 plus 3 conformance additions, with every conditional shortfall (F24 partial enforcement on
@@ -327,7 +327,7 @@ timeline gates the work; these are operational dependencies, each with a fallbac
 | Dependency | Gates | Owner | Fallback |
 |-----------|-------|-------|----------|
 | Non-Claude reviewer (Codex CLI) | Waves 4/6/7 GO | Kyle | §10.4: max 2 rounds → owner override CR, named in release notes |
-| GitHub Actions availability | Wave 0 CI gate, standing checks | Kyle (repo `krwhynot/deepgrade`) | Local suite runs remain authoritative interim; CI-enable is Wave 0's *last* step by design |
+| GitHub Actions availability | Wave 0 CI gate, standing checks | Kyle (repo `krwhynot/toque`) | Local suite runs remain authoritative interim; CI-enable is Wave 0's *last* step by design |
 | npm retention of old `@anthropic-ai/claude-code` versions | U7 floor discovery | Kyle | If a candidate is unpublished, the floor is the oldest *installable* version — recorded as such, honestly narrower claim |
 
 **Top risks and their controls** (full register: approach.md §5):
@@ -380,7 +380,7 @@ Verification command classes (§10.3): **U** suite · **G** grep guard · **C** 
 - [ ] 4a: F22 ask-JSON · F25 lease · F26 JSON outputs (U4 settled) [U]
 - [ ] 4a: Layer 2 rewritten, no positional indices [U]
 - [ ] 4b: ONE activation commit (~8 files); folder + manifest-key never both present [U, R, I]
-- [ ] 4b: stale-reference sweep — `grep -rn "scripts/dg-.*\.sh"` (lane N: no live reference to the retired `.sh`
+- [ ] 4b: stale-reference sweep — `grep -rn "scripts/tq-.*\.sh"` (lane N: no live reference to the retired `.sh`
       paths outside snapshots/history) [G]
 - [ ] 4c: Layer 7 — every event + matcher fires via `--plugin-dir` AND installed copy; node-less installed-copy
       case observed; F26 visibility (U5) settled [R, I]
@@ -389,7 +389,7 @@ Verification command classes (§10.3): **U** suite · **G** grep guard · **C** 
 **Wave 5**
 - [ ] F09 (incl. zero-arg negative) · F10 · F11 · F13 · F15 (no `tree`) sweeps green [G, U]
 - [ ] F14 on exactly 3 commands, not `plan` [U] · F08 settings-merge target [G] · F28 · F30 (delete `doc.md`) [U, G]
-- [ ] F30 stale-reference sweep — no `/deepgrade:doc` or `commands/doc.md` string survives anywhere [G]
+- [ ] F30 stale-reference sweep — no `/toque:doc` or `commands/doc.md` string survives anywhere [G]
 
 **Wave 6**
 - [ ] Segmenter + inventory + checker built (shared with Wave 7) → verify: rejects gaps/overlaps/unclaimed [U]
@@ -475,8 +475,8 @@ since the proof must complete before the command is deleted). Reviews own their 
 - **Config rollout:** the migration note is the rollout document (four-command sequence; the version bump is the
   cache key). Third-party auto-update is off by default — reaching existing users *requires* the bump.
 - **Incident fallback:** forward rollback as 5.0.1 (§8.2 — revert is not rollback; there is no unpublish);
-  immediate disablement via uninstall + `/reload-plugins` or `DG_DISABLE_GUARDS=1` + restart (§8.3, rehearsed);
-  `dg-*` temp files always safely deletable (§8.4).
+  immediate disablement via uninstall + `/reload-plugins` or `TQ_DISABLE_GUARDS=1` + restart (§8.3, rehearsed);
+  `tq-*` temp files always safely deletable (§8.4).
 - **Success metrics:** CI plainly green post-Wave-3 and staying green; zero hook errors on healthy supported
   hosts (4c + U7 floor evidence); both publication flows proven; installed-tree identity equal to the catalog SHA;
   zero silent scope escapes (every PARTIAL/NOT-MET named in release notes).

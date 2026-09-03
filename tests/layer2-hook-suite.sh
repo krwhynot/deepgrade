@@ -2,10 +2,10 @@
 # Layer 2 dispatcher — PHV5-042 / PHV5-043.
 #
 #   1. layer2-ledger-rows.js  — one falsifying test per behaviour-ledger row
-#      (§3.1.4) for the plan-context handlers that remain in deepgrade.
+#      (§3.1.4) for the plan-context handlers that remain in toque.
 #
 # run-hook-corpus.js and tests/fixtures/hook-corpus.json were DELETED in 9.0.0
-# with the deepgrade-guard plugin whose git guard they exercised. The ledger rows
+# with the toque-guard plugin whose git guard they exercised. The ledger rows
 # for the guard, migration, tracker and stop handlers went with them.
 #
 # layer2-hook-simulation.sh was DELETED at 4b along with the inline hooks it
@@ -51,7 +51,7 @@ fi
 # Guard against silently losing the retired part the other way round: a resurrected
 # corpus runner with no dispatch would read as coverage too.
 if [ -f tests/run-hook-corpus.js ] || [ -f tests/fixtures/hook-corpus.json ]; then
-  echo "[FAIL] the hook corpus was retired with deepgrade-guard (9.0.0) but a copy is back in the tree —"
+  echo "[FAIL] the hook corpus was retired with toque-guard (9.0.0) but a copy is back in the tree —"
   echo "       either dispatch it against a live handler or delete it."
   FAILED=1
 fi

@@ -146,7 +146,7 @@ beat Option B in the options analysis.
 
 **Connection to this plan:** Every subsystem is replaced behind a stable interface with the
 user-facing surface unchanged: `hooks/hooks.json` supersedes the inline block, `skills/plan/`
-supersedes `commands/plan.md` with `/deepgrade:plan` preserved, generated technique files supersede
+supersedes `commands/plan.md` with `/toque:plan` preserved, generated technique files supersede
 hand-maintained duplicates. **One adaptation is explicit:** the classic pattern assumes a trustworthy
 test suite, and this one covers 2 of 33 target defects — so test additions are folded into each
 wave's definition of done rather than trailing it.
@@ -210,8 +210,8 @@ redirect itself: the former slash-commands reference page now **301s to the skil
 option viable against the brainstorm's stated worry about changing how the flagship workflow is
 invoked.
 
-**Connection to this plan:** Decision §3.2. `skills/plan/SKILL.md` in a plugin named `deepgrade`
-yields `/deepgrade:plan` — byte-identical to today. The plan does **not** migrate the other 16
+**Connection to this plan:** Decision §3.2. `skills/plan/SKILL.md` in a plugin named `toque`
+yields `/toque:plan` — byte-identical to today. The plan does **not** migrate the other 16
 commands; that stays in the deferred backlog.
 
 ---

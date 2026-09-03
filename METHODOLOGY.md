@@ -1,4 +1,4 @@
-# DeepGrade Methodology
+# Toque Methodology
 
 ## The Engineering Methods Behind the Grade
 
@@ -12,7 +12,7 @@ Version 4.27.1 | Research-backed. Battle-tested. Stack-agnostic.
 
 Most code quality tools give you a binary verdict: pass or fail. That is like grading a student's entire semester with a single thumbs-up or thumbs-down. It tells you nothing about where they excel, where they struggle, or what to work on next.
 
-DeepGrade uses letter grades instead. A codebase gets a grade from A+ to F, just like a school report card. The insight is simple: humans already know how to interpret grades. A "B-" means "you're passing, but there is real room for improvement." An "F" means "stop and fix the fundamentals before doing anything else."
+Toque uses letter grades instead. A codebase gets a grade from A+ to F, just like a school report card. The insight is simple: humans already know how to interpret grades. A "B-" means "you're passing, but there is real room for improvement." An "F" means "stop and fix the fundamentals before doing anything else."
 
 This idea draws from two key sources:
 
@@ -21,10 +21,10 @@ This idea draws from two key sources:
 
 ### The Grading Scale
 
-DeepGrade maps a percentage score (0-100) to a letter grade using the standard academic scale. Each grade carries a specific meaning for AI-assisted development readiness.
+Toque maps a percentage score (0-100) to a letter grade using the standard academic scale. Each grade carries a specific meaning for AI-assisted development readiness.
 
 ```text
-                    THE DEEPGRADE SCALE
+                    THE TOQUE SCALE
   ┌─────────────────────────────────────────────────────────┐
   │                                                         │
   │  A+  97-100%  ████████████████████████████████████  EXC │
@@ -73,7 +73,7 @@ DeepGrade maps a percentage score (0-100) to a letter grade using the standard a
 
 The B- threshold is the most important number in the table. It represents the minimum viable score for productive AI collaboration. Below B-, AI tools generate more confusion than value because they lack the context to make good decisions.
 
-When you run `/deepgrade-readiness:readiness-scan`, DeepGrade measures your codebase across 9 scoring gates (52 total checks), computes a weighted percentage, and maps it to this scale. The result is a single letter grade that tells you exactly where you stand.
+When you run `/toque-readiness:readiness-scan`, Toque measures your codebase across 9 scoring gates (52 total checks), computes a weighted percentage, and maps it to this scale. The result is a single letter grade that tells you exactly where you stand.
 
 ---
 
@@ -81,7 +81,7 @@ When you run `/deepgrade-readiness:readiness-scan`, DeepGrade measures your code
 
 ### Past, Present, Future
 
-Every codebase exists in three time orientations simultaneously. What was built (past), what condition it is in (present), and whether it can safely evolve (future). DeepGrade organizes its entire assessment around these three questions, and the order is not arbitrary. You cannot assess risk without knowing what exists, and you cannot plan safe changes without understanding risk.
+Every codebase exists in three time orientations simultaneously. What was built (past), what condition it is in (present), and whether it can safely evolve (future). Toque organizes its entire assessment around these three questions, and the order is not arbitrary. You cannot assess risk without knowing what exists, and you cannot plan safe changes without understanding risk.
 
 ```mermaid
 graph LR
@@ -122,13 +122,13 @@ Before AI can help with a codebase, the codebase must be documented. This sounds
 
 Category 1 treats documentation as an archaeological dig. The goal is to answer "what do we have?" by producing three artifacts: a feature inventory (what the system does), a dependency map (how the pieces connect), and business rule documentation (why the code behaves the way it does). These are prerequisites for AI-assisted development, not nice-to-haves. Without them, an AI agent is navigating blind.
 
-The method is straightforward. DeepGrade's `/deepgrade-audit:codebase-audit` command deploys specialized scanner agents to find features, trace dependencies, and catalog business rules embedded in code. The output is a structured report that serves as the AI's map of the codebase.
+The method is straightforward. Toque's `/toque-audit:codebase-audit` command deploys specialized scanner agents to find features, trace dependencies, and catalog business rules embedded in code. The output is a structured report that serves as the AI's map of the codebase.
 
 ### Category 2: Phased Delivery Over Big-Bang Releases (Present)
 
 Once you know what you have, the next question is "what shape is it in?" Category 2 classifies every module by risk level, because not all code is equally dangerous to change.
 
-Risk in DeepGrade is calculated as **business criticality x dependency exposure**, not just lines of code. A 50-line payment processing function with 25 callers (fan-in > 20) is far more dangerous than a 5,000-line reporting utility that runs in isolation. Modules with fan-in above 20 are flagged as danger zones. Modules with fan-out above 40 are flagged as fragile to external changes.
+Risk in Toque is calculated as **business criticality x dependency exposure**, not just lines of code. A 50-line payment processing function with 25 callers (fan-in > 20) is far more dangerous than a 5,000-line reporting utility that runs in isolation. Modules with fan-in above 20 are flagged as danger zones. Modules with fan-out above 40 are flagged as fragile to external changes.
 
 The delivery method follows from the risk classification. Safe modules get modified first, then medium-risk, then high-risk. Each phase has entry criteria (what must be true before starting), exit criteria (what must be true before moving on), and regression testing requirements. This phased approach replaces big-bang releases with incremental, verifiable progress.
 
@@ -138,7 +138,7 @@ Technical debt is classified into three buckets: **CRITICAL** (must fix before p
 
 Category 3 asks the forward-looking question: can we safely change this codebase? Having documentation (Category 1) and risk assessment (Category 2) is necessary but not sufficient. You also need active safety nets to catch problems as they happen.
 
-This category is modeled on [Google SRE's Production Readiness Review](https://sre.google/sre-book/launching/), the industry standard since 2016. Google's key insight is that production systems need explicit readiness criteria, not just "it works on my machine." DeepGrade adapts this framework for AI-assisted development contexts.
+This category is modeled on [Google SRE's Production Readiness Review](https://sre.google/sre-book/launching/), the industry standard since 2016. Google's key insight is that production systems need explicit readiness criteria, not just "it works on my machine." Toque adapts this framework for AI-assisted development contexts.
 
 Category 3 produces four deliverables:
 
@@ -188,7 +188,7 @@ Category 3 produces four deliverables:
 - [Cortex: Production Readiness Checklist](https://www.cortex.io/) - Organizes readiness into tiered levels (Bronze, Silver, Gold) across security, reliability, and observability, making it possible to measure incremental progress.
 - [GitLab: Production Readiness Review](https://handbook.gitlab.com/handbook/engineering/infrastructure/production/readiness/) - GitLab's internal standard requires "enough documentation, observability, and reliability for production scale" before any service goes live.
 
-The three categories form a dependency chain. You cannot skip ahead. A codebase without documentation (Category 1) cannot have accurate risk classification (Category 2), and a codebase without risk classification cannot have meaningful operational readiness criteria (Category 3). DeepGrade enforces this ordering by requiring earlier categories as inputs to later ones.
+The three categories form a dependency chain. You cannot skip ahead. A codebase without documentation (Category 1) cannot have accurate risk classification (Category 2), and a codebase without risk classification cannot have meaningful operational readiness criteria (Category 3). Toque enforces this ordering by requiring earlier categories as inputs to later ones.
 
 ---
 
@@ -196,7 +196,7 @@ The three categories form a dependency chain. You cannot skip ahead. A codebase 
 
 ### Design Before Code
 
-The `/deepgrade:plan` command implements a 9-phase workflow that takes any starting input (a vague idea, a folder of vendor docs, a Jira ticket) and produces an audited, executable plan. The method is inspired by two sources:
+The `/toque:plan` command implements a 9-phase workflow that takes any starting input (a vague idea, a folder of vendor docs, a Jira ticket) and produces an audited, executable plan. The method is inspired by two sources:
 
 - [Anthropic: feature-dev plugin](https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev) - Anthropic's own guided workflow uses 7 phases (Discovery through Execute), demonstrating that AI-assisted development benefits from structured phases with explicit transitions rather than open-ended conversation.
 - [OpenAI: Harness Engineering](https://openai.com/index/harness-engineering/) - OpenAI's "design-before-code culture" principle argues that the most expensive bugs are the ones introduced before a single line of code is written.
@@ -291,7 +291,7 @@ flowchart TB
 **Question:** What problem are we solving?
 **Gate:** User confirmation
 
-Every plan starts with a problem statement, not a solution. If the input is vague ("we need to fix payments"), the brainstorm phase asks structured questions: What is the problem? Who is affected? Why now? What does success look like? If the input includes source documents, DeepGrade reads them and drafts a problem statement for the user to confirm or adjust.
+Every plan starts with a problem statement, not a solution. If the input is vague ("we need to fix payments"), the brainstorm phase asks structured questions: What is the problem? Who is affected? Why now? What does success look like? If the input includes source documents, Toque reads them and drafts a problem statement for the user to confirm or adjust.
 
 The output is a `brainstorm.md` file with a problem statement, goals, non-goals, and open questions. Skipping this phase means building a solution to the wrong problem. That is the most expensive mistake in software engineering, and it compounds through every subsequent phase.
 
@@ -308,7 +308,7 @@ Research runs three parallel tracks simultaneously:
 | **Source Doc Cleanup** | Cleans and structures any provided documents | Read, Write |
 | **Best Practices** | Searches for how others solved similar problems | Ref (ref_search_documentation, ref_read_url), Exa (web_search_exa, get_code_context_exa), Perplexity (perplexity_ask), WebSearch, WebFetch |
 
-The three tracks are independent, so DeepGrade runs them as parallel subagents. This is not just a performance optimization. Parallel execution prevents the sequential bias where findings from Track 1 color the interpretation of Track 2.
+The three tracks are independent, so Toque runs them as parallel subagents. This is not just a performance optimization. Parallel execution prevents the sequential bias where findings from Track 1 color the interpretation of Track 2.
 
 Research stops when a rubric is met: all open questions from brainstorm are answered (or explicitly deferred), at least one viable implementation path is identified, and top risks have mitigation ideas. The auto-gate prevents both premature closure ("we have enough") and analysis paralysis ("let's research one more thing").
 
@@ -345,7 +345,7 @@ Detail level scales with risk. High-risk phases get exact file paths, function n
 **Question:** What is weak or missing?
 **Gate:** Evaluator-optimizer loop + human review
 
-The audit is a stress test. DeepGrade runs four checks against the plan:
+The audit is a stress test. Toque runs four checks against the plan:
 
 1. **8-Dimension Score:** Rates the plan from 1-5 across eight quality dimensions. Thresholds: 32-40 GREEN, 24-31 YELLOW, 16-23 ORANGE, 1-15 RED.
 2. **Devil's Advocate:** Challenges every assumption. "If this fails in production, what is the most likely reason?"
@@ -359,7 +359,7 @@ The Phase 5 audit gate uses an evaluator-optimizer loop. If the score is below 3
 **Question:** What got built?
 **Gate:** Per-action approval for code changes
 
-Build is the execution phase. Before writing any code, DeepGrade analyzes the ticket dependency graph from the plan and batches independent tickets for parallel execution.
+Build is the execution phase. Before writing any code, Toque analyzes the ticket dependency graph from the plan and batches independent tickets for parallel execution.
 
 ```mermaid
 flowchart LR
@@ -406,7 +406,7 @@ This is the phase most teams skip, and it is the one that catches the bugs that 
 
 Phase 7 is adapted from cross-cutting concern analysis in SRE practices. The insight is that code changes ripple. A function that "just" changes a return type can break callers in five other modules. Impact Review explicitly hunts for these ripple effects by deploying parallel subagents to scan each dimension independently.
 
-DeepGrade runs three parallel subagents: one for Integration and Cross-Layer effects, one for Scale and Transition-State analysis, and one for Test Delta and String Path references. The orchestrator synthesizes findings and flags any HIGH severity issues that should be resolved before testing.
+Toque runs three parallel subagents: one for Integration and Cross-Layer effects, one for Scale and Transition-State analysis, and one for Test Delta and String Path references. The orchestrator synthesizes findings and flags any HIGH severity issues that should be resolved before testing.
 
 ### Phase 8: Test
 
@@ -448,7 +448,7 @@ Every phase exists because skipping it has a known cost:
 | 8. Test | Unvalidated changes shipped to users |
 | 9. Handoff | Knowledge lost, next team starts from zero |
 
-The cost of a skipped phase increases exponentially with distance from the skip. A problem missed in Brainstorm (Phase 1) that surfaces during Test (Phase 8) costs roughly 100x more to fix than catching it in Phase 1. This is not a DeepGrade-specific observation. It is the well-documented cost-of-change curve applied to AI-assisted development workflows.
+The cost of a skipped phase increases exponentially with distance from the skip. A problem missed in Brainstorm (Phase 1) that surfaces during Test (Phase 8) costs roughly 100x more to fix than catching it in Phase 1. This is not a Toque-specific observation. It is the well-documented cost-of-change curve applied to AI-assisted development workflows.
 
 ---
 
@@ -456,7 +456,7 @@ The cost of a skipped phase increases exponentially with distance from the skip.
 
 ### Why 9 Categories, and Why These 9
 
-Most AI readiness advice boils down to "write better docs." That is not wrong, but it is not actionable. DeepGrade replaces that vague guidance with 52 deterministic checks organized into 9 categories, each measuring a specific dimension of how well an AI agent can read, navigate, and safely modify your codebase.
+Most AI readiness advice boils down to "write better docs." That is not wrong, but it is not actionable. Toque replaces that vague guidance with 52 deterministic checks organized into 9 categories, each measuring a specific dimension of how well an AI agent can read, navigate, and safely modify your codebase.
 
 The 9 categories were not chosen arbitrarily. They emerged from synthesizing five independent research frameworks that each approached the same question from a different angle.
 
@@ -679,7 +679,7 @@ Claude Code's system prompt already uses about 50 of those instructions. That le
 
 [Allahabadi.dev: "7 CLAUDE.md Mistakes"](https://allahabadi.dev/blogs/ai/7-claude-md-mistakes-developers-make/) reports that Boris Cherny, the creator of Claude Code, keeps his own team's CLAUDE.md at approximately 2,500 tokens (about 100 lines). That is not minimalism for its own sake. It is precision engineering for the instruction budget.
 
-DeepGrade's context budget scanner (Checks 8.1-8.8) enforces these thresholds:
+Toque's context budget scanner (Checks 8.1-8.8) enforces these thresholds:
 
 ```text
   Target:  CLAUDE.md under 60 instructions
@@ -709,7 +709,7 @@ graph LR
 
 ### Nine Anti-Patterns That Waste Context
 
-DeepGrade's context budget scanner (Check 8.8) detects 9 specific anti-patterns that waste persistent context tokens. Each one has a direct mechanism of harm.
+Toque's context budget scanner (Check 8.8) detects 9 specific anti-patterns that waste persistent context tokens. Each one has a direct mechanism of harm.
 
 | ID | Anti-Pattern | What It Looks Like | Why It Hurts |
 | ---- | ------------- | ------------------- | ------------- |
@@ -766,9 +766,9 @@ Child CLAUDE.md files in subdirectories are lazy-loaded, meaning Claude only rea
 
 ### The Three-Tier Context Model
 
-[Steven Poitras: Three-Tier Context System](https://agenticthinking.ai/blog/three-tier-context/) proposed a layered context architecture that maps well to how DeepGrade thinks about context levels. [OpenAI: Harness Engineering](https://openai.com/index/harness-engineering/) makes a similar distinction between static context (docs, AGENTS.md) and dynamic context (CI status, directory mapping), showing that the tier model is converging across the industry.
+[Steven Poitras: Three-Tier Context System](https://agenticthinking.ai/blog/three-tier-context/) proposed a layered context architecture that maps well to how Toque thinks about context levels. [OpenAI: Harness Engineering](https://openai.com/index/harness-engineering/) makes a similar distinction between static context (docs, AGENTS.md) and dynamic context (CI status, directory mapping), showing that the tier model is converging across the industry.
 
-DeepGrade synthesizes these into a practical model:
+Toque synthesizes these into a practical model:
 
 ```text
  TIER 1: ALWAYS LOADED (minimize this)
@@ -796,7 +796,7 @@ The mechanism is not mysterious. Every token of persistent context consumes atte
 
 [HumanLayer: "Writing a Good CLAUDE.md"](https://www.humanlayer.dev/blog/writing-a-good-claude-md) points out that Claude Code wraps CLAUDE.md content with a caveat that it "may or may not be relevant" to the current task. The agent is already treating your persistent context as potentially disposable. Write it accordingly: high-signal, low-volume, and structured so the most important instructions come first.
 
-The worst case is not too little context. It is too much irrelevant context. A lean CLAUDE.md with 40 precise instructions outperforms a bloated one with 200 instructions that the agent partially ignores because it cannot reliably track them all. DeepGrade's Context Budget category (Category 8) exists specifically to catch this failure mode before it degrades your AI-assisted development experience.
+The worst case is not too little context. It is too much irrelevant context. A lean CLAUDE.md with 40 precise instructions outperforms a bloated one with 200 instructions that the agent partially ignores because it cannot reliably track them all. Toque's Context Budget category (Category 8) exists specifically to catch this failure mode before it degrades your AI-assisted development experience.
 
 ---
 
@@ -806,11 +806,11 @@ The worst case is not too little context. It is too much irrelevant context. A l
 
 A single safety mechanism has a single failure mode. If your only protection against accidental data loss is a pre-commit hook, and that hook has a bug, your protection is zero. Defense-in-depth solves this by stacking multiple independent layers so that a failure in any one layer is caught by the next.
 
-This is not a new idea. It comes from military strategy and was adopted by information security decades ago. DeepGrade applies the same principle to AI-assisted development: an AI agent should not be able to do something destructive even if one safety mechanism fails.
+This is not a new idea. It comes from military strategy and was adopted by information security decades ago. Toque applies the same principle to AI-assisted development: an AI agent should not be able to do something destructive even if one safety mechanism fails.
 
 ### The Three Layers
 
-DeepGrade implements safety in three concentric layers. Each layer operates independently. Each layer catches a different class of mistake. The outermost layer is fully automatic. The innermost layer requires a human.
+Toque implements safety in three concentric layers. Each layer operates independently. Each layer catches a different class of mistake. The outermost layer is fully automatic. The innermost layer requires a human.
 
 ```text
  ┌─────────────────────────────────────────────────────────────────────┐
@@ -837,7 +837,7 @@ DeepGrade implements safety in three concentric layers. Each layer operates inde
  │                                                                     │
  │  settings.json deny: force push, direct DB deploy                  │
  │  settings.json ask:  hard reset, migration edits, git push         │
- │  (the deepgrade-guard hook plugin that filled this layer           │
+ │  (the toque-guard hook plugin that filled this layer           │
  │   from 5.0.0 to 8.x was retired in 9.0.0; history below)           │
  │                                                                     │
  └─────────────────────────────────────────────────────────────────────┘
@@ -847,7 +847,7 @@ The beauty of this arrangement is redundancy. An AI agent that somehow bypasses 
 
 ### Layer 1: Permission Rules
 
-Layer 1 is whatever stops a dangerous tool call before it runs, with no human attention and no judgment call by the model. Since 9.0.0 DeepGrade fills this layer with Claude Code's own permission rules rather than with a plugin. A `deny` entry refuses the command outright; an `ask` entry turns it into a confirmation prompt. They live in the project's or the user's `settings.json`, need no runtime, and cannot disagree with a project's own choices the way a second enforcement layer can.
+Layer 1 is whatever stops a dangerous tool call before it runs, with no human attention and no judgment call by the model. Since 9.0.0 Toque fills this layer with Claude Code's own permission rules rather than with a plugin. A `deny` entry refuses the command outright; an `ask` entry turns it into a confirmation prompt. They live in the project's or the user's `settings.json`, need no runtime, and cannot disagree with a project's own choices the way a second enforcement layer can.
 
 The recommended baseline, which a project adjusts to its stack:
 
@@ -876,9 +876,9 @@ The recommended baseline, which a project adjusts to its stack:
 
 `--force-with-lease` is not matched by the deny rules above and stays allowed, which is the correct behavior: it is the safe form. `--dry-run` and `--local` variants of the deploy commands need their own `allow` entries if a project uses them, because a deny rule wins over a wildcard allow.
 
-**Why the plugin was retired.** From 5.0.0 through 8.x this layer shipped as `deepgrade-guard`: five Node hooks (force-push and hard-reset guard, migration guard, DB deploy guard, change and test trackers, session summary). The guards worked and were tested to a corpus of falsifying cases, but three things argued against keeping them. Permission rules had reached parity for every blocking behavior, with zero runtime dependency and no hook-error failure mode. Projects that already carried their own `ask` rules for the same paths ended up with two layers disagreeing, and the block always won silently over the project's deliberate choice. And the trackers, the part permission rules cannot replace, were nudges that the planning plugin's own stage gates and the audit plugin's staleness checks already cover. The historical description follows for the record; the fail-closed principle it established still governs any blocking hook that is ever added back.
+**Why the plugin was retired.** From 5.0.0 through 8.x this layer shipped as `toque-guard`: five Node hooks (force-push and hard-reset guard, migration guard, DB deploy guard, change and test trackers, session summary). The guards worked and were tested to a corpus of falsifying cases, but three things argued against keeping them. Permission rules had reached parity for every blocking behavior, with zero runtime dependency and no hook-error failure mode. Projects that already carried their own `ask` rules for the same paths ended up with two layers disagreeing, and the block always won silently over the project's deliberate choice. And the trackers, the part permission rules cannot replace, were nudges that the planning plugin's own stage gates and the audit plugin's staleness checks already cover. The historical description follows for the record; the fail-closed principle it established still governs any blocking hook that is ever added back.
 
-#### Historical: the deepgrade-guard hooks (5.0.0 to 8.x)
+#### Historical: the toque-guard hooks (5.0.0 to 8.x)
 
 The hooks were declared in the plugin's `hooks/hooks.json` and executed as Node scripts under its `scripts/`, one file per handler.
 
@@ -918,15 +918,15 @@ graph TD
 
 Seven hooks ran as part of Layer 1:
 
-**Force push guard** ([`scripts/dg-git-guard.js`](scripts/dg-git-guard.js), PreToolUse:Bash). Blocks `git push --force` and the bare `-f` form. Force pushes rewrite shared history and can destroy other people's work. Use `--force-with-lease` if you truly need it — the guard genuinely does not block that, which was untrue before v5.0.0: the old pattern matched `--force` inside `--force-with-lease`, so the safe form was denied and the short form was not.
+**Force push guard** ([`scripts/tq-git-guard.js`](scripts/tq-git-guard.js), PreToolUse:Bash). Blocks `git push --force` and the bare `-f` form. Force pushes rewrite shared history and can destroy other people's work. Use `--force-with-lease` if you truly need it — the guard genuinely does not block that, which was untrue before v5.0.0: the old pattern matched `--force` inside `--force-with-lease`, so the safe form was denied and the short form was not.
 
-**Hard reset guard** ([`scripts/dg-git-guard.js`](scripts/dg-git-guard.js), PreToolUse:Bash). Prompts for confirmation on `git reset --hard` rather than blocking it. A hard reset permanently discards all uncommitted changes, but it is also a legitimate operation, so the guard asks instead of refusing. Before v5.0.0 it denied outright, and the explanation was written to a channel that is never displayed.
+**Hard reset guard** ([`scripts/tq-git-guard.js`](scripts/tq-git-guard.js), PreToolUse:Bash). Prompts for confirmation on `git reset --hard` rather than blocking it. A hard reset permanently discards all uncommitted changes, but it is also a legitimate operation, so the guard asks instead of refusing. Before v5.0.0 it denied outright, and the explanation was written to a channel that is never displayed.
 
-**Migration guard** ([`scripts/dg-migration-guard.js`](scripts/dg-migration-guard.js), PreToolUse:Write|Edit). Blocks edits to existing migration files. Modifying an applied migration can corrupt databases. The correct action is always to create a new migration. New migration files are allowed; only edits to existing ones trigger the guard.
+**Migration guard** ([`scripts/tq-migration-guard.js`](scripts/tq-migration-guard.js), PreToolUse:Write|Edit). Blocks edits to existing migration files. Modifying an applied migration can corrupt databases. The correct action is always to create a new migration. New migration files are allowed; only edits to existing ones trigger the guard.
 
 **DB deploy guard** ([`plugin.json` PreToolUse:Bash](.claude-plugin/plugin.json)). Blocks direct database deploy commands (`supabase db push`, `prisma migrate deploy`, `dotnet ef database update`, `flyway migrate`, `rails db:migrate`) unless the command includes `--dry-run`, `--local`, `RAILS_ENV=test`, or `RAILS_ENV=development`. As [Supabase: Managing Environments](https://supabase.com/docs/deployment/managing-environments) puts it: "Use a CI/CD pipeline rather than deploying from your local machine."
 
-**Change tracker** ([`plugin.json` PostToolUse:Write|Edit](.claude-plugin/plugin.json)). Counts file changes per session by incrementing a counter in `/tmp/dg-baseline-{session}`. When the count crosses a configurable threshold (default: 15), it suggests running a delta scan. This is a nudge, not a blocker.
+**Change tracker** ([`plugin.json` PostToolUse:Write|Edit](.claude-plugin/plugin.json)). Counts file changes per session by incrementing a counter in `/tmp/tq-baseline-{session}`. When the count crosses a configurable threshold (default: 15), it suggests running a delta scan. This is a nudge, not a blocker.
 
 **Test/build tracker** ([`plugin.json` PostToolUse:Bash](.claude-plugin/plugin.json)). Silently records timestamps when test or build commands run. Recognizes test and build commands across Node (jest, vitest, npm test), Python (pytest), .NET (dotnet test/build), Rust (cargo test/build/check), and Go (go test/vet). The Stop hook and Git Guard read these timestamps to know whether tests ran.
 
@@ -962,13 +962,13 @@ Trackers (change counter, test/build tracker) are fail-open: if the hook cannot 
 
 Layer 2 catches problems at the pull request level, after code leaves the developer's machine. The recommended setup validates PRs against a dev branch, with a manual gate for production deploys.
 
-For teams adopting DeepGrade on an existing codebase, the CI pipeline runs in advisory mode for the first two weeks: it reports findings but does not block merges. After two weeks, it switches to blocking mode. This ramp-up period prevents the "new tool blocks everything on Day 1" frustration that kills adoption.
+For teams adopting Toque on an existing codebase, the CI pipeline runs in advisory mode for the first two weeks: it reports findings but does not block merges. After two weeks, it switches to blocking mode. This ramp-up period prevents the "new tool blocks everything on Day 1" frustration that kills adoption.
 
-The pipeline is generated by [`/deepgrade-audit:codebase-gates`](commands/codebase-gates.md), which produces GitHub Actions workflows, pre-commit configs, and supporting scripts based on your actual audit findings. It does not generate a generic template. It generates gates specific to what your scan discovered.
+The pipeline is generated by [`/toque-audit:codebase-gates`](commands/codebase-gates.md), which produces GitHub Actions workflows, pre-commit configs, and supporting scripts based on your actual audit findings. It does not generate a generic template. It generates gates specific to what your scan discovered.
 
 ### Layer 3: Plan Workflow
 
-Layer 3 is where a human stays in the loop. The [`/deepgrade:plan`](commands/plan.md) command's 9-phase workflow includes three safety-critical phases:
+Layer 3 is where a human stays in the loop. The [`/toque:plan`](commands/plan.md) command's 9-phase workflow includes three safety-critical phases:
 
 **Phase 5 (Audit)** scores the plan across 8 quality dimensions with rubric-calibrated scoring (1-5 per dimension, reasoning required before each score). Thresholds: 32-40 GREEN, 24-31 YELLOW, 16-23 ORANGE, 1-15 RED. The audit runs the registry's Phase 5 lint rules (LINT-11/12 run at Phase 7), 4 gap verification matrices (coverage, assumptions, scenarios, cross-cutting), infrastructure verification (LINT-15/16), and a devil's advocate challenge. If the score is below 32 or gaps remain, an evaluator-optimizer loop auto-revises and re-audits (up to 2 iterations). A human review checkpoint follows before Build entry.
 
@@ -980,7 +980,7 @@ Layer 3 is where a human stays in the loop. The [`/deepgrade:plan`](commands/pla
 
 ### The Single-Dependency Principle
 
-The three plan-context hooks that remain in `deepgrade`, and the two design-gate tools beside them, declare exactly one dependency: **Node.js 18 or later**, which Claude Code itself already requires. There is no `jq`, no POSIX utility chain, and no fallback ladder.
+The three plan-context hooks that remain in `toque`, and the two design-gate tools beside them, declare exactly one dependency: **Node.js 18 or later**, which Claude Code itself already requires. There is no `jq`, no POSIX utility chain, and no fallback ladder.
 
 That is a deliberate reversal of the earlier zero-dependency design, and it is worth being precise about why. The old hooks avoided dependencies by parsing JSON with `grep` and `sed`. That is not a parser, and the difference is not academic — it produced a guard that could not distinguish a command from text mentioning one, so it blocked a read-only `grep` whose search pattern named a deployment, and blocked commit messages that merely referred to a force push. Availability was traded for correctness in a security control, which is the wrong trade.
 
@@ -1016,7 +1016,7 @@ Node gives real `JSON.parse`, so a named field can be extracted rather than gues
 
 The concern that motivated the old design still stands: a security guard that fails to install is worse than no guard, because it creates a false sense of safety. v5.0.0 answers it differently. Rather than degrade quietly to a weaker parser, a host that cannot run the guards produces a visible hook error on every guarded event. You are told the safety layer is absent instead of being left to assume it is working.
 
-Since v5.0.0 every hook is a Node script launched in exec form (`node ${CLAUDE_PLUGIN_ROOT}/scripts/dg-*.js`), so there is no shell PATH preamble and no `jq` dependency. The v4.x hooks were bash one-liners that prepended `$LOCALAPPDATA/Microsoft/WinGet/Links` to PATH so a winget-installed `jq` could be found under Git Bash; that preamble also broke under Git Bash because the Windows path contains a colon.
+Since v5.0.0 every hook is a Node script launched in exec form (`node ${CLAUDE_PLUGIN_ROOT}/scripts/tq-*.js`), so there is no shell PATH preamble and no `jq` dependency. The v4.x hooks were bash one-liners that prepended `$LOCALAPPDATA/Microsoft/WinGet/Links` to PATH so a winget-installed `jq` could be found under Git Bash; that preamble also broke under Git Bash because the Windows path contains a colon.
 
 ### Security Guards Must Never Fail-Open
 
@@ -1034,7 +1034,7 @@ This principle deserves its own heading because it is the one design decision th
 
 If you have ever watched a project go sideways, you know the problem usually was not the code. It was the plan. Or more precisely, the holes in the plan that nobody noticed until they became production incidents.
 
-DeepGrade's plan audit applies the same grading philosophy from Section 1 to technical plans, migration specs, and refactoring proposals. Instead of a binary "looks good" or "needs work," you get a numeric score across 8 dimensions, structured gap detection, and evidence-backed findings. The methodology is implemented in the [plan-auditor agent](agents/plan-auditor.md).
+Toque's plan audit applies the same grading philosophy from Section 1 to technical plans, migration specs, and refactoring proposals. Instead of a binary "looks good" or "needs work," you get a numeric score across 8 dimensions, structured gap detection, and evidence-backed findings. The methodology is implemented in the [plan-auditor agent](agents/plan-auditor.md).
 
 ### The 8-Dimension Scorecard
 
@@ -1261,11 +1261,11 @@ The verification pass also cross-references between specialists. If the Risk Rev
 
 LLM-generated analysis has specific failure modes that human analysis does not. A human auditor who is unsure says "I think" or "I'm not sure." An LLM produces the same confident prose whether it grep-confirmed a file count or hallucinated a pattern from a directory name. The confidence signal is flat. This creates a dangerous asymmetry: the most dangerous findings (high-confidence hallucinations) are the hardest to distinguish from the most reliable findings (tool-verified facts).
 
-DeepGrade's self-audit framework addresses this by requiring every finding to carry an explicit evidence basis that communicates *how* the claim was derived, not just *what* the claim says. The framework is implemented in the [self-audit-knowledge skill](skills/self-audit-knowledge/SKILL.md) and integrated into all Phase 2 scanner agents, the Phase 3 synthesis, and the report generator.
+Toque's self-audit framework addresses this by requiring every finding to carry an explicit evidence basis that communicates *how* the claim was derived, not just *what* the claim says. The framework is implemented in the [self-audit-knowledge skill](skills/self-audit-knowledge/SKILL.md) and integrated into all Phase 2 scanner agents, the Phase 3 synthesis, and the report generator.
 
 ### The Three Verification Tiers
 
-Every finding in a DeepGrade audit carries a verification tier that classifies the evidence type behind the claim.
+Every finding in a Toque audit carries a verification tier that classifies the evidence type behind the claim.
 
 ```text
   CLAIM VERIFICATION TIERS
@@ -1299,7 +1299,7 @@ Every finding in a DeepGrade audit carries a verification tier that classifies t
   └─────────────────────────────────────────────────────────────────────┘
 ```
 
-The tier is orthogonal to the confidence level. Confidence measures certainty. The tier measures evidence type. A finding can be HIGH confidence and Tier A (a grep confirmed 14 payment files exist) or HIGH confidence and Tier C (the agent inferred a pattern but is quite sure about it). The second combination — HIGH confidence + Tier C — is the most dangerous in the system, because it looks authoritative but is based on inference. DeepGrade flags these as SUSPECT and auto-adds them to the Phase 3 spot-check list.
+The tier is orthogonal to the confidence level. Confidence measures certainty. The tier measures evidence type. A finding can be HIGH confidence and Tier A (a grep confirmed 14 payment files exist) or HIGH confidence and Tier C (the agent inferred a pattern but is quite sure about it). The second combination — HIGH confidence + Tier C — is the most dangerous in the system, because it looks authoritative but is based on inference. Toque flags these as SUSPECT and auto-adds them to the Phase 3 spot-check list.
 
 ### Evidence Basis Format
 
@@ -1376,7 +1376,7 @@ A Tier C finding from 20 days ago is already AGING, while a Tier A finding from 
 
 ### The Self-Audit Summary
 
-The DeepGrade report replaces the traditional Confidence Summary with a Self-Audit Summary that includes four sections:
+The Toque report replaces the traditional Confidence Summary with a Self-Audit Summary that includes four sections:
 
 1. **Evidence Basis Distribution** — counts of Tier A/B/C findings with their confidence spread
 2. **Failure Mode Flags** — counts of each flag type with required actions
@@ -1397,7 +1397,7 @@ The self-audit framework extends to plan auditing via the [plan-auditor](agents/
 
 Code quality is necessary but not sufficient. A codebase can have clean architecture, good test coverage, and thorough documentation, and still be a nightmare to change safely. The missing piece is operational readiness: the guardrails, maintenance systems, and monitoring that make change safe in practice.
 
-DeepGrade's Category 3 adapts [Google's Production Readiness Review](https://sre.google/sre-book/launching/) for codebase-level assessment. Google's PRR was designed for services going into production. DeepGrade's version asks the same fundamental question at the codebase level: "Can we safely change this?"
+Toque's Category 3 adapts [Google's Production Readiness Review](https://sre.google/sre-book/launching/) for codebase-level assessment. Google's PRR was designed for services going into production. Toque's version asks the same fundamental question at the codebase level: "Can we safely change this?"
 
 The answer breaks down into 4 sub-categories. Each one addresses a different failure mode.
 
@@ -1435,7 +1435,7 @@ graph TD
 
 Guardrails are automated checks that run without anyone remembering to invoke them. They are the difference between "we have a process" and "the process enforces itself."
 
-DeepGrade checks for three layers of guardrails, generated by the [gate-generator agent](agents/gate-generator.md) and orchestrated by the [`/deepgrade-audit:codebase-gates`](commands/codebase-gates.md) command:
+Toque checks for three layers of guardrails, generated by the [gate-generator agent](agents/gate-generator.md) and orchestrated by the [`/toque-audit:codebase-gates`](commands/codebase-gates.md) command:
 
 | Layer | What It Does | Implementation |
 | :------ | :------------- | :--------------- |
@@ -1465,7 +1465,7 @@ The [delta-scanner agent](agents/delta-scanner.md) implements confidence decay u
 
 A HIGH confidence finding becomes MEDIUM after 31 days, LOW after 61 days, and gets tagged `[REQUIRES RE-SCAN]` after 91 days. This is not arbitrary. It reflects the reality that codebases change continuously, and a finding about module coupling from 3 months ago may not match the current dependency graph.
 
-Delta tracking via [`/deepgrade-audit:codebase-delta`](commands/codebase-delta.md) provides quick re-measurement without a full re-scan. It takes 2-3 minutes and tells you what improved, what regressed, and whether a full scan is warranted. The KPI dashboard tracks 12 metrics over time with trend indicators, making progress visible across multiple scan cycles.
+Delta tracking via [`/toque-audit:codebase-delta`](commands/codebase-delta.md) provides quick re-measurement without a full re-scan. It takes 2-3 minutes and tells you what improved, what regressed, and whether a full scan is warranted. The KPI dashboard tracks 12 metrics over time with trend indicators, making progress visible across multiple scan cycles.
 
 The 12 tracked KPIs are: readiness score, Phase 2 eligibility, monolith file count, largest monolith LOC, test file count, test file ratio, HIGH-risk module count, CRITICAL findings open, stale findings count, days since full scan, config files changed, and security files changed.
 
@@ -1501,14 +1501,14 @@ The Change Readiness Score is a composite rating derived from 3A, 3B, and 3C. It
 | :------- | :-------- | :------- |
 | **GREEN** | Safe to change with standard process | Proceed normally |
 | **YELLOW** | Change with extra review | Get a second pair of eyes on PRs |
-| **ORANGE** | Change only with plan and rollback | Use [`/deepgrade:quick-plan`](commands/quick-plan.md) first |
-| **RED** | Do not change without full audit | Run [`/deepgrade-audit:codebase-audit`](commands/codebase-audit.md) first |
+| **ORANGE** | Change only with plan and rollback | Use [`/toque:quick-plan`](commands/quick-plan.md) first |
+| **RED** | Do not change without full audit | Run [`/toque-audit:codebase-audit`](commands/codebase-audit.md) first |
 
 A GREEN rating requires all three sub-categories to be healthy: guardrails are installed, context is fresh (under 30 days), and HIGH-risk modules have test coverage. Any gap downgrades the rating.
 
 ### The Baseline Maintenance System
 
-Audits produce snapshots. Maintenance turns snapshots into a living system. The baseline maintenance system implemented by [`/deepgrade-audit:codebase-gates`](commands/codebase-gates.md) operates in three layers.
+Audits produce snapshots. Maintenance turns snapshots into a living system. The baseline maintenance system implemented by [`/toque-audit:codebase-gates`](commands/codebase-gates.md) operates in three layers.
 
 ```text
   THE THREE LAYERS OF BASELINE MAINTENANCE
@@ -1548,7 +1548,7 @@ Layer 3 is optional CI enforcement. A GitHub Actions workflow checks PRs against
 
 ### DORA Metrics Integration
 
-DeepGrade tracks progress against the [DORA four key metrics](https://dora.dev/), the industry standard for software delivery performance since the 2014 State of DevOps report.
+Toque tracks progress against the [DORA four key metrics](https://dora.dev/), the industry standard for software delivery performance since the 2014 State of DevOps report.
 
 | Metric | Elite | High | Medium | Low |
 | :------- | :------ | :----- | :------- | :---- |
@@ -1557,12 +1557,12 @@ DeepGrade tracks progress against the [DORA four key metrics](https://dora.dev/)
 | Change Failure Rate | Under 5% | 5-10% | 10-15% | 15%+ |
 | Mean Time to Recovery | Under 1 hour | Under 1 day | 1 day to 1 week | 1+ week |
 
-The key finding from DORA research relevant to AI-assisted development: AI tools increase deployment frequency and reduce lead time (good), but change failure rate rises without quality gates (bad). Teams that adopt AI coding assistants without guardrails ship faster and break more things. DeepGrade's Category 3 exists specifically to prevent that tradeoff.
+The key finding from DORA research relevant to AI-assisted development: AI tools increase deployment frequency and reduce lead time (good), but change failure rate rises without quality gates (bad). Teams that adopt AI coding assistants without guardrails ship faster and break more things. Toque's Category 3 exists specifically to prevent that tradeoff.
 
 ### Operational Readiness Sources
 
 - [Google SRE Book, Chapter 32](https://sre.google/sre-book/launching/) - The original Production Readiness Review covering system architecture, instrumentation, emergency response, capacity, change management, and performance criteria.
-- [Cortex: Production Readiness](https://www.cortex.io/) - Tiered maturity model (Bronze/Silver/Gold) that inspired DeepGrade's GREEN/YELLOW/ORANGE/RED change readiness scoring.
+- [Cortex: Production Readiness](https://www.cortex.io/) - Tiered maturity model (Bronze/Silver/Gold) that inspired Toque's GREEN/YELLOW/ORANGE/RED change readiness scoring.
 - [DORA State of DevOps Report](https://dora.dev/) - The four key metrics that define software delivery performance, now the industry standard for measuring team and codebase health.
 
 ---
@@ -1575,11 +1575,11 @@ If you have ever asked an AI to "review this entire codebase," you have probably
 
 Research from the Claude Code community (GitHub Issue #24256) found that "role specialization degrades after roughly 15-20 iterations." An agent that starts as a focused security reviewer gradually drifts toward general commentary. By the time it has processed 50 files, it is no longer the specialist you asked for.
 
-DeepGrade solves this with multi-agent orchestration: one orchestrator command spawns multiple specialist agents, each with a fresh context window and a specific, scoped objective. The agents write their outputs to the filesystem. After all agents complete, the orchestrator synthesizes and cross-references findings.
+Toque solves this with multi-agent orchestration: one orchestrator command spawns multiple specialist agents, each with a fresh context window and a specific, scoped objective. The agents write their outputs to the filesystem. After all agents complete, the orchestrator synthesizes and cross-references findings.
 
 ### The Fan-Out / Fan-In Pattern
 
-Every DeepGrade command that uses multiple agents follows the same structural pattern.
+Every Toque command that uses multiple agents follows the same structural pattern.
 
 ```mermaid
 graph TD
@@ -1614,16 +1614,16 @@ The filesystem is the communication layer. Agents do not pass messages to each o
 
 ### Agent Deployment Across Commands
 
-Each DeepGrade command deploys a different number of agents, tuned to the complexity of the task.
+Each Toque command deploys a different number of agents, tuned to the complexity of the task.
 
 | Command | Agents | Parallelism | What They Do |
 | :-------- | :------: | :------------ | :------------- |
-| [`/deepgrade-readiness:readiness-scan`](commands/readiness-scan.md) | 10 | All parallel (Phase 2) | 9 scanner agents + 1 report generator, each checking a specific category of AI readiness |
-| [`/deepgrade-audit:codebase-audit`](commands/codebase-audit.md) | 6 | 2 phases (3+2, then synthesis) | Phase 1: feature-scanner, dependency-mapper, doc-auditor (parallel). Phase 2: risk-assessor, integration-scanner (parallel). Then synthesis + report. |
+| [`/toque-readiness:readiness-scan`](commands/readiness-scan.md) | 10 | All parallel (Phase 2) | 9 scanner agents + 1 report generator, each checking a specific category of AI readiness |
+| [`/toque-audit:codebase-audit`](commands/codebase-audit.md) | 6 | 2 phases (3+2, then synthesis) | Phase 1: feature-scanner, dependency-mapper, doc-auditor (parallel). Phase 2: risk-assessor, integration-scanner (parallel). Then synthesis + report. |
 | Governance commands | 4 | Per command | [delta-scanner](agents/delta-scanner.md), [gate-generator](agents/gate-generator.md), [security-scanner](agents/security-scanner.md), [characterization-generator](agents/characterization-generator.md) each run as specialized single agents |
-| [`/deepgrade:quick-audit`](commands/quick-audit.md) (plan audit) | 5 | All parallel | Architecture, risk, execution, quality reviewers + gap verifier |
-| [`/deepgrade:quick-plan`](commands/quick-plan.md) (plan scaffolder) | 3 | All parallel | [Codebase analyst, pattern researcher, test strategist](agents/plan-scaffolder.md) gather evidence before the orchestrator writes the plan |
-| [`/deepgrade:troubleshoot`](commands/troubleshoot.md) | Up to 4 | Parallel (if escalated) | Code tracer, git historian, data inspector, integration checker. Only spawned when the bug spans 3+ layers. |
+| [`/toque:quick-audit`](commands/quick-audit.md) (plan audit) | 5 | All parallel | Architecture, risk, execution, quality reviewers + gap verifier |
+| [`/toque:quick-plan`](commands/quick-plan.md) (plan scaffolder) | 3 | All parallel | [Codebase analyst, pattern researcher, test strategist](agents/plan-scaffolder.md) gather evidence before the orchestrator writes the plan |
+| [`/toque:troubleshoot`](commands/troubleshoot.md) | Up to 4 | Parallel (if escalated) | Code tracer, git historian, data inspector, integration checker. Only spawned when the bug spans 3+ layers. |
 
 ### Why Fresh Context Per Agent
 
@@ -1683,7 +1683,7 @@ The codebase audit scales its agent count to match codebase size. Small codebase
 
 ### Model Selection Strategy
 
-DeepGrade uses two models for different types of work. The selection is not arbitrary. It maps to the cognitive demands of each task.
+Toque uses two models for different types of work. The selection is not arbitrary. It maps to the cognitive demands of each task.
 
 ```mermaid
 graph LR
@@ -1725,7 +1725,7 @@ The [plan-auditor](agents/plan-auditor.md) demonstrates the split clearly: Archi
 
 ### The Troubleshooting Escalation Pattern
 
-The [`/deepgrade:troubleshoot`](commands/troubleshoot.md) command shows a different orchestration pattern: conditional escalation. Most bugs do not need multiple agents. A null reference exception in a single file is investigated perfectly well by one agent.
+The [`/toque:troubleshoot`](commands/troubleshoot.md) command shows a different orchestration pattern: conditional escalation. Most bugs do not need multiple agents. A null reference exception in a single file is investigated perfectly well by one agent.
 
 But some bugs span multiple layers: the UI shows the wrong data, the API returns the wrong response, the database has the wrong value, and the migration that changed the schema ran 3 commits ago. Investigating this serially means context-switching between frontend, backend, database, and git history, losing focus at each transition.
 
@@ -1742,11 +1742,11 @@ This conditional escalation avoids the overhead of multi-agent mode for simple b
 
 ## 11. The Dependency Decision (reversed in 5.0.0)
 
-> Most of the handlers this section discusses shipped in `deepgrade-guard`, retired in 9.0.0. The three plan-context handlers still in `deepgrade` follow the same rules, and the rules are kept here because they are the reason a blocking hook is not a small thing to add.
+> Most of the handlers this section discusses shipped in `toque-guard`, retired in 9.0.0. The three plan-context handlers still in `toque` follow the same rules, and the rules are kept here because they are the reason a blocking hook is not a small thing to add.
 
 ### Why Dependencies Are the Enemy
 
-Here is a fun rule of thumb: the number of machines where your safety hooks will fail silently is directly proportional to the number of dependencies those hooks require. DeepGrade learned this the hard way, across four painful versions.
+Here is a fun rule of thumb: the number of machines where your safety hooks will fail silently is directly proportional to the number of dependencies those hooks require. Toque learned this the hard way, across four painful versions.
 
 The goal from day one was simple. Seven safety hooks, all running inside Claude Code's bash environment, all parsing JSON from stdin, all making pass/block decisions. The problem was JSON parsing. Bash does not have a built-in JSON parser. So you reach for a tool. And that is where the trouble starts.
 
@@ -1855,21 +1855,21 @@ These emerged from the failures above, and from the six defects an adversarial r
 ### How Each Hook Implements the Pattern
 
 Every handler follows the same structural template: read stdin, `JSON.parse`, read one
-named field, decide. Here is how it mapped across all **eight** handlers as of 8.x; the five marked retired left with `deepgrade-guard` in 9.0.0. The columns that
+named field, decide. Here is how it mapped across all **eight** handlers as of 8.x; the five marked retired left with `toque-guard` in 9.0.0. Handler filenames and the plugin name are given in their **current** spelling; at the tags where these files actually exist the prefix is `dg-` and the plugin is `deepgrade-guard`, renamed in 10.0.0. The columns that
 used to appear here — "jq Path" and "grep+sed Fallback" — are gone with the ladder they
 described; the deep links formerly pointed at line numbers inside `plugin.json`, which no
 longer contains hooks at all.
 
 | Handler | Event | Matcher | Field it reads | Decision it can return |
 | :------ | :---- | :------ | :------------- | :--------------------- |
-| [dg-session-start.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-session-start.js) | SessionStart | (none) | `source` | JSON `systemMessage` only |
-| dg-migration-guard.js (retired 9.0.0) | PreToolUse | `Write\|Edit` | `tool_input.file_path` | deny (exit 2) / allow |
-| dg-git-guard.js (retired 9.0.0) | PreToolUse | `Bash` | `tool_input.command` | deny / **ask** / allow |
-| dg-track-change.js (retired 9.0.0) | PostToolUse | `Write\|Edit` | `tool_input.file_path`, `session_id` | JSON `systemMessage` only |
-| dg-track-test.js (retired 9.0.0) | PostToolUse | `Bash` | `tool_input.command`, `session_id` | nothing (writes markers) |
-| dg-session-stop.js (retired 9.0.0) | Stop | (none) | `session_id` | JSON `systemMessage` only |
-| [dg-subagent-stop.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-subagent-stop.js) | SubagentStop | (none) | `reason` | nothing (appends to a log) |
-| [dg-pre-compact.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-pre-compact.js) | PreCompact | (none) | (none) | JSON `systemMessage` only |
+| [tq-session-start.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-session-start.js) | SessionStart | (none) | `source` | JSON `systemMessage` only |
+| tq-migration-guard.js (retired 9.0.0) | PreToolUse | `Write\|Edit` | `tool_input.file_path` | deny (exit 2) / allow |
+| tq-git-guard.js (retired 9.0.0) | PreToolUse | `Bash` | `tool_input.command` | deny / **ask** / allow |
+| tq-track-change.js (retired 9.0.0) | PostToolUse | `Write\|Edit` | `tool_input.file_path`, `session_id` | JSON `systemMessage` only |
+| tq-track-test.js (retired 9.0.0) | PostToolUse | `Bash` | `tool_input.command`, `session_id` | nothing (writes markers) |
+| tq-session-stop.js (retired 9.0.0) | Stop | (none) | `session_id` | JSON `systemMessage` only |
+| [tq-subagent-stop.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-subagent-stop.js) | SubagentStop | (none) | `reason` | nothing (appends to a log) |
+| [tq-pre-compact.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-pre-compact.js) | PreCompact | (none) | (none) | JSON `systemMessage` only |
 
 Two things this table now makes explicit that the old one hid. The **Matcher** column
 reads "(none)" for four events rather than `*`: SessionStart, Stop, SubagentStop and
@@ -1880,7 +1880,7 @@ construct the guard cannot evaluate both prompt rather than being denied or wave
 
 The three blocking hooks (Git Guard, Migration Guard, DB Deploy Guard) are the ones where the fail-open problem matters most. If any of them cannot parse the input and the input actually contains a dangerous command, we have a security hole. That is why the jq-first-then-grep pattern exists.
 
-Source: [scripts/dg-git-guard.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-git-guard.js), [scripts/dg-migration-guard.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-migration-guard.js), [scripts/dg-session-start.js](https://github.com/krwhynot/deepgrade/blob/main/scripts/dg-session-start.js) — the `.sh` handlers these lines used to cite were deleted in 5.0.0
+Source: [scripts/tq-git-guard.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-git-guard.js), [scripts/tq-migration-guard.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-migration-guard.js), [scripts/tq-session-start.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-session-start.js) — the `.sh` handlers these lines used to cite were deleted in 5.0.0
 
 ### The grep+sed Pattern Up Close
 
@@ -1899,11 +1899,11 @@ Three failures, all of them silent:
 2. **It truncates at the first quote.** `[^"]*` stops at any escaped quote inside the command, so what gets matched is a prefix of what will actually run.
 3. **It cannot tell a command from text.** Nothing distinguishes an instruction from a quoted mention of one, which over-blocks (a commit message naming a force push) and under-blocks (an exemption token appearing outside the command field suppressing a real denial).
 
-The replacement parsed the payload with `JSON.parse`, read the named field only, and split the command into shell words so quoted text contributed data rather than structure. That handler (`dg-git-guard.js`) and its acceptance corpus (`tests/fixtures/hook-corpus.json`, which encoded each of these three failures as a test) were retired with `deepgrade-guard` in 9.0.0; the git history at tag `v8.0.0` holds both.
+The replacement parsed the payload with `JSON.parse`, read the named field only, and split the command into shell words so quoted text contributed data rather than structure. That handler (`tq-git-guard.js`) and its acceptance corpus (`tests/fixtures/hook-corpus.json`, which encoded each of these three failures as a test) were retired with `toque-guard` in 9.0.0; the git history at tag `v8.0.0` holds both, under their pre-rename names (`dg-git-guard.js`, `deepgrade-guard`).
 
 The `head -1` in the grep path handles the case where `"command"` appears multiple times in the JSON (it can, in nested structures). We always take the first match, which corresponds to the top-level field.
 
-Source: [`.claude-plugin/plugin.json`](https://github.com/krwhynot/deepgrade/blob/main/.claude-plugin/plugin.json) lines 49, 61, 71, 83
+Source: [`.claude-plugin/plugin.json`](https://github.com/krwhynot/toque/blob/main/.claude-plugin/plugin.json) lines 49, 61, 71, 83
 
 ### Why Not Just Require jq?
 
@@ -1917,18 +1917,18 @@ This section argued against requiring a dependency, and 5.0.0 reversed it. The a
 | Approach | Strength | Failure Mode | Verdict |
 | :------- | :------- | :----------- | :------ |
 | **Required dependency** | Best quality when the tool is present. | The whole safety system degrades when the dependency is missing. | Bad default for safety hooks. |
-| **Optional + fallback** | Works everywhere and improves when jq is available. | More implementation complexity, but failure stays controlled. | The DeepGrade sweet spot. |
+| **Optional + fallback** | Works everywhere and improves when jq is available. | More implementation complexity, but failure stays controlled. | The Toque sweet spot. |
 | **Pure Bash** | No dependency management burden. | Fragile parsing on real-world payloads and edge cases. | Risky unless inputs are extremely simple. |
 
-> Visual cue: this is a tradeoff matrix, not a purity contest. DeepGrade chooses the middle column because reliability matters more than elegance.
+> Visual cue: this is a tradeoff matrix, not a purity contest. Toque chooses the middle column because reliability matters more than elegance.
 
-The sweet spot is in the middle. That is where DeepGrade lives.
+The sweet spot is in the middle. That is where Toque lives.
 
 ---
 
 ## 12. Sources Index
 
-Every source cited in this methodology, organized by topic. Each entry includes a one-sentence summary of the key insight that informed DeepGrade's design.
+Every source cited in this methodology, organized by topic. Each entry includes a one-sentence summary of the key insight that informed Toque's design.
 
 ### AI-Ready Codebases
 
@@ -1949,25 +1949,25 @@ Every source cited in this methodology, organized by topic. Each entry includes 
 - [Allahabadi.dev: 7 CLAUDE.md Mistakes](https://allahabadi.dev/blogs/ai/7-claude-md-mistakes-developers-make/) - Reports that Boris Cherny (Claude Code creator) keeps his team's file at 2.5K tokens (roughly 100 lines), setting a practical upper bound.
 - [Builder.io: CLAUDE.md Guide](https://www.builder.io/blog/claude-md-guide) - A comprehensive guide to structuring effective CLAUDE.md files with concrete patterns for instruction organization and prioritization.
 - [Buildcamp: Ultimate Guide to CLAUDE.md](https://www.buildcamp.io/guides/the-ultimate-guide-to-claudemd) - End-to-end walkthrough of CLAUDE.md authoring, covering structure, anti-patterns, and real-world examples from production codebases.
-- [Ogenki Blog: AI Coding Tips](https://blog.ogenki.io/post/series/agentic_ai/ai-coding-tips) - "CLAUDE.md is advisory (Claude CAN ignore). Hooks are deterministic (always run)." The distinction that shaped DeepGrade's entire hook architecture.
+- [Ogenki Blog: AI Coding Tips](https://blog.ogenki.io/post/series/agentic_ai/ai-coding-tips) - "CLAUDE.md is advisory (Claude CAN ignore). Hooks are deterministic (always run)." The distinction that shaped Toque's entire hook architecture.
 
 ### Production Readiness
 
 - [Google SRE Book Ch. 32: The Evolving SRE Engagement Model](https://sre.google/sre-book/launching/) - The Production Readiness Review framework covering system architecture, instrumentation, emergency response, capacity planning, change management, and performance.
-- [Cortex: Production Readiness](https://www.cortex.io/) - Bronze, Silver, and Gold maturity tiers for production readiness, providing a graduated model that DeepGrade adapted for its own tiering system.
+- [Cortex: Production Readiness](https://www.cortex.io/) - Bronze, Silver, and Gold maturity tiers for production readiness, providing a graduated model that Toque adapted for its own tiering system.
 - [GitLab: Production Readiness Review](https://handbook.gitlab.com/handbook/engineering/infrastructure/production/readiness/) - "Enough documentation, observability, and reliability for production scale," defining the minimum bar for shipping safely.
-- [Supabase: Managing Environments](https://supabase.com/docs/deployment/managing-environments) - "Use a CI/CD pipeline rather than deploying from your local machine," the principle behind DeepGrade's DB Deploy Guard.
+- [Supabase: Managing Environments](https://supabase.com/docs/deployment/managing-environments) - "Use a CI/CD pipeline rather than deploying from your local machine," the principle behind Toque's DB Deploy Guard.
 - [DORA: DevOps Research and Assessment](https://dora.dev/) - The four key metrics for software delivery performance (deployment frequency, lead time, change failure rate, time to restore), providing the empirical foundation for what "good" delivery looks like.
 
 ### Context Engineering
 
-- [Steven Poitras: Three-Tier Context System](https://agenticthinking.ai/blog/three-tier-context/) - A tiered context architecture (Ephemeral, Internal, Public, Rules) that maps directly to DeepGrade's always-loaded, conditionally-loaded, and on-demand context strategy.
+- [Steven Poitras: Three-Tier Context System](https://agenticthinking.ai/blog/three-tier-context/) - A tiered context architecture (Ephemeral, Internal, Public, Rules) that maps directly to Toque's always-loaded, conditionally-loaded, and on-demand context strategy.
 - [Colin McDonnell (Zod): AI Autodiscovery in package.json](https://colinhacks.com/essays/ai-autodiscovery-in-package-json) - Proposes standardized fields in package.json that let AI agents discover project capabilities without parsing documentation.
 - [Ryan Walker: AGENTS.md Standard](https://rywalker.com/research/agents-md-standard) - A proposed standard for agent context files, providing structured metadata that AI agents can consume to understand project conventions and constraints.
 
 ### Claude Code Plugin Architecture
 
-- [Anthropic: Official Plugin Examples](https://github.com/anthropics/claude-code/tree/main/plugins) - The official repository of Claude Code plugin examples and patterns that DeepGrade's plugin structure is built on.
+- [Anthropic: Official Plugin Examples](https://github.com/anthropics/claude-code/tree/main/plugins) - The official repository of Claude Code plugin examples and patterns that Toque's plugin structure is built on.
 - [Anthropic: Plugin File Structure](https://github.com/anthropics/claude-code/blob/main/plugins/plugin-dev/skills/plugin-structure/SKILL.md) - The canonical reference for how plugins organize their files, defining the `.claude-plugin/plugin.json`, `commands/`, `agents/`, `skills/`, and `scripts/` directories.
 - [Claude Code: Hooks Guide](https://docs.claude.com/en/docs/claude-code/hooks-guide) - Official documentation for the hooks system, covering event types (SessionStart, PreToolUse, PostToolUse, Stop, PreCompact), matchers, exit codes, and stdin JSON format.
 - [Claude Code: Memory](https://code.claude.com/docs/en/memory) - Documentation for Claude Code's memory and context file system, explaining how CLAUDE.md, CLAUDE.local.md, and child context files interact.
@@ -1975,7 +1975,7 @@ Every source cited in this methodology, organized by topic. Each entry includes 
 ### Database and CI/CD
 
 - [Supabase: Agent Skills](https://github.com/supabase/agent-skills) - A library of AI agent skills for database operations, demonstrating safe patterns for agent-driven schema changes.
-- [Supabase: Database Migrations](https://supabase.com/docs/guides/deployment/database-migrations) - Migration best practices including the "never edit a deployed migration" principle that DeepGrade's Migration Guard enforces.
+- [Supabase: Database Migrations](https://supabase.com/docs/guides/deployment/database-migrations) - Migration best practices including the "never edit a deployed migration" principle that Toque's Migration Guard enforces.
 - [Supabase: Branching](https://supabase.com/docs/guides/deployment/branching) - Environment branching for databases, enabling preview environments where AI agents can safely test schema changes before they hit production.
 
 ---

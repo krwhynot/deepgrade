@@ -158,6 +158,6 @@ updates, re-copy the latest bundle over your installed location.
 
 ## Provenance
 
-Distilled from the 4-phase debugging framework in the DeepGrade plugin
-(github.com/krwhynot/deepgrade), with plugin-specific couplings removed
+Distilled from the 4-phase debugging framework in the Toque plugin
+(github.com/krwhynot/toque), with plugin-specific couplings removed
 for portability.

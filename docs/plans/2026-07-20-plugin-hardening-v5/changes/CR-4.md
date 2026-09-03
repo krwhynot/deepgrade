@@ -11,7 +11,7 @@ failed to consider. **No owner decision is needed.** Independent review (Codex `
    `## 9.9.9 (` heading hid a following hit; `SUPERSEDED IN PART.*F30` anywhere in a file exempted
    every hit in that whole file including newly added live instructions; multi-line version JSON
    parsed as empty and skipped the expiry entirely; and the removal regex matched
-   "Do not remove `/deepgrade:doc`" while rejecting "`/deepgrade:doc` was removed".
+   "Do not remove `/toque:doc`" while rejecting "`/toque:doc` was removed".
 2. **The row did not need narrowing at all.** Rewording the two historical documents *truthfully* —
    "The documentation command and skill", which is accurate for 4.31.0 — satisfies the absolute row
    with no exemption, no expiry machinery, and no cross-wave dependency. Git history and the 4.31.0
@@ -30,7 +30,7 @@ checking; an exemption plus a change record is a strong signal that the option s
 
 **Affects (historical):** Wave 5 acceptance row 3, verbatim:
 
-> - [ ] F30 stale-reference sweep — no `/deepgrade:doc` or `commands/doc.md` string survives anywhere [G]
+> - [ ] F30 stale-reference sweep — no `/toque:doc` or `commands/doc.md` string survives anywhere [G]
 
 ## What I found
 
@@ -38,8 +38,8 @@ The row is class **G** — a grep guard — and **no guard existed**. I had mark
 strength of having deleted `commands/doc.md`. Two references survived the deletion:
 
 ```
-CHANGELOG.md:14:- `/deepgrade:doc` and the documentation skill: external enrichment for specs, ADRs, and READMEs
-docs/specs/mcp-research-integration.md:165:**Testing:** Manual — run `/deepgrade:doc adr test-topic` with Ref connected
+CHANGELOG.md:14:- `/toque:doc` and the documentation skill: external enrichment for specs, ADRs, and READMEs
+docs/specs/mcp-research-integration.md:165:**Testing:** Manual — run `/toque:doc adr test-topic` with Ref connected
 ```
 
 A **third** reference was on genuine product surface, and the guard found it on its first run —
@@ -55,10 +55,10 @@ hit a broken command *today*, because both sit in documents describing work that
 Both are **history**:
 
 - `CHANGELOG.md:14` is under `## 4.31.0 (2026-04-03)`. Version 4.31.0 genuinely did add
-  `/deepgrade:doc`. Deleting that line would make the changelog false.
+  `/toque:doc`. Deleting that line would make the changelog false.
 - `docs/specs/mcp-research-integration.md` is the spec for a shipped feature (MCP-005). Its
   `commands/doc.md` half, its `allowed-tools` acceptance criterion, and its
-  `/deepgrade:doc adr test-topic` testing step describe something that no longer exists.
+  `/toque:doc adr test-topic` testing step describe something that no longer exists.
 
 ## Why this is not simply "narrow the row"
 
@@ -80,7 +80,7 @@ Read the row as scoped to **live product surface**, with two structural exemptio
 successor obligation so the exemption cannot become permanent:
 
 1. **Subject set** = every tracked `*.md` outside `docs/plans/**` and outside this plan's own spec.
-   A plan document that says "delete `/deepgrade:doc`" must be able to name it. This is scope, not
+   A plan document that says "delete `/toque:doc`" must be able to name it. This is scope, not
    narrowing — plan artifacts were never product surface.
 2. **`CHANGELOG.md`** — a hit is exempt only when it sits under a `## X.Y.Z (date)` heading. A hit
    in an `Unreleased` section, or in prose outside any release, still fails.
@@ -88,7 +88,7 @@ successor obligation so the exemption cannot become permanent:
    `SUPERSEDED IN PART … F30` banner. The banner was added in this change; removing it re-arms the
    check rather than silently keeping the pass.
 4. **Expiry (the load-bearing clause).** Once `plugin.json` reports `5.x` or later, the guard
-   requires `CHANGELOG.md` to record the `/deepgrade:doc` removal. If Wave 8 bumps the version and
+   requires `CHANGELOG.md` to record the `/toque:doc` removal. If Wave 8 bumps the version and
    omits the note, the suite goes red. The exemption cannot outlive its justification.
 
 ## Alternatives considered
@@ -114,9 +114,9 @@ Falsifying in both directions, mutation-executed rather than asserted:
 
 | Mutation | Required result |
 |---|---|
-| Add `/deepgrade:doc` to `README.md` (product surface) | guard FAILS |
+| Add `/toque:doc` to `README.md` (product surface) | guard FAILS |
 | Strip the `SUPERSEDED IN PART … F30` banner | guard FAILS |
-| Add `/deepgrade:doc` under an `Unreleased` heading | guard FAILS |
+| Add `/toque:doc` under an `Unreleased` heading | guard FAILS |
 | Set `plugin.json` to `5.0.0` with no recorded removal | guard FAILS |
 | The existing `4.31.0` historical line, untouched | guard PASSES (baseline) |
 

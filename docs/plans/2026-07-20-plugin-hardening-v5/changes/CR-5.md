@@ -21,9 +21,9 @@ $ git check-attr text eol -- tests/mutation/wave5-guards.py
 tests/mutation/wave5-guards.py: text: unspecified
 tests/mutation/wave5-guards.py: eol: unspecified
 
-$ git check-attr text eol -- scripts/dg-git-guard.js
-scripts/dg-git-guard.js: text: set
-scripts/dg-git-guard.js: eol: lf
+$ git check-attr text eol -- scripts/tq-git-guard.js
+scripts/tq-git-guard.js: text: set
+scripts/tq-git-guard.js: eol: lf
 ```
 
 Layer 1 reported **139 passed / 0 failed** with that file uncovered.

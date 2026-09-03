@@ -1,0 +1,19 @@
+{
+  "name": "toque",
+  "version": "9.0.0",
+  "description": "Toque planning: six-stage AI-Native SDLC planning (intent, spec, plan, test, release, maintain) with an adversarial verifier-first design gate, plan-linked troubleshooting, and documentation generation. Stack-agnostic.",
+  "author": {
+    "name": "Kyle Whynot",
+    "url": "https://github.com/krwhynot"
+  },
+  "license": "MIT",
+  "keywords": [
+    "planning",
+    "audit-gate",
+    "troubleshooting",
+    "documentation",
+    "developer-toolkit"
+  ],
+  "repository": "https://github.com/krwhynot/toque",
+  "homepage": "https://github.com/krwhynot/toque#readme"
+}

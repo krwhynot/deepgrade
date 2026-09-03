@@ -12,7 +12,7 @@ language in this section, or a bold conflicting state marker anywhere in the fil
 
 **Accepted by the owner.** On a lane-N host without node, neither the guards nor the SessionStart check can spawn;
 the signal for that state is **Claude Code's own visible hook-error notice**, not the friendly
-`[DeepGrade] guards inactive` warning required by the round-4 owner decision. This is explicitly a **weaker signal
+`[Toque] guards inactive` warning required by the round-4 owner decision. This is explicitly a **weaker signal
 than the round-4 requirement**, accepted as such — not claimed as continuity.
 
 ## Scope of the acceptance

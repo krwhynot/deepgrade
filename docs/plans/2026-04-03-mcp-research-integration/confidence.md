@@ -65,10 +65,10 @@ Last reinforced: Pending (Phase 5)
 
 **Impact: HIGH** — Rationale: This is the core architectural pattern of the entire integration. If it doesn't work reliably, every MCP integration becomes a hard dependency.
 
-**Origin:** Standard resilience pattern in distributed systems. In the DeepGrade context, already implemented in `agents/security-scanner.md` (lines 63-65) for optional vulnerability scanning tools.
+**Origin:** Standard resilience pattern in distributed systems. In the Toque context, already implemented in `agents/security-scanner.md` (lines 63-65) for optional vulnerability scanning tools.
 
 **Who uses it at scale:**
-- **DeepGrade plugin** — existing pattern in security-scanner agent
+- **Toque plugin** — existing pattern in security-scanner agent
 - **Feature flag platforms (LaunchDarkly, Flagsmith)** — same principle: if flag service is down, use default value
 
 **Why it works:** By making external tool usage conditional at the prose level (not the code level), the LLM can make runtime decisions about tool availability without programmatic pre-flight checks. The fallback path preserves all existing functionality.
