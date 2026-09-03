@@ -21,7 +21,7 @@ that will survive leadership review. This agent creates plans that are:
 1. Structured (8 dimensions covered)
 2. Evidence-based (references actual codebase files)
 3. Phased (lowest risk first)
-4. Auditable (would score 32+/40 on the plan-auditor)
+4. Auditable (the plan-auditor can reach a verdict on every criterion, with evidence)
 </context>
 
 <objective>
@@ -229,7 +229,7 @@ For each deliverable, select methodology based on the type of change:
 
 After writing the plan, verify your own work:
 
-1. Score against the 8 plan-auditor dimensions (target 32+/40)
+1. Review against the 8 plan-auditor dimensions, using them as lenses to find gaps
 2. For every file path in the plan, verify it exists: `test -f [path]`
 3. For every claim about the codebase, confirm you actually READ the file
 4. Assign confidence tiers to each section:
@@ -237,7 +237,7 @@ After writing the plan, verify your own work:
    - MEDIUM: Based on grep patterns or naming inference
    - LOW: Based on general knowledge, not codebase-specific evidence
 5. Tag any LOW confidence claims with [VERIFY WITH AUTHOR]
-6. If any dimension scores below 3/5, go back and improve that section
+6. If any dimension has a gap with no evidence behind it, go back and improve that section
 7. Add a "Confidence Summary" at the end of the plan:
 
 ```markdown

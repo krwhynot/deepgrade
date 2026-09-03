@@ -73,7 +73,7 @@ The termination conditions are:
 Every iteration is recorded. The history shows what the plan looked like at each version, what the evaluator found, and how the generator responded. This audit trail is valuable for two reasons: it demonstrates that quality assurance occurred, and it reveals patterns in what the generator consistently gets wrong (informing future prompt improvements).
 
 ```
-v1 (score: 24/40, gaps: 7) -> audit1 -> v2 (score: 35/40, gaps: 1) -> audit2 -> final (accepted)
+v1 (NOT PASS, gaps: 7) -> audit1 -> v2 (NOT PASS, gaps: 1) -> audit2 -> final (PASS, accepted)
 ```
 
 ## Why It Prevents Gaps
@@ -98,7 +98,7 @@ The scaffolder's self-audit is inherently biased — it is grading its own work.
 
 The auditor produces findings but never triggers a revision. It writes an audit report to `docs/audit/` and that report sits there. The score, the gap findings, the specific recommendations — none of them flow back into the plan. The auditor is a sensor with no actuator.
 
-You have to manually read the audit, fix the plan, and re-audit. This manual loop is where gaps survive. A developer reads the audit, mentally translates "Dimension 5 scored 2/5 — rollback strategy is incomplete" into specific edits, makes those edits, and then may or may not re-run the auditor. In practice, the re-audit step is frequently skipped because it takes time and the developer believes their fixes are sufficient. The gaps that survive are the ones that the developer didn't fully understand from the audit report or the ones introduced by the revision itself.
+You have to manually read the audit, fix the plan, and re-audit. This manual loop is where gaps survive. A developer reads the audit, mentally translates "Dimension 5 UNMET — rollback strategy is incomplete" into specific edits, makes those edits, and then may or may not re-run the auditor. In practice, the re-audit step is frequently skipped because it takes time and the developer believes their fixes are sufficient. The gaps that survive are the ones that the developer didn't fully understand from the audit report or the ones introduced by the revision itself.
 
 ## Implementation (Completed)
 

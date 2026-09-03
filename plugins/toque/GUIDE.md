@@ -110,7 +110,7 @@ that also answer to natural-language triggers; six are command files under
 ---
 
 ### `/toque:quick-audit`
-**What it does:** Audits a technical plan, spec, or proposal through the plan-auditor's eight review dimensions (problem clarity, architecture, phasing, risk, rollback, timeline, testing, team). Produces evidence-backed findings, a go/no-go recommendation, and a leadership summary. The X/40 score in the report is reported for trend-watching only; the verdict rests on the findings.
+**What it does:** Audits a technical plan, spec, or proposal through the plan-auditor's eight review dimensions (problem clarity, architecture, phasing, risk, rollback, timeline, testing, team). Produces evidence-backed findings, a go/no-go recommendation, and a leadership summary. The verdict rests on the findings and their evidence; there is no score.
 **When to use it:** Before presenting a plan to stakeholders, or to stress-test any proposal outside the full workflow.
 **What it produces:** `docs/plans/{date}-{name}/audit.md` (if plan-linked) or conversation output.
 **Example:**
@@ -251,8 +251,7 @@ PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK
 ```
 
 There is no weighted sum. A strong showing on seven criteria cannot offset a
-miss on the eighth. `status.json` keeps a `score_history` for trend-watching,
-but nothing reads it as a gate.
+miss on the eighth.
 
 **The holistic judge** runs beside the rubric and never gates. Its unmapped
 findings land in `docs/planning-techniques/lint-candidates.md` as proposed

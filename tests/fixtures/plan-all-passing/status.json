@@ -9,7 +9,7 @@
     "research": {"status": "complete"},
     "pre_plan": {"status": "complete"},
     "plan": {"status": "complete"},
-    "audit": {"status": "complete", "score": 36, "rating": "GREEN", "gap_checked": true},
+    "audit": {"status": "complete", "verdict": "PASS", "gap_checked": true},
     "build": {"status": "in_progress"},
     "impact_review": {"status": "not_started"},
     "test": {"status": "not_started"},

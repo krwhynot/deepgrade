@@ -80,7 +80,7 @@ Our Phase 8 (Test) readiness gate has a flat checklist:
 - "All critical path tests pass"
 - "No open P0/P1 defects"
 - "Characterization baseline captured"
-- "Audit score is GREEN or YELLOW"
+- "Audit verdict is PASS"
 - "Rollback plan validated"
 
 These mix automated and manual criteria without distinction. "All critical path tests pass" is automated. "Rollback plan validated" could be either (tested in staging = automated, reviewed by ops = manual). There is no pause between automated and manual verification, and no explicit protocol for human testing sign-off.

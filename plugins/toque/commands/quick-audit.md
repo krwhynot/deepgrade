@@ -56,8 +56,8 @@ Spawn the plan-auditor agent with:
 ## Step 3: Present Results
 
 After the auditor completes, present:
-1. Overall score (X/40) with color (Green/Yellow/Orange/Red)
-2. The scorecard table (8 dimensions)
+1. The verdict: PASS or NOT PASS, with the criteria that failed
+2. Findings by severity, each citing file:line evidence
 3. Top 3 gaps that must be addressed
 4. Go/No-Go recommendation
 5. If linked to a plan, link to full report at docs/plans/{date}-{name}/audit.md

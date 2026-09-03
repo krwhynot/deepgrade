@@ -69,7 +69,7 @@ Spawn the plan-auditor agent with:
 - Instruction: produce structured findings with scores per dimension
 
 Record the audit results:
-- Overall score (X/40), reported only — it does not gate anything
+- Findings by severity with evidence, reported only — they do not gate anything
 - Gap-checked status (YES/NO)
 - Specific gaps found, each named by criterion id with a location
 
@@ -98,8 +98,8 @@ Track iteration history in the plan file:
 ## Revision History
 | Version | Score | Gap-Checked | Gaps Found | Action |
 |---------|-------|-------------|------------|--------|
-| v1      | 24/40 | NO          | 7          | Revised sections 4, 5, 7 |
-| v2      | 35/40 | YES         | 0          | Accepted |
+| v1      | NOT PASS | NO          | 7          | Revised sections 4, 5, 7 |
+| v2      | PASS     | YES         | 0          | Accepted |
 ```
 
 ## Step 6: Present Results
