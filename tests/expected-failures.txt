@@ -21,6 +21,5 @@
 #   Layer 2 Hook Simulation  15 passed / 0 failed
 #   Layer 3 Fixture Lint      9 passed / 0 failed
 #   Layer 4 Behavioral Smoke  7 passed / 0 failed
-#   Layer 5 Codex Challenge  41 passed / 0 failed
 #
 # Format: one exact failure message per line, '#' comments and blank lines ignored.

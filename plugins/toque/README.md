@@ -42,7 +42,6 @@ Verify inside a Claude Code session:
 | Command | Description |
 | ------- | ----------- |
 | `/toque:quick-audit` | Audit any technical plan or spec through 8 review dimensions with evidence |
-| `/toque:codex-challenge` | Adversarial review loop against OpenAI Codex |
 
 ### Documentation and Support
 
@@ -53,7 +52,7 @@ Verify inside a Claude Code session:
 | `/toque:troubleshoot` | 4-phase debugging framework with incident triage, containment, status updates, and postmortems |
 | `/toque:help` | Show all commands and usage |
 
-`/toque:plan`, `/toque:troubleshoot`, `/toque:codex-challenge`, and `/toque:documentation` are skill surfaces; the other entries are command files.
+`/toque:plan`, `/toque:troubleshoot`, and `/toque:documentation` are skill surfaces; the other entries are command files.
 
 ## The Six Stages
 
@@ -112,9 +111,9 @@ Code itself needs, so if Claude Code runs, this does too.
 node --version   # must print v18.0.0 or higher
 ```
 
-**Optional:** the OpenAI Codex CLI on PATH, for `/toque:codex-challenge`
-only. MCP search tools (Ref, Exa, Perplexity) enrich research when present;
-every stage and template works without them.
+**Optional:** MCP search tools (Ref, Exa, Perplexity) enrich research when
+present; every stage and template works without them. There are no other
+optional dependencies.
 
 **What happens without Node.** The hooks cannot start, and Claude Code reports a
 hook error on each guarded event. That is deliberate: absent and loud beats
@@ -137,7 +136,7 @@ pass without them.
 ## Architecture
 
 - **2 agents** - plan-auditor (the isolated judge) and plan-scaffolder
-- **6 skills** - plan, troubleshoot, and codex-challenge (each a router plus one file per stage or phase), documentation, MCP research, self-audit knowledge
+- **5 skills** - plan and troubleshoot (each a router plus one file per stage or phase), documentation, MCP research, self-audit knowledge
 - **7 doc templates** - ADR, BRD, PRD, README, runbook, release notes, spec, each with a fill-in document skeleton
 - **3 hook handlers** - `scripts/tq-session-start.js`, `tq-subagent-stop.js`, `tq-pre-compact.js`
 - **2 design-gate tools** - `scripts/tq-canary.js` and `tq-evidence-validate.js`, invoked by Stage 2 of `/toque:plan`, not by hooks

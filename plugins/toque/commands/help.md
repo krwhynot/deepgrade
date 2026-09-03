@@ -25,7 +25,6 @@ works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
 | `/toque:quick-audit` | Audit any spec or plan file. 8-dimension score + devil's advocate. |
 | `/toque:quick-cleanup` | Clean up a folder of messy docs into structured reference files. |
 | `/toque:troubleshoot` | AI-guided debugging. Suggests diagnostics, logs every step tried, builds a knowledge base. Auto-links to active plan. |
-| `/toque:codex-challenge` | Adversarial review: Codex scores your plan (8 dimensions, max 40), Claude optimizes until 36/40 GREEN. |
 
 ### /toque:plan vs /toque:quick-plan: Which Do I Use?
 

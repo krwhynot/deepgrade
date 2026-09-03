@@ -3,22 +3,14 @@ self-test: 20 passed, 0 failed
 
   METHODOLOGY.md  (section 7 only, lines 1031-1257): 5
   plugins/toque/agents/plan-scaffolder.md: 3
-  plugins/toque/commands/help.md: 1
   plugins/toque/commands/quick-audit.md: 2
   plugins/toque/commands/quick-plan.md: 3
   plugins/toque/docs/planning-techniques/02-evaluator-optimizer-loop.md: 2
   plugins/toque/docs/planning-techniques/09-multi-category-success-criteria.md: 1
   plugins/toque/docs/planning-techniques/10-llm-rubric-calibration.md: 17
-  plugins/toque/GUIDE.md: 3
-  plugins/toque/skills/codex-challenge/phases/prompt-template.md: 5
-  plugins/toque/skills/codex-challenge/phases/report.md: 7
-  plugins/toque/skills/codex-challenge/phases/round-loop.md: 10
-  plugins/toque/skills/codex-challenge/SKILL.md: 13
-  tests/codex-challenge-test.js: 7
-  tests/fixtures/codex-challenge/valid-concerns.txt: 6
-  tests/fixtures/codex-challenge/valid-lgtm.txt: 1
+  plugins/toque/GUIDE.md: 2
   tests/fixtures/plan-all-passing/status.json: 1
   tests/fixtures/plan-missing-assumptions/status.json: 1
 
-TOTAL: 88 violation line(s) across 18 file(s)
+TOTAL: 37 violation line(s) across 10 file(s)
 report mode: exit 0 regardless. Flip to enforce in the final phase.

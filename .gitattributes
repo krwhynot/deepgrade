@@ -35,7 +35,7 @@
 
 # Node scripts, same requirement (CR-3). Lane N runs the hook guards as `node scripts/tq-*.js`,
 # where the shebang is decorative and CRLF is harmless — but the guards are also executable
-# directly, `tests/codex-challenge-test.js` runs Layer 5's 41 assertions, and Wave 6's
+# directly, and Wave 6's
 # determinism check (PHV5-062: clean clone -> regenerate -> byte-identical) must not be
 # host-dependent. Covered on the same reasoning as *.sh rather than waiting for a failure.
 *.js text eol=lf

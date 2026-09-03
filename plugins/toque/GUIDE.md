@@ -2,7 +2,7 @@
 
 # Toque Knowledge Guide v10.0.0
 
-**6 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **6 Skills** &nbsp;&bull;&nbsp; **7 Document Templates** &nbsp;&bull;&nbsp; **3 Safety Hooks** &nbsp;&bull;&nbsp; **2 Gate Tools** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
+**6 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **5 Skills** &nbsp;&bull;&nbsp; **7 Document Templates** &nbsp;&bull;&nbsp; **3 Safety Hooks** &nbsp;&bull;&nbsp; **2 Gate Tools** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/toque)
 [![Version](https://img.shields.io/badge/v10.0.0-stable-2ECC71?style=for-the-badge)](#)
@@ -33,7 +33,7 @@ methodology reference lives in the monorepo's
 - [The Six Stages](#the-six-stages)
 - [The Design Gate](#the-design-gate)
 - [The 2 Agents](#the-2-agents)
-- [The 6 Skills](#the-6-skills)
+- [The 5 Skills](#the-5-skills)
 - [The 7 Document Templates](#the-7-document-templates)
 - [The 3 Hooks](#the-3-hooks)
 - [The Scripts](#the-scripts)
@@ -43,9 +43,9 @@ methodology reference lives in the monorepo's
 
 ## Commands at a Glance
 
-Ten entry points. Four are skills (`plan`, `troubleshoot`, `codex-challenge`,
-`documentation`) that also answer to natural-language triggers; six are command
-files under `commands/`.
+Nine entry points. Three are skills (`plan`, `troubleshoot`, `documentation`)
+that also answer to natural-language triggers; six are command files under
+`commands/`.
 
 ### `/toque:help`
 **What it does:** Shows all commands, agents, workflows, and output locations in one reference page.
@@ -118,17 +118,6 @@ files under `commands/`.
 /toque:quick-audit docs/specs/pricing-engine-extraction.md
 ```
 
----
-
-### `/toque:codex-challenge`
-**What it does:** Runs an adversarial review loop between Claude and the OpenAI Codex CLI: Codex scores a plan across 8 dimensions and Claude revises until the score converges at 36/40 or the round limit is hit.
-**When to use it:** When you want a second, independent model attacking a plan before you commit to it. Requires the Codex CLI on PATH.
-**What it produces:** A scored review transcript in the plan folder.
-**Example:**
-```
-/toque:codex-challenge my-plan
-/toque:codex-challenge docs/specs/my-plan.md --rounds 3
-```
 
 ### ![docs](https://img.shields.io/badge/Documentation_&_Troubleshooting-1ABC9C?style=for-the-badge)
 
@@ -289,15 +278,13 @@ incomplete.
 Both agents load the `self-audit-knowledge` skill so every claim carries a
 verification tier and, where relevant, a failure-mode flag.
 
-## The 6 Skills
+## The 5 Skills
 
 Skills are persistent knowledge that loads automatically when relevant — reference books the plugin carries in its back pocket.
 
 **plan** -- The `/toque:plan` workflow itself. `SKILL.md` is a router (identity, lifecycle, workspace layout, Step 0 intent detection and schema migration) and each of the six stages lives in its own file under `stages/`, with artifact templates for intent.md, spec.md, plan.md, and review.md under `templates/`, read when the stage is entered. Split this way so the later stages survive context compaction in long planning sessions instead of being silently dropped with the rest of a 1,700-line command.
 
 **troubleshoot** -- The `/toque:troubleshoot` workflow: a router holding identity, timeline logging, plan detection, and Step 0 knowledge-base lookup, with the incident pre-flow (triage, containment gate, status updates), the four phases, multi-agent mode, and the knowledge-base write-back with postmortem in one file each under `phases/`, read on entry.
-
-**codex-challenge** -- The `/toque:codex-challenge` loop: a router holding the Codex invocation pattern and the eight review dimensions, with the output schema, prompt template, round loop, and report in `phases/`. The schema file is what the parser tests bind to.
 
 **documentation** -- The dispatch hub for document generation. Contains routing logic (first word = subcommand), 7 template references each with a fill-in skeleton, smart suggestions when audit data exists, and document chain enforcement (a PRD triggers a check for a related BRD, a runbook checks it is linked from review.md). Loads when you ask for a document, or invoke `/toque:documentation` directly.
 

@@ -2,7 +2,7 @@
 /**
  * Tests for scripts/tq-evidence-validate.js  (PH5-020, spec §5.3)
  *
- * Unlike tests/codex-challenge-test.js, which mirrors logic that lives in markdown,
+ * Unlike a test that mirrors logic living in markdown,
  * this file requires the real module. There is no second copy of the rules to drift.
  *
  * Run with: node tests/evidence-validate-test.js

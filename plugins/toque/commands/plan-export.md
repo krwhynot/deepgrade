@@ -425,7 +425,7 @@ Vanilla Claude Code reads the CLAUDE.md and handles everything.
 </constraints>
 
 <valid_commands>
-/toque:codex-challenge, /toque:documentation, /toque:help, /toque:plan,
+/toque:documentation, /toque:help, /toque:plan,
 /toque:plan-export, /toque:plan-status, /toque:quick-audit, /toque:quick-cleanup,
 /toque:quick-plan, /toque:troubleshoot, /toque-audit:codebase-audit,
 /toque-audit:codebase-characterize, /toque-audit:codebase-delta,

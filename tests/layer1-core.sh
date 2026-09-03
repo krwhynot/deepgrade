@@ -46,7 +46,7 @@ case "$PROFILE" in
     F02_CHECK=0
     F03_EXACT="plan-scaffolder plan-auditor"
     F07_FLOOR=0
-    F21_FLOOR=10
+    F21_FLOOR=9   # was 10; codex-challenge's allowlist left with the skill
     F27_FLOOR=2
     F14_SET="plan-export"
     EXPECT_COMMANDS=1

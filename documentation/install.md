@@ -120,7 +120,6 @@ cannot pass without them**. There is no degraded mode that skips the gate.
 
 | Integration | Enables | Without it |
 | --- | --- | --- |
-| OpenAI Codex CLI on `PATH` | `/toque:codex-challenge` | That one command is unavailable; everything else works |
 | MCP search tools (Ref, Exa, Perplexity) | Richer research during planning stages | Stages and templates all work, with less external context |
 
 ## Related
