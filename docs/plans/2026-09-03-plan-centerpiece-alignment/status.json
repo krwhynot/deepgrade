@@ -22,7 +22,7 @@
     },
     "spec.md": {
       "stage": 2,
-      "status": "revision 2, awaiting gate attempt 2",
+      "status": "revision 3",
       "date": "2026-09-03"
     },
     "research/codex-design-review.md": {
@@ -43,6 +43,21 @@
     "changes/CR-001.md": {
       "stage": 2,
       "status": "ratified",
+      "date": "2026-09-03"
+    },
+    "tools/scoring-sweep.sh": {
+      "stage": 2,
+      "status": "shipped, 20/20 self-test",
+      "date": "2026-09-03"
+    },
+    "inventory.txt": {
+      "stage": 2,
+      "status": "instrument output, defines scope",
+      "date": "2026-09-03"
+    },
+    "confidence.md": {
+      "stage": 2,
+      "status": "written",
       "date": "2026-09-03"
     }
   },
@@ -146,14 +161,18 @@
         "root_cause": "the scoring inventory used a pattern matching /40 but not N/5; 4 hits found and 4 missed in round-loop.md alone, so the phase tables were built on a wrong measurement",
         "revision_loop": "permitted (canary caught)"
       },
-      "gate_attempt": 2,
+      "gate_attempt": 3,
       "inventory": {
         "method": "pattern self-tested on 7 positives / 4 negatives before use",
         "in_scope": "40 lines / 12 files",
         "out_of_scope": "28 lines - readiness grading and unrelated senses",
         "rev1_claimed": "31 lines / 10 files",
         "pre_CR_true": "114 lines / 21 files"
-      }
+      },
+      "phases_complete": [
+        "0 instrument",
+        "1 enumerate"
+      ]
     },
     "build": {
       "status": "not_started"
@@ -182,6 +201,14 @@
       "lines_deleted_approx": 1150,
       "suite_layers": "8 -> 7",
       "capability_lost": "adversarial second-opinion review by a different model family - nothing replaces it"
+    },
+    {
+      "id": "CR-002",
+      "date": "2026-09-03",
+      "author": "Kyle",
+      "title": "Invert the plan - build the instrument first, let it produce the inventory",
+      "supersedes": "spec.md rev2 Scope, Delivery, FR-2, FR-4, NFR-4, go/no-go",
+      "cause": "audit-2: 'the instrument is asserted, not shipped'; six counting errors across two gates"
     }
   ],
   "staleness": {
