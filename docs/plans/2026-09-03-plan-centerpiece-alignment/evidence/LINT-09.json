@@ -1,0 +1,19 @@
+{
+  "criterion_id": "LINT-09",
+  "evidence": [
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 106, "line_end": 106,
+      "exact_quote": "| Scoring sites in `plugins/toque/` | Leading | 0 | At merge | The FR-1 grep, run by the guard | Merge day |" },
+    { "artifact": "plugins/toque/commands/quick-plan.md", "line_start": 72, "line_end": 72,
+      "exact_quote": "- Overall score (X/40), reported only — it does not gate anything" },
+    { "artifact": "plugins/toque/commands/help.md", "line_start": 28, "line_end": 28,
+      "exact_quote": "| `/toque:codex-challenge` | Adversarial review: Codex scores your plan (8 dimensions, max 40), Claude optimizes until 36/40 GREEN. |" },
+    { "artifact": "plugins/toque/docs/planning-techniques/02-evaluator-optimizer-loop.md", "line_start": 76, "line_end": 76,
+      "exact_quote": "v1 (score: 24/40, gaps: 7) -> audit1 -> v2 (score: 35/40, gaps: 1) -> audit2 -> final (accepted)" },
+    { "artifact": "plugins/toque/GUIDE.md", "line_start": 124, "line_end": 124,
+      "exact_quote": "**What it does:** Runs an adversarial review loop between Claude and the OpenAI Codex CLI: Codex scores a plan across 8 dimensions and Claude revises until the score converges at 36/40 or the round limit is hit." },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 489, "line_end": 492,
+      "exact_quote": "Five phases, ordered so **the suite is green at every phase boundary**. That\nordering is the reason the guard lands last rather than first: widening\n`PH5-051` before the scoring is gone would turn Layer 1 red and leave the repo\nunreleasable between phases." }
+  ],
+  "reasoning": "I re-ran the widened guard's own regex over plugins/toque/ to derive the true subject set that Phase 4 will police. It flags scoring vocabulary in files the delivery plan never schedules for repair: commands/help.md:28, commands/quick-plan.md:72 and :101-102, docs/planning-techniques/02-evaluator-optimizer-loop.md:76, GUIDE.md:113 and :124, and round-loop.md:128. Phase 1's table (lines 519-523) covers GUIDE.md:265 and quick-plan.md:2 only; Phase 2's file list omits round-loop.md:128; no phase touches help.md:28 or the planning-techniques file. The consequence is concrete and self-inflicted: the success metric at line 106 targets zero scoring sites in plugins/toque/ measured by the guard, and the delivery section's stated ordering guarantee at lines 489-492 -- suite green at every phase boundary -- fails at the Phase 4 boundary because the guard will fire on at least four files the plan leaves untouched. Separately, METHODOLOGY.md section 7 is a shipped root document titled 'The Plan Audit Scoring System' that still describes the /40 scorecard and its colour bands; FR-2 forbids exactly that and no phase addresses it. Multiple cross-cutting concerns are unaddressed for in-scope features.",
+  "verdict": "UNMET"
+}

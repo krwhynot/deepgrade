@@ -29,6 +29,16 @@
       "stage": 2,
       "status": "complete",
       "date": "2026-09-03"
+    },
+    "audit.md": {
+      "stage": 2,
+      "status": "NOT_PASS",
+      "date": "2026-09-03"
+    },
+    "evidence/": {
+      "stage": 2,
+      "status": "18 records, 1 demoted",
+      "date": "2026-09-03"
     }
   },
   "phases": {
@@ -91,7 +101,46 @@
           "reversible": "naming only, one search-and-replace",
           "flagged_for_owner": true
         }
-      ]
+      ],
+      "gate": {
+        "result": "NOT_PASS",
+        "date": "2026-09-03",
+        "canary_ok": true,
+        "evidence_ok": false,
+        "verified": false,
+        "infra_ok": false,
+        "canary": {
+          "class": "assumption-inject",
+          "criterion": "LINT-08",
+          "caught": true,
+          "resolved": "stripped - rests only on the planted row, absent from the original",
+          "isolation": "imperfect - canary.json sat in the audited directory and was read; disclosed by the auditor"
+        },
+        "evidence_validator": {
+          "exit": 1,
+          "records": 18,
+          "demoted": [
+            "LINT-15"
+          ],
+          "flag": "EVIDENCE-UNEXECUTED"
+        },
+        "verdicts": {
+          "MET": 10,
+          "UNMET": 6,
+          "N_A": 1,
+          "stripped_canary": 1
+        },
+        "gap_check": {
+          "gap_checked": false,
+          "coverage_gaps": 19,
+          "assumption_gaps": 10,
+          "scenario_gaps": 4,
+          "cross_cutting_gaps": 5,
+          "lint": "11/17"
+        },
+        "root_cause": "the scoring inventory used a pattern matching /40 but not N/5; 4 hits found and 4 missed in round-loop.md alone, so the phase tables were built on a wrong measurement",
+        "revision_loop": "permitted (canary caught)"
+      }
     },
     "build": {
       "status": "not_started"

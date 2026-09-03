@@ -1,0 +1,9 @@
+{
+  "criterion_id": "LINT-10",
+  "evidence": [
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 600, "line_end": 606,
+      "exact_quote": "| Boundary | Go requires | No-go action |\n| --- | --- | --- |\n| 1 → any | Suite 8/8; the two greps empty | Fix forward; the phase is text-only |\n| 2 → 4 | All 8 loop tests pass; suite 8/8 | **Stop.** Phase 2 is the risk. Revert and reconsider Option D |\n| 3 → 4 | Suite 8/8; no scorecard remains | Fix forward |\n| 4 → 5 | Mutation proves the guard bites | **Stop.** A guard that cannot fail is worse than none |\n| 5 → Stage 4 | Suite 8/8; preflight clean | Fix forward |" }
+  ],
+  "reasoning": "All five phases have a boundary row with an explicit go condition and a named no-go action, and two of the five carry a hard Stop rather than fix-forward. Every phase has go/no-go criteria.",
+  "verdict": "MET"
+}

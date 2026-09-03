@@ -1,0 +1,11 @@
+{
+  "criterion_id": "LINT-01",
+  "evidence": [
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/intent.md", "line_start": 34, "line_end": 44,
+      "exact_quote": "1. **One verdict currency.** Every tool that judges a plan either uses the\n   gate's boolean vocabulary, or states in its own description that its output\n   is advisory and gates nothing. No tool leaves this ambiguous.\n2. **No stale citations.** No file claims a scoring rubric, threshold, or band\n   that the auditor no longer has. Verifiable by grep.\n3. **The guard covers what it claims.** Whatever scoring rule is chosen is\n   enforced by an automated check over *every* file that can violate it, not\n   only the three the current guard names.\n4. **A small plan can grow up.** Output from the lightweight planning command\n   can be promoted into a full plan workspace without redoing the work.\n5. **Every command states its relationship to the centerpiece** in one line, in" },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 500, "line_end": 506,
+      "exact_quote": "| Phase | Risk | Est. | Depends on | Critical path |\n| --- | --- | --- | --- | --- |\n| 1 — Stale citations | LOW | 0.5 | — | no |\n| 2 — Codex contract + loop | **HIGH** | 2-3 | — | **yes** |\n| 3 — `quick-audit` scoring | MEDIUM | 0.5 | — | no |\n| 4 — Widen the guard | LOW | 0.5 | 1, 2, 3 | **yes** |\n| 5 — Promotion path + labels | LOW | 1 | — | no |" }
+  ],
+  "reasoning": "Each of the six observable outcomes in intent.md maps to at least one delivery phase: outcome 1 to Phases 2 and 3, outcome 2 to Phase 1, outcome 3 to Phase 4, outcome 4 to Phase 5, outcome 5 to Phase 5, outcome 6 to the go/no-go table at spec lines 600-606. The rule asks only that each goal has at least one mapped ticket. Whether those tickets cover the whole goal is LINT-09 territory, and that is where this plan fails; the goal-to-ticket mapping itself is complete.",
+  "verdict": "MET"
+}

@@ -1,0 +1,13 @@
+{
+  "criterion_id": "LINT-02",
+  "evidence": [
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 330, "line_end": 330,
+      "exact_quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |" },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 327, "line_end": 327,
+      "exact_quote": "| # | Risk | Impact | Mitigation |" },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 610, "line_end": 611,
+      "exact_quote": "No deployment, no runtime, no monitoring surface — this ships as a plugin\nversion, not a service. What replaces monitoring:" }
+  ],
+  "reasoning": "The risk table's Mitigation column for this row contains the single word 'unverified', which is a verification status, not a mitigation. Its Impact cell reads 'Writes stall at launch' -- a launch-blocking outcome, so HIGH by any reading -- rather than a severity level, so the row does not even conform to the table's own header. The row is additionally impossible for this change: the spec states at line 610 that there is no deployment and no runtime, so no connection pool and no write path exist. The table is headed 'Top 3 risks' yet carries four rows numbered 1, 2, 2, 3. A HIGH-impact risk with no mitigation is present in the plan.",
+  "verdict": "UNMET"
+}

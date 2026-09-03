@@ -1,0 +1,13 @@
+{
+  "criterion_id": "LINT-19",
+  "evidence": [
+    { "artifact": "plugins/toque/skills/plan/stages/stage-2-design.md", "line_start": 13, "line_end": 13,
+      "exact_quote": "- Part A: Evidence section (the confidence brief, folded into spec.md)" },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 345, "line_end": 345,
+      "exact_quote": "## Evidence" },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 356, "line_end": 358,
+      "exact_quote": "| # | Claim | Evidence | Impact | Verified |\n| --- | --- | --- | --- | --- |\n| E1 | The gate has no score; the 8 dimensions survive as lenses only | `plugins/toque/agents/plan-auditor.md:60` | HIGH | Read |" }
+  ],
+  "reasoning": "The confidence brief for this plan is the spec's Evidence section, per stage-2-design.md line 13. It exists. Applying the rule mechanically as the registry states it -- blocks on any HIGH-impact entry marked [SOURCE NEEDED], [LINK DEAD], or [UNVERIFIED] -- none of the thirteen entries carries any of those three markers, and every HIGH-impact entry E1 through E9 and E13 is marked Read or run in the Verified column. Verdict MET on the rule as written. Recorded against it, because the rule does not reach it: two entries have references that do not survive checking. E1 cites plan-auditor.md:60, which is the literal string '<review_dimensions>' and contains no claim; the supporting text is at lines 61-63. E10 asserts 'only other match is the guard' for score_history, which a repo-wide grep falsifies -- CHANGELOG.md:105 and :288 and docs/specs/phase5-verifier-gate.md:317, :364 and :502 also match. Those are reported as citation failures rather than stretched into a marker rule they do not fit.",
+  "verdict": "MET"
+}

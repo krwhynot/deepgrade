@@ -1,0 +1,13 @@
+{
+  "criterion_id": "LINT-15",
+  "evidence": [
+    { "artifact": "tests/run-all.sh", "line_start": 109, "line_end": 118,
+      "exact_quote": "    case $layer in\n        1) run_layer 1 \"Config/Wiring\" \"$SCRIPT_DIR/layer1-config-wiring.sh\" || OVERALL_EXIT=1 ;;\n        2) run_layer 2 \"Hook Simulation\" \"$SCRIPT_DIR/layer2-hook-suite.sh\" || OVERALL_EXIT=1 ;;\n        3) run_layer 3 \"Fixture Lint\" \"$SCRIPT_DIR/layer3-fixture-lint.sh\" || OVERALL_EXIT=1 ;;\n        4) run_layer 4 \"Behavioral Smoke\" \"$SCRIPT_DIR/layer4-behavioral-smoke.sh\" || OVERALL_EXIT=1 ;;\n        5) run_layer 5 \"Codex Challenge Parser\" \"$SCRIPT_DIR/codex-challenge-test.js\" node || OVERALL_EXIT=1 ;;\n        6) run_layer 6 \"Evidence Validator\" \"$SCRIPT_DIR/evidence-validate-test.js\" node || OVERALL_EXIT=1 ;;\n        7) run_layer 7 \"Canary\" \"$SCRIPT_DIR/canary-test.js\" node || OVERALL_EXIT=1 ;;\n        8) run_layer 8 \"Release Preflight\" \"$SCRIPT_DIR/release-preflight-test.sh\" || OVERALL_EXIT=1 ;;\n    esac" },
+    { "artifact": "tests/layer1-config-wiring.sh", "line_start": 48, "line_end": 48,
+      "exact_quote": "bash \"$SCRIPT_DIR/layer1-repo.sh\" || OVERALL=1" },
+    { "artifact": ".github/release.sh", "line_start": 176, "line_end": 176,
+      "exact_quote": "  check)" }
+  ],
+  "reasoning": "Every piece of test infrastructure the spec claims exists was confirmed present. tests/run-all.sh wires exactly eight layers, matching the '8 of 8 layers pass' claim in FR-7 and the Tier 1 list. tests/layer1-repo.sh, which hosts the PH5-051 guard, is invoked by layer1-config-wiring.sh so a widened guard genuinely lands inside Layer 1. tests/codex-challenge-test.js exists at 447 lines as claimed and is Layer 5. The '.github/release.sh check' subcommand exists. tests/mutation/ exists as claimed for D5. One caveat that does not change the verdict: tests/mutation/ contains only README.md and wave5-guards.py and is not invoked by run-all.sh, so listing the D5 mutation under 'Tier 1, automated' overstates it -- it is a manual harness. The infrastructure is real; only its automation classification is loose.",
+  "verdict": "MET"
+}

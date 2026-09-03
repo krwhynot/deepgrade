@@ -9,7 +9,7 @@ Owner: Kyle
 | [Intent](intent.md) | 1 | Accepted by Kyle | 2026-09-03 |
 | [Research](research/findings.md) | 1 | Complete | 2026-09-03 |
 | [Spec](spec.md) | 2 | Complete, awaiting design gate | 2026-09-03 |
-| [Audit](audit.md) | 2 | Pending | |
+| [Audit](audit.md) | 2 | **NOT PASS** (revision loop permitted) | 2026-09-03 |
 | [Build plan](plan.md) | 3 | Pending | |
 | [Impact review](impact-review.md) | 3 | Pending | |
 | [Test plan](test-plan.md) | 4 | Pending | |

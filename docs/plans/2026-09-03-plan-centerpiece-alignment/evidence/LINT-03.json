@@ -1,0 +1,17 @@
+{
+  "criterion_id": "LINT-03",
+  "evidence": [
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 527, "line_end": 527,
+      "exact_quote": "**Rollback:** `git revert` one commit. No behaviour depends on this text." },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 565, "line_end": 566,
+      "exact_quote": "**Rollback:** one `git revert`. The tool is invoked fresh each run and persists\nno responses, so there is no state to unwind." },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 575, "line_end": 575,
+      "exact_quote": "**Rollback:** one `git revert`." },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 586, "line_end": 586,
+      "exact_quote": "**Rollback:** one `git revert`; the guard reverts to the narrower list." },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 596, "line_end": 596,
+      "exact_quote": "**Rollback:** one `git revert` per deliverable; both are additive." }
+  ],
+  "reasoning": "All five delivery phases carry an explicit rollback line naming the reversal mechanism and, where relevant, why no state unwinding is needed. No phase lacks one.",
+  "verdict": "MET"
+}

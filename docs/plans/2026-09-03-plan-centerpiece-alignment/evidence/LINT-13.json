@@ -1,0 +1,25 @@
+{
+  "criterion_id": "LINT-13",
+  "evidence": [
+    {
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 145,
+      "line_end": 148,
+      "exact_quote": "**Option A — Severity-classified findings, stop at zero blocking**\n\nCodex returns findings only. Each carries a severity. The loop stops when a\nround returns no findings at or above BLOCKING, or when a round cap is hit."
+    },
+    {
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 206,
+      "line_end": 214,
+      "exact_quote": "| Criterion | A: severity findings | B: boolean verdict | C: round delta | D: non-compensating score |\n| --- | --- | --- | --- | --- |\n| Implementation ease | Medium | High | High | **High** |\n| Strategic value — matches the gate | High | Medium | Low | Low |\n| Risk profile | Medium | Medium | **High** | **Low** |\n| Escalation trigger | Yes | No | No | Yes |\n| **Enforces coverage of all 8** | **No** | No | No | **Yes** |\n| Closes the 36/40 defect | Yes | Yes | Partly | **Yes** |\n| Resolves two-currency problem | Yes | Yes | Yes | **No** |"
+    },
+    {
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 241,
+      "line_end": 243,
+      "exact_quote": "*Would revisit D if:* the per-dimension verdict proves unstable across rounds\nin real use, making the numeric floor the more reliable coverage mechanism.\n*Would revisit C if:* runaway loops become the dominant failure in practice."
+    }
+  ],
+  "reasoning": "Four alternatives are evaluated (A, B, C, D), each with pros, cons, risk and rollback, scored against a shared seven-criterion comparison matrix. The chosen option is named with its amendment, the rejected recommendation D is argued against on the record rather than ignored, and revisit triggers are stated for the two live alternatives. This exceeds the minimum of two alternatives.",
+  "verdict": "MET"
+}

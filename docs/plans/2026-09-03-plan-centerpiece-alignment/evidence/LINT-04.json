@@ -1,0 +1,11 @@
+{
+  "criterion_id": "LINT-04",
+  "evidence": [
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 303, "line_end": 309,
+      "exact_quote": "### Dependencies\n\n- **Internal, hard:** `tests/layer1-repo.sh` (the guard), `tests/codex-challenge-test.js`\n  (447 lines, score-coupled), the four Codex fixtures.\n- **External, soft:** the OpenAI Codex CLI. Not required to make the change;\n  required to exercise `codex-challenge` end to end.\n- **Blocker:** none identified." },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 298, "line_end": 299,
+      "exact_quote": "- Timeline: no external deadline. Sole maintainer.\n- Team: one person; no cross-team coordination." }
+  ],
+  "reasoning": "One external dependency is named: the OpenAI Codex CLI. The Dependencies block carries no per-dependency owner field, but the Constraints block states there is a sole maintainer and a one-person team, which assigns every dependency to one identified owner. A per-row owner column where every row resolves to the same person adds no information. The rule's intent -- no unowned external dependency -- holds.",
+  "verdict": "MET"
+}

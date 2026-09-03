@@ -15,3 +15,6 @@ desktop.ini
 # Local overrides
 *.local.md
 *.local.json
+
+# Design-gate canary working copies — never committed (plan workspace spec)
+docs/plans/*/.canary/

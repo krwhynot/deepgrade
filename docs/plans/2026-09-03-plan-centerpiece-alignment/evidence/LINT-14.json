@@ -1,0 +1,7 @@
+{
+  "criterion_id": "LINT-14",
+  "evidence": [],
+  "reasoning": "No prior audit record exists for this plan, so there is no baseline against which to detect regressions. The registry's gate behavior for LINT-14 states it is skipped on first audit for exactly this reason, and the audit request confirms this is the first audit.",
+  "verdict": "N_A",
+  "n_a_justification": "First audit of this plan; no previous baseline exists. Registry gate behavior for LINT-14 prescribes skipping in this case."
+}

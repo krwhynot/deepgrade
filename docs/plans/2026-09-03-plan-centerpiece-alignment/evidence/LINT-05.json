@@ -1,0 +1,11 @@
+{
+  "criterion_id": "LINT-05",
+  "evidence": [
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 443, "line_end": 443,
+      "exact_quote": "| D2 | `codex-challenge` request/response contract (prompt, schema, 4 fixtures) | **Contract Testing** | This *is* an API contract with an external program. Both directions need proving: a conforming response parses, and a short response is rejected. |" },
+    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 552, "line_end": 561,
+      "exact_quote": "**Required tests** (authored before the parser edit, per Separate Test Authorship):\n\n1. All 8 PASS → converged\n2. 7 PASS + 1 FAIL → **not** converged *(the direct descendant of the 36/40 defect)*\n3. Response with 7 dimensions → **malformed**, not \"7 passed\"\n4. `FAIL` with no evidence → malformed\n5. Any `HIGH` → escalate\n6. Cap reached with a FAIL open → NOT CONVERGED, names the dimension\n7. Unparseable output → malformed, never success\n8. Both `.txt` fixtures round-trip through the real parser" }
+  ],
+  "reasoning": "The single API-shaped surface in this change is the Codex request/response contract. It is assigned Contract Testing and carries eight named test entries covering the conforming direction, the short-response direction, the unparseable direction, and the cap-exhaustion direction. Every new contract behavior has a test entry. Note as a caveat, not a failure: the eight dimension names that become the schema's 'required' list are never enumerated in the spec, so the contract's key set is under-specified -- recorded under LINT-09.",
+  "verdict": "MET"
+}

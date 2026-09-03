@@ -1,0 +1,31 @@
+{
+  "criterion_id": "LINT-18",
+  "evidence": [
+    {
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 457,
+      "line_end": 461,
+      "exact_quote": "- **Separate test authorship.** The agent that edits `tests/codex-challenge-test.js`\n  must not also write the assertions that prove the new parser correct. D2 and\n  D3's tests are authored before, and independently of, the parser edit.\n- **Higher scrutiny on generated code.** The loop logic (D3) is the only real\n  logic in this change; every branch of FR-3 gets a named test."
+    },
+    {
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 552,
+      "line_end": 552,
+      "exact_quote": "**Required tests** (authored before the parser edit, per Separate Test Authorship):"
+    },
+    {
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 463,
+      "line_end": 467,
+      "exact_quote": "  - *Tautological tests* — the sharpest risk here. A test asserting the parser\n    returns what the parser produced proves nothing. Every fixture assertion\n    compares against a **hand-written expected value**, not against parser output.\n  - *Happy-path-only* — explicitly countered: the malformed-response and\n    cap-exhaustion paths carry as many tests as the success path."
+    },
+    {
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 318,
+      "line_end": 319,
+      "exact_quote": "- **Separate test authorship** — the agent that edits the parser must not write\n  the parser's tests."
+    }
+  ],
+  "reasoning": "The only code-bearing deliverables are D2 and D3, both in the parser and loop. The spec states in three separate places that the agent editing tests/codex-challenge-test.js must not author the assertions proving the new parser correct, that D2 and D3 tests are written before and independently of the parser edit, and it names the specific AI failure mode -- tautological tests -- with a concrete counter-rule requiring hand-written expected values. The separation is specified, not merely asserted.",
+  "verdict": "MET"
+}
