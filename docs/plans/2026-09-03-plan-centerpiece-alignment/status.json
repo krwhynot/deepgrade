@@ -22,7 +22,7 @@
     },
     "spec.md": {
       "stage": 2,
-      "status": "scope-locked",
+      "status": "complete-awaiting-gate",
       "date": "2026-09-03"
     },
     "research/codex-design-review.md": {
@@ -77,7 +77,21 @@
           "expand/contract is ceremony -> removed"
         ],
         "recommendation_not_adopted": "Option D (keep scores, add per-dimension floor) - closes the defect but leaves two currencies; owner scope decision"
-      }
+      },
+      "part_b": "complete",
+      "awaiting": "design gate (Part C)",
+      "decisions_part_b": [
+        {
+          "id": "OQ2",
+          "question": "verdict vocabulary",
+          "decision": "PASS/FAIL per dimension; FAIL carries HIGH/MEDIUM/LOW",
+          "decided_by": "agent, on evidence",
+          "date": "2026-09-03",
+          "rationale": "planning plugin already uses HIGH/MEDIUM/LOW 83/42/39 times; the audit plugin's ladder lives in a plugin being split to another repo",
+          "reversible": "naming only, one search-and-replace",
+          "flagged_for_owner": true
+        }
+      ]
     },
     "build": {
       "status": "not_started"

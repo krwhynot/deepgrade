@@ -8,7 +8,7 @@ Owner: Kyle
 |------|-------|--------|------|
 | [Intent](intent.md) | 1 | Accepted by Kyle | 2026-09-03 |
 | [Research](research/findings.md) | 1 | Complete | 2026-09-03 |
-| [Spec](spec.md) | 2 | Scope locked by Kyle (Part B pending) | 2026-09-03 |
+| [Spec](spec.md) | 2 | Complete, awaiting design gate | 2026-09-03 |
 | [Audit](audit.md) | 2 | Pending | |
 | [Build plan](plan.md) | 3 | Pending | |
 | [Impact review](impact-review.md) | 3 | Pending | |

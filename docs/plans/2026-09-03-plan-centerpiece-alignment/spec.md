@@ -414,8 +414,211 @@ Every load-bearing claim below was read from the file cited during this session.
 
 ## Verification plan
 
-*(Part B — written after scope lock.)*
+### Vocabulary decision (was Open question 2)
+
+**Verdicts are `PASS` / `FAIL` per dimension. A `FAIL` carries a severity of
+`HIGH` / `MEDIUM` / `LOW`.**
+
+Decided on evidence rather than preference. The planning plugin already uses
+HIGH/MEDIUM/LOW **83 / 42 / 39 times** for assumption impact, risk levels, and
+finding severity. The audit plugin's richer CRITICAL/HIGH/MEDIUM/LOW/INFO ladder
+was the other candidate, and was rejected for a structural reason: that plugin is
+being split into a separate repository, so adopting its vocabulary would make the
+planning plugin's convergence logic depend on a ladder defined in another
+product. A coherence change should not create a cross-repo coupling.
+
+Model escalation triggers on **any `HIGH`** in a round.
+
+*Kyle: this is the one Part B decision made without asking. Say so if you want it
+reversed — it is confined to naming and costs one search-and-replace.*
+
+### Methodology per deliverable
+
+Selected from the framework, not defaulted to unit tests.
+
+| # | Deliverable | Methodology | Why this one |
+| --- | --- | --- | --- |
+| D1 | Fix 4 stale rubric citations + the phantom `score_history` | **TDD** | The assertion is a grep that must find nothing. Write the failing check, then delete the text. Red-to-green is literal here. |
+| D2 | `codex-challenge` request/response contract (prompt, schema, 4 fixtures) | **Contract Testing** | This *is* an API contract with an external program. Both directions need proving: a conforming response parses, and a short response is rejected. |
+| D3 | `codex-challenge` loop logic (stop, escalate, malformed, cap) | **TDD** | Pure decision logic with enumerable inputs. Tests are writable before the implementation and each maps to one FR-3 criterion. |
+| D4 | Remove scoring from `quick-audit` | **TDD** | Same shape as D1 — an absence assertion. |
+| D5 | Widen the `PH5-051` guard to a derived subject set | **Mutation Testing** | A guard that cannot fail is worse than no guard. Prove it by planting `X/40` in a scratch file and confirming Layer 1 goes red, then removing it. The repo already does this — `tests/mutation/` exists. |
+| D6 | `quick-plan` promotion path | **BDD** | User-facing workflow whose acceptance criteria are already written Given/When/Then in FR-5. |
+| D7 | One relationship line per command | **Snapshot / Approval** | The deliverable is rendered help text. Capture it, review it by eye once, approve it. |
+
+**Expand/Contract is deliberately NOT used** for D2, though the framework
+nominates it for contract changes. See Approach: no independent consumers exist,
+so the staging protects against nothing. Recorded here so its absence reads as a
+decision rather than an oversight.
+
+### AI-specific requirements
+
+- **Separate test authorship.** The agent that edits `tests/codex-challenge-test.js`
+  must not also write the assertions that prove the new parser correct. D2 and
+  D3's tests are authored before, and independently of, the parser edit.
+- **Higher scrutiny on generated code.** The loop logic (D3) is the only real
+  logic in this change; every branch of FR-3 gets a named test.
+- **AI failure-mode checklist**, applied to D2/D3 at review:
+  - *Tautological tests* — the sharpest risk here. A test asserting the parser
+    returns what the parser produced proves nothing. Every fixture assertion
+    compares against a **hand-written expected value**, not against parser output.
+  - *Happy-path-only* — explicitly countered: the malformed-response and
+    cap-exhaustion paths carry as many tests as the success path.
+  - *Logic drift* — the stop condition exists in exactly one place; a second
+    copy is a review rejection.
+  - *Stale dependencies* — n/a, nothing added.
+  - *Hidden rule violations* — the guard (D5) is the mechanical check.
+
+### Two-tier split (Stage 4 will use this)
+
+**Tier 1, automated:** `bash tests/run-all.sh` 8/8 · `.github/release.sh check`
+clean · the FR-1 and FR-2 greps return empty · the D5 mutation proves the guard
+bites · fixtures round-trip through the real parser.
+
+**Tier 2, manual, human-confirmed:** one **real `codex-challenge` run against a
+real plan** using the installed Codex CLI 0.153.0 — the only way to learn whether
+a live reviewer returns eight verdicts with evidence, which no fixture can prove
+(Gotcha 2). Plus: read the rendered `/toque:help` output once (D7), and promote
+one real `quick-plan` spec into a plan folder (D6).
+
+---
 
 ## Delivery
 
-*(Part B — written after scope lock.)*
+Five phases, ordered so **the suite is green at every phase boundary**. That
+ordering is the reason the guard lands last rather than first: widening
+`PH5-051` before the scoring is gone would turn Layer 1 red and leave the repo
+unreleasable between phases.
+
+### Timeline
+
+Estimated in **working sessions**, not calendar weeks — one maintainer, no
+external deadline, no coordination cost. Calendar estimates would be invented
+precision.
+
+| Phase | Risk | Est. | Depends on | Critical path |
+| --- | --- | --- | --- | --- |
+| 1 — Stale citations | LOW | 0.5 | — | no |
+| 2 — Codex contract + loop | **HIGH** | 2-3 | — | **yes** |
+| 3 — `quick-audit` scoring | MEDIUM | 0.5 | — | no |
+| 4 — Widen the guard | LOW | 0.5 | 1, 2, 3 | **yes** |
+| 5 — Promotion path + labels | LOW | 1 | — | no |
+
+Phase 2 is the critical path and the only one carrying real risk. Phases 1, 3,
+and 5 are independent and can land in any order.
+
+### Phase 1 — Stale citations and the phantom field · LOW
+
+Detail level: LOW risk, so goals and success criteria.
+
+**Goal.** Remove every claim about a rubric or field that no longer exists.
+
+| File | Line | Change |
+| --- | --- | --- |
+| `agents/plan-scaffolder.md` | 24 | drop "would score 32+/40 on the plan-auditor" |
+| `agents/plan-scaffolder.md` | 232 | drop "target 32+/40" |
+| `commands/quick-plan.md` | 2 | drop "scores well on the plan auditor's 8 dimensions" |
+| `skills/codex-challenge/SKILL.md` | 27 | drop "upper GREEN threshold from Toque's plan-auditor rubric" |
+| `GUIDE.md` | 265 | delete the `score_history` sentence entirely |
+
+**Done when:** `grep -rn "score_history" .` matches only the guard, and no file
+cites a `32+/40` or `36/40` auditor threshold.
+**Rollback:** `git revert` one commit. No behaviour depends on this text.
+
+### Phase 2 — The Codex contract and loop · HIGH
+
+Detail level: HIGH risk, so exact files and test requirements.
+
+**Files, all in one commit:**
+
+```
+plugins/toque/skills/codex-challenge/phases/prompt-template.md   (:18, :40)
+plugins/toque/skills/codex-challenge/phases/output-schema.md
+plugins/toque/skills/codex-challenge/phases/round-loop.md        (:62-64, :113, :126)
+plugins/toque/skills/codex-challenge/phases/report.md            (:20, :21, :25, :79)
+plugins/toque/skills/codex-challenge/SKILL.md                    (:3, :27, :28, :125, :158)
+tests/fixtures/codex-challenge/codex-review-schema.json
+tests/fixtures/codex-challenge/valid-lgtm.json  · valid-lgtm.txt
+tests/fixtures/codex-challenge/valid-concerns.json · valid-concerns.txt
+tests/codex-challenge-test.js                                    (447 lines)
+```
+
+**New response shape.** Eight entries, each `{name, verdict, evidence, issue?,
+fix?}`. `required` becomes the eight dimension names; `scores` and `total` are
+removed; `additionalProperties: false` is restored in **both** copies of the
+schema (`output-schema.md` and the fixture) — they must not drift.
+
+**Required tests** (authored before the parser edit, per Separate Test Authorship):
+
+1. All 8 PASS → converged
+2. 7 PASS + 1 FAIL → **not** converged *(the direct descendant of the 36/40 defect)*
+3. Response with 7 dimensions → **malformed**, not "7 passed"
+4. `FAIL` with no evidence → malformed
+5. Any `HIGH` → escalate
+6. Cap reached with a FAIL open → NOT CONVERGED, names the dimension
+7. Unparseable output → malformed, never success
+8. Both `.txt` fixtures round-trip through the real parser
+
+**Go/no-go to Phase 4:** all eight pass; suite 8/8; no `/40` remains under
+`skills/codex-challenge/`.
+**Rollback:** one `git revert`. The tool is invoked fresh each run and persists
+no responses, so there is no state to unwind.
+
+### Phase 3 — `quick-audit` scoring · MEDIUM
+
+`commands/quick-audit.md:59-60` — replace the score line and scorecard table with
+findings ordered by severity, each citing evidence. Update the front-matter
+description, which also advertises scoring.
+
+**Done when:** no `X/40`, no colour band, no scorecard table.
+**Rollback:** one `git revert`.
+
+### Phase 4 — Widen the guard · LOW, but it is the proof
+
+`tests/layer1-repo.sh` PH5-051. Replace the three hand-listed paths with a
+derived subject set over `plugins/toque/`, plus a floor so an empty derivation
+fails loudly instead of passing vacuously — the same vacuous-pass lesson the file
+already applies elsewhere.
+
+**Done when:** planting `X/40` in a scratch file turns Layer 1 red, and removing
+it turns it green. This phase is what makes phases 1-3 permanent.
+**Rollback:** one `git revert`; the guard reverts to the narrower list.
+
+### Phase 5 — Promotion path and relationship labels · LOW, P1
+
+`quick-plan` gains promotion following `quick-cleanup:7-25`'s existing pattern:
+create the plan folder, write `manifest.md` and `status.json`, place the spec
+where Stage 1 reads it, and **refuse to overwrite an existing folder**. Each
+command gains one line in `/toque:help` saying whether it is part of the plan
+workflow, feeds it, or stands alone.
+
+**Rollback:** one `git revert` per deliverable; both are additive.
+
+### Go / no-go criteria at each boundary
+
+| Boundary | Go requires | No-go action |
+| --- | --- | --- |
+| 1 → any | Suite 8/8; the two greps empty | Fix forward; the phase is text-only |
+| 2 → 4 | All 8 loop tests pass; suite 8/8 | **Stop.** Phase 2 is the risk. Revert and reconsider Option D |
+| 3 → 4 | Suite 8/8; no scorecard remains | Fix forward |
+| 4 → 5 | Mutation proves the guard bites | **Stop.** A guard that cannot fail is worse than none |
+| 5 → Stage 4 | Suite 8/8; preflight clean | Fix forward |
+
+### Operational readiness
+
+No deployment, no runtime, no monitoring surface — this ships as a plugin
+version, not a service. What replaces monitoring:
+
+- **First real use is the signal.** The Tier 2 manual `codex-challenge` run is
+  the only evidence the new contract works against a live reviewer.
+- **Incident fallback:** the plugin is versioned and pinned by SHA in the
+  catalog. A bad release is undone by pinning the previous tag — the mechanism
+  already used for every release.
+- **Success metric review** at 30 and 60 days, per the Success metrics table.
+
+### Release
+
+Version bump, tag, and catalog pin only through `.github/release.sh`. This is a
+**breaking** change — the Codex response contract changes shape and two commands
+stop emitting scores — so it takes a major version and a `CHANGELOG.md` entry
+naming both.
