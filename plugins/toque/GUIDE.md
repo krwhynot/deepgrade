@@ -1,11 +1,11 @@
 <div align="center">
 
-# Toque Knowledge Guide v9.0.0
+# Toque Knowledge Guide v10.0.0
 
 **6 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **6 Skills** &nbsp;&bull;&nbsp; **7 Document Templates** &nbsp;&bull;&nbsp; **3 Safety Hooks** &nbsp;&bull;&nbsp; **2 Gate Tools** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/toque)
-[![Version](https://img.shields.io/badge/v9.0.0-stable-2ECC71?style=for-the-badge)](#)
+[![Version](https://img.shields.io/badge/v10.0.0-stable-2ECC71?style=for-the-badge)](#)
 [![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
 
 </div>

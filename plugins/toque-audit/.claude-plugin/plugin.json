@@ -1,6 +1,6 @@
 {
   "name": "toque-audit",
-  "version": "9.0.0",
+  "version": "10.0.0",
   "description": "Toque codebase auditing: severity-graded audits by a team of parallel agents, security scans, delta/KPI tracking, characterization tests, and generated CI quality gates. Stack-agnostic.",
   "author": {
     "name": "Kyle Whynot",
