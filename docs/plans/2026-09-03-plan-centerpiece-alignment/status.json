@@ -1,0 +1,95 @@
+{
+  "schema_version": 2,
+  "plan_name": "plan-centerpiece-alignment",
+  "plan_dir": "docs/plans/2026-09-03-plan-centerpiece-alignment",
+  "created": "2026-09-03",
+  "current_phase": "design",
+  "documents": {
+    "intent.md": {
+      "stage": 1,
+      "status": "accepted",
+      "date": "2026-09-03"
+    },
+    "research/findings.md": {
+      "stage": 1,
+      "status": "complete",
+      "date": "2026-09-03"
+    },
+    "research/intake/session-findings.md": {
+      "stage": 1,
+      "status": "complete",
+      "date": "2026-09-03"
+    },
+    "spec.md": {
+      "stage": 2,
+      "status": "scope-locked",
+      "date": "2026-09-03"
+    },
+    "research/codex-design-review.md": {
+      "stage": 2,
+      "status": "complete",
+      "date": "2026-09-03"
+    }
+  },
+  "phases": {
+    "plan": {
+      "status": "complete",
+      "started": "2026-09-03",
+      "research": {
+        "tracks_run": [
+          "codebase-scan"
+        ],
+        "tracks_skipped": {
+          "source-doc-cleanup": "satisfied by intake before research began",
+          "best-practices": "deliberate - internal coherence question, no external source can answer it"
+        },
+        "open_questions_resolved": 2,
+        "open_questions_remaining": 2,
+        "blocking_remaining": 1
+      },
+      "accepted_by": "Kyle",
+      "accepted_date": "2026-09-03",
+      "completed": "2026-09-03",
+      "decisions": [
+        {
+          "id": "OQ1",
+          "question": "scoring: strip or relabel",
+          "decision": "strip",
+          "decided_by": "Kyle",
+          "date": "2026-09-03",
+          "consequence": "codex-challenge convergence loop is redesigned, not reworded; promotes OQ3 to blocking"
+        }
+      ]
+    },
+    "design": {
+      "status": "in_progress",
+      "started": "2026-09-03",
+      "part_a": "complete",
+      "scope_locked": "2026-09-03",
+      "scope_locked_by": "Kyle",
+      "decision": "Option A amended - findings with explicit per-dimension verdict (FR-3a)",
+      "adversarial_review": {
+        "reviewer": "Codex CLI 0.153.0",
+        "date": "2026-09-03",
+        "file": "research/codex-design-review.md",
+        "findings_absorbed": [
+          "coverage hole -> FR-3a",
+          "expand/contract is ceremony -> removed"
+        ],
+        "recommendation_not_adopted": "Option D (keep scores, add per-dimension floor) - closes the defect but leaves two currencies; owner scope decision"
+      }
+    },
+    "build": {
+      "status": "not_started"
+    },
+    "test": {
+      "status": "not_started"
+    },
+    "deploy": {
+      "status": "not_started"
+    },
+    "maintain": {
+      "status": "not_started"
+    }
+  }
+}
