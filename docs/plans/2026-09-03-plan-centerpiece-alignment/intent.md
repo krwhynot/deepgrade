@@ -88,8 +88,15 @@ Observable when all of the following hold:
 
 - **The `ai-scan` split.** Paused, separate problem, gets its own plan.
 - **Redesigning the design gate**, the canary classes, or the evidence validator.
-- **Removing any command.** This is about coherence, not deletion. If a command
-  turns out to be genuinely redundant, that is a finding for a later intent.
+- ~~**Removing any command.** This is about coherence, not deletion. If a command
+  turns out to be genuinely redundant, that is a finding for a later intent.~~
+  **SUPERSEDED by [CR-001](changes/CR-001.md), 2026-09-03.** `/toque:codex-challenge`
+  is deleted rather than de-scored. The design gate returned NOT PASS with that
+  tool as the cause of nearly every substantive finding, and the true scope came
+  in at 3.7× the estimate recorded here. Deletion satisfies FR-1 more completely
+  than a rewrite: a deleted tool cannot disagree with the gate. No other command
+  is removed. What is genuinely lost — adversarial review by a different model
+  family — is named in the CR rather than glossed.
 - **The readiness and audit plugins.** Untouched here.
 - **Publishing anything.** No release is part of this intent.
 

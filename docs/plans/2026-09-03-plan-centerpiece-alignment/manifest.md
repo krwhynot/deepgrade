@@ -6,9 +6,9 @@ Owner: Kyle
 ## Artifacts (this folder)
 | File | Stage | Status | Date |
 |------|-------|--------|------|
-| [Intent](intent.md) | 1 | Accepted by Kyle | 2026-09-03 |
+| [Intent](intent.md) | 1 | Accepted by Kyle, amended by CR-001 | 2026-09-03 |
 | [Research](research/findings.md) | 1 | Complete | 2026-09-03 |
-| [Spec](spec.md) | 2 | Complete, awaiting design gate | 2026-09-03 |
+| [Spec](spec.md) | 2 | Revision 2, awaiting gate attempt 2 | 2026-09-03 |
 | [Audit](audit.md) | 2 | **NOT PASS** (revision loop permitted) | 2026-09-03 |
 | [Build plan](plan.md) | 3 | Pending | |
 | [Impact review](impact-review.md) | 3 | Pending | |
@@ -29,7 +29,7 @@ Owner: Kyle
 ## Change Records
 | CR | Date | Summary |
 |----|------|---------|
-| (none yet) | | |
+| [CR-001](changes/CR-001.md) | 2026-09-03 | Delete /toque:codex-challenge rather than de-score it. Supersedes intent.md Out of scope; withdraws FR-3/FR-3a; suite 8 -> 7 layers |
 
 ## Codebase Files
 | File | Type | Created |

@@ -7,7 +7,7 @@
   "documents": {
     "intent.md": {
       "stage": 1,
-      "status": "accepted",
+      "status": "accepted, amended by CR-001",
       "date": "2026-09-03"
     },
     "research/findings.md": {
@@ -22,7 +22,7 @@
     },
     "spec.md": {
       "stage": 2,
-      "status": "complete-awaiting-gate",
+      "status": "revision 2, awaiting gate attempt 2",
       "date": "2026-09-03"
     },
     "research/codex-design-review.md": {
@@ -38,6 +38,11 @@
     "evidence/": {
       "stage": 2,
       "status": "18 records, 1 demoted",
+      "date": "2026-09-03"
+    },
+    "changes/CR-001.md": {
+      "stage": 2,
+      "status": "ratified",
       "date": "2026-09-03"
     }
   },
@@ -74,7 +79,7 @@
     "design": {
       "status": "in_progress",
       "started": "2026-09-03",
-      "part_a": "complete",
+      "part_a": "revision 2 complete",
       "scope_locked": "2026-09-03",
       "scope_locked_by": "Kyle",
       "decision": "Option A amended - findings with explicit per-dimension verdict (FR-3a)",
@@ -88,7 +93,7 @@
         ],
         "recommendation_not_adopted": "Option D (keep scores, add per-dimension floor) - closes the defect but leaves two currencies; owner scope decision"
       },
-      "part_b": "complete",
+      "part_b": "revision 2 complete",
       "awaiting": "design gate (Part C)",
       "decisions_part_b": [
         {
@@ -140,6 +145,14 @@
         },
         "root_cause": "the scoring inventory used a pattern matching /40 but not N/5; 4 hits found and 4 missed in round-loop.md alone, so the phase tables were built on a wrong measurement",
         "revision_loop": "permitted (canary caught)"
+      },
+      "gate_attempt": 2,
+      "inventory": {
+        "method": "pattern self-tested on 7 positives / 4 negatives before use",
+        "in_scope": "40 lines / 12 files",
+        "out_of_scope": "28 lines - readiness grading and unrelated senses",
+        "rev1_claimed": "31 lines / 10 files",
+        "pre_CR_true": "114 lines / 21 files"
       }
     },
     "build": {
@@ -154,5 +167,25 @@
     "maintain": {
       "status": "not_started"
     }
+  },
+  "change_records": [
+    {
+      "id": "CR-001",
+      "date": "2026-09-03",
+      "author": "Kyle",
+      "title": "Delete /toque:codex-challenge rather than de-score it",
+      "supersedes": "intent.md Out of scope (no command removal); spec.md Delivery Phase 2",
+      "withdraws_requirements": [
+        "FR-3",
+        "FR-3a"
+      ],
+      "lines_deleted_approx": 1150,
+      "suite_layers": "8 -> 7",
+      "capability_lost": "adversarial second-opinion review by a different model family - nothing replaces it"
+    }
+  ],
+  "staleness": {
+    "spec.md": "FRESH - revised under CR-001",
+    "audit.md": "superseded by revision 2"
   }
 }
