@@ -561,6 +561,60 @@ ${r.stdout}`);
 }
 
 // ---------------------------------------------------------------------------
+// A file that parses but is not an object.
+//
+// `validateRecord` was already null-safe; `validateDirectory` was not. It read
+// `rec.verdict` off the parsed value to report what the record claimed, so a
+// file containing exactly `null` — valid JSON, no record — threw a TypeError
+// and killed the whole run. That fails closed only by accident: the corpus is
+// not validated at all, and the caller sees a crash instead of a verdict.
+// A non-record must demote itself and let every other record still be read.
+// ---------------------------------------------------------------------------
+{
+  console.log('\nNon-object record files:');
+
+  const fs = require('fs');
+  const os = require('os');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-nonobj-'));
+
+  // `null` first alphabetically, so a throw here also proves the later files
+  // never got read.
+  fs.writeFileSync(path.join(tmp, 'a-null.json'), 'null');
+  fs.writeFileSync(path.join(tmp, 'b-number.json'), '3');
+  fs.writeFileSync(path.join(tmp, 'c-string.json'), '"MET"');
+  fs.writeFileSync(path.join(tmp, 'd-array.json'), '[{"verdict":"MET"}]');
+  fs.writeFileSync(path.join(tmp, 'e-good.json'), JSON.stringify(record({ verdict: 'N_A' })));
+
+  let result;
+  try {
+    result = validateDirectory(tmp, ROOT);
+  } catch (err) {
+    check('a record file containing `null` does not throw', false, `threw ${err.code || err.message}`);
+    result = null;
+  }
+
+  if (result) {
+    check('a record file containing `null` does not throw', true);
+    check('every file still produced a record', result.records.length === 5, `got ${result.records.length}`);
+
+    for (const f of ['a-null.json', 'b-number.json', 'c-string.json', 'd-array.json']) {
+      const r = result.records.find((x) => x.file === f);
+      check(`${f} is UNMET with EVIDENCE-VERDICT-INVALID`,
+        r && r.verdict === 'UNMET' && r.flags.includes('EVIDENCE-VERDICT-INVALID'),
+        r ? `verdict=${r.verdict} flags=${r.flags}` : 'no record');
+    }
+
+    // The run continues past the bad files rather than stopping at the first.
+    const good = result.records.find((x) => x.file === 'e-good.json');
+    check('a valid record after the bad ones is still read', good && good.verdict === 'N_A',
+      good ? `verdict=${good.verdict}` : 'no record');
+    check('the non-records are counted as flagged', result.flagged === 4, `flagged=${result.flagged}`);
+  }
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// ---------------------------------------------------------------------------
 // The regression this file existed to catch and did not.
 //
 // The validator read `item.artifact`; the records on disk were written with

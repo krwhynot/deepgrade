@@ -307,7 +307,7 @@ function validateDirectory(dir, rootDir) {
       return { file: f, criterion_id: null, claimed: null, verdict: 'UNMET', flags: ['EVIDENCE-UNPARSEABLE'] };
     }
     const out = validateRecord(rec, rootDir);
-    return { file: f, criterion_id: out.criterion_id, claimed: rec.verdict, verdict: out.verdict, flags: out.flags };
+    return { file: f, criterion_id: out.criterion_id, claimed: rec && rec.verdict, verdict: out.verdict, flags: out.flags };
   });
 
   const demoted = records.filter((r) => r.claimed === 'MET' && r.verdict !== 'MET').length;
