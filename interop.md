@@ -39,13 +39,21 @@ Format rules (the sweep depends on them):
 
 ## Toque's own paths under docs/audit/
 
-These live in the same directory but Toque writes them itself. They are listed
-so the sweep can tell them apart from the inputs above — adding one needs an
-entry here, not a row in the table.
+These live in the same directory but are not inputs from anywhere — Toque either
+writes them itself or is the only thing that ever did. They are listed so the
+sweep can tell them apart from the inputs above; adding one needs an entry here,
+not a row in the table.
 
 - `docs/audit/plan-audit.md` — written by the design gate. `quick-audit.md`
   explicitly refuses to create it, which is why it appears in two files while
   being nobody's input.
+- `docs/audit/impact-review-*.md` — a LEGACY location, read and never written.
+  Stage 3 writes `impact-review.md` into the plan folder; `troubleshoot` looks
+  there first and falls back to this glob for plans that predate that layout
+  (`skills/troubleshoot/SKILL.md:238`). Nothing in Toque has written it for
+  several releases. It stays because removing a read costs a user their history
+  and gains nothing, and it is listed here because a wildcard read that no
+  document mentions is exactly what the sweep exists to surface.
 
 ## Not inputs
 

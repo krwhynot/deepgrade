@@ -42,7 +42,7 @@ The evaluator receives the generated plan and judges it against defined criteria
 Since the verifier-first rewrite (docs/specs/phase5-verifier-gate.md), "fails" means
 a criterion came back UNMET after mechanical evidence validation, an infra gap
 exists, or the seeded canary was missed — never that a numeric total fell short.
-The score is computed and reported, but it authorizes nothing.
+The findings are reported, but they authorize nothing.
 
 The evaluator's feedback is not "try again" or "needs improvement." It is targeted: "Section 4 (Phase 2: Database Migration) has no rollback strategy. The migration adds 3 non-nullable columns but the rollback section only mentions dropping 2. The third column (user_preferences.locale) has no rollback path." This specificity is what makes revision productive rather than random.
 
@@ -50,7 +50,7 @@ The evaluator's feedback is not "try again" or "needs improvement." It is target
 
 The generator does not regenerate the entire plan. It receives the evaluator's findings and revises only the sections that were flagged. This preserves the parts of the plan that passed evaluation while fixing the parts that didn't. Targeted revision is faster, cheaper, and less likely to introduce new gaps than full regeneration.
 
-### 5. Evaluator re-scores the revised plan
+### 5. Evaluator re-judges the revised plan
 
 The evaluator scores the revised plan using the same criteria. This is a full re-evaluation, not just a check of the previously failing sections — revision can sometimes fix one gap while introducing another.
 

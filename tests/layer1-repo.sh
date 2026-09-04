@@ -848,7 +848,20 @@ grep -qxF "$HOL_LINE" plugins/toque/skills/plan/stages/stage-2-design.md \
 
 # ===========================================================================
 # PH5-051 / row A15 (inverted in 8.0.0, WIDENED in 11.0.0): no scoring
-# vocabulary survives anywhere in the planning plugin's live surface.
+# NOTATION survives anywhere in the planning plugin's live surface.
+#
+# NOTATION, not vocabulary, and the distinction is the guard's boundary rather
+# than a quibble. This matches numerals and named artifacts — "3/5", "X/40",
+# scorecard, score_history, the colour bands. It does NOT match the ordinary
+# words score, scores, scoring, rating or points, and it must not: METHODOLOGY
+# and several technique documents use them correctly, about scoring in general
+# or about systems this project only describes.
+#
+# So a sentence can still say a plan "scores well" and pass here. Three did,
+# through the 11.0.0 removal, and were found by reading rather than by this
+# guard. That is a known and accepted gap — a word-level pattern would fire on
+# every legitimate use and get itself suppressed, which is worse than a narrow
+# guard whose limit is written down.
 #
 # 8.0.0 dropped scoring from the design gate and this guard asserted the removal
 # held across three hand-listed paths. That list was the hole. Two commands, an
@@ -915,7 +928,7 @@ if [ "$sc_st" -eq 0 ]; then
   fi
 fi
 
-[ "$score_bad" -eq 0 ] && pass "PH5-051: no scoring vocabulary in the planning plugin ($sc_subjects subjects swept, pattern self-tested)"
+[ "$score_bad" -eq 0 ] && pass "PH5-051: no scoring notation in the planning plugin ($sc_subjects subjects swept, pattern self-tested)"
 
 # ===========================================================================
 # 16R. Root-doc conformance (§9.2, class G) — the root-level docs.
@@ -1194,7 +1207,11 @@ echo ""
 echo "--- Optional inputs (INTEROP-1/2) ---"
 
 INTEROP_DOC="interop.md"
-it_path_re='docs/audit/[A-Za-z0-9_./-]*\.(json|md)'
+# The character class includes '*' so a GLOB is a subject too. Without it,
+# troubleshoot/SKILL.md's fallback read of docs/audit/impact-review-*.md was
+# invisible: a real input, undocumented, with INTEROP-1 and INTEROP-2 both green
+# and a comment above them claiming every functional read was derived.
+it_path_re='docs/audit/[A-Za-z0-9_.*/-]*\.(json|md)'
 
 # Instrument self-tests: the extractor must fire on a real spelling and stay
 # quiet on a directory-only mention, or the derived set silently collapses.
@@ -1203,6 +1220,9 @@ if [ "$(printf 'see docs/audit/foo-bar.md now' | grep -oE "$it_path_re")" != "do
 fi
 if printf 'the docs/audit/readability/ directory' | grep -qE "$it_path_re"; then
   fail "INTEROP: path extractor matches a bare directory mention — it would count non-artifacts as reads"
+fi
+if [ "$(printf 'ls docs/audit/impact-review-*.md' | grep -oE "$it_path_re")" != 'docs/audit/impact-review-*.md' ]; then
+  fail "INTEROP: path extractor cannot see a glob — a wildcard read would go undocumented, which is how one already did"
 fi
 
 if [ ! -f "$INTEROP_DOC" ]; then
@@ -1245,7 +1265,7 @@ else
   {
     grep -E '^\| docs/' "$INTEROP_DOC" | awk -F'|' '{gsub(/ /,"",$2); print $2}'
     awk '/^## Toque.s own paths/,/^## Not inputs/' "$INTEROP_DOC" \
-      | grep -oE "docs/audit/[A-Za-z0-9_./-]*\.(json|md)"
+      | grep -oE "$it_path_re"
   } | sort -u > "$it_documented"
 
   it_derived_n=$(grep -c . "$it_derived" || true)

@@ -51,6 +51,73 @@
   layers 6, 7 and 8 renumber to 5, 6 and 7. `tests/run-all.sh` accepts `1-7`.
 
 
+- **Nine defects from an external adversarial review are fixed.** An independent
+  reviewer audited the plugin at the 11.0.0 tree and every finding was reproduced
+  before being acted on. Four were in the design gate itself, and two of those
+  were introduced earlier in this same release.
+
+  **The gate reported success on records it had just rejected.** The CLI exited on
+  `demoted`, which counts only records that CLAIMED `MET` and lost it. A record
+  written `"verdict": "PASS"` demotes nothing, so it printed
+  `EVIDENCE-VERDICT-INVALID` on screen and exited 0 — and the caller reads the exit
+  code, not the screen. Exit is now on any non-advisory flag.
+
+  **Executable criteria trusted a self-reported exit code.** `LINT-15`/`LINT-16`
+  were satisfied by a `command` field existing and its `exit_code` being 0, both
+  written by the judge and neither checked; a record carrying
+  `command: "definitely-not-run", exit_code: 0` came back `MET`. The validator will
+  not execute a model-authored string to find out, so `exit_code` is now ignored
+  entirely and an executable criterion is settled by a citation that survives
+  re-checking. A record whose only support is a command string is `UNMET`. Records
+  still carrying an exit code get `EVIDENCE-EXITCODE-IGNORED`, an advisory flag
+  that reports the number carried no weight without demoting.
+
+  **The artifact pin is now mandatory.** `sha256` was checked only when a record
+  happened to supply one, while `plan-auditor.md`'s schema did not ask for it and
+  `stage-2-design.md` told the reader the validator "confirms its hash still
+  matches". A record written exactly to the published schema skipped the staleness
+  check the documentation promised. Missing pins are now `EVIDENCE-UNPINNED`, and
+  the schema asks for it with the command to compute it.
+
+  **Citations must stay inside the audited tree.** `path.resolve` accepted an
+  absolute path or a `../` chain and walked out of the root, so a record could
+  satisfy `MET` by quoting a file the audit has no claim over. Absolute paths are
+  refused even when they land inside the tree, because a record is committed and
+  re-checked elsewhere: `EVIDENCE-PATH-ESCAPE`.
+
+  **`F07` passed having examined nothing.** Its extractor required "write" and a
+  `docs/audit/` path inside one period-delimited span, which no live agent
+  satisfies — `plan-auditor` heads a section "Write the Audit Report" and names the
+  path seven lines below. It derived ZERO subjects, and `F07_FLOOR=0` disabled the
+  collapse check that exists to catch exactly that. Now 2 subjects, floor 1.
+
+  **`INTEROP-2` could not see a glob.** `troubleshoot` reads
+  `docs/audit/impact-review-*.md`; the path regex matched only literal names, so a
+  real read went undocumented with both interop guards green and a comment above
+  them claiming every functional read was derived. The regex now includes `*`,
+  self-tests against a glob, and the second hardcoded copy of it is gone.
+
+  **`PH5-051`'s comment claimed more than the regex checks.** It said no scoring
+  vocabulary survives; it matches notation — numerals, `scorecard`, `score_history`,
+  the colour bands — not the words score, scoring or rating. The comment now says
+  notation and records the gap as accepted, because a word-level pattern would fire
+  on every legitimate use and get itself suppressed. Three word-only remnants it
+  cannot see were fixed by hand.
+
+  Also: the stale repository inventory in `README.md` and `CONTRIBUTING.md` (three
+  catalog entries, six skills — actually one and five), and `tq-subagent-stop.js`'s
+  header, which said the handler was "wired to NOTHING" while `hooks.json` wires it.
+
+  All six code fixes are mutation-proven: reverting each one reddens the suite.
+  Layer 5 goes from 48 assertions to 59.
+
+  **What this does not fix.** The historical evidence corpus under
+  `docs/plans/2026-09-03-plan-centerpiece-alignment/evidence/` now reports 10
+  demoted rather than 2, because those records were written before the pin was
+  required and cannot be retrofitted honestly — computing a hash today would pin
+  them to a file the auditor never saw. They stay unpinned and demoted, which is
+  the true statement about them.
+
 - **`toque-audit` and `toque-readiness` are removed.** The codebase audit,
   security scan, delta/KPI tracking, characterization tests, CI gate generation
   and the AI-readiness scan are gone from this repository and this marketplace.

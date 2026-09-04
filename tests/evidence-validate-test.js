@@ -43,6 +43,9 @@ function record(overrides = {}) {
       line_start: 9,
       line_end: 9,
       exact_quote: TRUE_QUOTE,
+      // Required since 11.0.0. Every helper carries it so that a test which
+      // omits it is testing the omission on purpose.
+      sha256: FIXTURE_SHA,
     }],
     reasoning: 'Phase 2 names a reversal command.',
     verdict: 'MET',
@@ -61,6 +64,7 @@ console.log('\n1. Quote fidelity');
       line_start: 9,
       line_end: 9,
       exact_quote: 'Rollback: revert migration 43 using npm run db:down.',
+      sha256: FIXTURE_SHA,
     }],
   });
   const out = validateRecord(r, ROOT);
@@ -165,67 +169,143 @@ console.log('\n3. Staleness');
   fs.rmSync(tmp, { recursive: true, force: true });
 }
 
-console.log('\n4. Command retention on executable criteria');
+console.log('\n4. Executable criteria');
 
-// Some criteria are settled by running something, not by reading something: does the
-// test file exist, does the dashboard config exist. For those, a quote is not
-// evidence — the command and its exit code are. The executable set is fixed inside
-// the validator on purpose. If the record declared its own check type, a judge could
-// avoid the requirement by calling an executable criterion textual, which is exactly
-// the opt-out this rule exists to remove.
+// Some criteria are settled by running something, not by reading something: does
+// the test file exist, is the gate wired. The executable set is fixed inside the
+// validator on purpose — if a record declared its own check type, a judge could
+// call an executable criterion textual and satisfy it with a quote, which is the
+// opt-out this rule exists to remove.
+//
+// What SETTLES one changed in 11.0.0 and this section changed with it. The rule
+// used to be "a command field is present and its exit_code is 0", both written by
+// the judge and neither checked; a record claiming
+// `command: "definitely-not-run", exit_code: 0` came back MET. The validator does
+// not execute commands — these records are model-authored and running a string one
+// wrote is a worse problem than the one it solves — so exit_code is ignored
+// entirely and a verified citation carries the verdict.
+
+// The defect, verbatim. This is the exact shape that used to pass.
 {
   const out = validateRecord({
     criterion_id: 'LINT-15',
-    evidence: [{ artifact: ARTIFACT, line_start: 9, line_end: 9, exact_quote: TRUE_QUOTE }],
-    reasoning: 'The scenario matrix names a test file.',
+    evidence: [{ command: 'definitely-not-run', exit_code: 0 }],
+    reasoning: 'Claims to have run something.',
     verdict: 'MET',
   }, ROOT);
-  check('executable criterion without a command forces UNMET', out.verdict === 'UNMET', `got ${out.verdict}`);
-  check('missing command is flagged EVIDENCE-UNEXECUTED',
+  check('a fabricated command with exit_code 0 does not satisfy an executable criterion',
+    out.verdict === 'UNMET', `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
+  check('command-only evidence is flagged EVIDENCE-UNEXECUTED',
     (out.flags || []).includes('EVIDENCE-UNEXECUTED'),
     `flags=${JSON.stringify(out.flags)}`);
 }
 
-// A retained command that failed is not support for a MET. Recording the command
-// without checking its outcome would let "I ran something" stand in for "it passed".
+// A verified citation settles it. The exit_code here is deliberately nonsense: if
+// it carried any weight in either direction this would not come back MET, so this
+// case is what proves the number is genuinely ignored rather than merely tolerated.
 {
   const out = validateRecord({
     criterion_id: 'LINT-15',
     evidence: [{
-      artifact: ARTIFACT, line_start: 9, line_end: 9, exact_quote: TRUE_QUOTE,
-      command: 'test -f tests/does-not-exist.js', exit_code: 1,
+      artifact: ARTIFACT, line_start: 9, line_end: 9,
+      exact_quote: TRUE_QUOTE, sha256: FIXTURE_SHA,
+      command: 'test -f tests/evidence-validate-test.js', exit_code: 99,
     }],
-    reasoning: 'Ran the existence check.',
+    reasoning: 'The artifact the command is about exists and says this.',
     verdict: 'MET',
   }, ROOT);
-  check('executable criterion with a failing command forces UNMET', out.verdict === 'UNMET', `got ${out.verdict}`);
-  check('failing command is flagged EVIDENCE-COMMAND-FAILED',
-    (out.flags || []).includes('EVIDENCE-COMMAND-FAILED'),
+  check('a verified citation settles an executable criterion', out.verdict === 'MET',
+    `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
+  check('a nonsense exit_code does not change the verdict', out.verdict === 'MET');
+  check('the ignored exit_code is reported, not silently dropped',
+    (out.flags || []).includes('EVIDENCE-EXITCODE-IGNORED'),
     `flags=${JSON.stringify(out.flags)}`);
 }
 
+// EVIDENCE-EXITCODE-IGNORED is advisory: it tells a reader the number carried no
+// weight, and it must not cost the record its verdict. A note that silently
+// demotes is how a validator starts disagreeing with its own comments.
 {
   const out = validateRecord({
     criterion_id: 'LINT-15',
     evidence: [{
-      artifact: ARTIFACT, line_start: 9, line_end: 9, exact_quote: TRUE_QUOTE,
-      command: 'test -f tests/evidence-validate-test.js', exit_code: 0,
+      artifact: ARTIFACT, line_start: 9, line_end: 9,
+      exact_quote: TRUE_QUOTE, sha256: FIXTURE_SHA, exit_code: 0,
     }],
-    reasoning: 'Existence check passed.',
+    reasoning: 'Cited and pinned.',
     verdict: 'MET',
   }, ROOT);
-  check('executable criterion with a passing command is accepted', out.verdict === 'MET',
+  check('an advisory flag alone does not demote',
+    out.verdict === 'MET' && out.flags.length === 1 && out.flags[0] === 'EVIDENCE-EXITCODE-IGNORED',
     `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
 }
 
-// The control that keeps the rule scoped. A textual criterion settled by reading the
-// document must NOT be made to produce a command — there is nothing to run. Without
-// this, the validator would demand shell commands as proof that a plan contains a
-// paragraph, and every honest textual verdict would fail.
+// An executable criterion whose citation does not survive re-checking has no
+// support at all — the quote being wrong removes the only thing that settles it.
+{
+  const out = validateRecord({
+    criterion_id: 'LINT-15',
+    evidence: [{
+      artifact: ARTIFACT, line_start: 9, line_end: 9,
+      exact_quote: 'not what line 9 says', sha256: FIXTURE_SHA,
+    }],
+    reasoning: 'Misquoted.',
+    verdict: 'MET',
+  }, ROOT);
+  check('an executable criterion with a failing citation forces UNMET',
+    out.verdict === 'UNMET' && (out.flags || []).includes('EVIDENCE-UNEXECUTED'),
+    `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
+}
+
+// The control that keeps the rule scoped. A textual criterion settled by reading
+// the document must NOT be made to produce a command — there is nothing to run.
+// Without this the validator would demand shell commands as proof that a plan
+// contains a paragraph, and every honest textual verdict would fail.
 {
   const out = validateRecord(record(), ROOT);
   check('textual criterion needs no command', out.verdict === 'MET',
     `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
+}
+
+console.log('\n4b. The artifact pin is mandatory');
+
+// The pin was checked only when a record happened to supply one, while the schema
+// in plan-auditor.md did not ask for it and stage-2-design.md told the reader the
+// validator "confirms its hash still matches". A record written exactly to the
+// published schema therefore skipped the staleness check the documentation
+// promised. Optional staleness detection is not staleness detection.
+{
+  const unpinned = record({
+    evidence: [{ artifact: ARTIFACT, line_start: 9, line_end: 9, exact_quote: TRUE_QUOTE }],
+  });
+  const out = validateRecord(unpinned, ROOT);
+  check('a MET citation with no sha256 forces UNMET', out.verdict === 'UNMET', `got ${out.verdict}`);
+  check('the missing pin is flagged EVIDENCE-UNPINNED',
+    (out.flags || []).includes('EVIDENCE-UNPINNED'),
+    `flags=${JSON.stringify(out.flags)}`);
+}
+
+console.log('\n4c. Citations stay inside the audited tree');
+
+// path.resolve accepts an absolute path or a ../ chain and walks straight out of
+// rootDir. Without containment a record could satisfy MET by quoting a file the
+// audit has no claim over — a sibling checkout, or anything else on the disk. The
+// quote would match, the hash would match, and the verdict would mean nothing.
+{
+  const path2 = require('path');
+  const abs = path2.resolve(ROOT, ARTIFACT);
+  for (const [name, artifact] of [
+    ['an absolute path inside the tree (non-portable)', abs],
+    ['a parent-directory escape', '../' + ARTIFACT],
+    ['a deeper escape', '../../etc/passwd'],
+  ]) {
+    const out = validateRecord(record({
+      evidence: [{ artifact, line_start: 9, line_end: 9, exact_quote: TRUE_QUOTE, sha256: FIXTURE_SHA }],
+    }), ROOT);
+    check(`${name} is refused`,
+      out.verdict === 'UNMET' && (out.flags || []).includes('EVIDENCE-PATH-ESCAPE'),
+      `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
+  }
 }
 
 console.log('\n5. CLI contract');
@@ -274,6 +354,46 @@ console.log('\n5. CLI contract');
   check('one invalid record exits 1', r.code === 1, `code=${r.code}\n${r.stdout}`);
   check('output names the failing criterion', /LINT-07/.test(r.stdout), r.stdout);
   check('output names the reason', /EVIDENCE-INVALID/.test(r.stdout), r.stdout);
+
+  // THE EXIT CODE MUST AGREE WITH THE REPORT.
+  //
+  // A record the validator cannot read demotes NOTHING, because it never claimed
+  // MET in the first place. For one release the CLI counted only demotions, so a
+  // record written "verdict": "PASS" printed its own rejection on screen and then
+  // exited 0 — and the caller reads the exit code, not the screen. The gate opened
+  // on a corpus the validator had refused.
+  //
+  // Both shapes below demote zero and must still exit 1.
+  fs.rmSync(path.join(evd, 'LINT-07.json'));
+  const typo = JSON.parse(JSON.stringify(good));
+  typo.criterion_id = 'LINT-09';
+  typo.verdict = 'PASS';
+  fs.writeFileSync(path.join(evd, 'LINT-09.json'), JSON.stringify(typo));
+  r = run([evd, ROOT]);
+  check('a verdict outside the vocabulary exits 1 despite demoting nothing',
+    r.code === 1, `code=${r.code}
+${r.stdout}`);
+  check('the report says 0 demoted while the exit code still refuses',
+    /0 demoted/.test(r.stdout) && r.code === 1, r.stdout);
+  fs.rmSync(path.join(evd, 'LINT-09.json'));
+
+  fs.writeFileSync(path.join(evd, 'LINT-10.json'), '{not json');
+  r = run([evd, ROOT]);
+  check('an unparseable record exits 1 despite demoting nothing',
+    r.code === 1, `code=${r.code}
+${r.stdout}`);
+  fs.rmSync(path.join(evd, 'LINT-10.json'));
+
+  // The control: an advisory-only flag must NOT fail the run, or every record
+  // carrying a retained command would redden the gate for saying so.
+  const advisory = JSON.parse(JSON.stringify(good));
+  advisory.criterion_id = 'LINT-11';
+  advisory.evidence[0].exit_code = 0;
+  fs.writeFileSync(path.join(evd, 'LINT-11.json'), JSON.stringify(advisory));
+  r = run([evd, ROOT]);
+  check('an advisory-only flag still exits 0', r.code === 0, `code=${r.code}
+${r.stdout}`);
+  fs.rmSync(path.join(evd, 'LINT-11.json'));
 
   // A missing directory is the worst case, not the quiet case. Exiting 0 would
   // report "nothing wrong" for an audit that produced no evidence at all — the
@@ -353,7 +473,7 @@ console.log('\n5. CLI contract');
   // One bad item among good ones must not cost the good ones their evaluation.
   const mixed = record({
     evidence: [
-      { artifact: ARTIFACT, line_start: 9, line_end: 9, exact_quote: TRUE_QUOTE },
+      { artifact: ARTIFACT, line_start: 9, line_end: 9, exact_quote: TRUE_QUOTE, sha256: FIXTURE_SHA },
       { line_start: 1, line_end: 1, exact_quote: 'x' },
     ],
   });

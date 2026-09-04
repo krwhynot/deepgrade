@@ -21,7 +21,7 @@ plugins were removed.
 
 ```
 .claude-plugin/marketplace.json    # Three catalog entries, one shared ref+SHA pin
-plugins/toque/                 # Planning core (6 commands, 2 agents, 6 skills, 3 hooks)
+plugins/toque/                 # Planning core (6 commands, 2 agents, 5 skills, 3 hooks)
 tests/                             # One suite for the whole monorepo
 ```
 

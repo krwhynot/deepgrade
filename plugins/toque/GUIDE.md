@@ -77,7 +77,7 @@ that also answer to natural-language triggers; six are command files under
 ---
 
 ### `/toque:quick-plan`
-**What it does:** One-shot plan generation from a vague objective. Analyzes the codebase and produces a phased technical plan covering the plan-auditor's eight review dimensions. The dimension score it reports is advisory and gates nothing.
+**What it does:** One-shot plan generation from a vague objective. Analyzes the codebase and produces a phased technical plan covering the plan-auditor's eight review dimensions. It reports findings per dimension, not a total, and gates nothing.
 **When to use it:** For smaller changes where the full six-stage workflow is overkill.
 **What it produces:** `docs/specs/{plan-name}.md`
 **Example:**

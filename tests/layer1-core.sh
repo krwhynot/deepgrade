@@ -45,7 +45,7 @@ case "$PROFILE" in
     HAS_HELP=1
     F02_CHECK=0
     F03_EXACT="plan-scaffolder plan-auditor"
-    F07_FLOOR=0
+    F07_FLOOR=1   # plan-auditor names a docs/audit/ fallback; 0 let the sweep pass on nothing
     F21_FLOOR=9   # was 10; codex-challenge's allowlist left with the skill
     F27_FLOOR=2
     F14_SET="plan-export"
@@ -961,11 +961,24 @@ done
 [ "$f03_bad" -eq 0 ] && pass "F03: Agent granted to exactly [${F03_EXACT:-nobody}]"
 
 # --- 12c. F07: every agent whose body mandates a docs/audit/ output has Write.
+#
+# The extractor required "write" and the path inside ONE period-delimited span,
+# which no live agent satisfies: plan-auditor heads a section "Write the Audit
+# Report" and names docs/audit/plan-audit.md seven lines below it. The sweep
+# derived ZERO subjects and, with F07_FLOOR=0 disabling the collapse check,
+# reported a pass having examined nothing — while a genuine writer sat in the
+# directory it had just walked.
+#
+# Now: an agent is a subject if its body names a docs/audit/ path at all AND
+# says write anywhere. Both conditions still have to hold, so an agent that
+# merely READS from docs/audit/ is not dragged in and forced to declare Write.
 f07_subjects=0
 f07_bad=0
 for f in "$AGENTS_DIR"/*.md; do
   [ -f "$f" ] || continue
-  body_of "$f" | grep -qiE '[Ww]rite[^.]*docs/audit/' || continue
+  f07_body=$(body_of "$f")
+  printf '%s' "$f07_body" | grep -qE 'docs/audit/' || continue
+  printf '%s' "$f07_body" | grep -qiw 'write' || continue
   f07_subjects=$((f07_subjects + 1))
   has_tool Write "$(tools_of "$f")" \
     || { fail "F07: $(basename "$f") is told to write into docs/audit/ but omits Write"; f07_bad=1; }

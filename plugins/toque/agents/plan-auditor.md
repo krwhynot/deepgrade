@@ -363,7 +363,8 @@ Emit one record per applicable criterion, in this shape and this field order:
       "artifact": "docs/specs/example.md",
       "line_start": 81,
       "line_end": 87,
-      "exact_quote": "Rollback: revert migration 0043 via `npm run db:down 0043`."
+      "exact_quote": "Rollback: revert migration 0043 via `npm run db:down 0043`.",
+      "sha256": "<sha256 of the artifact, LF-normalised>"
     }
   ],
   "reasoning": "Phase 2 names a reversal command and the phase it undoes.",
@@ -393,6 +394,20 @@ write the report, in that order — a report composed before the records exist i
 summary of what you intended to find, and the records end up reconstructed to agree
 with it.
 
+`sha256` is REQUIRED on every citation. Compute it over the artifact's
+LF-normalised content:
+
+```
+node -e "const f=require('fs'),c=require('crypto');console.log(c.createHash('sha256').update(f.readFileSync(process.argv[1],'utf8').replace(/
+/g,'
+'),'utf8').digest('hex'))" <path>
+```
+
+It pins the record to the version of the file you actually read. Without it your
+quote is compared against whatever the file says later, and agreement becomes
+coincidence rather than evidence. A citation with no `sha256` is flagged
+`EVIDENCE-UNPINNED` and the verdict drops to `UNMET`.
+
 Your records are re-checked mechanically after you return, by
 `scripts/tq-evidence-validate.js`. It re-reads every artifact you cite, confirms the
 hash still matches, slices the exact line range and compares it byte for byte with
@@ -400,9 +415,13 @@ your quote. It can only lower a verdict, never raise one. So a `MET` you cannot
 support does not become a disagreement to argue — it silently becomes `UNMET`, and
 the only thing you gain by claiming it is a less accurate audit.
 
-For a criterion settled by running something rather than reading something, record
-the `command` you ran and its `exit_code` alongside the quote. A command that exited
-non-zero does not support a `MET`.
+For a criterion settled by running something rather than reading something, the
+thing that settles it is still a citation. Record the `command` you ran so a human
+can repeat it, but understand that the validator does not run it and does not read
+its `exit_code` — both are written by you, and a number you supply about your own
+work is not evidence. What carries the verdict is a citation that survives
+re-checking: the test file that exists and is wired, the config that is in place.
+A record whose only support is a command string is `UNMET`.
 </verdict_schema>
 
 ## Verdict Summary

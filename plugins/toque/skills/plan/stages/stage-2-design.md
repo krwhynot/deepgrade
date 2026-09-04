@@ -608,8 +608,14 @@ project has already had to refuse twice.
 
 Exit codes from the validator, which the gate branches on:
   0  every record survived re-checking
-  1  at least one claimed MET was demoted — the gate does NOT open
+  1  at least one record was flagged — the gate does NOT open
   2  the evidence directory is missing or empty
+
+Exit 1 covers more than a demoted MET. A record the validator could not read at
+all — unparseable JSON, a verdict outside MET/UNMET/N_A — demotes nothing,
+because it never claimed MET in the first place. For one release those exited 0
+while printing their own rejection on screen, so the gate opened on a corpus the
+validator had refused. Any mark in the output is now exit 1.
 
 Treat 2 as the most serious of the three. A missing directory is not a clean run
 with nothing to report; it means the audit produced no evidence at all, and reading

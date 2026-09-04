@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 // Toque: SubagentStop handler — lane N
 //
-// Ledger row 4. This handler exists in scripts/ but is wired to NOTHING: the
-// inline hooks in plugin.json have no SubagentStop entry, so it has never run.
-// F06's fix text is "add the missing SubagentStop entry"; 4b adds it and the
-// handler count goes 7 -> 8. This is the port; activation is 4b's job.
+// Ledger row 4. WIRED and live: hooks/hooks.json registers this under
+// SubagentStop, so it runs on every subagent completion.
+//
+// This header said the opposite for several releases — "wired to NOTHING",
+// activation deferred to a later step. That step landed; the comment did not
+// move. Left uncorrected it is the kind of note that sends the next reader
+// looking for a bug in the wiring instead of in the handler.
 //
 // Informational: fails open, always exits 0.
 'use strict';

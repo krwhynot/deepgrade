@@ -135,7 +135,7 @@ interop.md                        # optional docs/audit/ inputs Toque reads
 ```
 
 Every plugin manifest carries the same version, bumped together by
-`.github/release.sh` — the three catalog entries always pin one ref and one SHA.
+`.github/release.sh` — the catalog entry always pins one ref and one SHA.
 
 ## Dependencies
 

@@ -54,6 +54,16 @@ const EXECUTABLE_CRITERIA = new Set(['LINT-15', 'LINT-16']);
  */
 const VALID_VERDICTS = new Set(['MET', 'UNMET', 'N_A']);
 
+/**
+ * Flags that report something without changing the verdict.
+ *
+ * Every other flag demotes. This set exists so a note can be surfaced to a reader
+ * without silently costing a record its verdict — the failure mode being a comment
+ * that says "not a demotion on its own" sitting above code that demotes, which is
+ * how a validator starts lying about itself.
+ */
+const ADVISORY_FLAGS = new Set(['EVIDENCE-EXITCODE-IGNORED']);
+
 function isExecutableCriterion(id) {
   return EXECUTABLE_CRITERIA.has(id) || /^INFRA-/.test(String(id || ''));
 }
@@ -73,6 +83,27 @@ function checkQuote(item, rootDir) {
 
   const abs = path.resolve(rootDir, item.artifact);
 
+  // The citation must land inside the tree being audited.
+  //
+  // path.resolve happily accepts an absolute path or a ../ chain and walks
+  // straight out of rootDir, so a record could satisfy MET by quoting a file the
+  // audit has no claim over — a sibling checkout, or anything else on the disk.
+  // The quote would match, the hash would match, and the verdict would be
+  // meaningless. Containment is what makes "this repository says so" true.
+  // Absolute paths are refused even when they land inside the tree. One that does
+  // is contained today and broken tomorrow: records are committed and re-checked
+  // on other machines, so C:\Users\...\repo\spec.md validates for its author and
+  // fails for everyone else. Repo-relative is the only spelling that survives the
+  // trip, so the check is on the SPELLING, not only on where it happens to land.
+  if (path.isAbsolute(item.artifact) || /^[A-Za-z]:[\\/]/.test(item.artifact)) {
+    return 'EVIDENCE-PATH-ESCAPE';
+  }
+  const root = path.resolve(rootDir);
+  const rel = path.relative(root, abs);
+  if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) {
+    return 'EVIDENCE-PATH-ESCAPE';
+  }
+
   let raw;
   try {
     raw = fs.readFileSync(abs, 'utf8');
@@ -84,7 +115,18 @@ function checkQuote(item, rootDir) {
   // record was written, the line numbers and the quote are being compared against a
   // document the auditor never saw, and agreement would be coincidence rather than
   // evidence.
-  if (item.sha256 && hashContent(raw) !== String(item.sha256).toLowerCase()) {
+  //
+  // The pin is REQUIRED, and that is a correction. It used to be checked only when
+  // a record happened to supply one, while the schema in plan-auditor.md did not
+  // ask for it and stage-2-design.md told the reader the validator "confirms its
+  // hash still matches". So a record written exactly to the published schema
+  // carried no pin, skipped this check, and the documentation described a guarantee
+  // nothing provided. Optional staleness detection is not staleness detection: the
+  // records that most need pinning are the ones a hurried judge would omit it from.
+  if (!item.sha256) {
+    return 'EVIDENCE-UNPINNED';
+  }
+  if (hashContent(raw) !== String(item.sha256).toLowerCase()) {
     return 'EVIDENCE-STALE';
   }
 
@@ -154,18 +196,41 @@ function validateRecord(rec, rootDir) {
   // For an executable criterion a quote is not evidence. "The scenario matrix says
   // there is a test" and "the test file exists" are different claims, and only the
   // second settles the rule — the first is the plan restating its own assertion.
+  //
+  // What counts as settling it is the part this got wrong for a release. The rule
+  // used to be "a command field is present and its exit_code is 0" — both written
+  // by the judge, neither checked. A record carrying
+  // `command: "definitely-not-run", exit_code: 0` came back MET. The judge was
+  // grading its own homework on precisely the criteria that exist to stop that.
+  //
+  // This validator will not execute a command to find out. These records are
+  // model-authored, and running a string one wrote is a worse problem than the one
+  // it solves. So exit_code is ignored entirely — it is not evidence and cannot be
+  // made into evidence by asserting it harder.
+  //
+  // What IS checkable without running anything: the artifact the command is about.
+  // A citation that survives checkQuote proves a real file, at real lines, saying
+  // what the record claims it says. For LINT-15 that is the test file existing and
+  // being wired; for an INFRA- criterion, the config that had to be in place. So an
+  // executable criterion is settled by at least one citation that verified, and a
+  // record whose only support is a command string is UNMET.
   if (isExecutableCriterion(rec.criterion_id)) {
-    const ran = evidence.filter((e) => e && e.command != null);
-    if (ran.length === 0) {
+    const verifiedCitations = evidence.filter(
+      (e) => e && typeof e.artifact === 'string' && e.artifact && checkQuote(e, rootDir) === null,
+    );
+    if (verifiedCitations.length === 0) {
       flags.push('EVIDENCE-UNEXECUTED');
-    } else if (ran.some((e) => Number(e.exit_code) !== 0)) {
-      // A retained command that failed is not support for a MET. Without this,
-      // "I ran something" would stand in for "it passed".
-      flags.push('EVIDENCE-COMMAND-FAILED');
+    }
+    if (evidence.some((e) => e && e.exit_code !== undefined)) {
+      // Not a demotion on its own — the citations above decide the verdict. This
+      // says out loud that the number carried no weight, so nobody reads a green
+      // record as confirmation that the command was re-run.
+      flags.push('EVIDENCE-EXITCODE-IGNORED');
     }
   }
 
-  const verdict = flags.length > 0 ? 'UNMET' : 'MET';
+  const demoting = flags.filter((f) => !ADVISORY_FLAGS.has(f));
+  const verdict = demoting.length > 0 ? 'UNMET' : 'MET';
   return { criterion_id: rec.criterion_id, verdict, flags };
 }
 
@@ -195,7 +260,17 @@ function validateDirectory(dir, rootDir) {
   });
 
   const demoted = records.filter((r) => r.claimed === 'MET' && r.verdict !== 'MET').length;
-  return { records, demoted };
+
+  // Anything the validator had to flag, whatever the record claimed.
+  //
+  // `demoted` counts only records that claimed MET and lost it, which is the
+  // number a reader wants — but it is the wrong number to exit on. A record
+  // written `"verdict": "PASS"` never claimed MET, so it demotes nothing, and
+  // for one release the CLI printed `✗ EVIDENCE-VERDICT-INVALID` and then
+  // exited 0. The caller reads exit 0 as "every record survived". A corpus the
+  // validator could not read is not a corpus that survived.
+  const flagged = records.filter((r) => r.flags.some((f) => !ADVISORY_FLAGS.has(f))).length;
+  return { records, demoted, flagged };
 }
 
 if (require.main === module) {
@@ -214,20 +289,23 @@ if (require.main === module) {
     process.exit(2);
   }
 
-  const { records, demoted } = validateDirectory(dir, rootDir);
+  const { records, demoted, flagged } = validateDirectory(dir, rootDir);
 
   for (const r of records) {
     const mark = r.flags.length ? '✗' : '✓';
     const why = r.flags.length ? `  [${r.flags.join(', ')}]` : '';
     console.log(`  ${mark} ${r.criterion_id || r.file}: ${r.verdict}${why}`);
   }
-  console.log(`\n${records.length} record(s), ${demoted} demoted`);
+  console.log(`\n${records.length} record(s), ${demoted} demoted, ${flagged} flagged`);
 
   if (records.length === 0) {
     console.error('No records found — an empty evidence directory is not a pass.');
     process.exit(2);
   }
-  process.exit(demoted > 0 ? 1 : 0);
+  // Exit on `flagged`, not `demoted`. Every mark printed above is a record the
+  // validator could not stand behind; exiting 0 while one is on screen makes the
+  // exit code disagree with the report, and the caller only reads the exit code.
+  process.exit(flagged > 0 ? 1 : 0);
 }
 
 module.exports = {
