@@ -54,13 +54,93 @@ jobs:
       #
       # Post-split, validating the root checks ONLY the marketplace manifest, so
       # each plugin directory is validated explicitly — a plugin the loop misses
-      # would ship unvalidated, hence the count assertion.
+      # would ship unvalidated.
+      #
+      # The assertion is set equality against the catalog, not a count. A literal
+      # `-eq 3` went stale the moment 9091fb9 split toque-audit and toque-readiness
+      # out to ai-scan, and 11.0.0 shipped with this job red for it while both
+      # suite matrix legs were green. A set derived from marketplace.json cannot
+      # go stale that way: it fails when the catalog and the tree disagree, in
+      # either direction, and names which side is short.
       - name: Validate marketplace + plugin manifests (strict)
         run: |
+          set -euo pipefail
           claude plugin validate . --strict
-          n=0
-          for p in plugins/*/; do
+
+          MARKET=.claude-plugin/marketplace.json
+
+          # Every entry is classified, and a shape this does not recognise fails
+          # the job. Sorting an unknown shape into "remote" would quietly shrink
+          # the compared set, which is the one way a set-equality check can pass
+          # while comparing nothing.
+          #
+          #   local   a relative path inside this repo — a bare string source, or
+          #           an object source carrying `path` (git-subdir and friends)
+          #   remote  an object source naming a type and no path
+          #   unknown anything else, including an absolute path or one escaping
+          #           the repo with `..`
+          classified=$(jq -r '
+            .plugins[]
+            | .name as $name
+            | (if (.source | type) == "string" then .source
+               elif (.source | type) == "object" and ((.source.path | type) == "string") then .source.path
+               else null end) as $raw
+            | if $raw != null then
+                ($raw | ltrimstr("./") | rtrimstr("/")) as $p
+                | if ($p == "" or ($p | startswith("/")) or ($p | split("/") | any(. == ".."))) then
+                    "unknown\t\($raw)\t\($name)"
+                  else "local\t\($p)\t\($name)" end
+              elif (.source | type) == "object" and ((.source.source | type) == "string") then
+                "remote\t\(.source.source)\t\($name)"
+              else
+                "unknown\t\(.source | tostring)\t\($name)"
+              end
+          ' "$MARKET")
+
+          unknown=$(printf '%s\n' "$classified" | awk -F'\t' '$1 == "unknown" { print "  " $3 " -> " $2 }')
+          if [ -n "$unknown" ]; then
+            echo "$MARKET has entries whose source shape this check does not recognise:"
+            echo "$unknown"
+            echo "Teach the classifier the new shape rather than letting it go uncompared."
+            exit 1
+          fi
+
+          printf '%s\n' "$classified" | awk -F'\t' '$1 == "remote" { print "note: " $3 " is remote (" $2 "); not compared against the tree" }'
+
+          pairs=$(printf '%s\n' "$classified" | awk -F'\t' '$1 == "local" { print $2 "\t" $3 }')
+          declared=$(printf '%s\n' "$pairs" | cut -f1 | sort -u)
+          actual=$(for f in plugins/*/.claude-plugin/plugin.json; do
+            [ -f "$f" ] || continue
+            printf '%s\n' "${f%/.claude-plugin/plugin.json}"
+          done | sort -u)
+
+          # Two empty sides satisfy set equality while validating nothing. That is
+          # the case the old count was really guarding, so the floors go back in
+          # explicitly instead of riding on a literal: the catalog lists something,
+          # something in it is local, and something actually got validated.
+          [ "$(jq '.plugins | length' "$MARKET")" -ge 1 ] || { echo "$MARKET lists no plugins"; exit 1; }
+          [ -n "$pairs" ] || { echo "no entry in $MARKET resolves to a local plugin directory"; exit 1; }
+          [ -n "$actual" ] || { echo "no plugins/*/.claude-plugin/plugin.json found in the tree"; exit 1; }
+
+          if [ "$declared" != "$actual" ]; then
+            echo "catalog and tree disagree about which plugins exist:"
+            comm -23 <(printf '%s\n' "$declared") <(printf '%s\n' "$actual") \
+              | sed 's|^|  in marketplace.json, missing from the tree: |'
+            comm -13 <(printf '%s\n' "$declared") <(printf '%s\n' "$actual") \
+              | sed 's|^|  in the tree, absent from marketplace.json: |'
+            exit 1
+          fi
+
+          validated=0
+          while IFS=$'\t' read -r p want; do
             claude plugin validate "$p" --strict
-            n=$((n + 1))
-          done
-          [ "$n" -eq 3 ] || { echo "validated $n plugin dirs, expected 3"; exit 1; }
+            got=$(jq -r '.name' "$p/.claude-plugin/plugin.json")
+            [ "$want" = "$got" ] || {
+              echo "$p: marketplace calls it '$want', its plugin.json calls it '$got'"
+              exit 1
+            }
+            validated=$((validated + 1))
+          done <<< "$pairs"
+
+          [ "$validated" -ge 1 ] || { echo "no plugin directory was validated"; exit 1; }
+          echo "validated $validated plugin dir(s), matching $MARKET"
