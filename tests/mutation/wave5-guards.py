@@ -22,9 +22,8 @@ atexit.register(lambda: os.path.exists(LOCK) and os.unlink(LOCK))
 
 
 FILES = ['plugins/toque/commands/quick-cleanup.md', 'plugins/toque/commands/plan-status.md', 'plugins/toque/commands/plan-export.md',
-         'plugins/toque-readiness/commands/readiness-generate.md', 'plugins/toque/skills/plan/stages/stage-1-plan.md', 'plugins/toque/commands/help.md',
-         'plugins/toque-audit/commands/codebase-gates.md',
-         'plugins/toque-audit/agents/gate-generator.md', 'plugins/toque/skills/documentation/SKILL.md',
+         'plugins/toque/skills/plan/stages/stage-1-plan.md', 'plugins/toque/commands/help.md',
+         'plugins/toque/skills/documentation/SKILL.md',
          'plugins/toque/skills/mcp-research/SKILL.md', 'README.md', 'CHANGELOG.md',
          'docs/specs/mcp-research-integration.md']
 BAK = {f: io.open(f, encoding='utf-8', newline='').read() for f in FILES}
@@ -32,7 +31,6 @@ BAK = {f: io.open(f, encoding='utf-8', newline='').read() for f in FILES}
 REQUIRED = {
     'plugins/toque/commands/plan-status.md':   'PLANS_DIR="docs/plans"',
     'plugins/toque/commands/quick-cleanup.md': 'No source folder given',
-    'plugins/toque-audit/agents/gate-generator.md':  'PowerShell variant',
     'plugins/toque/skills/plan/stages/stage-1-plan.md':          'toque:mcp-research',
 }
 FORBIDDEN = {
@@ -162,6 +160,13 @@ def append_block(f, body):
     return True
 
 # (label, layer, tag, mutation, expect)  expect: 'catch' or 'quiet'
+# Ten cases were dropped in 11.0.0 when toque-audit and toque-readiness moved to
+# the ai-scan repository: their mutation subjects left with them. Two of the
+# guards those cases proved (F11 argument-hint declaration, F08 PowerShell
+# instruction) now have NO subject in this repository at all — toque profile sets
+# F08_CHECK=0 and the F11 branch was removed rather than retargeted at an
+# arbitrary command. A guard with no subject cannot be mutation-proven, and
+# inventing a subject to keep the count up would prove the fixture, not the rule.
 MUTS = [
  # --- Codex F3: the eight demonstrated false passes ---
  ('Y1  quoted # hides a live $1 from comment-stripping', l1, 'F09',
@@ -171,22 +176,15 @@ MUTS = [
  # Was an INVALID MUTANT: it replaced the key with `argument-hint:XX` then replaced that
  # straight back, so the file was never changed and the guard was right to stay green.
  # Strip the VALUE instead, which is the defect the guard is supposed to see.
- ('Y3  argument-hint: present but with no value', l1, 'F11',
-  lambda: patch('plugins/toque-readiness/commands/readiness-generate.md',
-                'argument-hint: "[number|all-critical|all]"', 'argument-hint:'), 'catch'),
  ('Y4  guard says docs/plans but the loop hardcodes plans/*/', l1, 'F13',
   lambda: patch('plugins/toque/commands/plan-status.md', 'for d in "$PLANS_DIR"/*/', 'for d in plans/*/'), 'catch'),
  ('Y5  a FOURTH disable-model-invocation command', l1, 'F14',
   lambda: patch('plugins/toque/commands/help.md', '---\n', '---\ndisable-model-invocation: true\n')
           or patch('plugins/toque/commands/help.md', '---\r\n', '---\r\ndisable-model-invocation: true\r\n'), 'catch'),
- ('Y6  bare `tree .` with no option flag', l1, 'F15',
-  lambda: append_block('plugins/toque-readiness/commands/readiness-generate.md', 'tree .'), 'catch'),
  ('Y7  only a COMMENT names powershell + Compress-Archive', l1, 'F15',
   lambda: patch('plugins/toque/commands/plan-export.md',
                 '  powershell.exe -NoProfile -Command "Compress-Archive',
                 '  # powershell.exe -NoProfile -Command "Compress-Archive'), 'catch'),
- ('Y8  PowerShell instruction inverted to a prohibition', l1, 'F08',
-  lambda: patch('plugins/toque-audit/agents/gate-generator.md', 'PowerShell variant', 'do not emit a PowerShell variant'), 'catch'),
  ('Y9  skill wired by PROSE only, not a namespaced name', l1, 'F28',
   lambda: patch('plugins/toque/skills/plan/stages/stage-1-plan.md', '`toque:mcp-research` skill', 'mcp-research skill'), 'catch'),
  # --- Codex F4: clauses that previously had no falsifying assertion ---
@@ -233,20 +231,12 @@ MUTS = [
  # --- Round 2 (Codex N1-N7): every one a false pass DEMONSTRATED against the guards
  #     that replaced the round-1 versions. Frontmatter decoys, command-position gaps,
  #     negated references, and ordinal block selection.
- ('W1  argument-hint deleted from frontmatter, decoy in BODY', l1, 'F11',
-  lambda: patch('plugins/toque-readiness/commands/readiness-generate.md', 'argument-hint: "[number|all-critical|all]"', '')
-          and append_block('plugins/toque-readiness/commands/readiness-generate.md', 'x') is None or True, 'catch'),
- # The anchor needed the surrounding lines: `disable-model-invocation: true\n` alone is a
- # prefix of the frontmatter line AND could match nothing once the trailing context
- # differs. Anchored on the adjacent allowed-tools line, which is stable.
  ('W2  disable-model-invocation moved from frontmatter to BODY', l1, 'F14',
   lambda: patch('plugins/toque/commands/plan-export.md',
                 'allowed-tools: Read, Write, Grep, Glob, Bash, Task\ndisable-model-invocation: true\n---',
                 'allowed-tools: Read, Write, Grep, Glob, Bash, Task\n---\n\ndisable-model-invocation: true'), 'catch'),
  ('W3  CLAUDE_PROJECT_DIR only inside an HTML comment', l1, 'F10',
   lambda: patch('plugins/toque/commands/plan-export.md', '${CLAUDE_PROJECT_DIR:-$OLDPWD}', '$OLDPWD', 9), 'catch'),
- ('W4  `tree` after an `if` keyword', l1, 'F15',
-  lambda: append_block('plugins/toque-readiness/commands/readiness-generate.md', 'if tree .; then :; fi'), 'catch'),
  ('W5  skill referenced only to FORBID it', l1, 'F28',
   lambda: patch('plugins/toque/skills/plan/stages/stage-1-plan.md', 'see the `toque:mcp-research` skill',
                 'never invoke `toque:mcp-research`; it is deprecated'), 'catch'),
@@ -268,32 +258,12 @@ MUTS = [
  # Was a BAD CONTROL: replacing '## ' produced an EMPTY heading and demoted the original
  # heading text to prose (Codex round 3). A control has to be an edit a maintainer would
  # actually make, or "the guard stayed quiet" says nothing about legitimate work.
- ('Z1  control: prose about a "directory tree" (not a command)', l1, 'F15',
-  lambda: append_prose('plugins/toque-readiness/commands/readiness-generate.md',
-                       'The directory tree is deep, so prefer a bounded find.'), 'quiet'),
- ('Z2  control: reword an unrelated CI merge line', l1, 'F08',
-  lambda: patch('plugins/toque-audit/agents/gate-generator.md', 'Merge into existing files.', 'Combine with existing files.'), 'quiet'),
- # Over-strictness controls. A guard that fires on a LEGITIMATE edit gets weakened by
- # whoever hits it, so the weakened version is what survives (Codex Q3).
  ('Z3  control: ${PLANS_DIR} braced form in the loop', l1, 'F13',
   lambda: patch('plugins/toque/commands/plan-status.md', 'for d in "$PLANS_DIR"/*/', 'for d in "${PLANS_DIR}"/*/'), 'quiet'),
- ('Z4  control: "Do not omit Windows support; emit a PowerShell variant"', l1, 'F08',
-  lambda: patch('plugins/toque-audit/agents/gate-generator.md', 'Emit a PowerShell variant',
-                'Do not omit Windows support.\nEmit a PowerShell variant'), 'quiet'),
  ('Z5  control: harmless reword of the usage sentence', l4, 'B7',
   lambda: patch('plugins/toque/commands/quick-cleanup.md',
                 'No source folder given. Usage: /toque:quick-cleanup <folder>',
                 'No source folder supplied. Usage: /toque:quick-cleanup <folder>'), 'quiet'),
- ('Z6  control: legitimate rewrite "For every generated hook, also emit..."', l1, 'F08',
-  lambda: patch('plugins/toque-audit/agents/gate-generator.md',
-                'Emit a PowerShell variant of every generated hook command alongside the POSIX one.',
-                'For every generated hook, also emit a PowerShell variant alongside the POSIX one.'), 'quiet'),
- # --- Round 3 (Codex): the live product defect, the behavioural archive test, and the
- #     canary/marker fixes. Each is a variant Codex demonstrated, not a re-run.
- ('V1  the PARENT COMMAND names the inert plugin-side hooks path', l1, 'F08',
-  lambda: patch('plugins/toque-audit/commands/codebase-gates.md',
-                'the `hooks` key of .claude/settings.json',
-                '.claude/hooks/hooks.json'), 'catch'),
  ('V2  archive fallback only NAMES the cmdlet (Write-Output decoy)', l4, 'B8',
   lambda: patch('plugins/toque/commands/plan-export.md', '"Compress-Archive -Path',
                 '"Write-Output Compress-Archive -Path'), 'catch'),

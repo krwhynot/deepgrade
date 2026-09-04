@@ -7,10 +7,10 @@ tell whether it worked.
 
 | Requirement | Needed by | Check |
 | --- | --- | --- |
-| Claude Code | all three plugins | `claude --version` |
+| Claude Code | every plugin | `claude --version` |
 | Node.js 18+ | `toque` only (hooks and the design-gate tools) | `node --version` |
 
-`toque-readiness` and `toque-audit` need nothing beyond Claude Code — they have
+The `ai-scan` plugins need nothing beyond Claude Code — they have
 no hooks and no scripts, and act only when you invoke a command.
 
 Node is the same runtime Claude Code itself requires, so in practice if Claude
@@ -34,8 +34,9 @@ share a version.
 
 ```bash
 claude plugin install toque@toque-marketplace --scope user
-claude plugin install toque-readiness@toque-marketplace --scope user
-claude plugin install toque-audit@toque-marketplace --scope user
+claude plugin marketplace add krwhynot/ai-scan
+claude plugin install ai-scan@ai-scan-marketplace --scope user
+claude plugin install ai-scan-audit@ai-scan-marketplace --scope user
 ```
 
 Not sure which you want? [Choosing a plugin](./choosing-a-plugin.md) is a
@@ -60,22 +61,23 @@ Start Claude Code in any project and run:
 map, including commands belonging to the sibling plugins — so it doubles as a
 check that the other two registered.
 
-If you installed only `toque-readiness` or only `toque-audit`, there is no
+If you installed only the `ai-scan` plugins, there is no
 `help` command. Verify those by running their scan directly:
 
 ```
-/toque-readiness:readiness-scan
-/toque-audit:codebase-audit
+/ai-scan:readiness-scan
+/ai-scan-audit:codebase-audit
 ```
 
 ## Updating
 
-The three plugins share one version and one release. Update them together:
+Toque and the ai-scan plugins release independently now. Update whichever you
+have:
 
 ```bash
 claude plugin update toque@toque-marketplace
-claude plugin update toque-readiness@toque-marketplace
-claude plugin update toque-audit@toque-marketplace
+claude plugin update ai-scan@ai-scan-marketplace
+claude plugin update ai-scan-audit@ai-scan-marketplace
 ```
 
 The catalog pins all three entries to a single tag and commit SHA, so a
@@ -114,7 +116,7 @@ and wrong.
 The two design-gate tools fail the same way, and **Stage 2 of `/toque:plan`
 cannot pass without them**. There is no degraded mode that skips the gate.
 
-`toque-readiness` and `toque-audit` are unaffected.
+The `ai-scan` plugins are unaffected — they release on their own schedule now.
 
 ## Optional integrations
 
@@ -125,4 +127,4 @@ cannot pass without them**. There is no degraded mode that skips the gate.
 ## Related
 
 - [Quickstart](./quickstart.md) — your first scan, end to end
-- [Choosing a plugin](./choosing-a-plugin.md) — which of the three you need
+- [Choosing a plugin](./choosing-a-plugin.md) — Toque or ai-scan, and whether they compose

@@ -14,20 +14,22 @@
 
 ## Repository Structure
 
-This is a monorepo of three plugins with **lockstep versions** — every manifest
-carries the same version and `.github/release.sh` bumps them together.
+One plugin lives here. `.github/release.sh` discovers every tracked manifest
+rather than hardcoding a list, so the lockstep machinery still runs — it just
+has one member. It was three until 11.0.0, when the audit and readiness
+plugins moved to the ai-scan repository and started releasing on their own
+schedule.
 
 ```
 .claude-plugin/marketplace.json    # Three catalog entries, one shared ref+SHA pin
 plugins/toque/                 # Planning core (6 commands, 2 agents, 6 skills, 3 hooks)
-plugins/toque-readiness/       # Readiness scanners (2 commands, 10 agents, 1 skill)
-plugins/toque-audit/           # Audit team (5 commands, 10 agents, 3 skills)
 tests/                             # One suite for the whole monorepo
 ```
 
 Each plugin directory holds its own `.claude-plugin/plugin.json`, `README.md`,
 `GUIDE.md`, and its `commands/`, `agents/`, `skills/`, `hooks/`, `scripts/` as
-applicable. `toque-readiness` and `toque-audit` ship ZERO hooks and
+applicable. Toque is the only plugin here since 11.0.0; the audit and
+readiness plugins moved to the ai-scan repository and
 ZERO scripts by design — layer 1 enforces that partition.
 
 ## Adding a Command
@@ -72,11 +74,13 @@ file missing its `name:` passes clean.
 The same rule applies to **skill** names, which are not MCP tools but fail the
 same way: plugin skills address as `plugin:skill`, so an agent that says
 "reference the `self-audit-knowledge` skill" is naming something unresolvable.
-Qualify with the agent's OWN plugin namespace — `toque:self-audit-knowledge`
-in the planning plugin, `toque-audit:self-audit-knowledge` in the audit
-plugin (which ships a byte-identical mirror; layer 1 keeps the two copies
-identical — edit both or neither). Nothing in the toolchain catches an
-unqualified skill reference either.
+Qualify with the plugin namespace — `toque:self-audit-knowledge`. Nothing in
+the toolchain catches an unqualified skill reference either.
+
+Until 11.0.0 `toque-audit` shipped a byte-identical mirror of that skill so it
+resolved under both namespaces, and a layer 1 guard held the two copies
+identical. The mirror left with the plugin. If the copies drift now, nothing
+in this repository can tell — that check is gone, not relocated.
 
 The block above is byte-identical to the one in `skills/mcp-research/SKILL.md`
 and a test asserts they stay that way. Edit both or neither.
@@ -114,9 +118,10 @@ When editing hooks:
 
 ## Versioning
 
-Versions are **lockstep across all three plugins**: one release bumps every
-manifest, the three catalog entries stay on a single tag+SHA, and
-`.github/release.sh` is the only supported way to cut a release. Follow
+One manifest, one catalog entry, one tag+SHA, and `.github/release.sh` is the
+only supported way to cut a release. The lockstep checks still run over every
+manifest `git ls-files` finds, so adding a second plugin needs no change to
+the release script — only to the counts the suite asserts. Follow
 semantic versioning (MAJOR.MINOR.PATCH):
 - PATCH: Bug fixes, hook improvements
 - MINOR: New commands, agents, or hooks

@@ -92,10 +92,19 @@ sed -i "s/^Current: v$CUR_RE/Current: v0.0.1/" plugins/toque/README.md
 git commit -qam "v1b"
 violation "V1b: plugin README version drift refused" "version|drift"
 
-# V2: a manifest disagrees — the lockstep rule, load-bearing at three manifests.
-sed -i "s/\"version\": \"$CUR_RE\"/\"version\": \"0.0.1\"/" plugins/toque-audit/.claude-plugin/plugin.json
+# V2: the MANIFEST moves and the documents do not.
+#
+# This was the lockstep rule, and it was load-bearing while three manifests had
+# to agree with each other. One plugin ships since 11.0.0, so manifest-vs-manifest
+# drift has no second party and cannot be constructed. What survives is the other
+# half of the same invariant, and it is the half that actually shipped broken in
+# 5.0.0: preflight derives the release version FROM the manifest, so bumping the
+# manifest alone silently makes every README and GUIDE stale at once. V1 and V1b
+# move a document against a fixed manifest; this moves the manifest against fixed
+# documents, which is the direction a careless `npm version`-style bump takes.
+sed -i "s/\"version\": \"$CUR_RE\"/\"version\": \"0.0.1\"/" plugins/toque/.claude-plugin/plugin.json
 git commit -qam "v2"
-violation "V2: manifest out of lockstep refused" "lockstep|version"
+violation "V2: manifest bumped without the documents refused" "version|drift|states"
 
 # V3: CHANGELOG has no entry for the manifest version — how 5.0.0 shipped
 # without its breaking-change section.

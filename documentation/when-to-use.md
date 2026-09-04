@@ -5,7 +5,7 @@ The honest version, including the cases where you should not.
 Toque is deliberately heavy in places. Knowing where it is overkill is what
 makes the places it fits worth the cost.
 
-## `toque-readiness`
+## `ai-scan` (separate marketplace)
 
 **Use it when**
 
@@ -28,7 +28,7 @@ makes the places it fits worth the cost.
 service with no entry-point documentation scores worse than a mediocre one that
 explains itself.
 
-## `toque-audit`
+## `ai-scan-audit` (separate marketplace)
 
 **Use it when**
 

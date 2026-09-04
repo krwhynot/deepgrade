@@ -1,6 +1,6 @@
 {
   "name": "toque-marketplace",
-  "description": "Developer toolkit for codebase auditing, AI-readiness scanning, structured planning, and operational readiness. Three plugins, one lockstep release. Works on any stack.",
+  "description": "Six-stage AI-Native SDLC planning with an adversarial verifier-first design gate, plan-linked troubleshooting, and documentation generation. Works on any stack.",
   "owner": {
     "name": "Kyle Whynot"
   },
@@ -19,41 +19,6 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/toque.git",
         "path": "plugins/toque",
-        "ref": "v10.0.0",
-        "sha": "debe96e6aa1a1e9e25f026bd95c46c4c30de7d17"
-      }
-    },
-    {
-      "name": "toque-readiness",
-      "description": "AI-readiness scanning: 52 checks, 9 categories, composite letter grade, generated scaffolding for the gaps.",
-      "category": "development",
-      "tags": [
-        "ai-readiness",
-        "codebase-grading",
-        "scanning"
-      ],
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/krwhynot/toque.git",
-        "path": "plugins/toque-readiness",
-        "ref": "v10.0.0",
-        "sha": "debe96e6aa1a1e9e25f026bd95c46c4c30de7d17"
-      }
-    },
-    {
-      "name": "toque-audit",
-      "description": "Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates.",
-      "category": "development",
-      "tags": [
-        "audit",
-        "codebase",
-        "security",
-        "quality-gates"
-      ],
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/krwhynot/toque.git",
-        "path": "plugins/toque-audit",
         "ref": "v10.0.0",
         "sha": "debe96e6aa1a1e9e25f026bd95c46c4c30de7d17"
       }

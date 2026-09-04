@@ -311,8 +311,5 @@ STOP and follow the 4-phase process if you catch yourself:
 <valid_commands>
 /toque:documentation, /toque:help, /toque:plan,
 /toque:plan-export, /toque:plan-status, /toque:quick-audit, /toque:quick-cleanup,
-/toque:quick-plan, /toque:troubleshoot, /toque-audit:codebase-audit,
-/toque-audit:codebase-characterize, /toque-audit:codebase-delta,
-/toque-audit:codebase-gates, /toque-audit:codebase-security,
-/toque-readiness:readiness-generate, /toque-readiness:readiness-scan
+/toque:quick-plan, /toque:troubleshoot
 </valid_commands>

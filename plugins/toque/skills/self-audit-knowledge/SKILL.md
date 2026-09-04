@@ -58,8 +58,8 @@ dependents may be cosmetic.
 - Anything touching auth/security paths
 - Anything touching payment flows
 - Anything touching required-mod / state mutation flows
-- Any finding another scanner consumed as input (e.g., risk-assessor used
-  dependency-mapper's fan-in)
+- Any finding another step consumed as input (e.g., plan-auditor rested a
+  verdict on a risk plan-scaffolder had already stated)
 
 **COVERAGE** — scope/completeness claim; if wrong, silent gaps in analysis
 

@@ -1,15 +1,19 @@
 ---
-description: Show all Toque Developer Toolkit commands, agents, and capabilities. Use when you need to see what's available or explain the toolkit to someone new.
+description: Show all Toque commands, agents, and capabilities. Use when you need to see what's available or explain the plugin to someone new.
 ---
 
-# Toque Developer Toolkit
+# Toque
 
-A planning + implementation assistant with codebase auditing. Stack-agnostic:
-works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
+Structured planning for engineering work. Stack-agnostic: works on
+React/TypeScript, C#/.NET, Python, Rust, and Go projects.
+
+The centrepiece is `/toque:plan` — a six-stage workflow with an adversarial
+design gate between deciding what to build and building it. Everything else
+here either feeds that workflow or is a standalone shortcut for one part of it.
 
 ## Commands
 
-### Planning (the six-stage playbook workflow)
+### Planning (the six-stage workflow)
 
 | Command | What It Does |
 |---------|-------------|
@@ -22,7 +26,7 @@ works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
 | Command | What It Does |
 |---------|-------------|
 | `/toque:quick-plan` | Create a plan directly from an objective (skips brainstorm/research). |
-| `/toque:quick-audit` | Audit any spec or plan file. 8-dimension score + devil's advocate. |
+| `/toque:quick-audit` | Audit any spec or plan file against the design gate's criteria. Reports PASS or NOT PASS with the criteria that failed. |
 | `/toque:quick-cleanup` | Clean up a folder of messy docs into structured reference files. |
 | `/toque:troubleshoot` | AI-guided debugging. Suggests diagnostics, logs every step tried, builds a knowledge base. Auto-links to active plan. |
 
@@ -35,7 +39,7 @@ works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
 | **Asks questions?** | Yes, walks you through interactively | No, takes objective and generates immediately |
 | **Creates plan folder?** | Yes: `docs/plans/2026-03-07-{name}/` | No, just writes `docs/specs/{name}.md` |
 | **Research?** | Yes, scans codebase + docs + web | No, uses existing context |
-| **Audit?** | Yes, scores and challenges the plan | Yes, auto-audits with revision loop (up to 2 iterations) |
+| **Audit?** | Yes, the full design gate | Yes, auto-audits with revision loop (up to 2 iterations) |
 | **Build help?** | Yes, tracks tickets and assists | No, plan is delivered |
 | **Resumes?** | Yes, come back anytime | No, one and done |
 | **Time** | 30-60 min full workflow | 5-10 min |
@@ -48,39 +52,17 @@ works on React/TypeScript, C#/.NET, Python, Rust, and Go projects.
 | Got docs from someone, need the full treatment | `/toque:plan {name} from {folder}` |
 | Already know what to build, just need it written down | `/toque:quick-plan` |
 | Someone asks "write up a plan for X" and you need it fast | `/toque:quick-plan` |
-| Plan needs leadership approval | `/toque:plan` (includes audit) |
+| Plan needs leadership approval | `/toque:plan` (includes the gate) |
 | Quick internal plan for yourself | `/toque:quick-plan` |
 
 Same pattern applies: `/toque:quick-audit` = audit one file without the workflow.
 `/toque:quick-cleanup` = clean up docs without the workflow.
 
-### Readiness Scan (Phase 1: Can AI read this codebase?)
-
-| Command | What It Does |
-|---------|-------------|
-| `/toque-readiness:readiness-scan` | AI Readiness scan. 52 checks, 9 categories, letter grade A+ to F. |
-| `/toque-readiness:readiness-generate` | Generate missing artifacts found by readiness scan. |
-
-### Codebase Audit (Phase 2: What's in it and what's risky?)
-
-| Command | What It Does |
-|---------|-------------|
-| `/toque-audit:codebase-audit` | Full Toque codebase audit. 6 parallel agents: features, dependencies, docs, risk, integrations, report. |
-| `/toque-audit:codebase-security` | Security-focused scan: dependency vulns, secrets, SSL, injection risks. |
-
-### Codebase Monitoring (Phase 3: Did changes help or hurt?)
-
-| Command | What It Does |
-|---------|-------------|
-| `/toque-audit:codebase-delta` | Quick re-measurement. What improved, what regressed, KPI dashboard. |
-| `/toque-audit:codebase-gates` | Generate CI quality gates and Claude Code hooks from audit findings. |
-| `/toque-audit:codebase-characterize` | Golden master tests that capture behavior before refactoring. |
-
 ### Documentation
 
 | Command | What It Does |
 |---------|-------------|
-| `/toque:documentation` | Generate any document: ADR, BRD, PRD, README, release notes, spec. |
+| `/toque:documentation` | Generate any document: ADR, BRD, PRD, README, release notes, spec. Part of the plan workflow (Stage 2 ADRs, Stage 5 runbook) and usable standalone. |
 
 ### Utility
 
@@ -88,76 +70,28 @@ Same pattern applies: `/toque:quick-audit` = audit one file without the workflow
 |---------|-------------|
 | `/toque:help` | This command. |
 
-## Phase 1: AI Readiness (10 scanner agents)
-
-Scores how ready your codebase is for AI-assisted development.
-
-| Agent | Scans For |
-|-------|----------|
-| manifest-scanner | package.json, .sln, pyproject.toml completeness |
-| context-scanner | CLAUDE.md, .claude/ rules, AI context files |
-| structure-scanner | Directory organization, co-location, nesting depth |
-| entry-scanner | Main entry points, startup files, route handlers |
-| convention-scanner | Naming patterns, linting config, formatting consistency |
-| feedback-scanner | CI/CD, pre-commit hooks, test automation |
-| baseline-scanner | Existing audit baselines, confidence tracking |
-| budget-scanner | Context window efficiency, instruction count |
-| database-scanner | Schema docs, migration tracking, connection patterns |
-| readiness-report-generator | Synthesizes all scanner outputs into scored report |
-
-## Phase 2: Toque Audit (6 agents)
-
-Deep analysis producing actionable documentation. All scanners produce evidence basis
-(Tier A/B/C) and failure mode flags. Phase 3 synthesis cross-validates findings and
-assigns cascade risk. See Self-Audit Summary in the final report.
-
-| Agent | Produces |
-|-------|---------|
-| feature-scanner | Feature inventory by domain with critical business paths |
-| dependency-mapper | Dependency graph, coupling metrics, circular dependencies |
-| doc-auditor | Documentation coverage assessment, gap analysis |
-| risk-assessor | Module risk ratings, debt classification, phase boundaries |
-| integration-scanner | External touchpoints, security observations |
-| toque-report-generator | Final Toque report with severity-classified findings |
-
-## Phase 3: Enterprise Governance (4 agents)
-
-Verify progress, enforce quality, and maintain audit freshness.
-
-| Agent | What It Does |
-|-------|-------------|
-| delta-scanner | Re-measures codebase, compares against baselines, tracks KPIs, handles confidence decay |
-| gate-generator | Creates CI workflows, Claude Code hooks, and pre-commit hooks from audit findings |
-| security-scanner | Dependency vulns, hardcoded secrets, SSL config, injection risks, permissions |
-| characterization-generator | Golden master tests that capture current behavior before refactoring |
-
-## Planning Tools (2 agents)
+## Agents (2)
 
 Create and review technical plans for any engineering initiative.
 
 | Agent | What It Does |
 |-------|-------------|
-| plan-auditor | Scores any plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team). Produces go/no-go assessment. |
-| plan-scaffolder | Creates structured plans from vague objectives. Reads codebase + audit data to generate evidence-based phased plans. |
+| plan-auditor | Reviews a plan against the gate's criteria. Emits one verdict per criterion (MET, UNMET, N_A) with the evidence it rests on, and every verdict is mechanically re-checked afterwards. |
+| plan-scaffolder | Creates structured plans from vague objectives. Reads the codebase, and any audit data present, to generate evidence-based phased plans. |
 
-## Knowledge Skills (7, across all three plugins)
+## Knowledge Skills (5)
 
-Auto-loaded contextual knowledge that guides agent behavior during scans and reports.
-`plan` and `documentation` ship in toque; `toque-knowledge`, `governance-knowledge`
-and `self-audit-knowledge` in toque-audit (self-audit also in toque); `readiness-scoring`
-in toque-readiness.
+Auto-loaded contextual knowledge that guides behavior during planning.
 
 | Skill | What It Provides |
 |-------|-----------------|
-| toque-knowledge | Toque methodology for codebase audit and documentation |
+| plan | The `/toque:plan` workflow: a router plus one file per stage, loaded on entry so late stages survive compaction |
 | documentation | Document generation templates (ADR, BRD, PRD, README, release notes, spec) |
-| governance-knowledge | Enterprise governance patterns, DORA metrics, quality gates, confidence decay |
-| plan | The `/toque:plan` workflow: a router plus one file per phase, loaded on entry so late phases survive compaction |
+| troubleshoot | Plan-linked debugging: diagnostic suggestions, a log of every step tried, and a knowledge base built from what worked |
 | mcp-research | When and how to use external MCP search tools (Ref, Exa, Perplexity): tool selection heuristics, token budget rules, graceful degradation |
-| readiness-scoring | AI readiness scoring methodology, gate thresholds, grading criteria |
 | self-audit-knowledge | LLM epistemic transparency, claim verification tiers (A/B/C), failure mode flags, cascade risk classification, evidence basis formatting |
 
-## Documentation Skill (6 templates)
+## Documentation Skill (7 templates)
 
 Generate any project document. Auto-loaded when you mention documentation.
 Powered by audit data when available. Suggests which document to create if you're unsure.
@@ -176,16 +110,7 @@ Don't know which format? Just say "I need to document X" and the skill will reco
 
 ## Typical Workflow
 
-**For codebase auditing:**
-1. `/toque-readiness:readiness-scan` to get your baseline score
-2. `/toque-readiness:readiness-generate` to fix low-hanging issues
-3. Re-scan to verify improvement
-4. `/toque-audit:codebase-audit` when score reaches 80%+
-5. `/toque-audit:codebase-gates` to generate CI quality checks
-6. `/toque-audit:codebase-delta` after changes to verify improvement
-7. `/toque-audit:codebase-security` periodically
-
-**For planning any new work (the six-stage playbook workflow):**
+**For planning any new work (the six-stage workflow):**
 ```
 /toque:plan {name}
 ```
@@ -198,26 +123,32 @@ All artifacts go to `docs/plans/{date}-{name}/`. Check progress with `/toque:pla
 - `/toque:quick-audit [file]` to audit any spec or plan
 - `/toque:quick-cleanup [folder]` to clean up messy docs
 - `/toque:documentation [type] [topic]` to generate a specific document
-- `/toque-audit:codebase-characterize [module]` to generate golden master tests
 
-**Note on gating:** The readiness scan uses two tiers of gates:
-- **Hard gates** (manifest, context file, entry point, tests): Must pass or Phase 2 is blocked
-- **Soft gates** (CLAUDE.md specifics, monolith files, do-not-touch zones): Score penalty + warning, but Phase 2 still runs with reduced confidence on affected modules
+## Codebase auditing and AI-readiness scanning
 
-If soft gates fail (e.g., monolith files exist), the readiness report generates
-a "Phase 2 Focus Priorities" section that tells the audit exactly where to dig
-deepest. The audit output becomes your roadmap for fixing the structural issues.
+These moved out of Toque in 11.0.0. The codebase audit, security scan,
+delta/KPI tracking, characterization tests, CI gate generation and the
+AI-readiness scan now live in a separate marketplace:
+
+```
+/plugin marketplace add krwhynot/ai-scan
+```
+
+Toque still *reads* what they produce. If `docs/audit/` holds a risk
+assessment, dependency map, feature inventory or integration scan, the planning
+commands and the documentation templates use them to ground their output. If it
+does not, everything still works — the data makes plans better-informed, and
+none of it is required. `interop.md` in the Toque repository lists exactly which
+files are read and by what.
 
 ## Output Locations
 
 | What | Where |
 |------|-------|
-| Plan homebase (brainstorm, approach, research) | `docs/plans/YYYY-MM-DD-{name}/` |
+| Plan homebase (intent, research, spec, plan, review) | `docs/plans/YYYY-MM-DD-{name}/` |
 | Plan manifest (links to everything) | `docs/plans/YYYY-MM-DD-{name}/manifest.md` |
 | Specs | `docs/specs/` |
 | ADRs | `docs/adr/` |
 | PRDs | `docs/prd/` |
 | Plan audits | `docs/audit/` |
-| Readiness scan data | `docs/audit/readability/` |
-| Codebase audit reports | `docs/audit/` |
-| Golden master tests | Project test directories |
+| Audit and readiness data Toque reads (written by ai-scan) | `docs/audit/`, `docs/audit/readability/` |

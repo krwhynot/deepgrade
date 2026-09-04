@@ -56,55 +56,6 @@ case "$PROFILE" in
     F08_CHECK=0; F30_POS=1; F32_CHECK=1; TPL_CHECK=1
     NODE_REQ=1; GUIDE_8E=1
     ;;
-  toque-readiness)
-    # Readiness scanners: 2 commands, 10 agents, 1 skill, ZERO hooks by design.
-    PLUGIN_NAME="toque-readiness"
-    OWN_NS="toque-readiness"
-    EXPECTED_EVENTS=""
-    FORBIDDEN_EVENTS=""
-    EXPECT_HOOKS=0
-    F06_REF_FLOOR=0
-    SUBAGENT_WIRED=0
-    MARKER_CHECK=absent
-    HAS_HELP=0
-    F02_CHECK=0
-    F03_EXACT=""
-    F07_FLOOR=10
-    F21_FLOOR=12
-    F27_FLOOR=0
-    F14_SET="readiness-generate"
-    EXPECT_COMMANDS=1
-    EXPECT_AGENTS=1
-    F14_PLAN_NEG=0
-    F13_CHECK=0; F09_POS=0; F10_POS=0; F11_ARGHINT=1; F15_ZIP=0
-    F08_CHECK=0; F30_POS=0; F32_CHECK=0; TPL_CHECK=0
-    NODE_REQ=0; GUIDE_8E=0
-    ;;
-  toque-audit)
-    # Audit team: 5 codebase-* commands, 10 agents, 3 skills (incl. the
-    # byte-identical self-audit-knowledge mirror), ZERO hooks by design.
-    PLUGIN_NAME="toque-audit"
-    OWN_NS="toque-audit"
-    EXPECTED_EVENTS=""
-    FORBIDDEN_EVENTS=""
-    EXPECT_HOOKS=0
-    F06_REF_FLOOR=0
-    SUBAGENT_WIRED=0
-    MARKER_CHECK=absent
-    HAS_HELP=0
-    F02_CHECK=1
-    F03_EXACT=""
-    F07_FLOOR=10
-    F21_FLOOR=15
-    F27_FLOOR=5
-    F14_SET="codebase-gates"
-    EXPECT_COMMANDS=1
-    EXPECT_AGENTS=1
-    F14_PLAN_NEG=0
-    F13_CHECK=0; F09_POS=0; F10_POS=0; F11_ARGHINT=0; F15_ZIP=0
-    F08_CHECK=1; F30_POS=0; F32_CHECK=0; TPL_CHECK=0
-    NODE_REQ=0; GUIDE_8E=0
-    ;;
   *)
     echo "[FAIL] unknown profile '$PROFILE' — refusing to run with undefined floors"
     exit 1
@@ -884,9 +835,9 @@ else
   for tok in $(grep -rhoE '(^|[[:space:]"'"'"'(`])/[a-z][a-z-]*' "$TPL_DIR" 2>/dev/null \
                | tr -d ' "'"'"'(`' | sort -u); do
     case "$tok" in
-      /toque|/toque-readiness|/toque-audit) ;;
+      /toque) ;;
       *)
-        fail "F31: template references dead command '$tok' (only the four Toque namespaces are valid)"
+        fail "F31: template references dead command '$tok' (only the /toque namespace is valid)"
         bad_cmd=$((bad_cmd + 1)) ;;
     esac
   done
@@ -1385,13 +1336,11 @@ fi
 # A DECLARATION needs a value AND must be in frontmatter. The whole-file grep was
 # satisfied by `argument-hint: "[decoy-in-body]"` written into the body with the real
 # frontmatter key deleted (Codex N2).
-if [ "$F11_ARGHINT" -eq 0 ]; then
-  :  # readiness-generate ships with toque-readiness only
-elif fm_has "$COMMANDS_DIR/readiness-generate.md" 'argument-hint'; then
-  pass "F11: readiness-generate declares a non-empty argument-hint in frontmatter"
-else
-  fail "F11: readiness-generate has no argument-hint value in its frontmatter — an empty key, or one in the body, declares nothing"
-fi
+# The subject of this check, readiness-generate.md, left with toque-readiness in
+# 11.0.0. The rule it enforced — a declaration needs a value AND must live in
+# frontmatter — is kept alive by fm_has, which every remaining frontmatter check
+# calls. Retargeting it at an arbitrary toque command would assert a requirement
+# no toque command actually has.
 
 # --- F13: the guard must test the directory the loop actually reads. It tested
 #     `plans` while iterating `docs/plans/*/`, so on a normal layout the no-argument

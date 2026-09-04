@@ -73,11 +73,24 @@ const phaseStatus = status.phases && status.phases[phase] && typeof status.phase
 
 const parts = [`Active plan: ${latest.name} (phase: ${phase}, status: ${phaseStatus})`];
 
-const report = 'docs/audit/toque-report.md';
-try {
-  const ageDays = Math.floor((Date.now() - fs.statSync(report).mtimeMs) / 86400000);
+// Both filenames, newest wins. The audit plugin moved to the ai-scan repository
+// in 11.0.0 and renamed its output ai-scan-report.md; toque-report.md is what
+// every repository audited before that still has on disk. Checking one name
+// would silently stop reporting staleness for one population or the other, and
+// the failure is invisible — a stale-audit warning that never fires looks
+// exactly like an audit that is fresh.
+const reports = ['docs/audit/ai-scan-report.md', 'docs/audit/toque-report.md'];
+let newest = null;
+for (const r of reports) {
+  try {
+    const m = fs.statSync(r).mtimeMs;
+    if (newest === null || m > newest) newest = m;
+  } catch { /* this one is absent; try the other */ }
+}
+if (newest !== null) {
+  const ageDays = Math.floor((Date.now() - newest) / 86400000);
   if (ageDays > 7) parts.push(`Audit report is ${ageDays} days old.`);
-} catch { /* no audit report yet */ }
+}
 
 if (source === 'compact') {
   // 3.1.6 locked fallback: if PreCompact cannot surface a message (U5 negative),

@@ -5,11 +5,10 @@ AI-Native SDLC playbook (intent.md, spec.md, plan.md, review.md) with an
 adversarial, verifier-first design gate, plan-linked troubleshooting, and
 documentation generation. Stack-agnostic. Works on any codebase.
 
-This is one of three Toque plugins in the
-[toque monorepo](https://github.com/krwhynot/toque). It pairs with
-`toque-readiness` (AI-readiness grading) and `toque-audit` (codebase
-audits) — install any subset.
-The full reference is [GUIDE.md](GUIDE.md).
+It pairs with [ai-scan](https://github.com/krwhynot/ai-scan), a separate
+marketplace holding the codebase audit and AI-readiness scanners that used to
+ship alongside it. Toque uses their output when it is there and does not need
+it. The full reference is [GUIDE.md](GUIDE.md).
 
 ## Install
 

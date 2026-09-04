@@ -5,20 +5,19 @@
 [![release](https://img.shields.io/github/v/tag/krwhynot/toque?label=release&color=2ECC71)](./CHANGELOG.md)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2)](https://claude.ai)
 
-Toque gives your codebase a letter grade. AI-powered codebase auditing,
-planning, operational readiness assessment, and documentation generation for
-Claude Code. Stack-agnostic. Works on any codebase.
-
-This repository is a monorepo of **three plugins with lockstep versions** — one
-marketplace, one release, install any subset:
+Toque takes a change from idea to release with a gate at every step. A
+six-stage planning workflow for Claude Code, built around an adversarial design
+gate that has to be passed rather than scored. Stack-agnostic. Works on any
+codebase.
 
 | Plugin | What it does | Who installs it |
 | ------ | ------------ | --------------- |
 | [`toque`](plugins/toque/) | Six-stage AI-Native SDLC planning (intent, spec, plan, test, release, maintain) with an adversarial verifier-first design gate, plan-linked troubleshooting, documentation generation | Developers living in `docs/plans/` daily |
-| [`toque-readiness`](plugins/toque-readiness/) | AI-readiness scan: 52 checks, 9 categories, composite letter grade A+ to F, generated scaffolding | Consultants and leads grading many repos |
-| [`toque-audit`](plugins/toque-audit/) | Severity-graded codebase audits, security scans, delta/KPI tracking, characterization tests, generated CI gates | Engineering managers doing due diligence |
 
-Not sure which? → [Choosing a plugin](documentation/choosing-a-plugin.md)
+**Looking for the codebase audit or the AI-readiness scan?** They moved to
+[ai-scan](https://github.com/krwhynot/ai-scan) in 11.0.0 and release on their
+own schedule now. Toque reads what they write when it is there, and works
+without it. → [Choosing a plugin](documentation/choosing-a-plugin.md)
 
 ## What It Does
 
@@ -76,12 +75,10 @@ No weighted sum, no partial credit.
 claude plugin marketplace add krwhynot/toque
 ```
 
-**Step 2:** Install the plugins you want (any subset works):
+**Step 2:** Install it:
 
 ```bash
 claude plugin install toque@toque-marketplace --scope user
-claude plugin install toque-readiness@toque-marketplace --scope user
-claude plugin install toque-audit@toque-marketplace --scope user
 ```
 
 **Step 3:** Start Claude Code in any project and verify:
@@ -90,19 +87,23 @@ claude plugin install toque-audit@toque-marketplace --scope user
 /toque:help
 ```
 
-`/toque:help` (from the `toque` plugin) shows the full toolkit map,
-including the commands that belong to the sibling plugins.
+`/toque:help` maps every command, and points at ai-scan for the audit and
+readiness work that is no longer here.
 
 Upgrading from a pre-10.0.0 install, or want every install path? →
 [Install](documentation/install.md)
 
-## A Suggested Path Through the Toolkit
+## A Suggested Path
 
-1. `/toque-readiness:readiness-scan` for a baseline navigability grade
-2. `/toque-readiness:readiness-generate` to fix the low-hanging issues
-3. `/toque-audit:codebase-audit` once the readiness score is healthy
-4. `/toque:plan` to plan the remediation work the audit surfaced
-5. `/toque-audit:codebase-delta` after changes, to verify improvement
+1. `/toque:quick-plan` on something small, to see the shape of the output
+2. `/toque:plan` when the work is big enough to want the gate
+3. `/toque:plan-status` to pick up where you left off
+
+If you also install [ai-scan](https://github.com/krwhynot/ai-scan), run its
+readiness scan and codebase audit first: Toque reads the risk assessment,
+dependency map, feature inventory and integration scan they leave in
+`docs/audit/`, and a plan grounded in those is better than one written from the
+code alone.
 
 New to it? [Quickstart](documentation/quickstart.md) walks the first plan
 end to end, and suggests two lighter commands to try first.
@@ -113,30 +114,27 @@ end to end, and suggests two lighter commands to try first.
 | ---- | ------------ |
 | [Quickstart](documentation/quickstart.md) | Your first plan, end to end, with what appears on disk |
 | [Install](documentation/install.md) | Every install path, scopes, upgrading, what breaks without Node |
-| [Choosing a plugin](documentation/choosing-a-plugin.md) | Which of the three you need, and whether they compose |
+| [Choosing a plugin](documentation/choosing-a-plugin.md) | Toque or ai-scan, and whether they compose |
 | [When to use Toque](documentation/when-to-use.md) | Use / don't use per plugin — including where it is overkill |
 | [The plan workflow](documentation/the-plan-workflow.md) | All six stages in depth, approval tiers, parallelism |
 | [The plan workspace](documentation/plan-workspace.md) | Plan folder anatomy, `status.json`, resume, staleness cascade |
 | [The design gate](documentation/the-design-gate.md) | Canary, evidence validation, the pass expression, the limitation |
 
-Deeper references: per-plugin `GUIDE.md` files
-([toque](plugins/toque/GUIDE.md) ·
-[readiness](plugins/toque-readiness/GUIDE.md) ·
-[audit](plugins/toque-audit/GUIDE.md)) ·
+Deeper references: [GUIDE.md](plugins/toque/GUIDE.md) ·
 [METHODOLOGY.md](METHODOLOGY.md) (the theory) ·
-[interop.md](interop.md) · [CHANGELOG.md](CHANGELOG.md)
+[interop.md](interop.md) (what Toque reads that it does not write) ·
+[CHANGELOG.md](CHANGELOG.md)
 
 ## Repository Layout
 
 ```
-.claude-plugin/marketplace.json   # the three catalog entries, one shared ref+SHA pin
+.claude-plugin/marketplace.json   # the catalog entry and its ref+SHA pin
 plugins/toque/                    # planning core (commands, agents, skills, hooks)
-plugins/toque-readiness/          # readiness scanners
-plugins/toque-audit/              # audit agents
 documentation/                    # task-shaped user documentation
-tests/                            # one suite for the whole monorepo (run-all.sh)
+tests/                            # the suite (run-all.sh, seven layers)
 docs/                             # dev-time records: plans, specs, release notes
-METHODOLOGY.md                    # the methodology reference (not shipped by any plugin)
+METHODOLOGY.md                    # the methodology reference (not shipped by the plugin)
+interop.md                        # the docs/audit/ files Toque reads from ai-scan
 ```
 
 Every plugin manifest carries the same version, bumped together by
@@ -144,10 +142,10 @@ Every plugin manifest carries the same version, bumped together by
 
 ## Dependencies
 
-The `toque` plugin runs its hooks and design-gate tools as Node scripts
-and requires [Node.js](https://nodejs.org/) 18 or later — the same runtime
-Claude Code itself needs, so if Claude Code runs, it does too.
-`toque-readiness` and `toque-audit` need nothing beyond Claude Code.
+Toque runs its hooks and design-gate tools as Node scripts and requires
+[Node.js](https://nodejs.org/) 18 or later — the same runtime Claude Code itself
+needs, so if Claude Code runs, it does too. The ai-scan plugins need nothing
+beyond Claude Code.
 
 The always-on safety hooks that used to ship as `toque-guard` (force-push
 and DB-deploy blocking, migration protection, change/test tracking) were retired

@@ -172,7 +172,7 @@ before you continue.
 Different job, separate plugin, one command:
 
 ```
-/toque-readiness:readiness-scan
+/ai-scan:readiness-scan
 ```
 
 52 checks across 9 categories score how well an AI agent can read and navigate
@@ -181,12 +181,14 @@ the project, weighted into a composite grade from A+ to F. Output lands in
 `docs/audit/readability/readability-score.json` as a machine-readable baseline
 for later comparison.
 
-Then `/toque-readiness:readiness-generate` scaffolds the gaps it found.
+Then `/ai-scan:readiness-generate` scaffolds the gaps it found. Both commands
+come from the separate [ai-scan](https://github.com/krwhynot/ai-scan)
+marketplace, not from Toque.
 
 ---
 
 ## Related
 
 - [The plan workflow](./the-plan-workflow.md) — all six stages in depth
-- [Choosing a plugin](./choosing-a-plugin.md) — which of the three you need
+- [Choosing a plugin](./choosing-a-plugin.md) — Toque or ai-scan, and whether they compose
 - [When to use Toque](./when-to-use.md) — including when not to

@@ -22,9 +22,10 @@ falsifiable criteria, its evidence is re-validated byte-for-byte by
 verdict counts. The gate passes on verified evidence, never on a self-assigned
 score. See [The Design Gate](#the-design-gate) below.
 
-It is one of three Toque plugins. `toque-readiness` grades AI
-navigability and `toque-audit` runs codebase audits — install any subset. The
-methodology reference lives in the monorepo's
+Toque is the only plugin in this repository. Codebase auditing and AI-readiness
+scanning moved to [ai-scan](https://github.com/krwhynot/ai-scan) in 11.0.0;
+Toque reads what they write when it is present and works without it when it is
+not. The methodology reference lives in the repository's
 [METHODOLOGY.md](https://github.com/krwhynot/toque/blob/main/METHODOLOGY.md).
 
 ## Contents
@@ -308,7 +309,7 @@ and a fill-in document skeleton the output must follow.
 | `spec-template.md` | Technical Specification -- extraction, migration, feature, or infrastructure plans with phases, validation, risk, rollback, and success criteria | `docs/specs/` |
 
 > [!IMPORTANT]
-> When a `toque-audit` baseline exists, templates pull from it automatically. A PRD pulls feature confidence scores and entry points from `feature-inventory.json`, an ADR pulls related findings from `risk-assessment.json`, a README pulls dependencies from `dependency-map.json`. Documents generated **after** an audit are richer than documents generated from scratch. Everything below 0.90 confidence is tagged `[ASSUMPTION]` rather than stated as fact.
+> When an ai-scan audit baseline exists, templates pull from it automatically. A PRD pulls feature confidence scores and entry points from `feature-inventory.json`, an ADR pulls related findings from `risk-assessment.json`, a README pulls dependencies from `dependency-map.json`. Documents generated **after** an audit are richer than documents generated from scratch. Everything below 0.90 confidence is tagged `[ASSUMPTION]` rather than stated as fact.
 
 ---
 

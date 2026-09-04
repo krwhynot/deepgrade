@@ -182,16 +182,16 @@ as files in the plugin's commands/ directory. The valid commands are:
 | Create plan | `/toque:quick-plan [objective]` |
 | Audit plan | `/toque:quick-audit [file]` |
 | Create document | `/toque:documentation [adr\|brd\|prd\|readme\|runbook\|release-notes\|spec] [topic]` |
-| Readiness scan | `/toque-readiness:readiness-scan` |
-| Toque audit | `/toque-audit:codebase-audit` |
-| Delta scan | `/toque-audit:codebase-delta` |
-| Security scan | `/toque-audit:codebase-security` |
-| Characterize | `/toque-audit:codebase-characterize [module]` |
-| Setup gates | `/toque-audit:codebase-gates` |
-| Generate artifacts | `/toque-readiness:readiness-generate` |
 
 NEVER suggest a command that is not in this list. If you are unsure whether a
 command exists, use `/toque:help` to check.
+
+Codebase auditing and readiness scanning left Toque in 11.0.0 and are not in
+this list on purpose. Their commands live in a separate marketplace that may or
+may not be installed, so suggesting one is a guess about the user's setup — and
+a command that does not resolve is worse than no suggestion. Point at
+`docs/audit/` if the data is already there; otherwise say the audit lives in
+ai-scan and let the user decide.
 
 ## External Enrichment (when MCP search tools available)
 

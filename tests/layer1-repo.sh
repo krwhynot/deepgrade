@@ -899,7 +899,10 @@ if [ "$sc_st" -eq 0 ]; then
   fi
 
   while IFS= read -r sf; do
-    case "$sf" in */toque-audit/*|*readability-score*|*readiness*|tests/mutation/*) continue ;; esac
+    # The exclusions that named toque-audit, readability-score and the mutation
+    # harness are gone with 11.0.0: the subject glob below is toque-only, so they
+    # could never fire again and a dead exclusion reads like a live one.
+    case "$sf" in *readiness*) continue ;; esac
     [ -f "$sf" ] || continue
     sc_subjects=$((sc_subjects + 1))
     hits=$(grep -nE "$SC_RE" "$sf" || true)
@@ -972,61 +975,35 @@ else
   pass "F04: all install commands in root docs are marketplace-qualified"
 fi
 
-# ===========================================================================
-# SPLIT-1: the self-audit-knowledge mirror is byte-identical (split step 4).
-#
-# toque-audit ships a MIRROR of toque's self-audit-knowledge skill so
-# each plugin resolves the skill under its own namespace. Two copies of one
-# text is exactly the drift species PH5-001 exists to kill, so the mirror is
-# tolerated only under a byte-identity guard: edit both or neither.
-#
-# The comparison strips \r first. On a core.autocrlf host, restoring ONE copy
-# via `git checkout` re-materializes it CRLF while the untouched copy stays LF
-# — identical git blobs, different working-tree bytes, and `git status` clean
-# throughout (both sides are i/lf). That exact state produced this guard's one
-# false positive (2026-08-03, split step 4 boundary run). What ships is the
-# blob, so eol divergence in the working tree is materialization, not drift;
-# CONTENT divergence is still refused byte-for-byte.
-# ===========================================================================
 echo ""
 echo "--- Split invariants ---"
 
-SAK_A="plugins/toque/skills/self-audit-knowledge"
-SAK_B="plugins/toque-audit/skills/self-audit-knowledge"
-sak_bad=0
-for d in "$SAK_A" "$SAK_B"; do
-  [ -f "$d/SKILL.md" ] || { fail "SPLIT-1: $d/SKILL.md is missing — the mirror pair is broken, not clean"; sak_bad=1; }
-done
-if [ "$sak_bad" -eq 0 ]; then
-  # File LISTS must match too — a resource added to one side only is drift the
-  # per-file compare below would never see.
-  sak_list_a=$(cd "$SAK_A" && git ls-files . | sort)
-  sak_list_b=$(cd "$SAK_B" && git ls-files . | sort)
-  if [ "$sak_list_a" != "$sak_list_b" ]; then
-    fail "SPLIT-1: the self-audit-knowledge copies ship different file sets"
-    sak_bad=1
-  else
-    for f in $sak_list_a; do
-      cmp -s <(tr -d '\r' < "$SAK_A/$f") <(tr -d '\r' < "$SAK_B/$f") \
-        || { fail "SPLIT-1: $f differs between the canonical skill and its mirror — edit both or neither"; sak_bad=1; }
-    done
-  fi
-fi
-[ "$sak_bad" -eq 0 ] && pass "SPLIT-1: self-audit-knowledge mirror is byte-identical to the canonical"
+# SPLIT-1 is retired. It held toque's self-audit-knowledge skill byte-identical
+# to the mirror toque-audit shipped so each plugin could resolve the skill under
+# its own namespace. toque-audit moved to the ai-scan repository in 11.0.0 and
+# took the mirror with it, so there is no second copy in this tree to drift
+# against. The drift risk is now cross-repository and cannot be checked from
+# here; interop.md records that, and it is deliberately not a guard, because a
+# guard that cannot see its subject reports a pass it did not earn.
 
 # ===========================================================================
 # SPLIT-2: version lockstep across every plugin manifest.
 #
 # The release script enforces this at release time; this copy enforces it on
 # every suite run, so a drifted manifest is caught in the PR that drifts it
-# rather than on release day. The count is EXACTLY three (four until
-# toque-guard was retired in 9.0.0) — adding or removing a plugin is a
-# deliberate decision that must update this number in the same commit.
+# rather than on release day. The count is EXACTLY one (four until toque-guard
+# was retired in 9.0.0, three until toque-audit and toque-readiness moved to
+# ai-scan in 11.0.0) — adding or removing a plugin is a deliberate decision that
+# must update this number in the same commit.
+#
+# The lockstep comparison is trivially satisfied at a count of one. It is kept
+# anyway: the count assertion is what has teeth now, and the moment a second
+# plugin reappears the version check is already in place to catch it drifting.
 # ===========================================================================
 split_manifests=$(git ls-files '*/.claude-plugin/plugin.json')
 split_mcount=$(echo "$split_manifests" | grep -c . || true)
-if [ "$split_mcount" -ne 3 ]; then
-  fail "SPLIT-2: found $split_mcount plugin manifests, expected exactly 3"
+if [ "$split_mcount" -ne 1 ]; then
+  fail "SPLIT-2: found $split_mcount plugin manifests, expected exactly 1"
 else
   split_vers=$(for m in $split_manifests; do
     grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$m" | head -1 | sed 's/.*"\([0-9][^"]*\)"$/\1/'
@@ -1034,39 +1011,48 @@ else
   if [ "$(echo "$split_vers" | grep -c .)" -ne 1 ]; then
     fail "SPLIT-2: version lockstep broken across manifests: $(echo $split_vers | tr '\n' ' ')"
   else
-    pass "SPLIT-2: all 3 plugin manifests in lockstep at $split_vers"
+    pass "SPLIT-2: the single plugin manifest is at $split_vers"
   fi
 fi
 
 # ===========================================================================
-# SPLIT-3: every namespaced reference resolves against its own plugin.
+# SPLIT-3: every namespaced reference resolves to a file that exists.
 #
-# After the split, `/toque-audit:codebase-audit` is a claim that a file
-# exists in ANOTHER plugin's directory — nothing else checks cross-plugin
-# references (help.md's 5c and the template check resolve only same-plugin
-# names). A rename on one side of the boundary must fail every referring
-# plugin, or the reference decays into an "if installed" guess.
+# Until 11.0.0 this checked references ACROSS plugin boundaries — a
+# `/toque-audit:codebase-audit` written inside toque was a claim about another
+# plugin's directory, and nothing else verified it. Those namespaces left with
+# their plugins, so the pattern is now single-namespace and the guard proves
+# the narrower thing that remains true: every `/toque:x` written anywhere in
+# the tree names a command or skill that is actually shipped.
+#
+# Retargeting rather than retiring is deliberate. The cross-plugin half is
+# gone, but the failure it caught — a rename landing in one file and not the
+# eleven that reference it — is unchanged, and help.md alone carries most of
+# those references.
 #
 # Subjects: every tracked .md under plugins/ plus the root README. docs/plans
 # and the CHANGELOG are historical records; docs/specs quote old namespaces by
-# design. Longest-alternative-first is cosmetic — grep -E is leftmost-longest,
-# so 'toque' can never shadow 'toque-audit' at the same position.
+# design.
 # ===========================================================================
-ns_re='(toque-readiness|toque-audit|toque):[a-z][a-z0-9-]*'
+ns_re='toque:[a-z][a-z0-9-]*'
 
 # Self-tests. The known-positive is drawn from the LIVE artifact (help.md), not
 # authored here — a known-positive written alongside the pattern shares its
 # blind spots (the F06 lesson). The known-negative proves the resolver can
 # refuse: a real namespace with a sibling's command name must NOT resolve.
-ns_kp=$(grep -ohE "$ns_re" plugins/toque/commands/help.md 2>/dev/null | grep -m1 '^toque-readiness:')
+ns_kp=$(grep -ohE "$ns_re" plugins/toque/commands/help.md 2>/dev/null | grep -m1 '^toque:')
 if [ -z "$ns_kp" ]; then
-  fail "SPLIT-3: extractor finds no cross-plugin token in help.md, which maps the whole toolkit — the pattern collapsed, so a clean sweep would be vacuous"
+  fail "SPLIT-3: extractor finds no namespaced token in help.md, which maps every command — the pattern collapsed, so a clean sweep would be vacuous"
 fi
 ns_resolves() {  # ns_resolves <ns> <name> -> 0 if the name exists in that plugin
   [ -f "plugins/$1/commands/$2.md" ] || [ -f "plugins/$1/skills/$2/SKILL.md" ]
 }
-if ns_resolves "toque-readiness" "plan"; then
-  fail "SPLIT-3: resolver accepts toque-readiness:plan, which does not exist — it can no longer refuse anything"
+# The known-negative proves the resolver can still refuse. codebase-audit is a
+# real command name — it just lives in ai-scan now — which makes it a sharper
+# negative than an invented string: it is exactly what a stale reference to the
+# departed plugins would look like.
+if ns_resolves "toque" "codebase-audit"; then
+  fail "SPLIT-3: resolver accepts toque:codebase-audit, which moved to ai-scan — it can no longer refuse anything"
 fi
 
 ns_bad=0
@@ -1082,8 +1068,8 @@ while IFS= read -r tok; do
   fi
 done < <(git ls-files -z 'plugins/*.md' 'README.md' 2>/dev/null | xargs -0 grep -hoE "$ns_re" 2>/dev/null | sort -u)
 
-if [ "$ns_total" -lt 20 ]; then
-  fail "SPLIT-3: only $ns_total distinct namespaced references derived (expected >= 20) — the subject set collapsed, so a pass would be vacuous"
+if [ "$ns_total" -lt 10 ]; then
+  fail "SPLIT-3: only $ns_total distinct namespaced references derived (expected >= 10) — the subject set collapsed, so a pass would be vacuous"
 elif [ "$ns_bad" -eq 0 ]; then
   pass "SPLIT-3: all $ns_total distinct namespaced references resolve within their declared plugin"
 fi
@@ -1122,8 +1108,8 @@ else
   # Self-test: the extractor must actually read entries out of THIS file, or
   # every per-entry assertion below sweeps an empty set and reports clean.
   cat_n=$(jq '.plugins | length' "$CATALOG" 2>/dev/null | tr -d '\r')
-  if [ "${cat_n:-0}" -ne 3 ]; then
-    fail "SPLIT-4: catalog lists ${cat_n:-0} plugins, expected exactly 3 — a fourth entry (or a removal) is a deliberate decision that updates this number"
+  if [ "${cat_n:-0}" -ne 1 ]; then
+    fail "SPLIT-4: catalog lists ${cat_n:-0} plugins, expected exactly 1 — an addition (or a removal) is a deliberate decision that updates this number"
     cat_bad=1
   fi
 
@@ -1171,18 +1157,36 @@ else
     cat_bad=1
   fi
 
-  [ "$cat_bad" -eq 0 ] && pass "SPLIT-4: all 4 catalog entries are git-subdir over https, resolve to real plugin dirs, and share one release pin"
+  [ "$cat_bad" -eq 0 ] && pass "SPLIT-4: all $cat_n catalog entries are git-subdir over https, resolve to real plugin dirs, and share one release pin"
 fi
 
 # ===========================================================================
-# INTEROP: cross-plugin artifact contracts (split step 6).
+# INTEROP: cross-REPOSITORY artifact contracts.
 #
-# SPLIT-3 proves namespaced REFERENCES resolve; nothing proved the ARTIFACTS
-# plugins hand each other stay contract-true. A producer renaming its output
-# strands every consumer in a sibling plugin, and no per-plugin check can see
-# it — the drift is only visible repo-wide. interop.md is the contract; this
-# sweep holds it to the tree in BOTH directions, so neither a stale row nor an
-# undocumented new edge survives.
+# Until 11.0.0 the producers were sibling plugins here and this swept both
+# directions: a stale row failed, and so did an undocumented edge. The audit and
+# readiness plugins moved to ai-scan, so the producer half is now unreachable
+# from this tree and no amount of cleverness makes it checkable.
+#
+# What is left is the consumer half, and it is worth keeping precisely because
+# the other half went away. With no producer in the repo, a toque file quietly
+# reading docs/audit/whatever.md has nothing to keep it honest — the artifact
+# never appears in any test run, so a typo in the path reads identically to an
+# unscanned repository. These checks are what still notices.
+#
+# The guard therefore asserts three narrower things:
+#   INTEROP-1  every consumer named in interop.md exists and still reads its
+#              artifact.
+#   INTEROP-2  every docs/audit/ path a toque functional file reads has a row
+#              or is declared toque-internal, and every row has a live reader.
+#   INTEROP-3  the producer column names a foreign repository, so nobody
+#              mistakes an unenforceable row for a checked one.
+#
+# INTEROP-3 previously validated readability-score.json against the producer's
+# schema block and a fixture derived from a live scan. Toque never read that
+# artifact; its schema, its ratified points/max vocabulary and the fixture all
+# travel with the producer. Keeping a copy of the assertion here would test a
+# contract this repository is not party to.
 #
 # Subjects are FUNCTIONAL files only (commands/, agents/, skills/, scripts/):
 # README/GUIDE mentions are description, not consumption — the (since retired)
@@ -1193,7 +1197,6 @@ echo ""
 echo "--- Interop contracts (INTEROP-1/2/3) ---"
 
 INTEROP_DOC="interop.md"
-IT_FIX="tests/fixtures/interop/readability-score.sample.json"
 it_path_re='docs/audit/[A-Za-z0-9_./-]*\.(json|md)'
 
 # Instrument self-tests: the extractor must fire on a real spelling and stay
@@ -1206,10 +1209,11 @@ if printf 'the docs/audit/readability/ directory' | grep -qE "$it_path_re"; then
 fi
 
 if [ ! -f "$INTEROP_DOC" ]; then
-  fail "INTEROP: $INTEROP_DOC is missing — the cross-plugin contracts are undocumented"
+  fail "INTEROP: $INTEROP_DOC is missing — the cross-repository contracts are undocumented"
 else
-  # --- INTEROP-1: every contract row is live in both its producer and every
-  #     consumer. Rows are `| <artifact> | <producer> | <consumers,> |`.
+  # --- INTEROP-1: every documented consumer exists and still reads its
+  #     artifact. The producer column is NOT resolved — it names a path in
+  #     another repository, and pretending otherwise is what INTEROP-3 guards.
   it_rows=0
   it_bad=0
   while IFS='|' read -r _ it_art it_prod it_cons _; do
@@ -1217,13 +1221,6 @@ else
     it_prod=$(echo "$it_prod" | tr -d ' ')
     [ -n "$it_art" ] || continue
     it_rows=$((it_rows + 1))
-    if [ ! -f "$it_prod" ]; then
-      fail "INTEROP-1: producer $it_prod (for $it_art) does not exist"
-      it_bad=1
-    elif ! grep -qF "$it_art" "$it_prod"; then
-      fail "INTEROP-1: producer $it_prod no longer mentions $it_art — the contract row is stale or the producer renamed its output"
-      it_bad=1
-    fi
     for it_c in $(echo "$it_cons" | tr ',' ' '); do
       if [ ! -f "$it_c" ]; then
         fail "INTEROP-1: consumer $it_c (for $it_art) does not exist"
@@ -1238,108 +1235,70 @@ else
   if [ "$it_rows" -lt 8 ]; then
     fail "INTEROP-1: only $it_rows contract rows parsed from $INTEROP_DOC (expected >= 8) — the parser or the table collapsed"
   elif [ "$it_bad" -eq 0 ]; then
-    pass "INTEROP-1: all $it_rows contract rows are live in their producers and consumers"
+    pass "INTEROP-1: all $it_rows contract rows have live consumers that still read them"
   fi
 
-  # --- INTEROP-2: the DERIVED cross-plugin edge set equals the documented
-  #     one. An artifact referenced from functional files of 2+ plugins is an
-  #     edge whether or not anyone wrote it down.
-  it_tmp=$(mktemp)
-  for it_p in toque toque-readiness toque-audit; do
-    git ls-files -z "plugins/$it_p/commands/*" "plugins/$it_p/agents/*" \
-                    "plugins/$it_p/skills/*" "plugins/$it_p/scripts/*" 2>/dev/null \
-      | xargs -0 -r grep -ohE "$it_path_re" 2>/dev/null | sort -u | sed "s|^|$it_p |"
-  done > "$it_tmp"
-
+  # --- INTEROP-2: the derived read-set equals the documented one.
+  #     Derived = every docs/audit/ path any toque functional file references.
+  #     Documented = contract rows plus the toque-internal list, which is
+  #     parsed out of interop.md rather than repeated here so there is one
+  #     place to edit.
   it_derived=$(mktemp)
-  awk '{print $2}' "$it_tmp" | sort | uniq -c | awk '$1 >= 2 {print $2}' | sort > "$it_derived"
+  git ls-files -z 'plugins/toque/commands/*' 'plugins/toque/agents/*' \
+                  'plugins/toque/skills/*' 'plugins/toque/scripts/*' 2>/dev/null \
+    | xargs -0 -r grep -ohE "$it_path_re" 2>/dev/null | sort -u > "$it_derived"
+
   it_documented=$(mktemp)
-  grep -E '^\| docs/' "$INTEROP_DOC" | awk -F'|' '{gsub(/ /,"",$2); print $2}' | sort > "$it_documented"
+  {
+    grep -E '^\| docs/' "$INTEROP_DOC" | awk -F'|' '{gsub(/ /,"",$2); print $2}'
+    awk '/^## Toque-internal paths/,/^## Deliberate non-edges/' "$INTEROP_DOC" \
+      | grep -oE "docs/audit/[A-Za-z0-9_./-]*\.(json|md)"
+  } | sort -u > "$it_documented"
 
   it_derived_n=$(grep -c . "$it_derived" || true)
   if [ "$it_derived_n" -lt 8 ]; then
-    fail "INTEROP-2: derived only $it_derived_n cross-plugin artifacts (expected >= 8) — the derivation is broken, not the tree"
+    fail "INTEROP-2: derived only $it_derived_n docs/audit paths from toque (expected >= 8) — the derivation is broken, not the tree"
   else
     it2_bad=0
     while IFS= read -r it_miss; do
       [ -n "$it_miss" ] || continue
-      fail "INTEROP-2: $it_miss is referenced by 2+ plugins but has no contract row in $INTEROP_DOC"
+      fail "INTEROP-2: toque reads $it_miss but it has no contract row and is not declared toque-internal in $INTEROP_DOC"
       it2_bad=1
     done < <(comm -23 "$it_derived" "$it_documented")
     while IFS= read -r it_stale; do
       [ -n "$it_stale" ] || continue
-      fail "INTEROP-2: $INTEROP_DOC documents $it_stale but the tree no longer has a cross-plugin edge for it — delete or update the row"
+      fail "INTEROP-2: $INTEROP_DOC documents $it_stale but no toque file reads it — delete or update the row"
       it2_bad=1
     done < <(comm -13 "$it_derived" "$it_documented")
-    [ "$it2_bad" -eq 0 ] && pass "INTEROP-2: derived cross-plugin edge set ($it_derived_n artifacts) exactly matches the documented contracts"
+    [ "$it2_bad" -eq 0 ] && pass "INTEROP-2: toque's derived docs/audit read-set ($it_derived_n paths) exactly matches the documented contracts"
   fi
-  rm -f "$it_tmp" "$it_derived" "$it_documented"
-fi
+  rm -f "$it_derived" "$it_documented"
 
-# --- INTEROP-3: the readability-score.json schema smoke test. The score file
-#     is the one MACHINE-read cross-plugin artifact, so its contract is keys,
-#     not prose: the fixture must parse, carry every load-bearing key a
-#     consumer extracts, and agree with the producer's schema block.
-IT_SCAN="plugins/toque-readiness/commands/readiness-scan.md"
-if [ ! -f "$IT_FIX" ]; then
-  fail "INTEROP-3: fixture $IT_FIX is missing"
-elif ! command -v jq >/dev/null 2>&1; then
-  fail "INTEROP-3: jq is unavailable — the schema smoke test cannot run, and silence here is not a pass"
-else
-  if ! jq -e '
-      (.timestamp | type == "string") and
-      (.overall.score | type == "number") and
-      (.overall.grade | type == "string") and
-      (.categories | has("manifest") and has("context_files") and has("structure")
-        and has("entry_points") and has("conventions") and has("feedback_loops")
-        and has("baseline") and has("context_budget") and has("database")) and
-      (.categories.database.status | IN("applicable", "not_applicable")) and
-      (.checks | type == "array" and length > 0
-        and all(has("id") and has("name") and has("status") and has("points") and has("max"))) and
-      (.delta | has("previous_scan_id"))
-    ' "$IT_FIX" >/dev/null 2>&1; then
-    fail "INTEROP-3: fixture fails the load-bearing key contract (timestamp, overall.score/grade, 9 categories, database.status, checks[] elements with id/name/status/points/max, delta)"
-  else
-    pass "INTEROP-3: fixture carries every load-bearing key with the right types"
-  fi
-
-  # The check-element vocabulary is points/max, RATIFIED from observed reality
-  # (2026-08-03 dogfood): every template said score/max_score, every one of 8
-  # live scanners emitted points/max, and no consumer noticed — both ends of
-  # an LLM-to-LLM contract are tolerant, so the drift had no symptom. The
-  # templates now say points/max; this ban keeps the dead vocabulary from
-  # creeping back in either the templates or the fixture.
-  it_vocab=$(grep -rln 'max_score' plugins/toque-readiness/ tests/fixtures/interop/ 2>/dev/null)
-  if [ -n "$it_vocab" ]; then
-    for it_v in $it_vocab; do
-      fail "INTEROP-3: $it_v says 'max_score' — the ratified check-element vocabulary is points/max"
-    done
-  else
-    pass "INTEROP-3: the retired score/max_score vocabulary appears nowhere in the readiness plugin or the fixture"
-  fi
-
-  # Top-level keys: producer schema block vs fixture, exact set equality.
-  # tr -d '\r' on BOTH sides: Windows jq emits CRLF lines, and a CRLF-
-  # materialized producer file would poison the other side the same way —
-  # the SPLIT-1 eol lesson applies to every text comparison in this file.
-  it_schema_keys=$(awk '/must follow this schema/,/^}/' "$IT_SCAN" \
-    | grep -oE '^  "[a-z_]+":' | tr -d ' ":\r' | sort)
-  it_fix_keys=$(jq -r 'keys_unsorted[]' "$IT_FIX" | tr -d '\r' | sort)
-  if [ -z "$it_schema_keys" ]; then
-    fail "INTEROP-3: no schema block extractable from $IT_SCAN — the producer contract is gone or moved"
-  elif [ "$it_schema_keys" != "$it_fix_keys" ]; then
-    fail "INTEROP-3: schema block keys and fixture keys diverge (schema: $(echo $it_schema_keys | tr '\n' ' '); fixture: $(echo $it_fix_keys | tr '\n' ' '))"
-  else
-    pass "INTEROP-3: schema block and fixture agree on the top-level key set"
-  fi
-
-  # The consumer's extraction must name a key the schema still declares.
-  if ! grep -q 'timestamp' plugins/toque-audit/agents/delta-scanner.md; then
-    fail "INTEROP-3: delta-scanner no longer extracts 'timestamp' — the scan-age contract is broken on the consumer side"
-  elif ! echo "$it_fix_keys" | grep -qx 'timestamp'; then
-    fail "INTEROP-3: 'timestamp' missing from the fixture keys — the scan-age contract is broken on the producer side"
-  else
-    pass "INTEROP-3: the scan-age key (timestamp) is intact on both sides of the contract"
+  # --- INTEROP-3: every producer is external and says so.
+  #     A row whose producer looks like a local path is a row someone believes
+  #     is being checked. It is not, and the difference matters more than any
+  #     assertion this file could make about it.
+  it3_bad=0
+  it3_n=0
+  while IFS='|' read -r _ it_art it_prod _ _; do
+    it_prod=$(echo "$it_prod" | tr -d ' ')
+    [ -n "$it_prod" ] || continue
+    it3_n=$((it3_n + 1))
+    case "$it_prod" in
+      *:*) ;;   # <repo>:<path> — declared foreign, unresolvable by design
+      *)
+        fail "INTEROP-3: producer '$it_prod' is written as a local path, but no producer lives in this repository — use <repo>:<path>"
+        it3_bad=1 ;;
+    esac
+    if [ -f "$it_prod" ]; then
+      fail "INTEROP-3: producer $it_prod resolves inside this repository — a producer reappeared, so INTEROP-1 should check it again"
+      it3_bad=1
+    fi
+  done < <(grep -E '^\| docs/' "$INTEROP_DOC")
+  if [ "$it3_n" -lt 8 ]; then
+    fail "INTEROP-3: only $it3_n producer cells parsed (expected >= 8) — the parser collapsed"
+  elif [ "$it3_bad" -eq 0 ]; then
+    pass "INTEROP-3: all $it3_n producers are declared foreign and none resolves locally"
   fi
 fi
 

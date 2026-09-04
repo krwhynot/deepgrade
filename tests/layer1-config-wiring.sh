@@ -25,10 +25,9 @@ echo "=== Toque Plugin: Layer 1 - Config/Wiring Tests ==="
 echo ""
 
 # Parts: one core run per plugin profile, then the repo-wide sweeps.
+# One profile since 11.0.0 — the audit and readiness plugins moved to ai-scan.
 PARTS=(
   "plugins/toque toque"
-  "plugins/toque-readiness toque-readiness"
-  "plugins/toque-audit toque-audit"
 )
 
 COUNTS_FILE=$(mktemp)

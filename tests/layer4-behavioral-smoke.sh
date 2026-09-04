@@ -31,7 +31,11 @@ echo "--- B1: Help Command Structure ---"
 HELP_FILE="$DG/commands/help.md"
 if [[ -f "$HELP_FILE" ]]; then
     # Check required sections exist in help.md
-    SECTIONS=("Planning" "Quick Shortcuts" "Readiness Scan" "Codebase Audit" "Codebase Monitoring" "Documentation" "Utility")
+    # Readiness Scan / Codebase Audit / Codebase Monitoring left in 11.0.0 with
+    # the plugins that owned those commands. What replaced them is a pointer to
+    # ai-scan, which is asserted below rather than dropped: help.md going silent
+    # about where the audit went is the regression worth catching now.
+    SECTIONS=("Planning" "Quick Shortcuts" "Documentation" "Utility" "Agents" "Knowledge Skills" "Output Locations")
     ALL_FOUND=true
     for section in "${SECTIONS[@]}"; do
         if ! grep -qi "$section" "$HELP_FILE"; then
@@ -40,6 +44,16 @@ if [[ -f "$HELP_FILE" ]]; then
         fi
     done
     $ALL_FOUND && pass "B1: help.md has all required sections (${#SECTIONS[@]})"
+
+    # The audit and readiness commands moved to another marketplace. A user who
+    # runs /toque:help looking for them must be told where they went — silence
+    # reads as "this toolkit never had them", which is the wrong answer for
+    # anyone upgrading from 10.x.
+    if grep -qi 'ai-scan' "$HELP_FILE"; then
+        pass "B1: help.md points at ai-scan for the departed audit and readiness commands"
+    else
+        fail "B1: help.md does not mention ai-scan — an upgrading user has no way to find the audit commands"
+    fi
 
     # Count commands listed vs command files that exist
     CMD_FILES=$(find "$DG/commands" -name "*.md" ! -name "help.md" | wc -l | tr -d ' ')
