@@ -1,15 +1,14 @@
 {
   "criterion_id": "LINT-16",
+  "rule": "All \"Monitored\" claims have verified monitoring infrastructure",
+  "phase": 5,
+  "verdict": "FAIL",
   "evidence": [
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 110, "line_end": 110,
-      "exact_quote": "| Plans promoted from `quick-plan` | Lagging | ≥1 promotion completed without rework | 60 days | Plan folders whose `status.json` records a promotion source | 60 days post-release |" },
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 98, "line_end": 98,
-      "exact_quote": "| NFR-4 | Backwards compatible with existing plans | `status.json` schema 2 unchanged; the two existing plan folders resume without migration |" },
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 590, "line_end": 594,
-      "exact_quote": "`quick-plan` gains promotion following `quick-cleanup:7-25`'s existing pattern:\ncreate the plan folder, write `manifest.md` and `status.json`, place the spec\nwhere Stage 1 reads it, and **refuse to overwrite an existing folder**. Each\ncommand gains one line in `/toque:help` saying whether it is part of the plan\nworkflow, feeds it, or stands alone." },
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/status.json", "line_start": 1, "line_end": 6,
-      "exact_quote": "{\n  \"schema_version\": 2,\n  \"plan_name\": \"plan-centerpiece-alignment\",\n  \"plan_dir\": \"docs/plans/2026-09-03-plan-centerpiece-alignment\",\n  \"created\": \"2026-09-03\",\n  \"current_phase\": \"design\"," }
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "111",
+      "quote": "| Plans promoted from `quick-plan` | ≥1 without rework | 60 days | An additive `promoted_from` field in `status.json` (permitted by revised NFR-4) | 60 days |"
+    }
   ],
-  "reasoning": "The 60-day lagging metric names its measurement method as 'Plan folders whose status.json records a promotion source'. No such field exists in schema 2 -- the live status.json for this very plan has no promotion key -- and Phase 5, the only phase that touches promotion, does not add one; it says only that promotion writes manifest.md and status.json. Worse, NFR-4 forbids adding it: it requires status.json schema 2 to remain unchanged. So the measurement infrastructure for this metric does not exist and the plan's own non-functional requirement prohibits creating it. The claim and the constraint are in direct contradiction. A second, softer instance: the 'runs that terminate' metric is measured by 'Manual observation of the round report' over the first ten real runs, with no mechanism named for capturing or counting those runs.",
-  "verdict": "UNMET"
+  "note": "The only lagging metric is measured by a status.json field that does not exist yet. Nothing in the spec names what reads the field, what aggregates it across plan folders, who evaluates it on day 60, or where the result is recorded. There is no monitoring infrastructure to verify — the measurement method is a field, not a mechanism."
 }

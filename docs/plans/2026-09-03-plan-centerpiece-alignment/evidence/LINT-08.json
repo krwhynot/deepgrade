@@ -1,13 +1,19 @@
 {
   "criterion_id": "LINT-08",
+  "rule": "No unverified HIGH-impact assumption exists (hard gate, Phase 6 entry)",
+  "phase": 5,
+  "verdict": "FAIL",
   "evidence": [
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 330, "line_end": 330,
-      "exact_quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |" },
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 300, "line_end": 300,
-      "exact_quote": "- Technology: Markdown, Bash, Node 18+. No new runtime." },
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 96, "line_end": 96,
-      "exact_quote": "| NFR-2 | No data-scope change | Zero new persisted fields, network calls, or user-data reads |" }
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "186",
+      "quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |"
+    },
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "207",
+      "quote": "| E17 | Deletion removes 46 of 114 in-scope lines | Inventory diff before and after excluding `codex-challenge` | Run |"
+    }
   ],
-  "reasoning": "The row states an assumption -- that peak write throughput fits the current connection pool -- whose impact if false is 'Writes stall at launch', a launch-blocking and therefore HIGH impact, and it is explicitly marked 'unverified' in the column reserved for mitigation. No verification method, owner, or date is attached anywhere in the spec. It is also foreign to the change: the spec's own Constraints (line 300) and NFR-2 (line 96) establish there is no runtime, no new persisted state and no network calls, so no connection pool exists to size. Either reading leaves an unverified HIGH-impact assumption standing in the document, which is exactly what this rule forbids. LINT-08 is the registry's hard gate at Phase 6 entry, so this is not a cosmetic finding.",
-  "verdict": "UNMET"
+  "note": "Two failures. The Gotcha row at 186 is an assumption whose verification status is the literal word 'unverified' and whose impact is a launch-blocking stall. Separately, E17 is the assumption the entire Scope section rests on (40 IN, 28 OUT, both derived from 114 and 46), and it is unverifiable by anyone but its author because the pattern that produced those numbers is not written down anywhere in the plan folder. This is a hard gate; it blocks Build."
 }

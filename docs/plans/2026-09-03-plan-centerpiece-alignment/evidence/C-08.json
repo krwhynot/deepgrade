@@ -1,0 +1,19 @@
+{
+  "criterion_id": "C-08",
+  "criterion": "Reversibility is stated for every destructive step",
+  "verdict": "MET",
+  "evidence": [
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "286",
+      "quote": "| 1 → 4 | Suite 7/7; no dangling references | Fix forward; deletion is reversible by revert |"
+    },
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/changes/CR-001.md",
+      "lines": "23",
+      "quote": "| `tests/codex-challenge-test.js` | 447 |"
+    }
+  ],
+  "note": "The only destructive step is file deletion in a git repository, and revert is named as the recovery. Verified the deletion set exists exactly as CR-001 lists it: 5 skill files under plugins/toque/skills/codex-challenge, tests/codex-challenge-test.js at exactly 447 lines, and 7 files under tests/fixtures/codex-challenge. Spec line 264 ('the five skill files, the 447-line test, the seven fixtures') matches the filesystem exactly.",
+  "command_run": "find plugins/toque/skills/codex-challenge -type f | wc -l ; wc -l tests/codex-challenge-test.js ; find tests/fixtures/codex-challenge -type f | wc -l"
+}

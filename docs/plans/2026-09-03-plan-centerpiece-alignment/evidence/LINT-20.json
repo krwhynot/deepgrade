@@ -1,17 +1,15 @@
 {
   "criterion_id": "LINT-20",
+  "rule": "Confidence brief has all 3 sections and each entry has required fields",
+  "phase": 5,
+  "verdict": "FAIL",
   "evidence": [
-    { "artifact": "plugins/toque/skills/plan/stages/stage-2-design.md", "line_start": 173, "line_end": 173,
-      "exact_quote": "### Dependencies & Tools" },
-    { "artifact": "plugins/toque/skills/plan/stages/stage-2-design.md", "line_start": 194, "line_end": 194,
-      "exact_quote": "### Methods & Patterns" },
-    { "artifact": "plugins/toque/skills/plan/stages/stage-2-design.md", "line_start": 217, "line_end": 217,
-      "exact_quote": "### Best Practices & Standards" },
-    { "artifact": "plugins/toque/skills/plan/stages/stage-2-design.md", "line_start": 178, "line_end": 178,
-      "exact_quote": "**What it is:** {1-2 sentence definition — what the tool does, what problem it solves}" },
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 345, "line_end": 356,
-      "exact_quote": "## Evidence\n\n**Nature of the evidence base.** This is an internal coherence change. The\ndecisions rest on what this repository already does and already decided, not on\nexternal practice. Stated plainly so a reviewer does not mistake absence of\nexternal citations for an unresearched plan: **external research was skipped\ndeliberately** (research/findings.md), because no outside source can answer\nwhether these particular tools should agree with each other.\n\nEvery load-bearing claim below was read from the file cited during this session.\n\n| # | Claim | Evidence | Impact | Verified |" }
+    {
+      "path": "plugins/toque/docs/planning-techniques/lint-registry.md",
+      "lines": "72",
+      "quote": "| LINT-20 | Audit quality (Phase 5) | Fails if confidence.md is absent, has none of the 3 sections, or has an entry missing \"What it is\" / \"Why it works\" / \"Connection to this plan\". |"
+    }
   ],
-  "reasoning": "The registry's gate behavior for LINT-20 fails a confidence brief that has none of the three sections or whose entries omit the required fields. The three sections the plan skill prescribes are 'Dependencies & Tools', 'Methods & Patterns' and 'Best Practices & Standards' (stage-2-design.md lines 173, 194, 217). The spec's Evidence section contains none of them: it runs a bold paragraph, a five-column claims table, a bold 'Standards and methods used' list, and a bold 'Known weaknesses' list. It has zero of the three required sections. Separately, no entry carries the required per-entry fields 'What it is', 'Why it works' or 'Connection to this plan' -- the table's columns are Claim, Evidence, Impact and Verified. Both failure conditions in the gate behavior are met independently. I record this as a genuine format failure while noting the substance is unusually strong: the section is honest about a bounded negative claim, records a correction to an earlier draft, and names a disagreement with the adversarial reviewer rather than averaging it away. Format non-conformance is what the rule measures.",
-  "verdict": "UNMET"
+  "note": "confidence.md is absent, which the registry names as the first failure condition for this rule verbatim.",
+  "command_run": "ls docs/plans/2026-09-03-plan-centerpiece-alignment/confidence.md  ->  No such file or directory"
 }

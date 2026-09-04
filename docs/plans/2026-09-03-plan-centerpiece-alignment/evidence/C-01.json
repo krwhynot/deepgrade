@@ -1,0 +1,18 @@
+{
+  "criterion_id": "C-01",
+  "criterion": "Every requirement traces to the accepted intent (or to a ratified change record)",
+  "verdict": "UNMET",
+  "evidence": [
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/intent.md",
+      "lines": "70-71",
+      "quote": "- **Backwards compatibility:** existing plan folders must keep resuming. Nothing\n  here may change `status.json` schema 2 or the plan folder layout."
+    },
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/intent.md",
+      "lines": "68-69",
+      "quote": "- **External dependencies:** none added. The Codex CLI dependency of\n  `/toque:codex-challenge` is in scope for *labelling*, not for removal."
+    }
+  ],
+  "note": "Spec lines 99-102 relax the backwards-compatibility constraint (FR-5 may add an additive, optional field) and success-metric line 111 depends on a new promoted_from field. CR-001's Supersedes field names only the intent Out-of-scope line about removing a command; CR-001 lists the NFR-4 conflict as still open, not as authorised. The spec resolves it unilaterally. The second citation is a related casualty: the external-dependencies constraint still says the Codex CLI is in scope for labelling and not removal, and NFR-3 now removes it. CR-001 is the substantive authority for that, but the intent line was never struck the way the Out-of-scope line was."
+}

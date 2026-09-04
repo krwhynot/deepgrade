@@ -1,11 +1,15 @@
 {
   "criterion_id": "LINT-06",
+  "rule": "Backward compatibility claimed but no mixed-state scenario",
+  "phase": 5,
+  "verdict": "PASS",
   "evidence": [
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 98, "line_end": 98,
-      "exact_quote": "| NFR-4 | Backwards compatible with existing plans | `status.json` schema 2 unchanged; the two existing plan folders resume without migration |" },
-    { "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md", "line_start": 475, "line_end": 483,
-      "exact_quote": "**Tier 1, automated:** `bash tests/run-all.sh` 8/8 · `.github/release.sh check`\nclean · the FR-1 and FR-2 greps return empty · the D5 mutation proves the guard\nbites · fixtures round-trip through the real parser.\n\n**Tier 2, manual, human-confirmed:** one **real `codex-challenge` run against a\nreal plan** using the installed Codex CLI 0.153.0 — the only way to learn whether\na live reviewer returns eight verdicts with evidence, which no fixture can prove\n(Gotcha 2). Plus: read the rendered `/toque:help` output once (D7), and promote\none real `quick-plan` spec into a plan folder (D6)." }
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "99-102",
+      "quote": "mutually exclusive, as the audit found. NFR-4 now requires **resumability**, not\nimmutability. FR-5 may add an additive, optional field; it may not change or\nremove an existing one, and a plan folder written before this change must still\nresume."
+    }
   ],
-  "reasoning": "NFR-4 makes an explicit backward-compatibility claim with a measurable criterion: the two existing plan folders resume without migration. That is a genuine mixed-state condition -- plan folders written by the old tooling read by the changed tooling -- and no scenario, test, phase step, or go/no-go criterion exercises it. The Tier 1 and Tier 2 verification lists at lines 475-483 enumerate five automated checks and three manual checks; none of them opens an existing plan folder. The go/no-go table at lines 600-606 does not mention it either. The compatibility claim is asserted and never verified.",
-  "verdict": "UNMET"
+  "note": "Backward compatibility is claimed and the mixed state is named explicitly: a plan folder written before this change, read by code after it. Verified the population is real and small — docs/plans/ holds exactly two pre-existing plan folders (2026-04-03-mcp-research-integration, 2026-07-20-plugin-hardening-v5), both with a status.json, matching NFR-4's 'two existing plan folders'. The scenario is stated; that it is untested is recorded against LINT-05, not here.",
+  "command_run": "ls -d docs/plans/*/ ; ls docs/plans/2026-04-03-mcp-research-integration/status.json docs/plans/2026-07-20-plugin-hardening-v5/status.json"
 }

@@ -1,0 +1,13 @@
+{
+  "criterion_id": "C-02",
+  "criterion": "FR acceptance criteria are satisfiable as written",
+  "verdict": "UNMET",
+  "evidence": [
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "49-50",
+      "quote": "- *Given* `plugins/toque/**` and `METHODOLOGY.md`, *when* grepped for\n  `score_history`, *then* the only match is the guard's own pattern."
+    }
+  ],
+  "note": "The guard is tests/layer1-repo.sh:857, which is not under plugins/toque/** and is not METHODOLOGY.md (verified: grep -rn score_history returns 7 hits, one of them ./tests/layer1-repo.sh:857). Over the stated Given-set the post-change match count must be ZERO, so the criterion can never be satisfied as phrased. Spec line 271 states the achievable form (greps empty), contradicting FR-2 itself."
+}

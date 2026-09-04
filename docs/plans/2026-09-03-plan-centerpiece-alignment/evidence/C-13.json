@@ -1,0 +1,24 @@
+{
+  "criterion_id": "C-13",
+  "criterion": "Evidence claims are reproducible by a third party",
+  "verdict": "UNMET",
+  "evidence": [
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "206",
+      "quote": "| E16 | The new pattern is proven | 11-assertion self-test, 7 positives and 4 negatives incl. the `REQUIRED`/`RED` trap, all passing before any count | Run |"
+    },
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "207",
+      "quote": "| E17 | Deletion removes 46 of 114 in-scope lines | Inventory diff before and after excluding `codex-challenge` | Run |"
+    },
+    {
+      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "lines": "176-178",
+      "quote": "- Instrument self-test before measurement: any pattern used to derive an\n  inventory is first proven against known-positives and known-negatives. This\n  is the repo's own practice, applied after revision 1 failed for want of it."
+    }
+  ],
+  "note": "E15, E16 and E17 are all marked 'Run' and all three depend on a regex the spec never writes down. The self-test is described (11 assertions, 7 positives, 4 negatives, a REQUIRED/RED trap) but neither the pattern nor any test artefact exists anywhere under the plan folder — grepping the plan folder for 'known-negative', 'self-test' and '11-assertion' returns only spec.md, its .canary copy, CR-001.md and status.json, all of which merely restate the claim. The central quantitative finding of this revision (46 of 114, and the 40 that follows) therefore rests on an undisclosed instrument. This is exactly the standard line 176-178 claims to have adopted: the self-test is asserted, not shown.",
+  "command_run": "grep -rln 'known-negative\\|known negative\\|self-test\\|11-assertion' docs/plans/2026-09-03-plan-centerpiece-alignment/"
+}
