@@ -19,8 +19,8 @@
         "source": "git-subdir",
         "url": "https://github.com/krwhynot/toque.git",
         "path": "plugins/toque",
-        "ref": "v10.0.0",
-        "sha": "debe96e6aa1a1e9e25f026bd95c46c4c30de7d17"
+        "ref": "v11.0.0",
+        "sha": "f0f0c2bfc4e7a966587f81d71d6de77a82df762e"
       }
     }
   ]
