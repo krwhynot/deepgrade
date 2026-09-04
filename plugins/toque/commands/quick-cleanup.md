@@ -139,11 +139,11 @@ Use the answers to:
 1. Set the plan name (if not already set)
 2. Choose the right extraction schema (Step 4)
 3. Know what to prioritize during extraction
-4. Write a focused brainstorm.md
+4. Write a focused intent.md
 
-## Step 3: Write Brainstorm
+## Step 3: Write Intent
 
-Write docs/plans/{date}-{name}/brainstorm.md:
+Write docs/plans/{date}-{name}/intent.md:
 
 ```markdown
 # {Plan Name}
@@ -167,8 +167,9 @@ Write docs/plans/{date}-{name}/brainstorm.md:
 - {anything unclear from the brainstorm}
 ```
 
-Update status.json: brainstorm -> complete, research -> in_progress.
-Update manifest.md with brainstorm.md entry.
+Update status.json: set phases.plan to in_progress (schema 2 has no brainstorm
+or research phase; see skills/plan/SKILL.md for the phase block).
+Update manifest.md with the intent.md entry.
 
 ## Step 4: Inventory and Classify (now with context)
 
@@ -253,7 +254,7 @@ source index as "[MANUAL REVIEW REQUIRED]".
 
 ## Step 6: Schema-First Extraction
 
-Based on the content type from Step 1, extract into predefined schemas.
+Based on the content type from Step 2, extract into predefined schemas.
 This reduces hallucination by giving the extraction a target structure.
 
 ### Schema A: Vendor/Hardware Documentation
@@ -387,7 +388,7 @@ Recommended toolkit commands to run with this cleaned data:
 ```
 
 ### File 2: reference-data.json (always created)
-Structured data extracted per the schema from Step 3.
+Structured data extracted per the schema from Step 6.
 
 ### File 3: setup-checklist.md (if applicable)
 Only created when setup steps were found in the source material.
@@ -426,8 +427,8 @@ Maps every extracted fact back to its source file.
 
 ## Step 9: Completion Report
 
-Update status.json: research -> complete.
-Update manifest.md: add all output files to Plan Files table with dates.
+Update status.json: set phases.plan to complete.
+Update manifest.md: add all output files to the Artifacts table with dates.
 Also write research/findings.md as a summary of the cleaned data.
 
 ```
@@ -452,7 +453,7 @@ Quality:
 If this is all you needed, you're done. Your cleaned data is ready for reference.
 
 If you want to continue building on this data:
-  /toque:plan {name}         Resume the plan from Phase 3 (Pre-Plan)
+  /toque:plan {name}         Resume the plan at Stage 2 (Design)
   /toque:quick-plan "{topic}" Create a spec directly from this data
   /toque:documentation spec {topic}    Create a technical specification
   /toque:documentation adr {topic}     Document an architectural decision

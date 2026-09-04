@@ -228,23 +228,28 @@ codebase files + the deterministic pre-check results from Step 2.
 ### Subagent 5: Gap Verifier (Opus)
 **Dimensions:** None (produces structured gap artifacts)
 **Context:** Available plan artifacts (see input modes below) + spec
-**Focus:** Systematic gap detection using 4 matrices + 15 lint rules
+**Focus:** Systematic gap detection using 4 matrices + the plan lint rules the
+registry assigns to the detected audit mode
 **Output:** 4 structured artifacts:
   A. Coverage Matrix: every goal/risk/dependency/non-goal mapped to implementation
   B. Assumption Register: every assumption with impact-if-false, verification, owner
   C. Scenario Matrix: 8 mandatory scenarios mapped to plan/test/monitoring
   D. Cross-Cutting Concern Sweep: 12 concerns checked per feature
-  Plus: 15 plan lint rules (binary pass/fail)
+  Plus: the plan lint rules from the registry (binary pass/fail); read
+  `docs/planning-techniques/lint-registry.md` for the set, its size, and the text
 
 INPUT MODES (detect automatically based on available artifacts):
 
 FULL MODE (called from /toque:plan or /toque:quick-audit with plan context):
-  The Gap Verifier reads:
-  1. brainstorm.md for goals and non-goals
-  2. approach.md for scope decisions, risks, dependencies
-  3. The spec (docs/specs/) for implementation details
-  4. The plan phases for ticket-level coverage
-  5. Test plan or test files for test coverage
+  The Gap Verifier reads, from docs/plans/{date}-{name}/:
+  1. intent.md for goals, non-goals, and out-of-scope items
+  2. spec.md for scope decisions, risks, dependencies, and implementation details
+  3. The delivery phases in spec.md for ticket-level coverage
+  4. Test plan or test files for test coverage
+  Schema-1 fallback: an older plan folder holds the same content under the old
+  names — brainstorm.md (goals and non-goals), approach.md (scope, risks,
+  dependencies) and docs/specs/{name}.md (implementation details). Read those
+  wherever the current names are absent; do not rewrite them.
   It then builds each matrix by cross-referencing all sources.
   The applicable rules are the registry's Phase 5 set for Full mode; read
   `docs/planning-techniques/lint-registry.md` for the set, its size, and the rule text.
@@ -256,7 +261,7 @@ LITE MODE (called from /toque:quick-plan or standalone /toque:quick-audit):
   2. Extracts scope from the spec's Architecture / Phases sections
   3. Infers non-goals from any "Out of Scope" or "Non-Goals" sections
   4. Reads test files from the codebase if referenced in the spec
-  5. Builds matrices from the spec alone (no brainstorm.md or approach.md)
+  5. Builds matrices from the spec alone (no plan folder, so no intent.md)
 
   Lint rule adjustments in LITE MODE — which sources each rule is evaluated against.
   The rules themselves are unchanged; read the registry for their text.
@@ -275,8 +280,10 @@ LITE MODE (called from /toque:quick-plan or standalone /toque:quick-audit):
   Report includes: "Audit mode: LITE (spec-only). For full gap matrices, run /toque:plan."
 
 MODE DETECTION:
-  If docs/plans/{date}-{name}/ exists with brainstorm.md and approach.md -> FULL MODE
-  If only a spec file is provided -> LITE MODE
+  If docs/plans/{date}-{name}/ exists with intent.md and spec.md -> FULL MODE
+  If that folder exists with the schema-1 names brainstorm.md and approach.md
+    instead -> FULL MODE, reading them per the fallback above
+  If only a spec file is provided and there is no plan folder -> LITE MODE
   Log which mode was selected in the audit output.
 
 CRITICAL: The Gap Verifier does NOT review by dimension. It produces structured
@@ -337,7 +344,7 @@ If called from /toque:plan: write to docs/plans/{date}-{name}/audit.md
 If called from /toque:quick-audit with --plan: write to docs/plans/{date}-{name}/audit.md
 If called from /toque:quick-audit standalone: present in conversation (no file)
 If called from /toque:quick-plan: present in conversation (no file)
-Default fallback: docs/audit/plan-audit.md
+If the caller is none of these: present in conversation (no file)
 
 Use this structure:
 
@@ -387,12 +394,22 @@ A `MET` verdict with an empty `evidence` array is not a `MET`. If a claim is
 externally checkable and you could not find evidence for it, the verdict is `UNMET`
 — not partial credit, not a warning.
 
+In Full mode — the two callers above that write audit.md into a plan folder,
+/toque:plan and /toque:quick-audit with --plan:
+
 WRITE one evidence record per criterion to evidence/{criterion_id}.json before reporting anything.
 
 The directory sits beside audit.md in the plan folder. Write the files first, then
 write the report, in that order — a report composed before the records exist is a
 summary of what you intended to find, and the records end up reconstructed to agree
 with it.
+
+The conversation-only callers — standalone /toque:quick-audit and /toque:quick-plan —
+produce no file and have no plan folder, so there is nothing for the directory to sit
+beside. Report each criterion's verdict inline, in the same field order (evidence,
+then reasoning, then verdict), and write no evidence records. Do not put them
+somewhere else instead: a records directory outside a plan folder is committed by
+nobody and re-checked by nothing, which is the state the records exist to replace.
 
 `sha256` is REQUIRED on every citation. Compute it over the artifact's
 LF-normalised content:

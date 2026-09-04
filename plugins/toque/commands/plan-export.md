@@ -117,7 +117,7 @@ For each match found:
 - Log what was redacted (type, file, line) to a redaction-log.md
 - Keep the key/field name so the receiving developer knows what credential is needed
 
-Write `docs/plans/{name}/redaction-log.md`:
+Write `$EXPORT_DIR/plans/${PLAN_NAME}/redaction-log.md`:
 ```markdown
 # Redaction Log
 
@@ -141,7 +141,7 @@ grep -rhoP '[A-Za-z0-9_./]+\.(cs|vb|ts|tsx|js|jsx|config|json|md|sql)' \
   "$EXPORT_DIR/plans/${PLAN_NAME}/" 2>/dev/null | sort -u > "$EXPORT_DIR/referenced-files.txt"
 ```
 
-Write `docs/plans/{name}/codebase-verification.md`:
+Write `$EXPORT_DIR/plans/${PLAN_NAME}/codebase-verification.md`:
 ```markdown
 # Codebase Verification
 
@@ -219,7 +219,7 @@ ls {unique-file} 2>/dev/null && echo "FOUND" || echo "MISSING"
 This is the most critical file. It auto-loads when the receiving developer
 opens Claude Code and gives Claude full context about the plan.
 
-Write `docs/plans/{name}/CLAUDE.md`:
+Write `$EXPORT_DIR/plans/${PLAN_NAME}/CLAUDE.md`:
 
 ```markdown
 # Plan Context: {Plan Name}
@@ -234,7 +234,7 @@ You are Claude Code. When this file loads, do the following:
 
 ### Step 1: Verify This Is the Right Codebase
 
-Read docs/plans/{name}/codebase-verification.md and check the FINGERPRINT section first.
+Read plans/{name}/codebase-verification.md and check the FINGERPRINT section first.
 Run the verification commands to check the 6 fingerprint markers.
 
 IF 0 MARKERS MATCH (wrong codebase):
@@ -325,14 +325,14 @@ Suggested next steps:
 ## Key Documents in This Package
 | Document | Purpose | Path |
 |----------|---------|------|
-| manifest.md | Index of all plan files and project docs | docs/plans/{name}/manifest.md |
-| intent.md | Problem, proposed outcome, constraints | docs/plans/{name}/intent.md |
-| spec.md | Requirements, design, evidence, delivery | docs/plans/{name}/spec.md |
-| plan.md | Build plan: files, order, risks, proof | docs/plans/{name}/plan.md |
-| status.json | Machine-readable progress | docs/plans/{name}/status.json |
-| codebase-verification.md | File/function reference checklist | docs/plans/{name}/codebase-verification.md |
-| redaction-log.md | What secrets were removed | docs/plans/{name}/redaction-log.md |
-| referenced-docs/ | Copies of all project docs (specs, ADRs) | docs/plans/{name}/referenced-docs/ |
+| manifest.md | Index of all plan files and project docs | plans/{name}/manifest.md |
+| intent.md | Problem, proposed outcome, constraints | plans/{name}/intent.md |
+| spec.md | Requirements, design, evidence, delivery | plans/{name}/spec.md |
+| plan.md | Build plan: files, order, risks, proof | plans/{name}/plan.md |
+| status.json | Machine-readable progress | plans/{name}/status.json |
+| codebase-verification.md | File/function reference checklist | plans/{name}/codebase-verification.md |
+| redaction-log.md | What secrets were removed | plans/{name}/redaction-log.md |
+| referenced-docs/ | Copies of all project docs (specs, ADRs) | plans/{name}/referenced-docs/ |
 
 ## Credentials Needed
 {From redaction-log.md: list of credential types the developer needs to obtain}
@@ -379,7 +379,7 @@ echo "Export complete: ${ZIP_NAME}"
 Export complete: {plan-name}-export.zip
 
 Package contents:
-  docs/plans/{name}/
+  plans/{name}/
     CLAUDE.md                  <- Auto-loads in vanilla Claude Code
     manifest.md                <- Plan index
     status.json                <- Current progress
@@ -403,9 +403,9 @@ Codebase references: {count} files, {count} functions
 
 How to share:
   1. Send the zip to the other developer
-  2. They unzip it into their project root (the docs/plans/ folder appears)
+  2. They unzip it into their project root (the plans/ folder appears)
   3. They open Claude Code in the project
-  4. Claude auto-reads the CLAUDE.md inside docs/plans/{name}/
+  4. Claude auto-reads the CLAUDE.md inside plans/{name}/
   5. Claude verifies their codebase, shows a summary, and suggests next steps
 
 The receiving developer does NOT need the Toque plugin.
