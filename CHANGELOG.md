@@ -1,5 +1,76 @@
 # Changelog
 
+## 11.0.1 (2026-09-04)
+
+### Fixed
+
+- **A JSON evidence file containing only `null` crashed the validator and took
+  the whole corpus with it.** `validateRecord` was null-safe at both of its
+  early returns, but `validateDirectory` read `rec.verdict` off the parsed value
+  to report what the record claimed. `null` is valid JSON, so the file never
+  reached the `EVIDENCE-UNPARSEABLE` path: it parsed, then threw
+  `TypeError: Cannot read properties of null (reading 'verdict')`. That fails
+  closed only by accident — nothing invalid passes, but nothing valid is checked
+  either, and the caller gets a stack trace where a verdict belongs. A
+  non-record now demotes itself to `EVIDENCE-VERDICT-INVALID` and the remaining
+  files are still read. Regression test covers `null`, a number, a string, an
+  array, and a valid record sorted after them.
+
+- **`/toque:plan-export` wrote three generated files into the live plan folder
+  instead of the staging copy.** `redaction-log.md`, `codebase-verification.md`
+  and `CLAUDE.md` were written to `docs/plans/{name}/`, but the staging copy
+  that becomes the zip is taken before those writes. The export polluted the
+  working tree and shipped a package missing the three files its own contents
+  list promised — including the `CLAUDE.md` the receiving developer's session
+  depends on. The package description and the paths inside the generated
+  `CLAUDE.md` now read `plans/{name}/`, matching the layout actually archived.
+
+- **`/toque:quick-cleanup` created plan folders in the pre-8.0.0 shape.** It
+  wrote `brainstorm.md` and set schema-1 phase keys (`brainstorm -> complete`,
+  `research -> in_progress`) in `status.json`. Schema 2 defines only
+  plan/design/build/test/deploy/maintain, so a folder created today was born
+  looking like a legacy plan and `/toque:plan-status` would report a stage that
+  is not a stage. It now writes `intent.md` and sets `phases.plan`.
+
+- **The design gate silently ran in LITE mode.** `plan-auditor` detected FULL
+  MODE by the presence of `brainstorm.md` and `approach.md`, names retired in
+  8.0.0. Every current plan folder holds `intent.md` and `spec.md`, so detection
+  fell through and the gate — which `lint-registry.md` classifies as Full mode —
+  ran spec-only and advised the caller to "run `/toque:plan`" for the matrices it
+  was already inside. Detection now keys on the current artifacts, with the old
+  names kept as an explicit schema-1 fallback.
+
+- **CI could not pass.** The `validate` job asserted a hardcoded count of three
+  plugin directories. `9091fb9` split two plugins out to a separate repository
+  and left the literal at 3, so the job failed on every push from that point,
+  11.0.0 included, while both suite matrix legs were green. The check now
+  derives the expected set from `marketplace.json` and compares it against the
+  tree in both directions, so it cannot go stale the way a literal did.
+
+### Changed
+
+- **The documentation now describes the software that ships.** Reading all
+  13,328 lines of the living documentation found 75 contradictions against the
+  tree, where a keyword sweep had found five. `METHODOLOGY.md` section 3 is
+  rewritten from a 9-phase workflow to the six stages shipped since 8.0.0. The
+  8-dimension 1-5 scoring rubric is gone from every page that still described
+  it — `plan-auditor.md` has forbidden a score field since 11.0.0, and the pages
+  now state the gate that exists: per-criterion MET/UNMET/N_A resolving to
+  `PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK`. Also corrected:
+  a "3 Safety Hooks" badge above a section explaining there are none, a
+  SessionStart staleness nudge deleted in 11.0.0, test-layer numbers, three
+  handler links to a directory that does not exist, a change-record template
+  disagreeing with the one that ships, a `baseline.json` no code writes,
+  LINT-20 failing on a `confidence.md` folded into `spec.md` at 8.0.0,
+  ADR/BRD/PRD templates writing back to files `interop.md` documents as
+  read-only, and a checks total that did not match its own table.
+
+### Internal
+
+- `tests/layer1-core.sh` locates the plugin README's hook table by heading, and
+  that heading changed with the docs: the stale "Safety Hooks" vocabulary lived
+  in the test too.
+
 ## 11.0.0 (2026-09-04)
 
 ### BREAKING
