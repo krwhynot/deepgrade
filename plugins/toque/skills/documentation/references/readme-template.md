@@ -6,7 +6,7 @@ Generate a README for "$1".
 Read `docs/audit/baseline/dependency-map.json` and search for projects
 matching "$1".
 
-If no baseline exists: "No audit baseline found. Run the ai-scan codebase audit first, or continue without it."
+If no baseline exists: "No audit baseline found in docs/audit/. Continuing without it."
 
 If multiple projects match (e.g., "contact" matches contacts and
 contacts.test), present a numbered list:

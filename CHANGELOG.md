@@ -51,33 +51,23 @@
   layers 6, 7 and 8 renumber to 5, 6 and 7. `tests/run-all.sh` accepts `1-7`.
 
 
-- **`toque-audit` and `toque-readiness` are removed from this repository and
-  this marketplace.** They now live in
-  [ai-scan](https://github.com/krwhynot/ai-scan) as `ai-scan-audit` and
-  `ai-scan`, and release on their own schedule. The catalog goes from three
-  entries to one; the version lockstep, which held three manifests together,
-  now has a single member.
+- **`toque-audit` and `toque-readiness` are removed.** The codebase audit,
+  security scan, delta/KPI tracking, characterization tests, CI gate generation
+  and the AI-readiness scan are gone from this repository and this marketplace.
+  Nothing replaces them here. The catalog goes from three entries to one; the
+  version lockstep, which held three manifests together, now has a single
+  member.
 
   **Installed copies keep working** from the plugin cache but receive no
-  further updates from `toque-marketplace`. To keep them, add the new
-  marketplace:
-
-  ```
-  claude plugin marketplace add krwhynot/ai-scan
-  claude plugin install ai-scan@ai-scan-marketplace --scope user
-  claude plugin install ai-scan-audit@ai-scan-marketplace --scope user
-  ```
-
-  Two names changed in the move: the `toque-knowledge` skill is
-  `ai-scan-knowledge`, and `toque-report-generator` is
-  `ai-scan-report-generator`.
+  further updates. `claude plugin uninstall` removes them when you are done
+  with them.
 
   **Why.** `/toque:plan` is the centrepiece, and a marketplace that shipped it
   beside two scanners asked every user to work out which of three plugins they
-  wanted before they could use any of them. The scanners are a different job for
-  a different person on a different cadence — a consultant grading repositories
-  is not the developer living in `docs/plans/`. Splitting lets each release when
-  it has something to say.
+  wanted before they could use any of them. Scanning a codebase is a different
+  job for a different person on a different cadence — a consultant grading
+  repositories is not the developer living in `docs/plans/`. Toque is a
+  planning tool.
 
 - **Toque no longer suggests audit or readiness commands.** The `valid_commands`
   allowlists in `plan-export.md`, `skills/plan/SKILL.md` and
@@ -86,25 +76,25 @@
   command from a marketplace the user may not have installed is a guess about
   their setup, and a command that does not resolve is worse than no suggestion.
 
-- **`interop.md` describes a cross-repository contract now.** Toque still reads
+- **`interop.md` is now a list of optional inputs.** Toque still reads
   `docs/audit/risk-assessment.md`, `dependency-map.md`, `feature-inventory.md`,
-  `integration-scan.md`, the four `baseline/*.json` files, and the readiness
-  report — it just no longer ships anything that writes them. Every consumer
-  degrades to working without the file, so a repository with no `docs/audit/`
-  loses nothing but context.
+  `integration-scan.md`, the four `baseline/*.json` files and the readiness
+  report — it just no longer ships anything that writes them, and does not say
+  what should. Every reader degrades to working without the file, so a project
+  with no `docs/audit/` loses nothing but context.
 
   **The guarantee is genuinely weaker, and this is the honest statement of it:**
-  a green suite used to mean the contract held end to end. It now means Toque's
-  half holds. A rename on the producer side arrives here as a feature that
-  quietly stops finding its input — no error, just a plan generated without risk
-  data. Nothing in this repository can detect that.
+  a green suite used to mean the contract held end to end, because both ends
+  were in this repository. It now means Toque's end holds. If whatever writes
+  those files renames one, it arrives here as a feature that quietly stops
+  finding its input — no error, just a plan generated without risk data.
+  Nothing here can detect that.
 
-- **`tq-session-start.js` accepts both audit report names.** It stats
-  `docs/audit/ai-scan-report.md` and `docs/audit/toque-report.md` and uses
-  whichever is newer. ai-scan writes the first; every repository audited before
-  11.0.0 has the second, and nothing rewrites it. Checking one name would
-  silently stop reporting staleness for one population — and a stale-audit
-  warning that never fires looks exactly like an audit that is fresh.
+- **The stale-audit warning is removed from `tq-session-start.js`.** The
+  SessionStart hook used to stat an audit report and add "Audit report is N days
+  old" to its message. It reported on a file this plugin does not produce, which
+  made a session message depend on another tool having run in the same
+  repository. Toque reports on its own plans.
 
 ### Changed
 
@@ -144,14 +134,16 @@
     one file and not the eleven referencing it — is unchanged. Its
     known-negative is now `toque:codebase-audit`, a real command name that moved
     away, which is a sharper negative than an invented string.
-  - `INTEROP-1/2` check the **consumer** half only. `INTEROP-3` is replaced: it
-    used to validate `readability-score.json` against the producer's schema, and
-    now asserts every producer cell names a foreign repository and resolves to
-    nothing locally — so an unenforceable row cannot be mistaken for a checked
-    one.
-  - Layer 4's `B1` asserts `help.md` **points at ai-scan**. An upgrading user
-    who runs `/toque:help` looking for the audit commands must be told where
-    they went; silence reads as "this toolkit never had them".
+  - `INTEROP-1/2` check the **reader** half only, against a table that no
+    longer has a producer column. `INTEROP-3` is **retired**: it validated
+    `readability-score.json` against its producer's schema, and the producer is
+    not here to have one. Its number is not reused — a renumbered guard makes
+    old failure reports mean the wrong thing.
+  - Layer 4's `B1` asserts `help.md` **states the commands were removed**. An
+    upgrading user who runs `/toque:help` looking for them must find out they
+    are gone, or they go hunting for a typo; silence reads as "this toolkit
+    never had them". No destination is named — where a project gets its
+    codebase analysis is not this plugin's business.
   - Ten mutation cases in `tests/mutation/wave5-guards.py` are dropped with
     their subjects. Two guards they proved (F11 argument-hint, F08 PowerShell)
     now have no subject in this repository at all, and inventing one to keep the
@@ -169,10 +161,17 @@
   not see them. The command description is the one a user actually reads before
   running it.
 
-- **`METHODOLOGY.md` carries a scope note.** Sections 1, 2, 4 and 9 document
-  ai-scan; 3, 5, 6, 7, 8, 10 and 11 document Toque. Sections are **not**
-  renumbered — specs, plan records and the PH5-051 guard's derived section-7
-  bounds all cite the current numbers.
+- **`documentation/choosing-a-plugin.md` is deleted** and the scanner sections
+  of `documentation/when-to-use.md` with it. A page whose subject was choosing
+  among three plugins has no subject at one.
+
+- **`METHODOLOGY.md` carries a scope note.** Sections 1, 2, 4 and 9 describe
+  codebase analysis this repository no longer implements; 3, 5, 6, 7, 8, 10 and
+  11 describe Toque. The analysis sections are kept because several Toque
+  sections build on their reasoning, and their links to departed files are
+  reduced to plain text. Sections are **not** renumbered — specs, plan records
+  and the PH5-051 guard's derived section-7 bounds all cite the current
+  numbers.
 
 ### Fixed
 

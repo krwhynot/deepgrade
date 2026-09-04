@@ -14,10 +14,10 @@ codebase.
 | ------ | ------------ | --------------- |
 | [`toque`](plugins/toque/) | Six-stage AI-Native SDLC planning (intent, spec, plan, test, release, maintain) with an adversarial verifier-first design gate, plan-linked troubleshooting, documentation generation | Developers living in `docs/plans/` daily |
 
-**Looking for the codebase audit or the AI-readiness scan?** They moved to
-[ai-scan](https://github.com/krwhynot/ai-scan) in 11.0.0 and release on their
-own schedule now. Toque reads what they write when it is there, and works
-without it. → [Choosing a plugin](documentation/choosing-a-plugin.md)
+**Upgrading from 10.x?** The codebase-audit and AI-readiness commands are no
+longer part of Toque. Nothing replaces them here. Toque still reads analysis
+files left in `docs/audit/` by whatever produced them, and works fine when there
+are none — see [Optional inputs](interop.md).
 
 ## What It Does
 
@@ -87,8 +87,7 @@ claude plugin install toque@toque-marketplace --scope user
 /toque:help
 ```
 
-`/toque:help` maps every command, and points at ai-scan for the audit and
-readiness work that is no longer here.
+`/toque:help` maps every command.
 
 Upgrading from a pre-10.0.0 install, or want every install path? →
 [Install](documentation/install.md)
@@ -99,11 +98,10 @@ Upgrading from a pre-10.0.0 install, or want every install path? →
 2. `/toque:plan` when the work is big enough to want the gate
 3. `/toque:plan-status` to pick up where you left off
 
-If you also install [ai-scan](https://github.com/krwhynot/ai-scan), run its
-readiness scan and codebase audit first: Toque reads the risk assessment,
-dependency map, feature inventory and integration scan they leave in
-`docs/audit/`, and a plan grounded in those is better than one written from the
-code alone.
+If some other tool has left a risk assessment, dependency map, feature
+inventory or integration scan in `docs/audit/`, Toque reads them, and a plan
+grounded in those beats one written from the code alone. It never requires
+them.
 
 New to it? [Quickstart](documentation/quickstart.md) walks the first plan
 end to end, and suggests two lighter commands to try first.
@@ -114,7 +112,6 @@ end to end, and suggests two lighter commands to try first.
 | ---- | ------------ |
 | [Quickstart](documentation/quickstart.md) | Your first plan, end to end, with what appears on disk |
 | [Install](documentation/install.md) | Every install path, scopes, upgrading, what breaks without Node |
-| [Choosing a plugin](documentation/choosing-a-plugin.md) | Toque or ai-scan, and whether they compose |
 | [When to use Toque](documentation/when-to-use.md) | Use / don't use per plugin — including where it is overkill |
 | [The plan workflow](documentation/the-plan-workflow.md) | All six stages in depth, approval tiers, parallelism |
 | [The plan workspace](documentation/plan-workspace.md) | Plan folder anatomy, `status.json`, resume, staleness cascade |
@@ -122,7 +119,7 @@ end to end, and suggests two lighter commands to try first.
 
 Deeper references: [GUIDE.md](plugins/toque/GUIDE.md) ·
 [METHODOLOGY.md](METHODOLOGY.md) (the theory) ·
-[interop.md](interop.md) (what Toque reads that it does not write) ·
+[interop.md](interop.md) (optional inputs Toque reads but does not write) ·
 [CHANGELOG.md](CHANGELOG.md)
 
 ## Repository Layout
@@ -134,7 +131,7 @@ documentation/                    # task-shaped user documentation
 tests/                            # the suite (run-all.sh, seven layers)
 docs/                             # dev-time records: plans, specs, release notes
 METHODOLOGY.md                    # the methodology reference (not shipped by the plugin)
-interop.md                        # the docs/audit/ files Toque reads from ai-scan
+interop.md                        # optional docs/audit/ inputs Toque reads
 ```
 
 Every plugin manifest carries the same version, bumped together by
@@ -144,8 +141,7 @@ Every plugin manifest carries the same version, bumped together by
 
 Toque runs its hooks and design-gate tools as Node scripts and requires
 [Node.js](https://nodejs.org/) 18 or later — the same runtime Claude Code itself
-needs, so if Claude Code runs, it does too. The ai-scan plugins need nothing
-beyond Claude Code.
+needs, so if Claude Code runs, it does too.
 
 The always-on safety hooks that used to ship as `toque-guard` (force-push
 and DB-deploy blocking, migration protection, change/test tracking) were retired

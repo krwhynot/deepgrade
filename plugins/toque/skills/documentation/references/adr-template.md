@@ -9,7 +9,7 @@ Search the audit baselines for content related to "$1":
 - `docs/audit/baseline/dependency-map.json` - dependency decisions
 - `docs/audit/baseline/feature-inventory.json` - feature-related decisions
 
-If no baseline exists: "No audit baseline found. Run the ai-scan codebase audit first, or continue without it."
+If no baseline exists: "No audit baseline found in docs/audit/. Continuing without it."
 
 If "$1" is vague or could map to multiple decisions, present options:
 ```

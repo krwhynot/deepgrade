@@ -6,7 +6,7 @@ Generate a BRD for "$1".
 Read `docs/audit/baseline/feature-inventory.json` and identify domains
 matching "$1".
 
-If no baseline exists: "No audit baseline found. Run the ai-scan codebase audit first, or continue without it."
+If no baseline exists: "No audit baseline found in docs/audit/. Continuing without it."
 
 If "$1" matches a domain name exactly (e.g., "Ordering", "Payments"):
 proceed with that domain.

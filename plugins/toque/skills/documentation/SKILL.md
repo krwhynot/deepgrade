@@ -187,11 +187,10 @@ NEVER suggest a command that is not in this list. If you are unsure whether a
 command exists, use `/toque:help` to check.
 
 Codebase auditing and readiness scanning left Toque in 11.0.0 and are not in
-this list on purpose. Their commands live in a separate marketplace that may or
-may not be installed, so suggesting one is a guess about the user's setup — and
-a command that does not resolve is worse than no suggestion. Point at
-`docs/audit/` if the data is already there; otherwise say the audit lives in
-ai-scan and let the user decide.
+this list on purpose. Never suggest a command to produce that data — whatever
+tool a project uses is not this plugin's concern, and a command that does not
+resolve is worse than no suggestion. If `docs/audit/` already holds analysis,
+use it; if it does not, say so and carry on without it.
 
 ## External Enrichment (when MCP search tools available)
 

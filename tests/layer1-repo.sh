@@ -980,11 +980,10 @@ echo "--- Split invariants ---"
 
 # SPLIT-1 is retired. It held toque's self-audit-knowledge skill byte-identical
 # to the mirror toque-audit shipped so each plugin could resolve the skill under
-# its own namespace. toque-audit moved to the ai-scan repository in 11.0.0 and
-# took the mirror with it, so there is no second copy in this tree to drift
-# against. The drift risk is now cross-repository and cannot be checked from
-# here; interop.md records that, and it is deliberately not a guard, because a
-# guard that cannot see its subject reports a pass it did not earn.
+# its own namespace. That plugin was removed in 11.0.0 and took the mirror with
+# it, so there is no second copy in this tree to drift against. A guard that
+# cannot see its subject reports a pass it did not earn, so this one is retired
+# rather than kept limping; CONTRIBUTING.md records what is no longer checked.
 
 # ===========================================================================
 # SPLIT-2: version lockstep across every plugin manifest.
@@ -992,8 +991,8 @@ echo "--- Split invariants ---"
 # The release script enforces this at release time; this copy enforces it on
 # every suite run, so a drifted manifest is caught in the PR that drifts it
 # rather than on release day. The count is EXACTLY one (four until toque-guard
-# was retired in 9.0.0, three until toque-audit and toque-readiness moved to
-# ai-scan in 11.0.0) — adding or removing a plugin is a deliberate decision that
+# was retired in 9.0.0, three until toque-audit and toque-readiness were
+# removed in 11.0.0) — adding or removing a plugin is a deliberate decision that
 # must update this number in the same commit.
 #
 # The lockstep comparison is trivially satisfied at a count of one. It is kept
@@ -1048,11 +1047,11 @@ ns_resolves() {  # ns_resolves <ns> <name> -> 0 if the name exists in that plugi
   [ -f "plugins/$1/commands/$2.md" ] || [ -f "plugins/$1/skills/$2/SKILL.md" ]
 }
 # The known-negative proves the resolver can still refuse. codebase-audit is a
-# real command name — it just lives in ai-scan now — which makes it a sharper
-# negative than an invented string: it is exactly what a stale reference to the
-# departed plugins would look like.
+# real command name that this repository no longer ships, which makes it a
+# sharper negative than an invented string: it is exactly what a stale reference
+# to the departed plugins would look like.
 if ns_resolves "toque" "codebase-audit"; then
-  fail "SPLIT-3: resolver accepts toque:codebase-audit, which moved to ai-scan — it can no longer refuse anything"
+  fail "SPLIT-3: resolver accepts toque:codebase-audit, a command this repo no longer ships — it can no longer refuse anything"
 fi
 
 ns_bad=0
@@ -1161,40 +1160,38 @@ else
 fi
 
 # ===========================================================================
-# INTEROP: cross-REPOSITORY artifact contracts.
+# INTEROP: the optional inputs Toque reads but does not write.
 #
 # Until 11.0.0 the producers were sibling plugins here and this swept both
-# directions: a stale row failed, and so did an undocumented edge. The audit and
-# readiness plugins moved to ai-scan, so the producer half is now unreachable
-# from this tree and no amount of cleverness makes it checkable.
+# directions: a stale row failed, and so did an undocumented edge. Those plugins
+# left the repository, and with them any way to check that anything still writes
+# these files.
 #
-# What is left is the consumer half, and it is worth keeping precisely because
-# the other half went away. With no producer in the repo, a toque file quietly
-# reading docs/audit/whatever.md has nothing to keep it honest — the artifact
-# never appears in any test run, so a typo in the path reads identically to an
-# unscanned repository. These checks are what still notices.
+# The consumer half is worth keeping precisely because the other half went away.
+# With no producer in the tree, a toque file quietly reading docs/audit/foo.md
+# has nothing to keep it honest — the path never appears in any test run, so a
+# typo reads exactly like a project that was never analysed. These checks are
+# what still notices.
 #
-# The guard therefore asserts three narrower things:
-#   INTEROP-1  every consumer named in interop.md exists and still reads its
-#              artifact.
-#   INTEROP-2  every docs/audit/ path a toque functional file reads has a row
-#              or is declared toque-internal, and every row has a live reader.
-#   INTEROP-3  the producer column names a foreign repository, so nobody
-#              mistakes an unenforceable row for a checked one.
+#   INTEROP-1  every reader named in interop.md exists and still reads its path.
+#   INTEROP-2  every docs/audit/ path a toque functional file reads has a row or
+#              is declared one of Toque's own, and every row has a live reader.
 #
-# INTEROP-3 previously validated readability-score.json against the producer's
-# schema block and a fixture derived from a live scan. Toque never read that
-# artifact; its schema, its ratified points/max vocabulary and the fixture all
-# travel with the producer. Keeping a copy of the assertion here would test a
-# contract this repository is not party to.
+# INTEROP-3 is RETIRED. It validated readability-score.json against its
+# producer's schema block and a fixture derived from a live scan. Toque never
+# read that artifact, and the producer is not here to have a schema. A revised
+# version briefly asserted that every producer cell named a foreign repository;
+# that column is gone too, so there is nothing left for it to hold. Its number
+# is not reused — a renumbered guard makes old failure reports mean the wrong
+# thing.
 #
 # Subjects are FUNCTIONAL files only (commands/, agents/, skills/, scripts/):
 # README/GUIDE mentions are description, not consumption — the (since retired)
 # guard README once shipped a whole output-table row describing a sibling's
-# writer, which is exactly why prose does not count as an edge.
+# writer, which is exactly why prose does not count as a read.
 # ===========================================================================
 echo ""
-echo "--- Interop contracts (INTEROP-1/2/3) ---"
+echo "--- Optional inputs (INTEROP-1/2) ---"
 
 INTEROP_DOC="interop.md"
 it_path_re='docs/audit/[A-Za-z0-9_./-]*\.(json|md)'
@@ -1202,47 +1199,43 @@ it_path_re='docs/audit/[A-Za-z0-9_./-]*\.(json|md)'
 # Instrument self-tests: the extractor must fire on a real spelling and stay
 # quiet on a directory-only mention, or the derived set silently collapses.
 if [ "$(printf 'see docs/audit/foo-bar.md now' | grep -oE "$it_path_re")" != "docs/audit/foo-bar.md" ]; then
-  fail "INTEROP: path extractor fails its known-positive — the derived edge set would be vacuous"
+  fail "INTEROP: path extractor fails its known-positive — the derived set would be vacuous"
 fi
 if printf 'the docs/audit/readability/ directory' | grep -qE "$it_path_re"; then
-  fail "INTEROP: path extractor matches a bare directory mention — it would count non-artifacts as edges"
+  fail "INTEROP: path extractor matches a bare directory mention — it would count non-artifacts as reads"
 fi
 
 if [ ! -f "$INTEROP_DOC" ]; then
-  fail "INTEROP: $INTEROP_DOC is missing — the cross-repository contracts are undocumented"
+  fail "INTEROP: $INTEROP_DOC is missing — the optional inputs are undocumented"
 else
-  # --- INTEROP-1: every documented consumer exists and still reads its
-  #     artifact. The producer column is NOT resolved — it names a path in
-  #     another repository, and pretending otherwise is what INTEROP-3 guards.
+  # --- INTEROP-1: every documented reader exists and still reads its path.
   it_rows=0
   it_bad=0
-  while IFS='|' read -r _ it_art it_prod it_cons _; do
+  while IFS='|' read -r _ it_art it_cons _; do
     it_art=$(echo "$it_art" | tr -d ' ')
-    it_prod=$(echo "$it_prod" | tr -d ' ')
     [ -n "$it_art" ] || continue
     it_rows=$((it_rows + 1))
     for it_c in $(echo "$it_cons" | tr ',' ' '); do
       if [ ! -f "$it_c" ]; then
-        fail "INTEROP-1: consumer $it_c (for $it_art) does not exist"
+        fail "INTEROP-1: reader $it_c (for $it_art) does not exist"
         it_bad=1
       elif ! grep -qF "$it_art" "$it_c"; then
-        fail "INTEROP-1: consumer $it_c no longer mentions $it_art — stale row, or the consumer moved off the contract"
+        fail "INTEROP-1: reader $it_c no longer mentions $it_art — stale row, or the file moved off the input"
         it_bad=1
       fi
     done
   done < <(grep -E '^\| docs/' "$INTEROP_DOC")
 
   if [ "$it_rows" -lt 8 ]; then
-    fail "INTEROP-1: only $it_rows contract rows parsed from $INTEROP_DOC (expected >= 8) — the parser or the table collapsed"
+    fail "INTEROP-1: only $it_rows rows parsed from $INTEROP_DOC (expected >= 8) — the parser or the table collapsed"
   elif [ "$it_bad" -eq 0 ]; then
-    pass "INTEROP-1: all $it_rows contract rows have live consumers that still read them"
+    pass "INTEROP-1: all $it_rows documented inputs have live readers that still read them"
   fi
 
   # --- INTEROP-2: the derived read-set equals the documented one.
   #     Derived = every docs/audit/ path any toque functional file references.
-  #     Documented = contract rows plus the toque-internal list, which is
-  #     parsed out of interop.md rather than repeated here so there is one
-  #     place to edit.
+  #     Documented = table rows plus Toque's own paths, parsed out of interop.md
+  #     rather than repeated here so there is one place to edit.
   it_derived=$(mktemp)
   git ls-files -z 'plugins/toque/commands/*' 'plugins/toque/agents/*' \
                   'plugins/toque/skills/*' 'plugins/toque/scripts/*' 2>/dev/null \
@@ -1251,7 +1244,7 @@ else
   it_documented=$(mktemp)
   {
     grep -E '^\| docs/' "$INTEROP_DOC" | awk -F'|' '{gsub(/ /,"",$2); print $2}'
-    awk '/^## Toque-internal paths/,/^## Deliberate non-edges/' "$INTEROP_DOC" \
+    awk '/^## Toque.s own paths/,/^## Not inputs/' "$INTEROP_DOC" \
       | grep -oE "docs/audit/[A-Za-z0-9_./-]*\.(json|md)"
   } | sort -u > "$it_documented"
 
@@ -1262,44 +1255,17 @@ else
     it2_bad=0
     while IFS= read -r it_miss; do
       [ -n "$it_miss" ] || continue
-      fail "INTEROP-2: toque reads $it_miss but it has no contract row and is not declared toque-internal in $INTEROP_DOC"
+      fail "INTEROP-2: toque reads $it_miss but it has no row and is not declared one of Toque's own in $INTEROP_DOC"
       it2_bad=1
     done < <(comm -23 "$it_derived" "$it_documented")
     while IFS= read -r it_stale; do
       [ -n "$it_stale" ] || continue
-      fail "INTEROP-2: $INTEROP_DOC documents $it_stale but no toque file reads it — delete or update the row"
+      fail "INTEROP-2: $INTEROP_DOC lists $it_stale but no toque file reads it — delete or update the row"
       it2_bad=1
     done < <(comm -13 "$it_derived" "$it_documented")
-    [ "$it2_bad" -eq 0 ] && pass "INTEROP-2: toque's derived docs/audit read-set ($it_derived_n paths) exactly matches the documented contracts"
+    [ "$it2_bad" -eq 0 ] && pass "INTEROP-2: toque's derived docs/audit read-set ($it_derived_n paths) exactly matches the documented list"
   fi
   rm -f "$it_derived" "$it_documented"
-
-  # --- INTEROP-3: every producer is external and says so.
-  #     A row whose producer looks like a local path is a row someone believes
-  #     is being checked. It is not, and the difference matters more than any
-  #     assertion this file could make about it.
-  it3_bad=0
-  it3_n=0
-  while IFS='|' read -r _ it_art it_prod _ _; do
-    it_prod=$(echo "$it_prod" | tr -d ' ')
-    [ -n "$it_prod" ] || continue
-    it3_n=$((it3_n + 1))
-    case "$it_prod" in
-      *:*) ;;   # <repo>:<path> — declared foreign, unresolvable by design
-      *)
-        fail "INTEROP-3: producer '$it_prod' is written as a local path, but no producer lives in this repository — use <repo>:<path>"
-        it3_bad=1 ;;
-    esac
-    if [ -f "$it_prod" ]; then
-      fail "INTEROP-3: producer $it_prod resolves inside this repository — a producer reappeared, so INTEROP-1 should check it again"
-      it3_bad=1
-    fi
-  done < <(grep -E '^\| docs/' "$INTEROP_DOC")
-  if [ "$it3_n" -lt 8 ]; then
-    fail "INTEROP-3: only $it3_n producer cells parsed (expected >= 8) — the parser collapsed"
-  elif [ "$it3_bad" -eq 0 ]; then
-    pass "INTEROP-3: all $it3_n producers are declared foreign and none resolves locally"
-  fi
 fi
 
 # ===========================================================================

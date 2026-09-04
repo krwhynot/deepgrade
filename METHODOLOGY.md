@@ -8,11 +8,12 @@ Version 4.27.1 | Research-backed. Battle-tested. Stack-agnostic.
 > products that used to ship together. Only one of them ships from this
 > repository now.
 >
-> - **Toque** (this repository): sections 3, 5, 6, 7, 8, 10, 11.
-> - **[ai-scan](https://github.com/krwhynot/ai-scan)**: sections 1, 2, 4, 9 —
->   the report card model, the grade categories, the 52-check readiness scan,
->   and operational readiness. The commands they name install from the ai-scan
->   marketplace, not this one.
+> - **Toque** (what this repository ships): sections 3, 5, 6, 7, 8, 10, 11.
+> - **Codebase analysis** — the report card model, the grade categories, the
+>   52-check readiness scan and operational readiness, in sections 1, 2, 4 and
+>   9. Those commands were removed in 11.0.0. The sections are kept because the
+>   methods are the reasoning several Toque sections build on, but nothing here
+>   implements them, and this repository does not say what does.
 >
 > The sections are not renumbered. Numbering is referenced from specs, plan
 > records and a test guard that derives section 7's bounds from its heading, and
@@ -88,7 +89,7 @@ Toque maps a percentage score (0-100) to a letter grade using the standard acade
 
 The B- threshold is the most important number in the table. It represents the minimum viable score for productive AI collaboration. Below B-, AI tools generate more confusion than value because they lack the context to make good decisions.
 
-When you run `/ai-scan:readiness-scan`, Toque measures your codebase across 9 scoring gates (52 total checks), computes a weighted percentage, and maps it to this scale. The result is a single letter grade that tells you exactly where you stand.
+When you run the AI-readiness scan, Toque measures your codebase across 9 scoring gates (52 total checks), computes a weighted percentage, and maps it to this scale. The result is a single letter grade that tells you exactly where you stand.
 
 ---
 
@@ -137,7 +138,7 @@ Before AI can help with a codebase, the codebase must be documented. This sounds
 
 Category 1 treats documentation as an archaeological dig. The goal is to answer "what do we have?" by producing three artifacts: a feature inventory (what the system does), a dependency map (how the pieces connect), and business rule documentation (why the code behaves the way it does). These are prerequisites for AI-assisted development, not nice-to-haves. Without them, an AI agent is navigating blind.
 
-The method is straightforward. Toque's `/ai-scan-audit:codebase-audit` command deploys specialized scanner agents to find features, trace dependencies, and catalog business rules embedded in code. The output is a structured report that serves as the AI's map of the codebase.
+The method is straightforward. Toque's the codebase audit command deploys specialized scanner agents to find features, trace dependencies, and catalog business rules embedded in code. The output is a structured report that serves as the AI's map of the codebase.
 
 ### Category 2: Phased Delivery Over Big-Bang Releases (Present)
 
@@ -365,7 +366,7 @@ The audit is a stress test. Toque runs four checks against the plan:
 1. **8-Dimension Score:** Rates the plan from 1-5 across eight quality dimensions. Thresholds: 32-40 GREEN, 24-31 YELLOW, 16-23 ORANGE, 1-15 RED.
 2. **Devil's Advocate:** Challenges every assumption. "If this fails in production, what is the most likely reason?"
 3. **Codebase Verification:** Confirms that file paths, function names, and line numbers referenced in the plan actually exist in the codebase.
-4. **Gap Verification:** Four structured outputs (Coverage Matrix, Assumption Register, Scenario Matrix, Cross-Cutting Concern Sweep) plus infrastructure verification and the Phase 5 lint rules (see [lint-registry.md](docs/planning-techniques/lint-registry.md), which owns the set and its size). LINT-11 and LINT-12 run at Phase 7 instead.
+4. **Gap Verification:** Four structured outputs (Coverage Matrix, Assumption Register, Scenario Matrix, Cross-Cutting Concern Sweep) plus infrastructure verification and the Phase 5 lint rules (see [lint-registry.md](plugins/toque/docs/planning-techniques/lint-registry.md), which owns the set and its size). LINT-11 and LINT-12 run at Phase 7 instead.
 
 The Phase 5 audit gate uses an evaluator-optimizer loop. If the score is below 32/40 or gaps remain, the system auto-revises the plan spec and re-audits (up to 2 iterations). After the loop, a human review checkpoint prompts for reviewer sign-off before Build (waivable in solo mode). GREEN + gap-checked means "ready to build." YELLOW + gap-checked means "proceed with known gaps." RED means "go back to Phase 3 or 4."
 
@@ -933,19 +934,19 @@ graph TD
 
 Seven hooks ran as part of Layer 1:
 
-**Force push guard** ([`scripts/tq-git-guard.js`](scripts/tq-git-guard.js), PreToolUse:Bash). Blocks `git push --force` and the bare `-f` form. Force pushes rewrite shared history and can destroy other people's work. Use `--force-with-lease` if you truly need it — the guard genuinely does not block that, which was untrue before v5.0.0: the old pattern matched `--force` inside `--force-with-lease`, so the safe form was denied and the short form was not.
+**Force push guard** (`scripts/tq-git-guard.js`, PreToolUse:Bash). Blocks `git push --force` and the bare `-f` form. Force pushes rewrite shared history and can destroy other people's work. Use `--force-with-lease` if you truly need it — the guard genuinely does not block that, which was untrue before v5.0.0: the old pattern matched `--force` inside `--force-with-lease`, so the safe form was denied and the short form was not.
 
-**Hard reset guard** ([`scripts/tq-git-guard.js`](scripts/tq-git-guard.js), PreToolUse:Bash). Prompts for confirmation on `git reset --hard` rather than blocking it. A hard reset permanently discards all uncommitted changes, but it is also a legitimate operation, so the guard asks instead of refusing. Before v5.0.0 it denied outright, and the explanation was written to a channel that is never displayed.
+**Hard reset guard** (`scripts/tq-git-guard.js`, PreToolUse:Bash). Prompts for confirmation on `git reset --hard` rather than blocking it. A hard reset permanently discards all uncommitted changes, but it is also a legitimate operation, so the guard asks instead of refusing. Before v5.0.0 it denied outright, and the explanation was written to a channel that is never displayed.
 
-**Migration guard** ([`scripts/tq-migration-guard.js`](scripts/tq-migration-guard.js), PreToolUse:Write|Edit). Blocks edits to existing migration files. Modifying an applied migration can corrupt databases. The correct action is always to create a new migration. New migration files are allowed; only edits to existing ones trigger the guard.
+**Migration guard** (`scripts/tq-migration-guard.js`, PreToolUse:Write|Edit). Blocks edits to existing migration files. Modifying an applied migration can corrupt databases. The correct action is always to create a new migration. New migration files are allowed; only edits to existing ones trigger the guard.
 
-**DB deploy guard** ([`plugin.json` PreToolUse:Bash](.claude-plugin/plugin.json)). Blocks direct database deploy commands (`supabase db push`, `prisma migrate deploy`, `dotnet ef database update`, `flyway migrate`, `rails db:migrate`) unless the command includes `--dry-run`, `--local`, `RAILS_ENV=test`, or `RAILS_ENV=development`. As [Supabase: Managing Environments](https://supabase.com/docs/deployment/managing-environments) puts it: "Use a CI/CD pipeline rather than deploying from your local machine."
+**DB deploy guard** ([`plugin.json` PreToolUse:Bash](plugins/toque/.claude-plugin/plugin.json)). Blocks direct database deploy commands (`supabase db push`, `prisma migrate deploy`, `dotnet ef database update`, `flyway migrate`, `rails db:migrate`) unless the command includes `--dry-run`, `--local`, `RAILS_ENV=test`, or `RAILS_ENV=development`. As [Supabase: Managing Environments](https://supabase.com/docs/deployment/managing-environments) puts it: "Use a CI/CD pipeline rather than deploying from your local machine."
 
-**Change tracker** ([`plugin.json` PostToolUse:Write|Edit](.claude-plugin/plugin.json)). Counts file changes per session by incrementing a counter in `/tmp/tq-baseline-{session}`. When the count crosses a configurable threshold (default: 15), it suggests running a delta scan. This is a nudge, not a blocker.
+**Change tracker** ([`plugin.json` PostToolUse:Write|Edit](plugins/toque/.claude-plugin/plugin.json)). Counts file changes per session by incrementing a counter in `/tmp/tq-baseline-{session}`. When the count crosses a configurable threshold (default: 15), it suggests running a delta scan. This is a nudge, not a blocker.
 
-**Test/build tracker** ([`plugin.json` PostToolUse:Bash](.claude-plugin/plugin.json)). Silently records timestamps when test or build commands run. Recognizes test and build commands across Node (jest, vitest, npm test), Python (pytest), .NET (dotnet test/build), Rust (cargo test/build/check), and Go (go test/vet). The Stop hook and Git Guard read these timestamps to know whether tests ran.
+**Test/build tracker** ([`plugin.json` PostToolUse:Bash](plugins/toque/.claude-plugin/plugin.json)). Silently records timestamps when test or build commands run. Recognizes test and build commands across Node (jest, vitest, npm test), Python (pytest), .NET (dotnet test/build), Rust (cargo test/build/check), and Go (go test/vet). The Stop hook and Git Guard read these timestamps to know whether tests ran.
 
-**Session summary** ([`plugin.json` Stop](.claude-plugin/plugin.json)). Reports the total file change count when a session ends. If files were changed but no tests ran (and the project has tests), it warns you. This is always informational; Stop hooks must use exit 0 to avoid infinite re-trigger loops.
+**Session summary** ([`plugin.json` Stop](plugins/toque/.claude-plugin/plugin.json)). Reports the total file change count when a session ends. If files were changed but no tests ran (and the project has tests), it warns you. This is always informational; Stop hooks must use exit 0 to avoid infinite re-trigger loops.
 
 ### The Fail-Closed Principle
 
@@ -979,11 +980,11 @@ Layer 2 catches problems at the pull request level, after code leaves the develo
 
 For teams adopting Toque on an existing codebase, the CI pipeline runs in advisory mode for the first two weeks: it reports findings but does not block merges. After two weeks, it switches to blocking mode. This ramp-up period prevents the "new tool blocks everything on Day 1" frustration that kills adoption.
 
-The pipeline is generated by [`/ai-scan-audit:codebase-gates`](https://github.com/krwhynot/ai-scan), which produces GitHub Actions workflows, pre-commit configs, and supporting scripts based on your actual audit findings. It does not generate a generic template. It generates gates specific to what your scan discovered.
+The pipeline is generated by the CI gate generator, which produces GitHub Actions workflows, pre-commit configs, and supporting scripts based on your actual audit findings. It does not generate a generic template. It generates gates specific to what your scan discovered.
 
 ### Layer 3: Plan Workflow
 
-Layer 3 is where a human stays in the loop. The [`/toque:plan`](https://github.com/krwhynot/ai-scan) command's 9-phase workflow includes three safety-critical phases:
+Layer 3 is where a human stays in the loop. The [`/toque:plan`](plugins/toque/commands/plan-status.md) command's 9-phase workflow includes three safety-critical phases:
 
 **Phase 5 (Audit)** scores the plan across 8 quality dimensions with rubric-calibrated scoring (1-5 per dimension, reasoning required before each score). Thresholds: 32-40 GREEN, 24-31 YELLOW, 16-23 ORANGE, 1-15 RED. The audit runs the registry's Phase 5 lint rules (LINT-11/12 run at Phase 7), 4 gap verification matrices (coverage, assumptions, scenarios, cross-cutting), infrastructure verification (LINT-15/16), and a devil's advocate challenge. If the score is below 32 or gaps remain, an evaluator-optimizer loop auto-revises and re-audits (up to 2 iterations). A human review checkpoint follows before Build entry.
 
@@ -1049,7 +1050,7 @@ This principle deserves its own heading because it is the one design decision th
 
 If you have ever watched a project go sideways, you know the problem usually was not the code. It was the plan. Or more precisely, the holes in the plan that nobody noticed until they became production incidents.
 
-Toque's plan audit applies the same scrutiny to technical plans, migration specs, and refactoring proposals. Instead of a binary "looks good" or "needs work," you get a per-criterion verdict with the evidence behind it, structured gap detection, and findings you can act on. There is no score: a plan either has the thing or it does not, and the audit shows you where it says so. The methodology is implemented in the [plan-auditor agent](https://github.com/krwhynot/ai-scan).
+Toque's plan audit applies the same scrutiny to technical plans, migration specs, and refactoring proposals. Instead of a binary "looks good" or "needs work," you get a per-criterion verdict with the evidence behind it, structured gap detection, and findings you can act on. There is no score: a plan either has the thing or it does not, and the audit shows you where it says so. The methodology is implemented in the [plan-auditor agent](plugins/toque/agents/plan-auditor.md).
 
 ### The 8 Review Dimensions
 
@@ -1100,7 +1101,7 @@ The dimensions are lenses for finding gaps and locating evidence, not things to 
 
 ### The Evidence Requirement
 
-Every finding from the plan audit must carry a confidence tier. This prevents the auditor from generating plausible-sounding gaps that do not actually exist in the plan. The confidence system works the same way as the [codebase audit confidence tiers](https://github.com/krwhynot/ai-scan).
+Every finding from the plan audit must carry a confidence tier. This prevents the auditor from generating plausible-sounding gaps that do not actually exist in the plan. The confidence system works the same way as the codebase audit confidence tiers.
 
 | Tier | Meaning | Example |
 | :----- | :-------- | :-------- |
@@ -1112,7 +1113,7 @@ Unverified findings (no evidence at all) are excluded from scoring entirely. The
 
 ### The 4 Structured Gap Checks
 
-A dimension review catches qualitative gaps ("the risk section is thin"). But a plan can clear every dimension and still have structural holes the dimension model misses. That is why the audit runs 4 additional structured checks, implemented by the Gap Verifier subagent in the [plan-auditor](https://github.com/krwhynot/ai-scan).
+A dimension review catches qualitative gaps ("the risk section is thin"). But a plan can clear every dimension and still have structural holes the dimension model misses. That is why the audit runs 4 additional structured checks, implemented by the Gap Verifier subagent in the [plan-auditor](plugins/toque/agents/plan-auditor.md).
 
 ```mermaid
 graph TD
@@ -1164,7 +1165,7 @@ graph TD
 
 On top of the 4 matrices, a set of binary pass/fail rules run as automated checks — most during Phase 5 Audit, two during Phase 7 Impact Review. These are the plan equivalent of a linter. Either the rule passes or it does not.
 
-[lint-registry.md](docs/planning-techniques/lint-registry.md) is the canonical registry, and since PH5-001 it is the *only* place rule text and rule counts are written. The table below reproduces the registry's wording verbatim and `tests/layer1-config-wiring.sh` fails the suite if a word of it drifts. It states no total for the same reason: this page, the registry, `commands/plan.md` and `agents/plan-auditor.md` were each carrying a different figure, and the only way to stop that recurring is for exactly one file to be allowed to say it.
+[lint-registry.md](plugins/toque/docs/planning-techniques/lint-registry.md) is the canonical registry, and since PH5-001 it is the *only* place rule text and rule counts are written. The table below reproduces the registry's wording verbatim and `tests/layer1-config-wiring.sh` fails the suite if a word of it drifts. It states no total for the same reason: this page, the registry, `commands/plan.md` and `agents/plan-auditor.md` were each carrying a different figure, and the only way to stop that recurring is for exactly one file to be allowed to say it.
 
 | Rule | Description | Phase |
 | :----- | :------------ | :---- |
@@ -1193,7 +1194,7 @@ A plan is "gap-checked" only when every applicable lint rule passes, the Coverag
 
 ### The 5 Parallel Subagents
 
-The plan audit does not run as a single agent reviewing all 8 dimensions. A single agent reviewing everything gravitates toward the first type of issue it finds (anchoring bias). Instead, the [plan-auditor](https://github.com/krwhynot/ai-scan) deploys 5 specialist subagents in parallel.
+The plan audit does not run as a single agent reviewing all 8 dimensions. A single agent reviewing everything gravitates toward the first type of issue it finds (anchoring bias). Instead, the [plan-auditor](plugins/toque/agents/plan-auditor.md) deploys 5 specialist subagents in parallel.
 
 ```mermaid
 graph TD
@@ -1254,7 +1255,7 @@ The verification pass also cross-references between specialists. If the Risk Rev
 
 LLM-generated analysis has specific failure modes that human analysis does not. A human auditor who is unsure says "I think" or "I'm not sure." An LLM produces the same confident prose whether it grep-confirmed a file count or hallucinated a pattern from a directory name. The confidence signal is flat. This creates a dangerous asymmetry: the most dangerous findings (high-confidence hallucinations) are the hardest to distinguish from the most reliable findings (tool-verified facts).
 
-Toque's self-audit framework addresses this by requiring every finding to carry an explicit evidence basis that communicates *how* the claim was derived, not just *what* the claim says. The framework is implemented in the [self-audit-knowledge skill](skills/self-audit-knowledge/SKILL.md) and integrated into all Phase 2 scanner agents, the Phase 3 synthesis, and the report generator.
+Toque's self-audit framework addresses this by requiring every finding to carry an explicit evidence basis that communicates *how* the claim was derived, not just *what* the claim says. The framework is implemented in the [self-audit-knowledge skill](plugins/toque/skills/self-audit-knowledge/SKILL.md) and integrated into all Phase 2 scanner agents, the Phase 3 synthesis, and the report generator.
 
 ### The Three Verification Tiers
 
@@ -1345,7 +1346,7 @@ The cascade risk line only appears in the report for non-CONTAINED findings. Thi
 
 ### Phase 3 Cross-Validation
 
-The Phase 3 synthesis in the [codebase-audit command](https://github.com/krwhynot/ai-scan) uses the self-audit framework to systematically validate findings across agents. The process follows 7 steps:
+The Phase 3 synthesis in the codebase-audit command uses the self-audit framework to systematically validate findings across agents. The process follows 7 steps:
 
 1. **Read all outputs** from the 5 Phase 1/2 agents
 2. **Cross-reference matrix** — for every module mentioned by 2+ scanners, check alignment and verify side-effect documentation
@@ -1357,7 +1358,7 @@ The Phase 3 synthesis in the [codebase-audit command](https://github.com/krwhyno
 
 ### Tier-Aware Confidence Decay
 
-Findings decay at different rates depending on their verification tier, because inferred patterns become inaccurate sooner than tool-verified facts as code changes. The [governance-knowledge skill](skills/governance-knowledge/SKILL.md) defines the tier-aware decay schedule:
+Findings decay at different rates depending on their verification tier, because inferred patterns become inaccurate sooner than tool-verified facts as code changes. The governance-knowledge skill defines the tier-aware decay schedule:
 
 | Tier | FRESH | AGING | STALE | EXPIRED |
 | :--- | :---- | :---- | :---- | :------ |
@@ -1376,11 +1377,11 @@ The Toque report replaces the traditional Confidence Summary with a Self-Audit S
 3. **Cross-Validation Results** — table of modules where scanners disagreed, with resolutions
 4. **What to Verify** — consolidated list of items requiring human review
 
-If more than 30% of findings are Tier C, the overall report confidence is downgraded one level. If any HIGH-confidence finding fails spot-checking, all findings from that scanner are reviewed. These thresholds are defined in the [self-audit-knowledge skill](skills/self-audit-knowledge/SKILL.md) as the single source of truth.
+If more than 30% of findings are Tier C, the overall report confidence is downgraded one level. If any HIGH-confidence finding fails spot-checking, all findings from that scanner are reviewed. These thresholds are defined in the [self-audit-knowledge skill](plugins/toque/skills/self-audit-knowledge/SKILL.md) as the single source of truth.
 
 ### Self-Audit in Plan Auditing
 
-The self-audit framework extends to plan auditing via the [plan-auditor](https://github.com/krwhynot/ai-scan) and [plan-scaffolder](https://github.com/krwhynot/ai-scan). Plan audits use Tier A/B/C labels alongside confidence levels and add three plan-specific failure mode flags: `[PLAN-GAP-INFERRED]` (gap detected by keyword absence), `[SCOPE-ASSUMED]` (auditor assumed scope beyond explicit plan text), and `[CODEBASE-CLAIM-NOT-VERIFIED]` (plan references code the auditor could not verify).
+The self-audit framework extends to plan auditing via the [plan-auditor](plugins/toque/agents/plan-auditor.md) and [plan-scaffolder](plugins/toque/agents/plan-scaffolder.md). Plan audits use Tier A/B/C labels alongside confidence levels and add three plan-specific failure mode flags: `[PLAN-GAP-INFERRED]` (gap detected by keyword absence), `[SCOPE-ASSUMED]` (auditor assumed scope beyond explicit plan text), and `[CODEBASE-CLAIM-NOT-VERIFIED]` (plan references code the auditor could not verify).
 
 ---
 
@@ -1428,7 +1429,7 @@ graph TD
 
 Guardrails are automated checks that run without anyone remembering to invoke them. They are the difference between "we have a process" and "the process enforces itself."
 
-Toque checks for three layers of guardrails, generated by the [gate-generator agent](https://github.com/krwhynot/ai-scan) and orchestrated by the [`/ai-scan-audit:codebase-gates`](https://github.com/krwhynot/ai-scan) command:
+Toque checks for three layers of guardrails, generated by the gate-generator agent and orchestrated by the the CI gate generator command:
 
 | Layer | What It Does | Implementation |
 | :------ | :------------- | :--------------- |
@@ -1442,7 +1443,7 @@ A codebase with all three layers has defense in depth. A codebase with none has 
 
 Findings decay. An audit report from 6 months ago might describe a codebase that no longer exists. Context currency measures how fresh your documentation, audit baselines, and findings are.
 
-The [delta-scanner agent](https://github.com/krwhynot/ai-scan) implements confidence decay using a simple time-based model:
+The delta-scanner agent implements confidence decay using a simple time-based model:
 
 ```text
   CONFIDENCE DECAY MODEL
@@ -1458,7 +1459,7 @@ The [delta-scanner agent](https://github.com/krwhynot/ai-scan) implements confid
 
 A HIGH confidence finding becomes MEDIUM after 31 days, LOW after 61 days, and gets tagged `[REQUIRES RE-SCAN]` after 91 days. This is not arbitrary. It reflects the reality that codebases change continuously, and a finding about module coupling from 3 months ago may not match the current dependency graph.
 
-Delta tracking via [`/ai-scan-audit:codebase-delta`](https://github.com/krwhynot/ai-scan) provides quick re-measurement without a full re-scan. It takes 2-3 minutes and tells you what improved, what regressed, and whether a full scan is warranted. The KPI dashboard tracks 12 metrics over time with trend indicators, making progress visible across multiple scan cycles.
+Delta tracking via the delta scan provides quick re-measurement without a full re-scan. It takes 2-3 minutes and tells you what improved, what regressed, and whether a full scan is warranted. The KPI dashboard tracks 12 metrics over time with trend indicators, making progress visible across multiple scan cycles.
 
 The 12 tracked KPIs are: readiness score, Phase 2 eligibility, monolith file count, largest monolith LOC, test file count, test file ratio, HIGH-risk module count, CRITICAL findings open, stale findings count, days since full scan, config files changed, and security files changed.
 
@@ -1466,7 +1467,7 @@ The 12 tracked KPIs are: readiness score, Phase 2 eligibility, monolith file cou
 
 Test coverage numbers can be misleading. 80% line coverage means nothing if the untested 20% contains your payment processing logic. Category 3C focuses specifically on whether HIGH-risk modules (identified by the Phase 2 risk assessment) have adequate test coverage.
 
-The key technique is characterization testing, implemented by the [characterization-generator agent](https://github.com/krwhynot/ai-scan). Characterization tests capture what the code DOES, not what it SHOULD do. The distinction matters for refactoring.
+The key technique is characterization testing, implemented by the characterization-generator agent. Characterization tests capture what the code DOES, not what it SHOULD do. The distinction matters for refactoring.
 
 ```text
   CHARACTERIZATION TESTS vs UNIT TESTS
@@ -1494,14 +1495,14 @@ The Change Readiness Score is a composite rating derived from 3A, 3B, and 3C. It
 | :------- | :-------- | :------- |
 | **GREEN** | Safe to change with standard process | Proceed normally |
 | **YELLOW** | Change with extra review | Get a second pair of eyes on PRs |
-| **ORANGE** | Change only with plan and rollback | Use [`/toque:quick-plan`](https://github.com/krwhynot/ai-scan) first |
-| **RED** | Do not change without full audit | Run [`/ai-scan-audit:codebase-audit`](https://github.com/krwhynot/ai-scan) first |
+| **ORANGE** | Change only with plan and rollback | Use [`/toque:quick-plan`](plugins/toque/commands/quick-plan.md) first |
+| **RED** | Do not change without full audit | Run the codebase audit first |
 
 A GREEN rating requires all three sub-categories to be healthy: guardrails are installed, context is fresh (under 30 days), and HIGH-risk modules have test coverage. Any gap downgrades the rating.
 
 ### The Baseline Maintenance System
 
-Audits produce snapshots. Maintenance turns snapshots into a living system. The baseline maintenance system implemented by [`/ai-scan-audit:codebase-gates`](https://github.com/krwhynot/ai-scan) operates in three layers.
+Audits produce snapshots. Maintenance turns snapshots into a living system. The baseline maintenance system implemented by the CI gate generator operates in three layers.
 
 ```text
   THE THREE LAYERS OF BASELINE MAINTENANCE
@@ -1533,7 +1534,7 @@ Audits produce snapshots. Maintenance turns snapshots into a living system. The 
   └──────────────────────────────────────────────────────────────┘
 ```
 
-Layer 1 is invisible. The [baseline-tracker script](https://github.com/krwhynot/ai-scan) runs as a PostToolUse hook, incrementing a counter every time a file is written or edited. No output, no interruptions. It just counts.
+Layer 1 is invisible. The baseline-tracker script runs as a PostToolUse hook, incrementing a counter every time a file is written or edited. No output, no interruptions. It just counts.
 
 Layer 2 uses that count to trigger contextual nudges. After 15 file changes (configurable via `TP_CHANGE_THRESHOLD`), it suggests running a delta scan. If a config file, migration file, or security-related file is changed, it suggests a targeted re-scan. These are suggestions, not blocks. You can always ignore them.
 
@@ -1611,12 +1612,12 @@ Each Toque command deploys a different number of agents, tuned to the complexity
 
 | Command | Agents | Parallelism | What They Do |
 | :-------- | :------: | :------------ | :------------- |
-| [`/ai-scan:readiness-scan`](https://github.com/krwhynot/ai-scan) | 10 | All parallel (Phase 2) | 9 scanner agents + 1 report generator, each checking a specific category of AI readiness |
-| [`/ai-scan-audit:codebase-audit`](https://github.com/krwhynot/ai-scan) | 6 | 2 phases (3+2, then synthesis) | Phase 1: feature-scanner, dependency-mapper, doc-auditor (parallel). Phase 2: risk-assessor, integration-scanner (parallel). Then synthesis + report. |
-| Governance commands | 4 | Per command | [delta-scanner](https://github.com/krwhynot/ai-scan), [gate-generator](https://github.com/krwhynot/ai-scan), [security-scanner](https://github.com/krwhynot/ai-scan), [characterization-generator](https://github.com/krwhynot/ai-scan) each run as specialized single agents |
-| [`/toque:quick-audit`](https://github.com/krwhynot/ai-scan) (plan audit) | 5 | All parallel | Architecture, risk, execution, quality reviewers + gap verifier |
-| [`/toque:quick-plan`](https://github.com/krwhynot/ai-scan) (plan scaffolder) | 3 | All parallel | [Codebase analyst, pattern researcher, test strategist](https://github.com/krwhynot/ai-scan) gather evidence before the orchestrator writes the plan |
-| [`/toque:troubleshoot`](https://github.com/krwhynot/ai-scan) | Up to 4 | Parallel (if escalated) | Code tracer, git historian, data inspector, integration checker. Only spawned when the bug spans 3+ layers. |
+| the AI-readiness scan | 10 | All parallel (Phase 2) | 9 scanner agents + 1 report generator, each checking a specific category of AI readiness |
+| the codebase audit | 6 | 2 phases (3+2, then synthesis) | Phase 1: feature-scanner, dependency-mapper, doc-auditor (parallel). Phase 2: risk-assessor, integration-scanner (parallel). Then synthesis + report. |
+| Governance commands | 4 | Per command | delta-scanner, gate-generator, security-scanner, characterization-generator each run as specialized single agents |
+| [`/toque:quick-audit`](plugins/toque/commands/quick-audit.md) (plan audit) | 5 | All parallel | Architecture, risk, execution, quality reviewers + gap verifier |
+| [`/toque:quick-plan`](plugins/toque/commands/quick-plan.md) (plan scaffolder) | 3 | All parallel | Codebase analyst, pattern researcher, test strategist gather evidence before the orchestrator writes the plan |
+| [`/toque:troubleshoot`](plugins/toque/skills/troubleshoot/SKILL.md) | Up to 4 | Parallel (if escalated) | Code tracer, git historian, data inspector, integration checker. Only spawned when the bug spans 3+ layers. |
 
 ### Why Fresh Context Per Agent
 
@@ -1656,7 +1657,7 @@ Each agent gets a scoped objective. Not "review this codebase" but "scan all .cs
 
 Not every task benefits from multiple agents. Spawning a subagent has overhead: the context window setup, the prompt injection, the filesystem I/O. For small tasks, that overhead costs more than it saves.
 
-The [codebase-audit command](https://github.com/krwhynot/ai-scan) documents the scaling rules:
+The codebase-audit command documents the scaling rules:
 
 ```text
   WHEN TO USE SUBAGENTS
@@ -1714,11 +1715,11 @@ graph LR
 
 **Sonnet** handles tasks that are read-heavy, pattern-matching, or mechanical. Scanning a codebase for test files is pattern matching. Counting monolith files is mechanical. Gathering evidence from a plan document is read-heavy. Sonnet does these well and costs less.
 
-The [plan-auditor](https://github.com/krwhynot/ai-scan) demonstrates the split clearly: Architecture and Risk reviewers use Opus (reasoning about tradeoffs and failure scenarios), while Execution and Quality reviewers use Sonnet (mechanical assessment of whether a timeline or test plan exists). The [plan-scaffolder](https://github.com/krwhynot/ai-scan) uses the same split: 3 Sonnet analysts gather evidence, then an Opus orchestrator synthesizes the findings into a cohesive plan.
+The [plan-auditor](plugins/toque/agents/plan-auditor.md) demonstrates the split clearly: Architecture and Risk reviewers use Opus (reasoning about tradeoffs and failure scenarios), while Execution and Quality reviewers use Sonnet (mechanical assessment of whether a timeline or test plan exists). The [plan-scaffolder](plugins/toque/agents/plan-scaffolder.md) uses the same split: 3 Sonnet analysts gather evidence, then an Opus orchestrator synthesizes the findings into a cohesive plan.
 
 ### The Troubleshooting Escalation Pattern
 
-The [`/toque:troubleshoot`](https://github.com/krwhynot/ai-scan) command shows a different orchestration pattern: conditional escalation. Most bugs do not need multiple agents. A null reference exception in a single file is investigated perfectly well by one agent.
+The [`/toque:troubleshoot`](plugins/toque/skills/troubleshoot/SKILL.md) command shows a different orchestration pattern: conditional escalation. Most bugs do not need multiple agents. A null reference exception in a single file is investigated perfectly well by one agent.
 
 But some bugs span multiple layers: the UI shows the wrong data, the API returns the wrong response, the database has the wrong value, and the migration that changed the schema ran 3 commits ago. Investigating this serially means context-switching between frontend, backend, database, and git history, losing focus at each transition.
 

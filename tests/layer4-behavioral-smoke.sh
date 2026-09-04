@@ -32,9 +32,9 @@ HELP_FILE="$DG/commands/help.md"
 if [[ -f "$HELP_FILE" ]]; then
     # Check required sections exist in help.md
     # Readiness Scan / Codebase Audit / Codebase Monitoring left in 11.0.0 with
-    # the plugins that owned those commands. What replaced them is a pointer to
-    # ai-scan, which is asserted below rather than dropped: help.md going silent
-    # about where the audit went is the regression worth catching now.
+    # the plugins that owned those commands. What replaced them is a statement
+    # that they are gone, asserted below rather than dropped: help.md going
+    # silent about it is the regression worth catching now.
     SECTIONS=("Planning" "Quick Shortcuts" "Documentation" "Utility" "Agents" "Knowledge Skills" "Output Locations")
     ALL_FOUND=true
     for section in "${SECTIONS[@]}"; do
@@ -45,14 +45,15 @@ if [[ -f "$HELP_FILE" ]]; then
     done
     $ALL_FOUND && pass "B1: help.md has all required sections (${#SECTIONS[@]})"
 
-    # The audit and readiness commands moved to another marketplace. A user who
-    # runs /toque:help looking for them must be told where they went — silence
-    # reads as "this toolkit never had them", which is the wrong answer for
-    # anyone upgrading from 10.x.
-    if grep -qi 'ai-scan' "$HELP_FILE"; then
-        pass "B1: help.md points at ai-scan for the departed audit and readiness commands"
+    # The audit and readiness commands were removed in 11.0.0. A user upgrading
+    # from 10.x who runs /toque:help looking for them must find out they are
+    # gone; silence reads as "this toolkit never had them", and they go hunting
+    # for a typo instead. No destination is named — where a project gets its
+    # codebase analysis is not this plugin.s business.
+    if grep -qi 'Codebase analysis' "$HELP_FILE" && grep -qi 'were removed' "$HELP_FILE"; then
+        pass "B1: help.md states the audit and readiness commands were removed"
     else
-        fail "B1: help.md does not mention ai-scan — an upgrading user has no way to find the audit commands"
+        fail "B1: help.md does not say the audit and readiness commands were removed — an upgrading user is left guessing"
     fi
 
     # Count commands listed vs command files that exist

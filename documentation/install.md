@@ -1,20 +1,16 @@
 # Install
 
-Every install path for the three Toque plugins, what each one needs, and how to
-tell whether it worked.
+Every install path for Toque, what it needs, and how to tell whether it worked.
 
 ## Prerequisites
 
-| Requirement | Needed by | Check |
-| --- | --- | --- |
-| Claude Code | every plugin | `claude --version` |
-| Node.js 18+ | `toque` only (hooks and the design-gate tools) | `node --version` |
-
-The `ai-scan` plugins need nothing beyond Claude Code — they have
-no hooks and no scripts, and act only when you invoke a command.
+| Requirement | Check |
+| --- | --- |
+| Claude Code | `claude --version` |
+| Node.js 18+ (hooks and the design-gate tools) | `node --version` |
 
 Node is the same runtime Claude Code itself requires, so in practice if Claude
-Code runs, `toque` runs. See [What happens without
+Code runs, Toque runs. See [What happens without
 Node](#what-happens-without-node) if you are not sure.
 
 ## Add the marketplace
@@ -27,20 +23,11 @@ claude plugin marketplace add krwhynot/toque
 
 This registers the catalog. It installs nothing on its own.
 
-## Install the plugins
-
-Install any subset — the three are independent at install time even though they
-share a version.
+## Install the plugin
 
 ```bash
 claude plugin install toque@toque-marketplace --scope user
-claude plugin marketplace add krwhynot/ai-scan
-claude plugin install ai-scan@ai-scan-marketplace --scope user
-claude plugin install ai-scan-audit@ai-scan-marketplace --scope user
 ```
-
-Not sure which you want? [Choosing a plugin](./choosing-a-plugin.md) is a
-one-page decision table.
 
 ### Scope
 
@@ -57,32 +44,14 @@ Start Claude Code in any project and run:
 /toque:help
 ```
 
-`/toque:help` ships with the `toque` planning plugin and prints the full toolkit
-map, including commands belonging to the sibling plugins — so it doubles as a
-check that the other two registered.
-
-If you installed only the `ai-scan` plugins, there is no
-`help` command. Verify those by running their scan directly:
-
-```
-/ai-scan:readiness-scan
-/ai-scan-audit:codebase-audit
-```
+`/toque:help` prints every command, so it doubles as a check that the plugin
+registered.
 
 ## Updating
 
-Toque and the ai-scan plugins release independently now. Update whichever you
-have:
-
 ```bash
 claude plugin update toque@toque-marketplace
-claude plugin update ai-scan@ai-scan-marketplace
-claude plugin update ai-scan-audit@ai-scan-marketplace
 ```
-
-The catalog pins all three entries to a single tag and commit SHA, so a
-partially updated install is a supported state but not an intended one — the
-plugins are documented and tested as a set.
 
 ## Upgrading from a pre-10.0.0 install
 
@@ -116,8 +85,6 @@ and wrong.
 The two design-gate tools fail the same way, and **Stage 2 of `/toque:plan`
 cannot pass without them**. There is no degraded mode that skips the gate.
 
-The `ai-scan` plugins are unaffected — they release on their own schedule now.
-
 ## Optional integrations
 
 | Integration | Enables | Without it |
@@ -126,5 +93,5 @@ The `ai-scan` plugins are unaffected — they release on their own schedule now.
 
 ## Related
 
-- [Quickstart](./quickstart.md) — your first scan, end to end
-- [Choosing a plugin](./choosing-a-plugin.md) — Toque or ai-scan, and whether they compose
+- [Quickstart](./quickstart.md) — your first plan, end to end
+- [When to use Toque](./when-to-use.md) — including where it is overkill

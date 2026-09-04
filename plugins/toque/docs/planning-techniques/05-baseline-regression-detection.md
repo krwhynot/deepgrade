@@ -87,7 +87,7 @@ A baseline is a point-in-time snapshot stored as structured data (JSON) that rep
 
 ## Status Before Implementation
 
-The ai-scan `codebase-delta` scanner tracks aggregate codebase scores over time but not per-element plan metrics. A plan audit might improve several lint rules but regress on two scenario matrix items, and we'd report a headline "most lint rules pass" without noting that two previously-passing rules now fail. We have no per-concern baseline comparison. We also don't distinguish between pre-existing gaps and newly introduced regressions.
+A codebase-delta scanner tracks aggregate codebase scores over time but not per-element plan metrics. A plan audit might improve several lint rules but regress on two scenario matrix items, and we'd report a headline "most lint rules pass" without noting that two previously-passing rules now fail. We have no per-concern baseline comparison. We also don't distinguish between pre-existing gaps and newly introduced regressions.
 
 When a plan is re-audited after changes, the new audit produces a fresh score. If the score is the same or higher, we report success. But that score could hide element-level regressions masked by improvements elsewhere. There is no mechanism to flag "Scenario 5 was covered in the last audit but is now a gap" — only "the plan has 1 scenario gap."
 
@@ -123,7 +123,7 @@ When a plan is re-audited after changes, the new audit produces a fresh score. I
     }
   }
   ```
-- **Add baseline comparison logic to the ai-scan codebase-delta command** when a plan is active. When both a previous baseline and a current audit exist, run per-element comparison before reporting results.
+- **Add baseline comparison logic to whatever runs the delta scan** when a plan is active. When both a previous baseline and a current audit exist, run per-element comparison before reporting results.
 - **Report three categories separately:**
   - **Regressions** (block): items that were covered/passing and are now gap/failing
   - **Improvements** (celebrate): items that were gap/failing and are now covered/passing

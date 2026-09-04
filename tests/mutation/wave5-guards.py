@@ -160,8 +160,8 @@ def append_block(f, body):
     return True
 
 # (label, layer, tag, mutation, expect)  expect: 'catch' or 'quiet'
-# Ten cases were dropped in 11.0.0 when toque-audit and toque-readiness moved to
-# the ai-scan repository: their mutation subjects left with them. Two of the
+# Ten cases were dropped in 11.0.0 when toque-audit and toque-readiness were
+# removed: their mutation subjects left with them. Two of the
 # guards those cases proved (F11 argument-hint declaration, F08 PowerShell
 # instruction) now have NO subject in this repository at all — toque profile sets
 # F08_CHECK=0 and the F11 branch was removed rather than retargeted at an

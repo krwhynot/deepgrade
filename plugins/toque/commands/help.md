@@ -124,22 +124,17 @@ All artifacts go to `docs/plans/{date}-{name}/`. Check progress with `/toque:pla
 - `/toque:quick-cleanup [folder]` to clean up messy docs
 - `/toque:documentation [type] [topic]` to generate a specific document
 
-## Codebase auditing and AI-readiness scanning
+## Codebase analysis
 
-These moved out of Toque in 11.0.0. The codebase audit, security scan,
-delta/KPI tracking, characterization tests, CI gate generation and the
-AI-readiness scan now live in a separate marketplace:
+Toque does not analyse codebases. The codebase-audit, security-scan, delta and
+AI-readiness commands were removed in 11.0.0 and nothing replaces them here.
 
-```
-/plugin marketplace add krwhynot/ai-scan
-```
-
-Toque still *reads* what they produce. If `docs/audit/` holds a risk
-assessment, dependency map, feature inventory or integration scan, the planning
-commands and the documentation templates use them to ground their output. If it
-does not, everything still works — the data makes plans better-informed, and
-none of it is required. `interop.md` in the Toque repository lists exactly which
-files are read and by what.
+It does *read* analysis when something else has produced it. If `docs/audit/`
+holds a risk assessment, dependency map, feature inventory or integration scan,
+the planning commands and the documentation templates use them to ground their
+output. If it does not, everything still works — the files make plans
+better-informed, and none is required. `interop.md` lists exactly which paths
+are read and by which file.
 
 ## Output Locations
 
@@ -151,4 +146,4 @@ files are read and by what.
 | ADRs | `docs/adr/` |
 | PRDs | `docs/prd/` |
 | Plan audits | `docs/audit/` |
-| Audit and readiness data Toque reads (written by ai-scan) | `docs/audit/`, `docs/audit/readability/` |
+| Codebase analysis Toque reads but does not write | `docs/audit/` |

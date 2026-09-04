@@ -17,8 +17,7 @@
 One plugin lives here. `.github/release.sh` discovers every tracked manifest
 rather than hardcoding a list, so the lockstep machinery still runs — it just
 has one member. It was three until 11.0.0, when the audit and readiness
-plugins moved to the ai-scan repository and started releasing on their own
-schedule.
+plugins were removed.
 
 ```
 .claude-plugin/marketplace.json    # Three catalog entries, one shared ref+SHA pin
@@ -28,9 +27,9 @@ tests/                             # One suite for the whole monorepo
 
 Each plugin directory holds its own `.claude-plugin/plugin.json`, `README.md`,
 `GUIDE.md`, and its `commands/`, `agents/`, `skills/`, `hooks/`, `scripts/` as
-applicable. Toque is the only plugin here since 11.0.0; the audit and
-readiness plugins moved to the ai-scan repository and
-ZERO scripts by design — layer 1 enforces that partition.
+applicable. Toque is the only plugin here since 11.0.0, and it is the one that
+carries hooks and scripts — layer 1 enforces per-plugin expectations from a
+profile, so a plugin that grows a surface it should not have fails there.
 
 ## Adding a Command
 
@@ -77,10 +76,10 @@ same way: plugin skills address as `plugin:skill`, so an agent that says
 Qualify with the plugin namespace — `toque:self-audit-knowledge`. Nothing in
 the toolchain catches an unqualified skill reference either.
 
-Until 11.0.0 `toque-audit` shipped a byte-identical mirror of that skill so it
-resolved under both namespaces, and a layer 1 guard held the two copies
-identical. The mirror left with the plugin. If the copies drift now, nothing
-in this repository can tell — that check is gone, not relocated.
+Until 11.0.0 a second plugin shipped a byte-identical mirror of that skill so
+it resolved under both namespaces, and a layer 1 guard held the two copies
+identical. The mirror left with that plugin, and the guard was retired rather
+than relocated — there is no second copy here to compare against.
 
 The block above is byte-identical to the one in `skills/mcp-research/SKILL.md`
 and a test asserts they stay that way. Edit both or neither.

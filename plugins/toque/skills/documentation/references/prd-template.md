@@ -6,7 +6,7 @@ Generate a PRD for "$1".
 Read `docs/audit/baseline/feature-inventory.json` and search for features
 matching "$1" by name, domain, namespace, or keyword.
 
-If no baseline exists: "No audit baseline found. Run the ai-scan codebase audit first, or continue without it."
+If no baseline exists: "No audit baseline found in docs/audit/. Continuing without it."
 
 If multiple features match, present a numbered list:
 ```
