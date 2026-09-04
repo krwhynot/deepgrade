@@ -35,7 +35,7 @@ The generator receives the source material (codebase analysis, brainstorm goals,
 
 ### 2. Evaluator Agent scores it against 8 dimensions + 4 gap matrices (plan-auditor)
 
-The evaluator receives the generated plan and judges it against defined criteria. In Toque's case that means one verdict per criterion — MET, UNMET or N_A — each resting on evidence that is re-read and byte-compared afterwards, plus 4 gap verification matrices (coverage, dependency, risk, cross-cutting). The evaluator produces localized findings, not a total. The 8-dimension scorecard this section originally described was removed in 11.0.0: it permitted a compensating sum, where seven strong dimensions outvoted one fatal one.
+The evaluator receives the generated plan and judges it against defined criteria. In Toque's case that means one verdict per criterion — MET, UNMET or N_A — each resting on evidence that is re-read and byte-compared afterwards, plus 4 gap verification matrices (coverage, dependency, risk, cross-cutting). The evaluator produces localized findings, not a total. The eight-dimension rating this section originally described was removed in 11.0.0: it permitted a compensating sum, where seven strong dimensions outvoted one fatal one.
 
 ### 3. If the gate fails: Evaluator produces specific, actionable feedback
 
