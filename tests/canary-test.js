@@ -172,11 +172,14 @@ console.log('\n6. CLI contract');
 
 {
   const os = require('os');
-  const { execFileSync } = require('child_process');
+  const { spawnSync } = require('child_process');
   const CLI = path.join(__dirname, '..', 'plugins', 'toque', 'scripts', 'tq-canary.js');
   const run = (args) => {
-    try { return { code: 0, out: execFileSync('node', [CLI].concat(args), { encoding: 'utf8' }) }; }
-    catch (e) { return { code: e.status, out: String(e.stdout || '') + String(e.stderr || '') }; }
+    // spawnSync, not execFileSync: the latter RETURNS stdout only, so a warning
+    // printed to stderr alongside exit 0 was invisible here. A warning the tests
+    // cannot see is a warning nothing holds in place.
+    const r = spawnSync('node', [CLI].concat(args), { encoding: 'utf8' });
+    return { code: r.status, out: String(r.stdout || '') + String(r.stderr || '') };
   };
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-canary-'));
@@ -193,6 +196,36 @@ console.log('\n6. CLI contract');
     !!rec.className && !!rec.criterion, JSON.stringify(rec));
   const mutated = fs.readFileSync(rec.mutated, 'utf8');
   check('the mutated copy differs from the original', mutated !== SPEC);
+
+  // The `detected` subcommand. It exists because the blanket-rejection rule
+  // lived in wasFound with no caller: the workflow instructed an agent to check
+  // membership by hand, so the rule was reachable only from these tests. A rule
+  // nothing invokes is not enforced, and the exit code is what the workflow
+  // branches on.
+  const CAN = path.join(outDir, 'canary.json');
+  const other = rec.criterion === 'LINT-03' ? 'LINT-07' : 'LINT-03';
+  const applicable = [rec.criterion, other, 'LINT-99'].join(',');
+
+  let d = run(['detected', CAN, [rec.criterion, other].join(','), applicable]);
+  check('detected exits 0 on a real detection', d.code === 0, `code=${d.code} ${d.out}`);
+
+  d = run(['detected', CAN, other, applicable]);
+  check('detected exits 1 when the canary criterion is absent', d.code === 1, `code=${d.code} ${d.out}`);
+
+  d = run(['detected', CAN, applicable, applicable]);
+  check('detected exits 1 on a blanket rejection', d.code === 1, `code=${d.code} ${d.out}`);
+  check('the blanket-rejection message says why it is not a detection',
+    /rejects everything|all \d+ applicable/i.test(d.out), d.out);
+
+  d = run(['detected', CAN, [rec.criterion, other].join(',')]);
+  check('detected warns when no applicable set is supplied',
+    /WARNING/.test(d.out), d.out);
+
+  d = run(['detected', path.join(outDir, 'nope.json'), rec.criterion, applicable]);
+  check('a missing canary record exits 2, not 0', d.code === 2, `code=${d.code}`);
+
+  d = run(['detected']);
+  check('detected with no arguments exits 2', d.code === 2, `code=${d.code}`);
   check('the ORIGINAL spec is left untouched',
     fs.readFileSync(specCopy, 'utf8') === SPEC, 'injection modified the real spec');
 

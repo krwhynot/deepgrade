@@ -254,10 +254,76 @@ if (require.main === module) {
   const fs = require('fs');
   const path = require('path');
 
-  const [cmd, specPath, outDir, seedArg] = process.argv.slice(2);
+  const argv = process.argv.slice(2);
+  const cmd = argv[0];
+
+  // `detected` exists because wasFound had no caller.
+  //
+  // The blanket-rejection rule was added to wasFound and nothing invoked it: the
+  // workflow told the agent to check membership by hand, in prose, so the
+  // function was reachable only from its own unit tests. In this plugin the
+  // markdown IS the runtime for agent behaviour, and a rule that lives in
+  // JavaScript nothing calls is decoration. A subcommand makes the check
+  // mechanical and gives the workflow an exit code to branch on instead of a
+  // judgement to make.
+  if (cmd === 'detected') {
+    const recordPath = argv[1];
+    const unmetArg = argv[2];
+    const applicableArg = argv[3];
+
+    if (!recordPath || unmetArg === undefined) {
+      console.error('usage: tq-canary.js detected <canary.json> <unmet-csv> [applicable-csv]');
+      console.error('  unmet-csv       criterion ids the audit returned UNMET, comma-separated');
+      console.error('  applicable-csv  every criterion the audit considered. Supply it:');
+      console.error('                  without it a blanket rejection cannot be distinguished');
+      console.error('                  from a real detection.');
+      process.exit(2);
+    }
+    if (!fs.existsSync(recordPath)) {
+      console.error(`canary record not found: ${recordPath}`);
+      console.error('Without the record there is nothing to detect. This is not a pass.');
+      process.exit(2);
+    }
+
+    let rec;
+    try {
+      rec = JSON.parse(fs.readFileSync(recordPath, 'utf8'));
+    } catch (err) {
+      console.error(`canary record is not valid JSON: ${recordPath}`);
+      process.exit(2);
+    }
+
+    const split = (v) => String(v || '').split(',').map((x) => x.trim()).filter(Boolean);
+    const unmet = split(unmetArg);
+    const applicable = split(applicableArg);
+
+    if (applicable.length === 0) {
+      console.error('WARNING: no applicable set supplied. An audit that returned every');
+      console.error('criterion UNMET cannot be told apart from one that found the canary.');
+    }
+
+    const found = wasFound(rec, unmet, applicable);
+    const blanket = applicable.length > 0 && applicable.every((c) => unmet.includes(c));
+
+    if (found) {
+      console.log(`canary FOUND: ${rec.criterion} (${rec.className})`);
+      process.exit(0);
+    }
+    if (blanket) {
+      console.log(`canary NOT FOUND: the audit returned all ${applicable.length} applicable criteria as UNMET.`);
+      console.log('An audit that rejects everything hits the canary by construction and');
+      console.log('discriminates nothing. This is a miss, not a detection.');
+      process.exit(1);
+    }
+    console.log(`canary MISSED: ${rec.criterion} (${rec.className}) is not in the UNMET set`);
+    process.exit(1);
+  }
+
+  const [, specPath, outDir, seedArg] = argv;
 
   if (cmd !== 'inject' || !specPath || !outDir) {
     console.error('usage: tq-canary.js inject <spec-path> <out-dir> [seed]');
+    console.error('       tq-canary.js detected <canary.json> <unmet-csv> [applicable-csv]');
     process.exit(2);
   }
   if (!fs.existsSync(specPath)) {

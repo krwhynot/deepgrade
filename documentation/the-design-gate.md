@@ -20,6 +20,24 @@ So the gate does not score. It asks two questions with checkable answers:
 2. **Is the evidence real?** — proven by re-reading every cited file and
    comparing bytes.
 
+**What question 2 does not ask is whether the evidence is *relevant*.** The
+validator decides that a cited file exists, has not changed since the audit, and
+contains the quoted text at the cited lines. It cannot decide that the quoted
+text supports the criterion it is filed under — a record citing a closing brace
+passes every mechanical check there is.
+
+That limit is not a gap waiting to be closed. Relevance is a judgement about
+meaning, and text comparison does not make judgements about meaning. Three
+successive attempts to tighten this by machine each moved the bar by one
+character and left the class untouched.
+
+So read a green gate as: *the auditor was awake, and nothing it cited was
+invented or stale.* Whether the evidence actually establishes each criterion is
+the one part still on the human at the approval gate. It is a much smaller job
+than auditing from scratch — every claim comes with a file, a line and a quote
+you can check in seconds — but it is not zero, and the gate does not pretend
+otherwise.
+
 ## The audit itself
 
 A fresh, isolated `plan-auditor` agent returns criterion records. Each carries a

@@ -542,13 +542,28 @@ exist. The class is recorded along with the single criterion it violates.
 
 The auditor then audits the MUTATED copy, knowing nothing of any of this.
 
-Afterwards:
-  1. If the recorded criterion is NOT in the audit's UNMET set, the audit missed a
-     defect that was placed there to be found. Re-run once with a different class.
-     A second miss fails the gate as "audit untrustworthy" — and DOES NOT trigger
-     the revision loop. Revising a plan against findings from an audit that could
-     not see a planted defect is worse than not revising: it rewrites the spec to
-     satisfy conclusions never derived from reading it.
+Afterwards, run the check — do not perform it by eye:
+
+```
+node "${CLAUDE_PLUGIN_ROOT}/scripts/tq-canary.js" detected \
+  docs/plans/{date}-{plan-name}/.canary/canary.json \
+  "<comma-separated UNMET criterion ids>" \
+  "<comma-separated ids of EVERY criterion the audit considered>"
+```
+
+Exit 0 means found, exit 1 means missed. **Supply the applicable set.** Without
+it the check falls back to plain membership, and plain membership is passed by an
+audit that returned *every* criterion as UNMET — such an audit hits the canary by
+construction and would "detect" a planted defect in a document with none. That
+rule lived in the function for a release while the instruction here said to check
+membership by hand, so nothing ever ran it.
+
+  1. If the check reports a miss, the audit did not find a defect that was placed
+     there to be found. Re-run once with a different class. A second miss fails
+     the gate as "audit untrustworthy" — and DOES NOT trigger the revision loop.
+     Revising a plan against findings from an audit that could not see a planted
+     defect is worse than not revising: it rewrites the spec to satisfy
+     conclusions never derived from reading it.
   2. If it was found, strip that finding from the report — it is an artefact of
      this harness, not a property of the plan — and then RE-CHECK that one
      criterion against the unmutated original. The strip alone is unsafe: if the
@@ -916,6 +931,19 @@ A gate that missed its canary or had verdicts demoted may still have produced a
 correct PASS, but nothing in its output can show that, so a human has to look. The
 asymmetry is the design: a doubtful automated result can never open the gate, but
 it can remove the owner's ability to SKIP review.
+
+**Say plainly what a waiver skips.** Mechanical re-checking establishes that every
+citation exists, is unchanged, and says what the record claims. It does not
+establish that any quote is RELEVANT to the criterion it is filed under — that is
+a judgement about meaning, and no text comparison makes those. A record citing a
+closing brace passes every check in the gate.
+
+So the reviewer this waives is the only reader who checks that the evidence
+actually supports the verdicts. Waiving is defensible on small, reversible,
+solo work, and the plan folder keeps every citation as file, line and quote so a
+later reader can still spot-check in seconds. It is not defensible because the
+gate was green — green was never a claim about relevance. When presenting option
+[2], say what is being skipped rather than only that it is allowed.
 
 If the waiver condition fails, option [2] is not offered at all. Do not present it
 greyed out with the reason; a visible near-miss invites one more revision aimed at

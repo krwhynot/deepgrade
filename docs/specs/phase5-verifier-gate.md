@@ -118,6 +118,7 @@ been bitten by repeatedly; the absence/equality formulation avoids it entirely.
 | Judge input | Session context | An explicit file manifest; enumerated forbidden inputs |
 | Judge output | Numeric scores | Per-criterion `MET`/`UNMET`/`N_A` + evidence records. No total field in the schema |
 | Verification | Self-reported prose | Quotes byte-validated against the artifact and pinned by hash; a retained command is provenance for a human, never proof |
+| Guarantee | Implied "the plan is good" | Existence and fidelity of every citation. NOT relevance: whether a quote supports its criterion is not decidable by text comparison and is not claimed |
 | Audit trustworthiness | Assumed | Measured by a seeded canary defect |
 | Revision feedback | "Dimension 4 scored 2" | "LINT-03 UNMET: Phase 2 migration has no rollback step (spec.md:142)" |
 | Human waiver | Unconditional in solo mode | Blocked when `infra_gaps > 0` OR score in guard band OR canary missed |

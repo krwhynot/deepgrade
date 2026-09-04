@@ -244,12 +244,21 @@ function validateRecord(rec, rootDir) {
   // it solves. So exit_code is ignored entirely — it is not evidence and cannot be
   // made into evidence by asserting it harder.
   //
-  // What IS checkable without running anything: the artifact the command is about.
-  // A citation that survives checkQuote proves a real file, at real lines, saying
-  // what the record claims it says. For LINT-15 that is the test file existing and
-  // being wired; for an INFRA- criterion, the config that had to be in place. So an
-  // executable criterion is settled by at least one citation that verified, and a
-  // record whose only support is a command string is UNMET.
+  // What IS checkable without running anything: that the artifact exists and says
+  // what the record claims. A citation surviving checkQuote proves a real file, at
+  // real lines, quoted exactly, unchanged since the audit.
+  //
+  // It does NOT prove the quote is relevant to the criterion, and this rule should
+  // not be read as if it did. Requiring a citation raises the floor from "assert an
+  // exit code" to "find a real line and quote it", which is a real improvement and
+  // a small one. A citation of a closing brace passes. Two earlier rounds tried to
+  // patch that — first by rejecting empty quotes, then by rejecting whitespace —
+  // and each patch moved the bar by one character while leaving the class open.
+  //
+  // Relevance is not decidable by text comparison, so this module does not claim to
+  // decide it. See the module header: the guarantee is existence and fidelity, not
+  // sufficiency. What closes the remaining gap is a human reading the record, and
+  // the gate's documentation now says so rather than implying the machine did it.
   if (isExecutableCriterion(rec.criterion_id)) {
     const verifiedCitations = evidence.filter(
       (e) => e && typeof e.artifact === 'string' && e.artifact && checkQuote(e, rootDir) === null,

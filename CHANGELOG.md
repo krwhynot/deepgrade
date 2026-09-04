@@ -51,6 +51,43 @@
   layers 6, 7 and 8 renumber to 5, 6 and 7. `tests/run-all.sh` accepts `1-7`.
 
 
+- **A third review answered the question the first two raised: stop patching.**
+  Rounds one and two each fixed the demonstrated instance and left the class
+  open — executable criteria went from "assert an exit code" to "cite anything",
+  then from "cite anything" to "cite anything non-empty". The third review's
+  probe settled it: a citation quoting a single `}` character returns `MET` on a
+  fabricated `INFRA-` criterion with no flags at all.
+
+  **Relevance is not decidable by text comparison, and the validator no longer
+  implies it is.** Its module header always said so; the two rounds of patching
+  ignored its own documentation. What a `MET` guarantees is now stated wherever
+  the gate is described: the cited file exists, is unchanged since the audit, and
+  contains the quoted text at the cited lines. Whether that text *supports* the
+  criterion is a judgement about meaning, and no byte comparison makes one.
+
+  `documentation/the-design-gate.md` says it in the user's terms, the spec
+  carries it as a row in the contract table, and the human-review waiver in
+  `stage-2-design.md` now states what waiving actually skips — the only reader
+  who checks that the evidence supports the verdicts. Waiving stays defensible on
+  small reversible work; it is not defensible *because the gate was green*, since
+  green was never a claim about relevance.
+
+- **The canary's blanket-rejection rule was never wired.** It was added to
+  `wasFound` in the previous release, and `wasFound` has no caller outside its
+  own unit tests: `stage-2-design.md` instructed an agent to check membership by
+  hand, in prose. In this plugin the markdown *is* the runtime for agent
+  behaviour, so a rule living in JavaScript nothing invokes is decoration.
+
+  `tq-canary.js` gains a `detected` subcommand — record, UNMET set, applicable
+  set, exit 0 or 1 — and the workflow now runs it instead of eyeballing. Without
+  the applicable set it warns and degrades to plain membership, which is the
+  behaviour that let an audit returning *every* criterion as UNMET pass by
+  construction. A missing record exits 2; it was never a pass.
+
+  Layer 6 goes from 35 assertions to 42. Its CLI helper switched to `spawnSync`,
+  because `execFileSync` returns stdout only and a warning printed to stderr
+  alongside exit 0 was invisible to the tests holding it.
+
 - **A second adversarial review found nine more, including one my own fix
   opened.** The reviewer was asked to attack the previous round rather than
   re-run it, and the headline finding is that the executable-criterion fix
