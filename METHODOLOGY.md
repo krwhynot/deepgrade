@@ -1028,82 +1028,60 @@ This principle deserves its own heading because it is the one design decision th
 
 ---
 
-## 7. The Plan Audit Scoring System
+## 7. The Plan Audit
 
-### Why Plans Need a Grade Too
+### Why Plans Need Auditing Too
 
 If you have ever watched a project go sideways, you know the problem usually was not the code. It was the plan. Or more precisely, the holes in the plan that nobody noticed until they became production incidents.
 
-Toque's plan audit applies the same grading philosophy from Section 1 to technical plans, migration specs, and refactoring proposals. Instead of a binary "looks good" or "needs work," you get a numeric score across 8 dimensions, structured gap detection, and evidence-backed findings. The methodology is implemented in the [plan-auditor agent](agents/plan-auditor.md).
+Toque's plan audit applies the same scrutiny to technical plans, migration specs, and refactoring proposals. Instead of a binary "looks good" or "needs work," you get a per-criterion verdict with the evidence behind it, structured gap detection, and findings you can act on. There is no score: a plan either has the thing or it does not, and the audit shows you where it says so. The methodology is implemented in the [plan-auditor agent](agents/plan-auditor.md).
 
-### The 8-Dimension Scorecard
+### The 8 Review Dimensions
 
-Each dimension is scored 1 to 5, producing a total out of 40. The dimensions are ordered by when they matter in a plan's lifecycle: WHY first, then HOW, then WHAT-IF.
+The dimensions are lenses for finding gaps and locating evidence, not things to be rated. They are ordered by when they matter in a plan's lifecycle: WHY first, then HOW, then WHAT-IF.
 
 ```text
-  THE 8 DIMENSIONS OF PLAN QUALITY
+  THE 8 REVIEW DIMENSIONS
 
   ┌────────────────────────────────────────────────────────────────────┐
   │                                                                    │
   │  WHY are we doing this?                                            │
   │  ┌──────────────────────────────────────────────────────────┐      │
-  │  │  1. Problem Definition         /5   Is the WHY clear?   │      │
+  │  │  1. Problem Definition   Is the WHY clear?   │      │
   │  └──────────────────────────────────────────────────────────┘      │
   │                                                                    │
   │  HOW will we do it?                                                │
   │  ┌──────────────────────────────────────────────────────────┐      │
-  │  │  2. Architecture & Design      /5   Is the HOW sound?   │      │
-  │  │  3. Phasing & Sequencing       /5   Is the ORDER right? │      │
+  │  │  2. Architecture & Design   Is the HOW sound?   │      │
+  │  │  3. Phasing & Sequencing   Is the ORDER right? │      │
   │  └──────────────────────────────────────────────────────────┘      │
   │                                                                    │
   │  WHAT IF something goes wrong?                                     │
   │  ┌──────────────────────────────────────────────────────────┐      │
-  │  │  4. Risk Assessment            /5   What could go WRONG? │      │
-  │  │  5. Rollback & Safety          /5   Can we UNDO this?   │      │
+  │  │  4. Risk Assessment   What could go WRONG? │      │
+  │  │  5. Rollback & Safety   Can we UNDO this?   │      │
   │  └──────────────────────────────────────────────────────────┘      │
   │                                                                    │
   │  WHO, WHEN, and HOW do we prove it?                                │
   │  ┌──────────────────────────────────────────────────────────┐      │
-  │  │  6. Timeline & Effort          /5   How LONG and MUCH?  │      │
-  │  │  7. Testing & Validation       /5   How do we PROVE it? │      │
-  │  │  8. Team & Resources           /5   WHO does this?      │      │
+  │  │  6. Timeline & Effort   How LONG and MUCH?  │      │
+  │  │  7. Testing & Validation   How do we PROVE it? │      │
+  │  │  8. Team & Resources   WHO does this?      │      │
   │  └──────────────────────────────────────────────────────────┘      │
   │                                                                    │
-  │  TOTAL                           /40                               │
   └────────────────────────────────────────────────────────────────────┘
 ```
 
-| Dimension | Points | What It Measures | A "1" Looks Like | A "5" Looks Like |
-| :---------- | :------: | :----------------- | :----------------- | :----------------- |
-| 1. Problem Definition | /5 | Is the WHY clear? Problem stated, business impact quantified, success criteria defined | "We should refactor payments" | Problem quantified, current state documented with evidence, measurable success criteria |
-| 2. Architecture & Design | /5 | Is the HOW sound? Architecture diagrammed, tech choices justified, interfaces defined | Vague hand-waving about "new service" | Component diagram, interface contracts, existing codebase patterns followed |
-| 3. Phasing & Sequencing | /5 | Is the ORDER right? Phases go low-to-high risk, each delivers value independently | All-or-nothing single phase | Low-risk phases first, each phase delivers value, stop-after-any-phase option |
-| 4. Risk Assessment | /5 | What could go WRONG? Risks with likelihood/impact, mitigations defined | "There are some risks" | Top risks with likelihood/impact matrix, contingency plans, highest-risk phase called out |
-| 5. Rollback & Safety | /5 | Can we UNDO this? Rollback per phase, feature flags, blast radius documented | No rollback mentioned | Per-phase rollback, feature flag, shadow mode, blast radius quantified |
-| 6. Timeline & Effort | /5 | How LONG and how MUCH? Evidence-based estimates, critical path, 20-30% buffer | "Should take a few weeks" | Per-phase estimates with evidence basis, critical path identified, buffer included |
-| 7. Testing & Validation | /5 | How do we PROVE it works? Test strategy per phase, characterization tests, acceptance criteria | "We will test it" | Test strategy per phase, characterization tests before refactoring, acceptance criteria per deliverable |
-| 8. Team & Resources | /5 | WHO does this? Team identified, skills documented, key person risk addressed | No team mentioned | Team named, skills documented, key person risk mitigated, single accountable owner |
-
-### Score Thresholds
-
-The 40-point scale maps to four zones. Think of them like traffic signals for plan readiness.
-
-```text
-  PLAN AUDIT SCORE RANGES
-
-   0          8         16         24         32        40
-   ├──────────┼──────────┼──────────┼──────────┼─────────┤
-   │   RED    :  ORANGE  :  YELLOW  :         GREEN      │
-   │  1 - 15  : 16 - 23  : 24 - 31  :       32 - 40     │
-   │          :          :          :                     │
-   │  Rework  :   Fix    : Usable   :  Ready to execute  │
-   │  the     :   gaps   : with     :  Solid plan.       │
-   │  plan.   :  before  : known    :  Ship it.          │
-   │          : building.: gaps.    :                     │
-   └──────────┴──────────┴──────────┴─────────────────────┘
-```
-
-A plan that scores RED is not a bad plan written by a bad engineer. It is usually a plan that was written in a rush and skipped the "boring" parts: rollback strategy, timeline evidence, risk mitigation. The audit tells you exactly which parts are missing so you can add them, not start over.
+| Dimension | What It Measures | Falls short | Meets the bar |
+| :---------- | :----------------- | :----------------- | :----------------- |
+| 1. Problem Definition | Is the WHY clear? Problem stated, business impact quantified, success criteria defined | "We should refactor payments" | Problem quantified, current state documented with evidence, measurable success criteria |
+| 2. Architecture & Design | Is the HOW sound? Architecture diagrammed, tech choices justified, interfaces defined | Vague hand-waving about "new service" | Component diagram, interface contracts, existing codebase patterns followed |
+| 3. Phasing & Sequencing | Is the ORDER right? Phases go low-to-high risk, each delivers value independently | All-or-nothing single phase | Low-risk phases first, each phase delivers value, stop-after-any-phase option |
+| 4. Risk Assessment | What could go WRONG? Risks with likelihood/impact, mitigations defined | "There are some risks" | Top risks with likelihood/impact matrix, contingency plans, highest-risk phase called out |
+| 5. Rollback & Safety | Can we UNDO this? Rollback per phase, feature flags, blast radius documented | No rollback mentioned | Per-phase rollback, feature flag, shadow mode, blast radius quantified |
+| 6. Timeline & Effort | How LONG and how MUCH? Evidence-based estimates, critical path, 20-30% buffer | "Should take a few weeks" | Per-phase estimates with evidence basis, critical path identified, buffer included |
+| 7. Testing & Validation | How do we PROVE it works? Test strategy per phase, characterization tests, acceptance criteria | "We will test it" | Test strategy per phase, characterization tests before refactoring, acceptance criteria per deliverable |
+| 8. Team & Resources | WHO does this? Team identified, skills documented, key person risk addressed | No team mentioned | Team named, skills documented, key person risk mitigated, single accountable owner |
 
 ### The Evidence Requirement
 
@@ -1119,7 +1097,7 @@ Unverified findings (no evidence at all) are excluded from scoring entirely. The
 
 ### The 4 Structured Gap Checks
 
-Dimension scoring catches qualitative gaps ("the risk section is thin"). But a plan can score 35/40 and still have structural holes that the dimension model misses. That is why the audit runs 4 additional structured checks, implemented by the Gap Verifier subagent in the [plan-auditor](agents/plan-auditor.md).
+A dimension review catches qualitative gaps ("the risk section is thin"). But a plan can clear every dimension and still have structural holes the dimension model misses. That is why the audit runs 4 additional structured checks, implemented by the Gap Verifier subagent in the [plan-auditor](agents/plan-auditor.md).
 
 ```mermaid
 graph TD
@@ -1238,7 +1216,7 @@ graph TD
 
 Architecture and Risk use Opus because those dimensions require deep reasoning about tradeoffs and failure scenarios. Execution and Quality use Sonnet because those are more mechanical assessments (does a timeline exist? are tests mentioned?). This balances quality with cost.
 
-The Gap Verifier is separate from the dimension scorers because structural gap detection (traceability, scenarios, assumptions) uses a fundamentally different methodology than dimension scoring. A plan can score 35/40 GREEN on dimensions but still have 5 gaps in the Coverage Matrix.
+The Gap Verifier is separate from the dimension reviewers because structural gap detection (traceability, scenarios, assumptions) uses a fundamentally different methodology than dimension review. A plan can come back clean on every dimension and still have 5 gaps in the Coverage Matrix.
 
 ### The Verification Pass
 
@@ -1246,7 +1224,7 @@ After all 5 subagents complete, the orchestrator runs a verification pass to pre
 
 If the gap is found elsewhere, it gets dropped with a note: "Addressed in [section]." If it is genuinely absent, it is confirmed with a confidence tier. The audit report includes verification statistics: "X candidate gaps, Y confirmed, Z dropped (W% false positive prevention rate)."
 
-The verification pass also cross-references between specialists. If the Risk Reviewer found a concern but the Architecture Reviewer scored that dimension 5/5, the contradiction gets investigated. These cross-checks catch the edge cases that individual specialists miss.
+The verification pass also cross-references between specialists. If the Risk Reviewer found a concern but the Architecture Reviewer returned that dimension clean, the contradiction gets investigated. These cross-checks catch the edge cases that individual specialists miss.
 
 ### Plan Audit Sources
 

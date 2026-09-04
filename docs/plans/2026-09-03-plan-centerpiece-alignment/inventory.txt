@@ -1,7 +1,6 @@
 === scoring-sweep (report) ===
 self-test: 20 passed, 0 failed
 
-  METHODOLOGY.md  (section 7 only, lines 1031-1257): 5
 
-TOTAL: 5 violation line(s) across 1 file(s)
+TOTAL: 0 violation line(s) across 0 file(s)
 report mode: exit 0 regardless. Flip to enforce in the final phase.

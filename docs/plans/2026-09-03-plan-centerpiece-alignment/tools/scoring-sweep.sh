@@ -75,10 +75,20 @@ is_excluded() {
   return 1
 }
 
-# METHODOLOGY.md is split: section 7 is the plan-audit scoring system (IN);
-# everything else is the readiness product's letter grades (OUT).
-METH_S7_START=1031
-METH_S7_END=1257
+# METHODOLOGY.md is split: section 7 is the plan audit (IN); everything else is
+# the readiness product's letter grades (OUT).
+#
+# The boundaries are DERIVED from the headers, not hardcoded. An earlier version
+# pinned them to 1031-1257; removing 21 lines from section 7 shifted section 8
+# upward and the fixed range began scanning into it. A line number is a fact
+# about a moment, not about a document.
+meth_s7_bounds() {
+  local a b
+  a=$(grep -nE '^## 7\.' METHODOLOGY.md | head -1 | cut -d: -f1)
+  b=$(grep -nE '^## 8\.' METHODOLOGY.md | head -1 | cut -d: -f1)
+  [ -n "$a" ] && [ -n "$b" ] || { echo "SECTION BOUNDS NOT DERIVABLE" >&2; return 1; }
+  echo "$a $((b - 1))"
+}
 
 # --- self-test ---------------------------------------------------------------
 st_pass=0; st_fail=0
@@ -134,6 +144,7 @@ while IFS= read -r f; do
   [ -f "$f" ] || continue
   is_excluded "$f" && continue
   if [ "$f" = "METHODOLOGY.md" ]; then
+    read -r METH_S7_START METH_S7_END < <(meth_s7_bounds) || exit 2
     hits=$(sed -n "${METH_S7_START},${METH_S7_END}p" "$f" | grep -cE "$RE")
     [ "$hits" -eq 0 ] && continue
     echo "  $f  (section 7 only, lines $METH_S7_START-$METH_S7_END): $hits"
