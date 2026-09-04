@@ -14,8 +14,13 @@ could drift and one had to go).
 If the request names a plan (`--plan {name}`, or the user says "for plan X"), write
 the document to its standard `docs/` location (`docs/adr/`, `docs/prd/`,
 `docs/specs/`, …) **and** add a link to it in
-`docs/plans/{date}-{name}/manifest.md`. The plan folder is a homebase that indexes
-documents; it is not where they live.
+`docs/plans/{date}-{name}/manifest.md`. ADRs go to `docs/adr/` and PRDs to
+`docs/prd/`, linked from the manifest like the rest. The plan folder is a
+homebase that indexes documents; with one exception, it is not where they live.
+
+The exception is a plan-linked runbook. It is that plan's deployment procedure,
+so it is written inside the plan folder at `docs/plans/{date}-{name}/runbook.md`
+rather than in `docs/runbooks/`.
 
 With no plan named, use the standard locations only.
 
@@ -30,7 +35,8 @@ runtime, anchor on `${CLAUDE_SKILL_DIR}`.
 ## Dispatch
 
 Unified entry point for all document generation workflows. Part of the Toque
-Developer Toolkit. Works standalone or powered by Phase 2 audit data when available.
+Developer Toolkit. Works standalone, or richer when a codebase-analysis tool has left audit data
+in `docs/audit/`.
 
 ## Usage
 
@@ -89,7 +95,7 @@ Parse `$ARGUMENTS` to determine the document type and topic:
    ls docs/audit/risk-assessment.md docs/audit/feature-inventory.md 2>/dev/null
    ```
 
-   If Phase 2 audit data exists, check for document gaps:
+   If audit data exists in `docs/audit/`, check for document gaps:
    - Features without PRDs -> suggest `prd` for those features
    - Domains without BRDs -> suggest `brd` for those domains
    - Architectural decisions without ADRs -> suggest `adr`
@@ -101,9 +107,9 @@ Parse `$ARGUMENTS` to determine the document type and topic:
 If the user says something like "I need to document X" or "what document should I
 create for Y" or "help me with documentation", analyze their situation:
 
-**After running Phase 2 audit:**
+**When audit data is present in `docs/audit/`:**
 ```
-Based on the Toque audit, here are recommended documents to create:
+Based on the audit data in `docs/audit/`, here are recommended documents to create:
 
 HIGH PRIORITY:
   - SPEC for monolith extraction (legacy modules need a refactoring plan)
@@ -143,16 +149,16 @@ When audit data is available, documentation templates pull from it automatically
 
 | Template | Uses From Audit |
 |----------|----------------|
-| ADR | risk-assessment.md findings, integration-scan.md security items |
-| BRD | feature-inventory.md domains and feature lists |
-| PRD | feature-inventory.md confidence scores, entry points, DB tables |
-| README | dependency-map.md project dependencies, risk ratings |
+| ADR | baseline/risk-assessment.json findings, baseline/integration-map.json security items |
+| BRD | baseline/feature-inventory.json domains and feature lists |
+| PRD | baseline/feature-inventory.json confidence scores, entry points, DB tables |
+| README | baseline/dependency-map.json project dependencies, risk ratings |
 | Runbook | plan.md ## Verification, deploy scripts and CI config (no audit dependency) |
 | Spec | risk-assessment.md risk levels, dependency-map.md coupling data |
 | Release Notes | git log (no audit dependency) |
 
-This means documents generated AFTER a Phase 2 audit are richer and more accurate
-than documents generated from scratch.
+This means documents generated with `docs/audit/` data present are richer and
+more accurate than documents generated from scratch.
 
 ### Document Chain Enforcement
 
@@ -173,18 +179,19 @@ treating the remaining arguments as the topic (feature, domain, or project name)
 
 ### Command Reference Rule
 
-When suggesting next steps or follow-up commands, ONLY suggest commands that exist
-as files in the plugin's commands/ directory. The valid commands are:
+When suggesting a next step, ONLY name a surface this plugin actually ships —
+the command files under `commands/` plus the skills under `skills/`. The valid
+surfaces are:
 
-| Command | Valid Syntax |
+| Surface | Valid Syntax |
 |---------|-------------|
 | Cleanup docs | `/toque:quick-cleanup [folder]` |
 | Create plan | `/toque:quick-plan [objective]` |
 | Audit plan | `/toque:quick-audit [file]` |
 | Create document | `/toque:documentation [adr\|brd\|prd\|readme\|runbook\|release-notes\|spec] [topic]` |
 
-NEVER suggest a command that is not in this list. If you are unsure whether a
-command exists, use `/toque:help` to check.
+NEVER suggest a surface that is not in this list. If you are unsure whether one
+exists, use `/toque:help` to check.
 
 Codebase auditing and readiness scanning left Toque in 11.0.0 and are not in
 this list on purpose. Never suggest a command to produce that data — whatever

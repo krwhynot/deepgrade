@@ -44,9 +44,9 @@ writes them itself or is the only thing that ever did. They are listed so the
 sweep can tell them apart from the inputs above; adding one needs an entry here,
 not a row in the table.
 
-- `docs/audit/plan-audit.md` — written by the design gate. `quick-audit.md`
-  explicitly refuses to create it, which is why it appears in two files while
-  being nobody's input.
+- `docs/audit/plan-audit.md` — written by nothing. It survives only as the
+  refusal in `quick-audit.md`, which names the path to forbid it; the auditor's
+  fallback to this path was removed, so it is nobody's input and nobody's output.
 - `docs/audit/impact-review-*.md` — a LEGACY location, read and never written.
   Stage 3 writes `impact-review.md` into the plan folder; `troubleshoot` looks
   there first and falls back to this glob for plans that predate that layout

@@ -55,9 +55,9 @@ Steps:
 1. Create `docs/adr/` directory if needed
 2. Read existing ADRs to match style
 3. Write ADR-{NNN}-{topic}.md using the skeleton below
-4. Update document-linkage.json for related features
-5. Update feature-inventory.json linked_docs
-6. Validate all JSON files
+
+The audit baselines are inputs only. Read them for evidence; never write back
+to them.
 
 **Document skeleton**
 

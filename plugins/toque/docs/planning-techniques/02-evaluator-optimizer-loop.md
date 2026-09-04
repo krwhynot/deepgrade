@@ -33,7 +33,7 @@ This pattern also relates to Anthropic's evaluation framework, which uses LLM-ba
 
 The generator receives the source material (codebase analysis, brainstorm goals, user requirements) and produces a structured plan. This is the first draft — it will contain gaps, because first drafts always do.
 
-### 2. Evaluator Agent scores it against 8 dimensions + 4 gap matrices (plan-auditor)
+### 2. Evaluator Agent judges it per criterion across 8 dimensions + 4 gap matrices (plan-auditor)
 
 The evaluator receives the generated plan and judges it against defined criteria. In Toque's case that means one verdict per criterion — MET, UNMET or N_A — each resting on evidence that is re-read and byte-compared afterwards, plus 4 gap verification matrices (coverage, dependency, risk, cross-cutting). The evaluator produces localized findings, not a total. The eight-dimension rating this section originally described was removed in 11.0.0: it permitted a compensating sum, where seven strong dimensions outvoted one fatal one.
 
@@ -52,7 +52,7 @@ The generator does not regenerate the entire plan. It receives the evaluator's f
 
 ### 5. Evaluator re-judges the revised plan
 
-The evaluator scores the revised plan using the same criteria. This is a full re-evaluation, not just a check of the previously failing sections — revision can sometimes fix one gap while introducing another.
+The evaluator re-judges the revised plan against the same criteria. This is a full re-evaluation, not just a check of the previously failing sections — revision can sometimes fix one gap while introducing another.
 
 ### 6. Loop terminates when the gate passes, OR max iterations reached (recommend cap at 2)
 
@@ -110,23 +110,21 @@ You have to manually read the audit, fix the plan, and re-audit. This manual loo
 
 - **Cap at 2 revision iterations** (diminishing returns observed after that). The first revision captures 70-80% of addressable gaps. The second captures most of the remainder. A third iteration rarely finds new issues and risks introducing revision fatigue where the generator makes unnecessary changes to satisfy an evaluator that has already been mostly satisfied.
 
-- **Track iteration metadata in status.json**: Record plan_version, audit_scores_per_version, and gaps_closed_per_iteration. This data serves two purposes: it provides the audit trail for the current plan, and it provides aggregate data over time to measure whether plan quality is improving across projects.
+- **Track iteration metadata in status.json**: Record plan_version, verdict_counts_per_version, and gaps_closed_per_iteration. This data serves two purposes: it provides the audit trail for the current plan, and it provides aggregate data over time to measure whether plan quality is improving across projects.
 
 ```json
 {
   "plan_iterations": [
     {
       "version": 1,
-      "score": 24,
-      "max_score": 40,
+      "verdicts": {"MET": 11, "UNMET": 6, "N_A": 1},
       "gap_checked": false,
       "gaps_found": 7,
       "gaps_by_type": {"coverage": 2, "dependency": 3, "risk": 1, "cross_cutting": 1}
     },
     {
       "version": 2,
-      "score": 35,
-      "max_score": 40,
+      "verdicts": {"MET": 17, "UNMET": 0, "N_A": 1},
       "gap_checked": true,
       "gaps_found": 0,
       "gaps_by_type": {"coverage": 0, "dependency": 0, "risk": 0, "cross_cutting": 0}
@@ -137,7 +135,7 @@ You have to manually read the audit, fix the plan, and re-audit. This manual loo
 }
 ```
 
-- **Add a "Revision History" section to the plan** showing what changed between versions. This section is appended to the plan document and records: the version number, the audit score at that version, the specific gaps identified, and the changes made in response. Stakeholders reviewing the final plan can see not just what the plan says, but what it used to say and why it changed.
+- **Add a "Revision History" section to the plan** showing what changed between versions. This section is appended to the plan document and records: the version number, the verdict counts at that version, the specific gaps identified, and the changes made in response. Stakeholders reviewing the final plan can see not just what the plan says, but what it used to say and why it changed.
 
 ## References
 

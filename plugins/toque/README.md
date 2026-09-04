@@ -84,7 +84,7 @@ There is no weighted sum. Known limitation: the auditor can read the canary's
 defect table, so this reliably detects a lazy audit and only incidentally an
 adversarial one. Details in [GUIDE.md](GUIDE.md#the-design-gate).
 
-## Safety Hooks (3)
+## Plan-Context Hooks (3)
 
 The plugin includes 3 plan-context hooks that activate automatically. They are
 declared in `hooks/hooks.json` and run as Node scripts from `scripts/`, one file
@@ -95,7 +95,7 @@ migration, and database-deploy protection.
 
 | Hook | Event | What It Does |
 | ---- | ----- | ------------ |
-| Active Plan Display | SessionStart | Reports the active plan, its stage, and audit staleness |
+| Active Plan Display | SessionStart | Reports the active plan, its phase, and that phase's status |
 | Subagent Log | SubagentStop | Logs subagent completions to the active plan's troubleshooting folder |
 | Plan Context | PreCompact | Preserves plan name and stage on compact |
 

@@ -52,8 +52,8 @@ Wait for the developer's choice.
 
 Read every entry point file for this feature. Trace database access patterns.
 Verify table names. Check for feature flags. Search for callers.
-Update the feature's confidence in feature-inventory.json.
-Validate the JSON after writing.
+Carry the verified confidence into the PRD itself; the baseline is an input and
+is never written back to.
 
 **Step 3: Generate PRD**
 
@@ -65,8 +65,6 @@ Generate the PRD directly, using:
 Steps:
 1. Create `docs/prd/{domain}/` directory
 2. Write the PRD using the skeleton below
-3. Update document-linkage.json and feature-inventory.json
-4. Validate all JSON files
 
 **Document skeleton**
 
@@ -156,7 +154,7 @@ for one release.}
 
 **Step 4: Post-Generation**
 
-After the PRD is created, check document-linkage.json:
+After the PRD is created, check `docs/brd/` and `docs/adr/` for related documents:
 
 If no BRD exists for this feature's domain:
 ```

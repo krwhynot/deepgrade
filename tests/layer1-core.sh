@@ -356,10 +356,10 @@ echo "--- Hook Count Consistency ---"
 
 if [ "$EXPECT_HOOKS" -eq 0 ]; then
   # Zero-hook plugin: the README must not carry a hook table either.
-  if grep -qE "Safety Hooks \([0-9]+\)" "$README" 2>/dev/null; then
-    fail "README documents a Safety Hooks table but this plugin ships zero hooks"
+  if grep -qE "Plan-Context Hooks \([0-9]+\)" "$README" 2>/dev/null; then
+    fail "README documents a Plan-Context Hooks table but this plugin ships zero hooks"
   else
-    pass "README carries no Safety Hooks table (zero-hook plugin)"
+    pass "README carries no Plan-Context Hooks table (zero-hook plugin)"
   fi
 else
 
@@ -381,21 +381,21 @@ if [ "$pj_hook_count" -eq 0 ]; then
   fail "hook count derived as 0 from hooks/hooks.json — the derivation is broken, not the config"
 fi
 
-# 4b. Extract number from README heading "Safety Hooks (N)"
+# 4b. Extract number from README heading "Plan-Context Hooks (N)"
 readme_hook_heading=0
 if [ -f "$README" ]; then
-  readme_hook_heading=$(grep -oE "Safety Hooks \([0-9]+\)" "$README" | head -1 | grep -oE "[0-9]+")
+  readme_hook_heading=$(grep -oE "Plan-Context Hooks \([0-9]+\)" "$README" | head -1 | grep -oE "[0-9]+")
   readme_hook_heading=${readme_hook_heading:-0}
 fi
 
-# 4c. Count rows in README Safety Hooks table
-# The table starts after "Safety Hooks" heading, skip header + separator rows
+# 4c. Count rows in README Plan-Context Hooks table
+# The table starts after "Plan-Context Hooks" heading, skip header + separator rows
 readme_hook_table=0
 if [ -f "$README" ]; then
   in_table=false
   past_header=0
   while IFS= read -r line; do
-    if echo "$line" | grep -q "## Safety Hooks"; then
+    if echo "$line" | grep -q "## Plan-Context Hooks"; then
       in_table=true
       past_header=0
       continue

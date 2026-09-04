@@ -114,6 +114,7 @@ check. Treat a passing gate as evidence of diligence, not of incorruptibility.
 | Canary missed twice | Fatal. Revision loop forbidden |
 | No canary class applies | Exit 2 with the list of classes tried |
 | Evidence does not match | That finding is demoted |
+| Record file unreadable, or not a record | Demoted to UNMET; the rest of the corpus is still read |
 | Everything passes | Stage 2 clears; Stage 3 needs separate human approval for codebase writes |
 
 ## Where the files go

@@ -2,7 +2,7 @@
 
 ## The Engineering Methods Behind the Grade
 
-Version 4.27.1 | Research-backed. Battle-tested. Stack-agnostic.
+Version 11.0.0 | Research-backed. Battle-tested. Stack-agnostic.
 
 > **Scope note (11.0.0).** This document describes the methods behind two
 > products that used to ship together. Only one of them ships from this
@@ -10,7 +10,8 @@ Version 4.27.1 | Research-backed. Battle-tested. Stack-agnostic.
 >
 > - **Toque** (what this repository ships): sections 3, 5, 6, 7, 8, 10, 11.
 > - **Codebase analysis** — the report card model, the grade categories, the
->   52-check readiness scan and operational readiness, in sections 1, 2, 4 and
+>   52-check readiness scan (60 with the conditional Database category) and
+>   operational readiness, in sections 1, 2, 4 and
 >   9. Those commands were removed in 11.0.0. The sections are kept because the
 >   methods are the reasoning several Toque sections build on, but nothing here
 >   implements them, and this repository does not say what does.
@@ -54,7 +55,7 @@ Toque maps a percentage score (0-100) to a letter grade using the standard acade
   │  C-  70-72%   ██████████████████████                PR  │
   │  D+  67-69%   ████████████████████                  VP  │
   │  D   63-66%   ██████████████████                    FL  │
-  │  F    0-59%   ██████████████                        NR  │
+  │  F    0-62%   ██████████████                        NR  │
   │                                                         │
   │  EXC = Exceptional    GD  = Good         MED = Mediocre │
   │  VG  = Very Good      BT  = Below Target PR  = Poor     │
@@ -85,11 +86,11 @@ Toque maps a percentage score (0-100) to a letter grade using the standard acade
 | **B** | 83-86% | Above Average | Several improvements needed. The AI can help, but a human needs to double-check more often than you would like. |
 | **B-** | 80-82% | Adequate | **Minimum for effective AI-assisted development.** Below this line, the AI spends more time guessing than building. |
 | **C** | 73-76% | Mediocre | Many improvements needed. The AI can read the code, but it cannot reliably navigate dependencies or understand business rules. |
-| **F** | Below 63% | Not Ready | The codebase is not ready for AI-assisted development. Missing documentation, no guardrails, unclear structure. Fix the foundation first. |
+| **F** | 0-62% | Not Ready | The codebase is not ready for AI-assisted development. Missing documentation, no guardrails, unclear structure. Fix the foundation first. |
 
 The B- threshold is the most important number in the table. It represents the minimum viable score for productive AI collaboration. Below B-, AI tools generate more confusion than value because they lack the context to make good decisions.
 
-When you run the AI-readiness scan, Toque measures your codebase across 9 scoring gates (52 total checks), computes a weighted percentage, and maps it to this scale. The result is a single letter grade that tells you exactly where you stand.
+The AI-readiness scan measured a codebase across 8 scoring categories (52 checks), plus a ninth conditional Database category that adds 8 more, computed a weighted percentage, and mapped it to this scale. Toque no longer implements it — see the scope note above. The result is a single letter grade that tells you exactly where you stand.
 
 ---
 
@@ -208,115 +209,110 @@ The three categories form a dependency chain. You cannot skip ahead. A codebase 
 
 ---
 
-## 3. The 9-Phase Planning Method
+## 3. The Six-Stage Planning Method
 
 ### Design Before Code
 
-The `/toque:plan` command implements a 9-phase workflow that takes any starting input (a vague idea, a folder of vendor docs, a Jira ticket) and produces an audited, executable plan. The method is inspired by two sources:
+The `/toque:plan` command implements a six-stage workflow that takes any starting input (a vague idea, a folder of vendor docs, a Jira ticket, a production incident) and leaves a committed artifact behind at each stage. The chain of artifacts is the audit trail: who asked, what was produced, who approved. The method is inspired by two sources:
 
 - [Anthropic: feature-dev plugin](https://github.com/anthropics/claude-code/tree/main/plugins/feature-dev) - Anthropic's own guided workflow uses 7 phases (Discovery through Execute), demonstrating that AI-assisted development benefits from structured phases with explicit transitions rather than open-ended conversation.
 - [OpenAI: Harness Engineering](https://openai.com/index/harness-engineering/) - OpenAI's "design-before-code culture" principle argues that the most expensive bugs are the ones introduced before a single line of code is written.
 
-Every phase answers exactly one question. Every phase has a gate that must be passed before proceeding. Some gates require human confirmation. Some are automatic. One is a hard pass/fail. Skipping a phase does not save time. It moves the cost to a later phase where it is more expensive to fix.
+Every stage answers exactly one question, reads the artifact the stage before it committed, and commits its own. Every stage ends at a gate, and a gate without a recorded human name is not passed. Skipping a stage does not save time. It moves the cost to a later stage where it is more expensive to fix.
 
-### The 9 Phases at a Glance
+> **Before 8.0.0** the same workflow ran as nine phases. Plans started under the old shape still resume: `/toque:plan` and `/toque:plan-status` map the old phase names onto stages — brainstorm + research to plan; pre_plan + plan + audit to design; build + impact_review to build; test to test; handoff to deploy — and the old artifacts keep their old names rather than being rewritten.
+
+### The Six Stages at a Glance
 
 ```mermaid
 flowchart TB
-    P1["1. BRAINSTORM<br/><i>What problem are<br/>we solving?</i>"]
-    P2["2. RESEARCH<br/><i>What is true about<br/>our situation?</i>"]
-    P3["3. PRE-PLAN<br/><i>What should be<br/>in scope?</i>"]
-    P4["4. PLAN<br/><i>How will we<br/>execute?</i>"]
-    P5["5. AUDIT<br/><i>What is weak<br/>or missing?</i>"]
-    P6["6. BUILD<br/><i>Execute + track<br/>progress</i>"]
-    P7["7. IMPACT REVIEW<br/><i>What else does this<br/>change affect?</i>"]
-    P8["8. TEST<br/><i>Does it work<br/>safely?</i>"]
-    P9["9. HANDOFF<br/><i>What happens<br/>next?</i>"]
+    S1["1. PLAN<br/><i>What is wanted, why,<br/>under which constraints?</i>"]
+    S2["2. DESIGN<br/><i>What exactly will be built,<br/>and does the spec hold up?</i>"]
+    S3["3. BUILD<br/><i>How is it implemented, and<br/>what did the change touch?</i>"]
+    S4["4. TEST<br/><i>Does it work<br/>safely?</i>"]
+    S5["5. DEPLOY<br/><i>Does the diff match the plan,<br/>and who authorizes release?</i>"]
+    S6["6. MAINTAIN<br/><i>What did production<br/>teach us?</i>"]
 
-    G1{{"Gate: User<br/>confirmation"}}
-    G2{{"Gate: Auto<br/>(tool decides)"}}
-    G3{{"Gate: User<br/>confirmation<br/>(scope lock)"}}
-    G4{{"Gate: User<br/>confirmation"}}
-    G5{{"Gate: Eval-optimizer<br/>loop + review"}}
-    G6{{"Gate: Per-action<br/>approval"}}
-    G7{{"Gate: User<br/>confirmation"}}
-    G8{{"Gate: Hard<br/>pass/fail"}}
-    G9{{"Gate: Readiness<br/>check"}}
+    G1{{"Gate: Product owner<br/>sets Status: Accepted"}}
+    G2{{"Gate: Design gate PASS<br/>+ human review"}}
+    G3{{"Gate: plan.md approved,<br/>impact review confirmed"}}
+    G4{{"Gate: Hard readiness<br/>(automated + manual)"}}
+    G5{{"Gate: Named human<br/>authorizes release"}}
 
-    P1 --> G1 --> P2
-    P2 --> G2 --> P3
-    P3 --> G3 --> P4
-    P4 --> G4 --> P5
-    P5 --> G5 --> P6
-    P6 --> G6 --> P7
-    P7 --> G7 --> P8
-    P8 --> G8 --> P9
-    P9 --> G9
+    S1 --> G1 --> S2
+    S2 --> G2 --> S3
+    S3 --> G3 --> S4
+    S4 --> G4 --> S5
+    S5 --> G5 --> S6
 
-    %% Parallel tracks in Research
-    P2a["Track A:<br/>Codebase Scan"]
-    P2b["Track B:<br/>Source Doc Cleanup"]
-    P2c["Track C:<br/>Best Practices"]
-    P2 -.-> P2a & P2b & P2c
+    %% Parallel research tracks in Plan
+    S1a["Track A:<br/>Codebase Scan"]
+    S1b["Track B:<br/>Source Doc Cleanup"]
+    S1c["Track C:<br/>Best Practices"]
+    S1 -.-> S1a & S1b & S1c
 
     %% Build parallelism
-    P6a["Batch 1:<br/>Independent tickets<br/>(parallel)"]
-    P6b["Batch 2:<br/>Dependent tickets<br/>(after Batch 1)"]
-    P6 -.-> P6a --> P6b
+    S3a["Batch 1:<br/>Independent tickets<br/>(parallel)"]
+    S3b["Batch 2:<br/>Dependent tickets<br/>(after Batch 1)"]
+    S3 -.-> S3a --> S3b
 
-    style P1 fill:#E8F0FE,stroke:#4A90D9,color:#2C3E50
-    style P2 fill:#E8F0FE,stroke:#4A90D9,color:#2C3E50
-    style P3 fill:#F4ECF7,stroke:#9B59B6,color:#2C3E50
-    style P4 fill:#F4ECF7,stroke:#9B59B6,color:#2C3E50
-    style P5 fill:#FEF5E7,stroke:#F39C12,color:#2C3E50
-    style P6 fill:#D5F5E3,stroke:#2ECC71,color:#2C3E50
-    style P7 fill:#FEF5E7,stroke:#F39C12,color:#2C3E50
-    style P8 fill:#FDEDEC,stroke:#E74C3C,color:#2C3E50
-    style P9 fill:#D5F5E3,stroke:#2ECC71,color:#2C3E50
+    %% The loop closes
+    S6 -. "new intent.md" .-> S1
+
+    style S1 fill:#E8F0FE,stroke:#4A90D9,color:#2C3E50
+    style S2 fill:#F4ECF7,stroke:#9B59B6,color:#2C3E50
+    style S3 fill:#D5F5E3,stroke:#2ECC71,color:#2C3E50
+    style S4 fill:#FDEDEC,stroke:#E74C3C,color:#2C3E50
+    style S5 fill:#FEF5E7,stroke:#F39C12,color:#2C3E50
+    style S6 fill:#EAECEE,stroke:#7F8C8D,color:#2C3E50
 
     style G1 fill:#fff,stroke:#4A90D9,color:#2C3E50
-    style G2 fill:#fff,stroke:#4A90D9,color:#2C3E50
-    style G3 fill:#fff,stroke:#9B59B6,color:#2C3E50
-    style G4 fill:#fff,stroke:#9B59B6,color:#2C3E50
+    style G2 fill:#fff,stroke:#9B59B6,color:#2C3E50
+    style G3 fill:#fff,stroke:#2ECC71,color:#2C3E50
+    style G4 fill:#fff,stroke:#E74C3C,color:#2C3E50
     style G5 fill:#fff,stroke:#F39C12,color:#2C3E50
-    style G6 fill:#fff,stroke:#2ECC71,color:#2C3E50
-    style G7 fill:#fff,stroke:#F39C12,color:#2C3E50
-    style G8 fill:#fff,stroke:#E74C3C,color:#2C3E50
-    style G9 fill:#fff,stroke:#2ECC71,color:#2C3E50
 
-    style P2a fill:#D6EAF8,stroke:#4A90D9,color:#2C3E50
-    style P2b fill:#D6EAF8,stroke:#4A90D9,color:#2C3E50
-    style P2c fill:#D6EAF8,stroke:#4A90D9,color:#2C3E50
-    style P6a fill:#D5F5E3,stroke:#2ECC71,color:#2C3E50
-    style P6b fill:#D5F5E3,stroke:#2ECC71,color:#2C3E50
+    style S1a fill:#D6EAF8,stroke:#4A90D9,color:#2C3E50
+    style S1b fill:#D6EAF8,stroke:#4A90D9,color:#2C3E50
+    style S1c fill:#D6EAF8,stroke:#4A90D9,color:#2C3E50
+    style S3a fill:#D5F5E3,stroke:#2ECC71,color:#2C3E50
+    style S3b fill:#D5F5E3,stroke:#2ECC71,color:#2C3E50
 ```
 
-#### Read the 9 Phases in Four Modes
+#### What Each Stage Commits
 
-| Mode | Phases | Mental Model | Why It Matters |
+| # | Stage | Question | Reads | Commits | Gate |
+| :-: | ------- | ---------- | ------- | --------- | ------ |
+| 1 | **Plan** | What is wanted, why, under which constraints? | idea, docs, ticket, incident | `intent.md`, `research/findings.md` | A named product owner sets `intent.md` Status to Accepted |
+| 2 | **Design** | What exactly will be built, and does the spec hold up? | `intent.md` | `spec.md`, `audit.md`, `evidence/` | Design gate PASS, then human review, then `spec.md` Status: Approved |
+| 3 | **Build** | How is it implemented, and what did the change touch? | `spec.md` | `plan.md`, code, `changes/CR-*.md`, `impact-review.md` | `plan.md` approved before any code; impact review confirmed |
+| 4 | **Test** | Does it work safely? | code, `plan.md` | `test-plan.md`, results | Automated tier passes and the manual tier is confirmed by a human |
+| 5 | **Deploy** | Does the diff match the plan, and who authorizes release? | diff, `plan.md`, `intent.md` | `review.md` | Diff-versus-plan acknowledged; a named human authorizes release |
+| 6 | **Maintain** | What did production teach us? | incidents, metrics | a new `intent.md` | None. On-call triage, never auto-accepted |
+
+The agent does the generating, verifying, and mechanical work. Humans keep the judgment calls. Stage 6 is the steady state; it never "completes".
+
+#### Read the Six Stages in Three Movements
+
+| Movement | Stages | Mental Model | Why It Matters |
 | :--- | :----- | :----------- | :------------- |
-| **Discover** | 1-3 | Understand the problem, reality, and scope. | Prevents teams from solving the wrong problem. |
-| **Design** | 4-5 | Turn scope into an executable, audited plan. | Forces weak assumptions into the open before build starts. |
-| **Execute** | 6-7 | Build in batches and then scan for ripple effects. | Keeps progress incremental instead of big-bang. |
-| **Prove + Transfer** | 8-9 | Validate the change and package what the next person needs. | Makes completion evidence-based instead of intuitive. |
+| **Frame** | 1-2 | Establish what is wanted, then what will be built and whether the spec survives checking. | Prevents teams from solving the wrong problem, and from building against a spec nobody stress-tested. |
+| **Deliver** | 3-4 | Build in batches, scan for ripple effects, then prove it works. | Keeps progress incremental instead of big-bang, and makes completion evidence-based instead of intuitive. |
+| **Release and Learn** | 5-6 | Compare the diff to the plan, hand release to a named human, feed production back in. | Catches drift before it ships, and closes the loop instead of ending at deploy. |
 
-> Visual cue: the flowchart is detailed on purpose, but the four mode labels are the memory anchors a reader should retain.
+> Visual cue: the flowchart is detailed on purpose, but the three movement labels are the memory anchors a reader should retain.
 
-### Phase 1: Brainstorm
+### Stage 1: Plan
 
-**Question:** What problem are we solving?
-**Gate:** User confirmation
+**Question:** What is wanted, why, and under which constraints?
+**Commits:** `intent.md`, `research/findings.md`
+**Gate:** A named product owner sets `intent.md` Status to Accepted
 
-Every plan starts with a problem statement, not a solution. If the input is vague ("we need to fix payments"), the brainstorm phase asks structured questions: What is the problem? Who is affected? Why now? What does success look like? If the input includes source documents, Toque reads them and drafts a problem statement for the user to confirm or adjust.
+Every plan starts with a problem statement, not a solution. If the input is vague ("we need to fix payments"), the intent interview asks structured questions one at a time, in plain language: What is the problem? Who is affected? Why now? What does success look like? The originator may be a non-engineer, so the interview does not ask for file paths, architecture, or technology choices. Those belong to Design.
 
-The output is a `brainstorm.md` file with a problem statement, goals, non-goals, and open questions. Skipping this phase means building a solution to the wrong problem. That is the most expensive mistake in software engineering, and it compounds through every subsequent phase.
+The output is an `intent.md` file with the problem, the proposed outcome, the affected users and systems, constraints, out-of-scope items, and open questions. Skipping this stage means building a solution to the wrong problem. That is the most expensive mistake in software engineering, and it compounds through every subsequent stage.
 
-### Phase 2: Research
-
-**Question:** What is true about our situation?
-**Gate:** Automatic (tool decides "enough")
-
-Research runs three parallel tracks simultaneously:
+Research runs three parallel tracks alongside the interview:
 
 | Track | What It Does | Tools Used |
 | :------ | :------------- | :----------- |
@@ -324,16 +320,19 @@ Research runs three parallel tracks simultaneously:
 | **Source Doc Cleanup** | Cleans and structures any provided documents | Read, Write |
 | **Best Practices** | Searches for how others solved similar problems | Ref (ref_search_documentation, ref_read_url), Exa (web_search_exa, get_code_context_exa), Perplexity (perplexity_ask), WebSearch, WebFetch |
 
-The three tracks are independent, so Toque runs them as parallel subagents. This is not just a performance optimization. Parallel execution prevents the sequential bias where findings from Track 1 color the interpretation of Track 2.
+The three tracks are independent, so Toque runs them as parallel subagents. This is not just a performance optimization. Parallel execution prevents the sequential bias where findings from one track color the interpretation of the next.
 
-Research stops when a rubric is met: all open questions from brainstorm are answered (or explicitly deferred), at least one viable implementation path is identified, and top risks have mitigation ideas. The auto-gate prevents both premature closure ("we have enough") and analysis paralysis ("let's research one more thing").
+Research has no gate of its own. It feeds the Constraints and Open questions sections of `intent.md`, and acceptance by a named product owner is the only exit from the stage. There is a dedicated intent-only mode (`/toque:plan intent {name}`) that runs this stage and stops, so a non-engineer can originate a plan without committing anyone to building it.
 
-### Phase 3: Pre-Plan
+### Stage 2: Design
 
-**Question:** What should be in scope?
-**Gate:** User confirmation (scope lock)
+**Question:** What should be in scope, how will we execute it, and what is weak or missing?
+**Commits:** `spec.md`, `audit.md`, `evidence/`
+**Gate:** Design gate PASS + human review, then `spec.md` Status: Approved
 
-This phase produces a one-page alignment checkpoint. One page. Not ten. The discipline of compression forces clarity. The checkpoint contains five elements:
+Design is the stage that merges what used to be three phases: pre-plan, plan, and audit. Its single artifact is `spec.md`, written in two passes around a mid-stage scope lock, then audited.
+
+**Part A: scope and design.** Part A produces a one-page alignment checkpoint. One page. Not ten. The discipline of compression forces clarity. The checkpoint contains five elements:
 
 1. **Scope:** IN list and OUT list. If it is not on the IN list, it is not in scope. Period.
 2. **Approach/Pattern:** Which architectural pattern (strangler fig, feature flag, migration, new build) and why.
@@ -341,41 +340,39 @@ This phase produces a one-page alignment checkpoint. One page. Not ten. The disc
 4. **Constraints:** Timeline, team size, technology limitations.
 5. **Dependencies:** Internal, external, hard blockers, soft dependencies.
 
-The user must explicitly confirm this checkpoint. This is the scope lock. Everything after this phase operates within the boundaries set here. If scope needs to change later, the plan loops back to Pre-Plan and re-locks.
+The user must explicitly confirm this checkpoint. This is the scope lock. Everything after it operates within the boundaries set here. If scope needs to change later, the stage re-enters Part A and re-locks.
 
-### Phase 4: Plan
+**Part B: verification plan and delivery.** Part B completes `spec.md` with the verification plan (including which testing methodology applies to each deliverable) and the delivery section (sequencing, rollback, what ships when). Detail level scales with risk. High-risk work gets exact file paths, function names, grep patterns, and test requirements. Low-risk work gets goals, scope, and success criteria. Over-specifying low-risk work wastes time. Under-specifying high-risk work causes failures.
 
-**Question:** How will we execute?
-**Gate:** User confirmation
+**Part C: the design gate.** The audit is a stress test, run by an isolated `plan-auditor` instance that is never told what passing costs. It runs four kinds of check against `spec.md`:
 
-The plan phase produces the full specification at `docs/specs/{plan-name}.md`, written in three views for three audiences:
+1. **Criterion verdicts:** every applicable criterion gets `MET`, `UNMET`, or `N_A`, each with the evidence it rests on. There is no total, no points field, and no band.
+2. **Devil's Advocate:** challenges every assumption. "If this fails in production, what is the most likely reason?"
+3. **Codebase Verification:** confirms that file paths, function names, and line numbers referenced in the spec actually exist in the codebase.
+4. **Gap Verification:** four structured outputs (Coverage Matrix, Assumption Register, Scenario Matrix, Cross-Cutting Concern Sweep) plus infrastructure verification and the Phase 5 lint rules (see [lint-registry.md](plugins/toque/docs/planning-techniques/lint-registry.md), which owns the set and its size). LINT-11 and LINT-12 run at Phase 7 instead.
 
-- **JIRA-Ready Tickets:** For the team doing the work. Each ticket has a title, acceptance criteria, and is assignable.
-- **Leadership Summary:** For stakeholders. Executive summary, timeline table, go/no-go criteria.
-- **Working Checklist:** For the person driving it. Step-by-step with verification at each step.
+A planted canary defect is injected into a copy of the spec before the audit runs, so a lazy audit can be detected rather than trusted. The gate is an expression, not a threshold:
 
-Detail level scales with risk. High-risk phases get exact file paths, function names, grep patterns, and test requirements. Low-risk phases get goals, scope, and success criteria. This is intentional. Over-specifying low-risk work wastes time. Under-specifying high-risk work causes failures.
+```text
+  CANARY_OK   = the criterion the planted defect violates came back UNMET
+  EVIDENCE_OK = the evidence validator flagged nothing
+  VERIFIED    = every applicable criterion is MET or N_A after validation
+  INFRA_OK    = no infrastructure gaps
 
-### Phase 5: Audit
+  PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK
+```
 
-**Question:** What is weak or missing?
-**Gate:** Evaluator-optimizer loop + human review
+Every term is re-derivable by someone who has the plan folder and did not run the audit. There is no weighted sum, so a strong showing on seven criteria cannot offset a failure on the eighth. If the gate does not pass, an evaluator-optimizer loop revises only the failing sections and re-audits with a **fresh** auditor instance (up to 2 iterations); the revision feedback carries defects and locations, never how near the spec came to passing. After the loop, a human review checkpoint prompts for reviewer sign-off before Build (waivable in solo mode). A spec does not "usably pass with known gaps" — either every applicable criterion is satisfied and evidenced, or the specific ones that are not get named.
 
-The audit is a stress test. Toque runs four checks against the plan:
+### Stage 3: Build
 
-1. **8-Dimension Score:** Rates the plan from 1-5 across eight quality dimensions. Thresholds: 32-40 GREEN, 24-31 YELLOW, 16-23 ORANGE, 1-15 RED.
-2. **Devil's Advocate:** Challenges every assumption. "If this fails in production, what is the most likely reason?"
-3. **Codebase Verification:** Confirms that file paths, function names, and line numbers referenced in the plan actually exist in the codebase.
-4. **Gap Verification:** Four structured outputs (Coverage Matrix, Assumption Register, Scenario Matrix, Cross-Cutting Concern Sweep) plus infrastructure verification and the Phase 5 lint rules (see [lint-registry.md](plugins/toque/docs/planning-techniques/lint-registry.md), which owns the set and its size). LINT-11 and LINT-12 run at Phase 7 instead.
+**Question:** How is it implemented, and what else does the change affect?
+**Commits:** `plan.md`, code, `changes/CR-*.md`, `impact-review.md`
+**Gate:** `plan.md` approved before any code; impact review confirmed to close the stage
 
-The Phase 5 audit gate uses an evaluator-optimizer loop. If the score is below 32/40 or gaps remain, the system auto-revises the plan spec and re-audits (up to 2 iterations). After the loop, a human review checkpoint prompts for reviewer sign-off before Build (waivable in solo mode). GREEN + gap-checked means "ready to build." YELLOW + gap-checked means "proceed with known gaps." RED means "go back to Phase 3 or 4."
+Nothing is implemented without an approved `plan.md`. The spec says WHAT and WHY; `plan.md` says exactly WHICH FILES, in WHAT ORDER, and HOW WE WILL KNOW, written for an engineer who never saw the conversation. A hard assumption verification gate (LINT-08) runs before implementation: no HIGH-impact assumption may be unverified unless explicitly waived with documented risk acceptance.
 
-### Phase 6: Build
-
-**Question:** What got built?
-**Gate:** Per-action approval for code changes
-
-Build is the execution phase. Before writing any code, Toque analyzes the ticket dependency graph from the plan and batches independent tickets for parallel execution.
+Before writing any code, Toque analyzes the ticket dependency graph from `plan.md` and batches independent tickets for parallel execution.
 
 ```mermaid
 flowchart LR
@@ -400,16 +397,9 @@ flowchart LR
     E --> F
 ```
 
-Document actions (updating status, answering questions about the plan) require no approval. Codebase actions (generating code, running tests, creating branches) require explicit per-action approval. This distinction is important: the planning tool should never surprise you by modifying code without asking.
+Document actions (updating status, answering questions about the plan) require no approval. Codebase actions (generating code, running tests, creating branches) require explicit per-action approval. This distinction is important: the planning tool should never surprise you by modifying code without asking. When implementation departs from `plan.md`, `plan.md` is updated in the same commit and the departure becomes an immutable change record under `changes/`.
 
-If scope changes are discovered during build, the plan loops back to Pre-Plan. The earlier phases are marked as stale, and the scope lock must be re-confirmed. This backward flow is not a failure. It is the system working as designed.
-
-### Phase 7: Impact Review
-
-**Question:** What else does this change affect?
-**Gate:** User confirmation
-
-This is the phase most teams skip, and it is the one that catches the bugs that slip through unit tests. Impact Review checks six dimensions:
+The stage exits through an **impact review**, the check most teams skip and the one that catches the bugs unit tests miss. It scans seven dimensions:
 
 | # | Dimension | What It Catches |
 | :-: | :---------- | :---------------- |
@@ -419,60 +409,72 @@ This is the phase most teams skip, and it is the one that catches the bugs that 
 | 4 | **Transition-State Behavior** | What happens when old and new code run simultaneously during rollout |
 | 5 | **Test Delta** | Tests that existed before but were not updated, new behavior without tests |
 | 6 | **String Path References** | Stale file paths in mock statements, config files, and documentation after file moves |
+| 7 | **Backward Traceability** | Delivered work that no longer traces back to a requirement in the spec |
 
-Phase 7 is adapted from cross-cutting concern analysis in SRE practices. The insight is that code changes ripple. A function that "just" changes a return type can break callers in five other modules. Impact Review explicitly hunts for these ripple effects by deploying parallel subagents to scan each dimension independently.
+The insight is that code changes ripple. A function that "just" changes a return type can break callers in five other modules. Toque runs three parallel subagents over these dimensions — integration and cross-layer, scale and transition-state, test delta and string paths and traceability — then synthesizes the findings and flags HIGH severity issues to resolve before testing.
 
-Toque runs three parallel subagents: one for Integration and Cross-Layer effects, one for Scale and Transition-State analysis, and one for Test Delta and String Path references. The orchestrator synthesizes findings and flags any HIGH severity issues that should be resolved before testing.
+If scope changes are discovered during build, the plan returns to Design and the scope lock must be re-confirmed. This backward flow is not a failure. It is the system working as designed.
 
-### Phase 8: Test
+### Stage 4: Test
 
 **Question:** Does it work safely?
-**Gate:** Hard pass/fail
+**Commits:** `test-plan.md`, results
+**Gate:** Hard readiness gate — automated tier passes, manual tier confirmed by a human
 
-Test is one of three phases with hard gates (Phase 5 has the evaluator-optimizer loop, Phase 6 has the assumption verification gate, Phase 8 has the readiness gate). Before proceeding to Handoff, all of these must be true:
+`test-plan.md` records a per-deliverable test matrix, the edge cases the plan context prompts, characterization test candidates for changed code, and the testing methodology assigned back in Design (an expand/contract migration, for instance, carries its own checklist). Every criterion is categorized as AUTOMATED or MANUAL, and the two tiers are gated differently: the automated tier must pass, and the manual tier must be confirmed by a human who says so by name.
+
+Before proceeding to Deploy, all of these must be true:
 
 - All critical path tests pass (or are explicitly waived with a documented reason)
 - No open P0/P1 defects against this plan
 - Characterization baseline captured for any refactored code
-- Audit score is GREEN or YELLOW with gap-checked = YES
+- The design gate is recorded as PASS with gap-checked = YES
 - Rollback plan has been validated
 
 If any condition fails, the plan stays in Test. There is no override. This is deliberate. A test gate that can be bypassed is not a gate, it is a suggestion.
 
-### Phase 9: Handoff
+### Stage 5: Deploy
 
-**Question:** What happens next?
-**Gate:** Readiness check
+**Question:** Does the diff match the plan, and who authorizes release?
+**Commits:** `review.md`
+**Gate:** A named human authorizes release. The skill never runs a deploy command.
 
-Handoff produces context-aware guidance based on the situation. If the plan is ready to ship, it provides a specific deployment sequence with verification steps. If gaps remain, it provides a prioritized list of what to fix. If there is timeline pressure, it separates critical path items from deferrable ones.
+Deploy opens with the drift control: a **fresh** subagent, not the one that did the Build, compares `git diff --name-only` against the files `plan.md` said would change and against the constraints `intent.md` recorded. It is run by a new instance on purpose, so the comparison is not biased by memory of why each file changed. Its job is to report, not to judge.
 
-The handoff also records decisions made, lessons learned, and what was deferred. This documentation feeds back into Category 1 (Documentation as the Foundation), closing the loop between the planning workflow and the grading framework.
+`review.md` collects the diff-versus-plan result, the constraint check, the findings, the release checklist, and the authorization line. That last line is the hard rule of the whole workflow: Toque prepares the release and then stops. A named human authorizes it, and a gate without a recorded name is not passed.
+
+### Stage 6: Maintain
+
+**Question:** What did production teach us?
+**Commits:** a new `intent.md` when the trigger rule fires
+**Gate:** None. This stage never completes; it is the steady state.
+
+After release the plan folder is the record of what was intended, specified, planned, built, tested, and authorized. Nothing in it is rewritten; new facts go in new files. Incidents against the release are handled by `/toque:troubleshoot --plan {name}`, which writes its log under the plan's `troubleshooting/` folder and links it from the manifest.
+
+When a logged incident is SEV1 or SEV2, or is a recurrence of a known pattern, Stage 6 proposes a new `intent.md` pre-filled from the incident: the root cause becomes the problem, the recommended fix becomes the proposed outcome, the incident scope becomes the affected users and systems. That intent enters Stage 1 and goes through the same acceptance gate as the original. This is what closes the loop between running software and the planning workflow.
 
 ### What Skipping Costs You
 
-Every phase exists because skipping it has a known cost:
+Every stage exists because skipping it has a known cost:
 
-| Phase Skipped | Typical Consequence |
+| Stage Skipped | Typical Consequence |
 | :------------ | :------------------ |
-| 1. Brainstorm | Build the wrong thing |
-| 2. Research | Rediscover known constraints mid-build |
-| 3. Pre-Plan | Scope creep, rework, team misalignment |
-| 4. Plan | Ad-hoc execution, missed dependencies |
-| 5. Audit | Gaps discovered in production |
-| 6. Build | You cannot skip this one |
-| 7. Impact Review | Cross-cutting bugs in production |
-| 8. Test | Unvalidated changes shipped to users |
-| 9. Handoff | Knowledge lost, next team starts from zero |
+| 1. Plan | Build the wrong thing, and rediscover known constraints mid-build |
+| 2. Design | Scope creep, ad-hoc execution, missed dependencies, gaps found in production |
+| 3. Build | You cannot skip this one |
+| 4. Test | Unvalidated changes shipped to users |
+| 5. Deploy | Drift between what was planned and what shipped, released by nobody in particular |
+| 6. Maintain | Incidents teach nothing, and the same defect comes back as a surprise |
 
-The cost of a skipped phase increases exponentially with distance from the skip. A problem missed in Brainstorm (Phase 1) that surfaces during Test (Phase 8) costs roughly 100x more to fix than catching it in Phase 1. This is not a Toque-specific observation. It is the well-documented cost-of-change curve applied to AI-assisted development workflows.
+The cost of a skipped stage increases exponentially with distance from the skip. A problem missed in Plan (Stage 1) that surfaces during Test (Stage 4) costs roughly 100x more to fix than catching it at the start. This is not a Toque-specific observation. It is the well-documented cost-of-change curve applied to AI-assisted development workflows.
 
 ---
 
-## 4. The AI Readiness Scan (52 Checks)
+## 4. The AI Readiness Scan (52 Checks, 60 with Database)
 
 ### Why 9 Categories, and Why These 9
 
-Most AI readiness advice boils down to "write better docs." That is not wrong, but it is not actionable. Toque replaces that vague guidance with 52 deterministic checks organized into 9 categories, each measuring a specific dimension of how well an AI agent can read, navigate, and safely modify your codebase.
+Most AI readiness advice boils down to "write better docs." That is not wrong, but it is not actionable. Toque replaces that vague guidance with 52 deterministic checks organized into 8 categories — 60 checks across 9 categories when the conditional Database category applies — each measuring a specific dimension of how well an AI agent can read, navigate, and safely modify your codebase.
 
 The 9 categories were not chosen arbitrarily. They emerged from synthesizing five independent research frameworks that each approached the same question from a different angle.
 
@@ -553,7 +555,7 @@ graph TD
     PRE -->|No| NODB["Run 8 categories<br/>Use non-DB weight set"]
     DB --> CALC["Calculate weighted composite"]
     NODB --> CALC
-    CALC --> GRADE["Assign letter grade<br/>A+ (97-100) to F (0-59)"]
+    CALC --> GRADE["Assign letter grade<br/>A+ (97-100) to F (0-62)"]
 
     style START fill:#4A90D9,stroke:#2C6FAC,color:#fff
     style PRE fill:#F39C12,stroke:#E67E22,color:#fff
@@ -593,7 +595,7 @@ A codebase needs a B- (80%) or above, plus all hard gates passing, to qualify fo
 
 ### The Gate System: Hard vs. Soft
 
-Not all checks are equal. Eight of the 52 checks serve as gates, split into two tiers that control access to the Phase 2 codebase audit.
+Not all checks are equal. Eight of the 52 always-on checks serve as gates, split into two tiers that control access to the Phase 2 codebase audit.
 
 ```text
  HARD GATES (4)                           SOFT GATES (4)
@@ -984,15 +986,15 @@ The pipeline is generated by the CI gate generator, which produces GitHub Action
 
 ### Layer 3: Plan Workflow
 
-Layer 3 is where a human stays in the loop. The [`/toque:plan`](plugins/toque/commands/plan-status.md) command's 9-phase workflow includes three safety-critical phases:
+Layer 3 is where a human stays in the loop. The [`/toque:plan`](plugins/toque/skills/plan/SKILL.md) command's six-stage workflow carries four safety-critical checkpoints:
 
-**Phase 5 (Audit)** scores the plan across 8 quality dimensions with rubric-calibrated scoring (1-5 per dimension, reasoning required before each score). Thresholds: 32-40 GREEN, 24-31 YELLOW, 16-23 ORANGE, 1-15 RED. The audit runs the registry's Phase 5 lint rules (LINT-11/12 run at Phase 7), 4 gap verification matrices (coverage, assumptions, scenarios, cross-cutting), infrastructure verification (LINT-15/16), and a devil's advocate challenge. If the score is below 32 or gaps remain, an evaluator-optimizer loop auto-revises and re-audits (up to 2 iterations). A human review checkpoint follows before Build entry.
+**Stage 2 (Design gate)** audits the spec across the 8 review dimensions and returns a per-criterion verdict — MET, UNMET, or N_A — with the evidence each rests on. There is no total and no band. The gate passes only when every applicable criterion is MET or N_A, the evidence validator flags nothing, the planted canary defect was caught, and infrastructure verification reports no gaps. The audit runs the registry's Phase 5 lint rules (LINT-11/12 run at Phase 7), 4 gap verification matrices (coverage, assumptions, scenarios, cross-cutting), infrastructure verification (LINT-15/16), and a devil's advocate challenge. If any applicable criterion is unmet, an evaluator-optimizer loop revises the failing sections and re-audits with a fresh auditor instance (up to 2 iterations). A human review checkpoint follows before Build entry.
 
-**Phase 7 (Impact Review)** checks six cross-cutting dimensions: integration edges, cross-layer effects, scale/performance, transition-state behavior, test delta, and string path references. Three parallel subagents scan these dimensions independently. This is the phase that catches the bugs unit tests miss: callers that were not updated, queries inside loops, stale file paths in mock statements.
+**Stage 3 (Build)** has a hard assumption verification gate (LINT-08). No HIGH-impact assumption can be unverified unless explicitly waived with documented risk acceptance. This prevents building on unverified foundations.
 
-**Phase 6 (Build)** has a hard assumption verification gate (LINT-08). No HIGH-impact assumption can be unverified unless explicitly waived with documented risk acceptance. This prevents building on unverified foundations.
+**Stage 3 exit (Impact Review)** checks seven cross-cutting dimensions: integration edges, cross-layer effects, scale/performance, transition-state behavior, test delta, string path references, and backward traceability. Three parallel subagents scan these dimensions independently. This is the check that catches the bugs unit tests miss: callers that were not updated, queries inside loops, stale file paths in mock statements.
 
-**Phase 8 (Test)** has a hard readiness gate. All critical path tests must pass, no open P0/P1 defects, characterization baselines captured for refactored code, audit score at GREEN or YELLOW with gap-checked = YES, and rollback plan validated. If any condition fails, the plan stays in Test. There is no override.
+**Stage 4 (Test)** has a hard readiness gate. All critical path tests must pass, no open P0/P1 defects, characterization baselines captured for refactored code, the design gate recorded as PASS with gap-checked = YES, and rollback plan validated. If any condition fails, the plan stays in Test. There is no override.
 
 ### The Single-Dependency Principle
 
@@ -1122,7 +1124,7 @@ graph TD
     PLAN --> SM["C. Scenario Matrix"]
     PLAN --> CC["D. Cross-Cutting<br/>Concern Sweep"]
 
-    CV --> LINT["10 Binary<br/>Lint Rules"]
+    CV --> LINT["Binary<br/>Lint Rules"]
     AR --> LINT
     SM --> LINT
     CC --> LINT
@@ -1142,7 +1144,7 @@ graph TD
     style NOTGAPPED fill:#E74C3C,stroke:#C0392B,color:#fff
 ```
 
-**A. Coverage Matrix** traces every goal, risk, dependency, and non-goal to its implementation in the plan. If a goal from the brainstorm phase has no corresponding ticket or phase, the matrix exposes it. If a risk has no mitigation, same thing.
+**A. Coverage Matrix** traces every goal, risk, dependency, and non-goal to its implementation in the plan. If a goal from Stage 1's intent.md has no corresponding ticket or stage, the matrix exposes it. If a risk has no mitigation, same thing.
 
 **B. Assumption Register** catalogs every assumption the plan makes, then asks two questions: what happens if this assumption is false, and how will we verify it before we find out the hard way? Unverified HIGH-impact assumptions are treated as gaps.
 
@@ -1800,7 +1802,7 @@ The PATH preamble is the first key insight. On Windows, `winget` installs binari
 
 Source (historical, v4.x): the inline hook commands in `.claude-plugin/plugin.json` at that time. Current hooks live in `plugins/*/hooks/hooks.json` and `plugins/*/scripts/`.
 
-### The Five Design Rules
+### The Six Design Rules
 
 These emerged from the failures above, and from the six defects an adversarial review found in the 5.0.0 rewrite itself. They are non-negotiable in any future hook development. Rules 2, 3 and 5 replace the pre-5.0.0 guidance that recommended jq-then-grep+sed; the example that settles rule 3 is that `git push "--force"` must be denied while a commit message mentioning it must not.
 
@@ -1856,14 +1858,14 @@ longer contains hooks at all.
 
 | Handler | Event | Matcher | Field it reads | Decision it can return |
 | :------ | :---- | :------ | :------------- | :--------------------- |
-| [tq-session-start.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-session-start.js) | SessionStart | (none) | `source` | JSON `systemMessage` only |
+| [tq-session-start.js](plugins/toque/scripts/tq-session-start.js) | SessionStart | (none) | `source` | JSON `systemMessage` only |
 | tq-migration-guard.js (retired 9.0.0) | PreToolUse | `Write\|Edit` | `tool_input.file_path` | deny (exit 2) / allow |
 | tq-git-guard.js (retired 9.0.0) | PreToolUse | `Bash` | `tool_input.command` | deny / **ask** / allow |
 | tq-track-change.js (retired 9.0.0) | PostToolUse | `Write\|Edit` | `tool_input.file_path`, `session_id` | JSON `systemMessage` only |
 | tq-track-test.js (retired 9.0.0) | PostToolUse | `Bash` | `tool_input.command`, `session_id` | nothing (writes markers) |
 | tq-session-stop.js (retired 9.0.0) | Stop | (none) | `session_id` | JSON `systemMessage` only |
-| [tq-subagent-stop.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-subagent-stop.js) | SubagentStop | (none) | `reason` | nothing (appends to a log) |
-| [tq-pre-compact.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-pre-compact.js) | PreCompact | (none) | (none) | JSON `systemMessage` only |
+| [tq-subagent-stop.js](plugins/toque/scripts/tq-subagent-stop.js) | SubagentStop | (none) | `reason` | nothing (appends to a log) |
+| [tq-pre-compact.js](plugins/toque/scripts/tq-pre-compact.js) | PreCompact | (none) | (none) | JSON `systemMessage` only |
 
 Two things this table now makes explicit that the old one hid. The **Matcher** column
 reads "(none)" for four events rather than `*`: SessionStart, Stop, SubagentStop and
@@ -1872,9 +1874,9 @@ the field was present and meaningless until a setup audit flagged it. And the gi
 is the only handler that can return **ask**: a hard reset and any command containing a
 construct the guard cannot evaluate both prompt rather than being denied or waved through.
 
-The three blocking hooks (Git Guard, Migration Guard, DB Deploy Guard) are the ones where the fail-open problem matters most. If any of them cannot parse the input and the input actually contains a dangerous command, we have a security hole. That is why the jq-first-then-grep pattern exists.
+The three blocking hooks (Git Guard, Migration Guard, DB Deploy Guard) were the ones where the fail-open problem mattered most. If any of them cannot parse the input and the input actually contains a dangerous command, we have a security hole. That is why the jq-first-then-grep pattern existed.
 
-Source: [scripts/tq-git-guard.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-git-guard.js), [scripts/tq-migration-guard.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-migration-guard.js), [scripts/tq-session-start.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-session-start.js) — the `.sh` handlers these lines used to cite were deleted in 5.0.0
+Source: [scripts/tq-git-guard.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-git-guard.js), [scripts/tq-migration-guard.js](https://github.com/krwhynot/toque/blob/main/scripts/tq-migration-guard.js), [plugins/toque/scripts/tq-session-start.js](https://github.com/krwhynot/toque/blob/main/plugins/toque/scripts/tq-session-start.js) — the `.sh` handlers these lines used to cite were deleted in 5.0.0
 
 ### The grep+sed Pattern Up Close
 
@@ -1895,9 +1897,7 @@ Three failures, all of them silent:
 
 The replacement parsed the payload with `JSON.parse`, read the named field only, and split the command into shell words so quoted text contributed data rather than structure. That handler (`tq-git-guard.js`) and its acceptance corpus (`tests/fixtures/hook-corpus.json`, which encoded each of these three failures as a test) were retired with `toque-guard` in 9.0.0; the git history at tag `v8.0.0` holds both, under their pre-rename names.
 
-The `head -1` in the grep path handles the case where `"command"` appears multiple times in the JSON (it can, in nested structures). We always take the first match, which corresponds to the top-level field.
-
-Source: [`.claude-plugin/plugin.json`](https://github.com/krwhynot/toque/blob/main/.claude-plugin/plugin.json) lines 49, 61, 71, 83
+Source (historical, v4.x): the inline hook commands carried by `.claude-plugin/plugin.json` at those tags. That file no longer holds hooks at all, so the line numbers this citation used to give no longer exist in it.
 
 ### Why Not Just Require jq?
 
@@ -1908,15 +1908,17 @@ This section argued against requiring a dependency, and 5.0.0 reversed it. The a
 
 **5.0.0 chose the required dependency instead, and this is the paragraph that changed.** The old answer was that `jq` is optional but recommended, with a `grep`+`sed` path when it is absent. That reads as having it both ways, and it does not: the two paths do not enforce the same rules, so the guarantee silently depended on which one ran. The plugin now requires Node.js 18+ — already required by Claude Code — and has exactly one parsing path. On a host without it the guards do not run and Claude Code reports a hook error on every guarded event. That is a worse availability story and a better safety one, which is the correct direction for a security control: the failure is visible instead of silent.
 
-| Approach | Strength | Failure Mode | Verdict |
+The matrix below is the **pre-5.0.0 assessment**, kept as it was written. Its Verdict column records the answer of the day, not the current one:
+
+| Approach | Strength | Failure Mode | Verdict (pre-5.0.0) |
 | :------- | :------- | :----------- | :------ |
 | **Required dependency** | Best quality when the tool is present. | The whole safety system degrades when the dependency is missing. | Bad default for safety hooks. |
-| **Optional + fallback** | Works everywhere and improves when jq is available. | More implementation complexity, but failure stays controlled. | The Toque sweet spot. |
+| **Optional + fallback** | Works everywhere and improves when jq is available. | More implementation complexity, but failure stays controlled. | The sweet spot, as it looked then. |
 | **Pure Bash** | No dependency management burden. | Fragile parsing on real-world payloads and edge cases. | Risky unless inputs are extremely simple. |
 
-> Visual cue: this is a tradeoff matrix, not a purity contest. Toque chooses the middle column because reliability matters more than elegance.
+> Visual cue: read the Verdict column as a dated opinion. The failure mode in the first row is real, but 5.0.0 judged a loud failure preferable to a quiet one.
 
-The sweet spot is in the middle. That is where Toque lives.
+5.0.0 took the first row. Toque now requires Node.js 18 or later — already required by Claude Code — and has exactly one parsing path, so the same rules are enforced on every host that can run the guards at all. Where the guards cannot run, they are absent and loud rather than silently weaker.
 
 ---
 

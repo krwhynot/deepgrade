@@ -29,7 +29,7 @@ Toque asks three questions about your codebase:
 | 2. Phased Delivery Over Big-Bang Releases | What shape is it in? | Present |
 | 3. Operational Readiness | Can we safely change it? | Future |
 
-The methodology behind all three plugins lives in [METHODOLOGY.md](METHODOLOGY.md).
+The methodology behind the plugin lives in [METHODOLOGY.md](METHODOLOGY.md).
 
 ## The plan workflow
 

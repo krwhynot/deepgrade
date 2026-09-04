@@ -43,6 +43,7 @@ spec.md layout (every section is required; write "None" rather than omit):
 ## Requirements
 ### Functional
 ### Non-functional
+## Success metrics
 ## Design
 ## Standards applied
 ## Gotchas
@@ -75,7 +76,7 @@ written only after scope is locked.
 - ## Success metrics: leading indicators (adoption, task completion, error
   rate) and lagging ones (retention, cost, support load), each with a numeric
   target, a window, a measurement method, and an evaluation date. Stage 6
-  reads these; the plan-auditor scores their presence.
+  reads these; the plan-auditor returns a verdict on their presence.
 - Scope: IN list and OUT list. The OUT list starts from intent.md Out of scope and
   grows with anything ruled out during options analysis. After scope lock, any
   addition comes with a removal or a timeline change, recorded in a CR.
@@ -189,7 +190,7 @@ what architectural property it provides, what failure mode it prevents}
 **Connection to this plan:** {1-2 sentences — why we chose this specifically,
 which plan goal it serves}
 
-**Also referenced in:** [{other-plan-name}](../../{other-plan-dir}/spec.md#{anchor}) ← only if another plan uses the same tool
+**Also referenced in:** [{other-plan-name}](../{other-plan-dir}/spec.md#{anchor}) ← only if another plan uses the same tool
 
 ### Methods & Patterns
 
@@ -408,7 +409,7 @@ Present to user:
 "Spec written with {N} delivery phases and {M} tickets over {X} weeks. Review
 before the design gate runs? [Y/n]"
 
-Commit spec.md. Update manifest.md: add spec.md to Plan Files table with date.
+Commit spec.md. Update manifest.md: add spec.md to the Artifacts table with date.
 
 ---
 
@@ -611,7 +612,7 @@ One flag is ADVISORY. It is printed, it does not demote, and it does not fail th
 run:
   EVIDENCE-EXITCODE-IGNORED  the record supplied an exit_code; it carried no weight
 
-The fourth rule is the one that matters most and is easiest to soften by accident:
+`EVIDENCE-MISSING` is the flag that matters most and is easiest to soften by accident:
 an externally checkable claim with no evidence is UNMET. Not PARTIAL, not a warning,
 not "verified but undocumented". This project has lost that argument twice — a layer
 was recorded PARTIAL with its result asserted in a commit message and no artifact in
@@ -635,7 +636,8 @@ Exit codes from the validator, which the gate branches on:
   2  the evidence directory is missing or empty
 
 Exit 1 covers more than a demoted MET. A record the validator could not read at
-all — unparseable JSON, a verdict outside MET/UNMET/N_A — demotes nothing,
+all — unparseable JSON, a file that parses but is not a record object, a
+verdict outside MET/UNMET/N_A — demotes nothing,
 because it never claimed MET in the first place. For one release those exited 0
 while printing their own rejection on screen, so the gate opened on a corpus the
 validator had refused. Any mark in the output is now exit 1.
@@ -717,7 +719,7 @@ Write docs/plans/{date}-{plan-name}/audit.md with: criterion records (verdict an
 evidence per criterion), challenges, verification results, ALL 4 gap verification
 outputs, lint results, gap summary.
 
-Update manifest.md: add audit.md to Plan Files table with date and gate result.
+Update manifest.md: add audit.md to the Artifacts table with date and gate result.
 
 EVIDENCE REINFORCEMENT (after audit, before baseline):
 
@@ -814,7 +816,7 @@ The gate reads whether the claims survived checking.
 
 <gate_expression>
 CANARY_OK   = the criterion the planted defect violates came back UNMET
-EVIDENCE_OK = tq-evidence-validate.js exited 0 (nothing was demoted)
+EVIDENCE_OK = tq-evidence-validate.js exited 0 (nothing was flagged)
 VERIFIED    = every applicable criterion is MET or N_A after validation
 INFRA_OK    = infra_gaps == 0
 

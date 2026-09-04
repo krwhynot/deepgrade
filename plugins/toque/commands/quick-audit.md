@@ -1,5 +1,5 @@
 ---
-description: Audit any technical plan, spec, or proposal for gaps, risks, and leadership readiness. Scores the plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team). Produces a go/no-go assessment and leadership presentation outline. Pass a file path or describe the plan.
+description: Audit any technical plan, spec, or proposal for gaps, risks, and leadership readiness. Reviews the plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team) and returns a per-criterion verdict (MET/UNMET/N_A) with evidence. Produces a go/no-go assessment and leadership presentation outline. Pass a file path or describe the plan.
 argument-hint: "[plan-file-path or description] [--plan plan-name]"
 allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
@@ -70,7 +70,7 @@ If the user mentioned presenting to leadership, also highlight:
 
 <examples>
 User: /toque:quick-audit docs/specs/pricing-engine-extraction.md
--> Reads the spec, scores it, finds gaps, produces audit report
+-> Reads the spec, returns a verdict per criterion, finds gaps, produces audit report
 
 User: /toque:quick-audit "the migration plan in our last meeting notes"
 -> Searches for matching files, asks for clarification if ambiguous

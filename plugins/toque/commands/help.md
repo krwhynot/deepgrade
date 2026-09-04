@@ -35,7 +35,7 @@ here either feeds that workflow or is a standalone shortcut for one part of it.
 | | `/toque:plan` | `/toque:quick-plan` |
 |--|-----------|-----------------|
 | **What** | Guided six-stage workflow | One-shot plan generation |
-| **Phases** | All 9 (Brainstorm through Handoff) | Phase 4 (Plan) only |
+| **Stages** | All 6 (Plan through Maintain) | None — a one-shot spec, outside the stage workflow |
 | **Asks questions?** | Yes, walks you through interactively | No, takes objective and generates immediately |
 | **Creates plan folder?** | Yes: `docs/plans/2026-03-07-{name}/` | No, just writes `docs/specs/{name}.md` |
 | **Research?** | Yes, scans codebase + docs + web | No, uses existing context |

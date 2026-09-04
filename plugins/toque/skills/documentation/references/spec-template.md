@@ -214,5 +214,6 @@ Document chain:
 
 Suggested next step:
   Run /toque:quick-audit docs/specs/SPEC-{NNN}-{topic}.md
-  to score the spec across 8 dimensions before presenting to leadership.
+  to review the spec across 8 dimensions before presenting to leadership.
+  It returns PASS or NOT PASS with the criteria that failed, not a score.
 ```

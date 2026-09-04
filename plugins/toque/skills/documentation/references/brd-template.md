@@ -61,9 +61,9 @@ Generate the BRD directly, using:
 
 Steps:
 1. Write the BRD to `docs/brd/{domain}.md` using the skeleton below
-2. Update document-linkage.json for all features in this domain
-3. Update feature-inventory.json linked_docs for all features
-4. Validate all JSON files
+
+The audit baselines are inputs only. Read them for evidence; never write back
+to them.
 
 **Document skeleton**
 

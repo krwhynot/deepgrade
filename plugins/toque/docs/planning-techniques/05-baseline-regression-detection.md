@@ -22,7 +22,7 @@ A baseline is a point-in-time snapshot stored as structured data (JSON) that rep
    - Scenario Matrix: 8 scenarios with individual status (covered/partial/gap)
    - Cross-Cutting Concerns: 12 concerns with individual status
    - Lint rule results: every applicable rule with individual pass/fail
-   - Dimension scores: 8 dimensions individually
+   - Infra gap count
 
 2. **Store as JSON** with run metadata (date, plan version, run number):
    ```json
@@ -30,37 +30,31 @@ A baseline is a point-in-time snapshot stored as structured data (JSON) that rep
      "run_number": 3,
      "date": "2026-03-19",
      "plan_version": "worldpay-canada-v2",
-     "coverage_matrix": {
-       "total_items": 12,
-       "gap_count": 1,
-       "items": [
-         {"name": "bilingual receipts", "status": "covered"},
-         {"name": "rollback procedure", "status": "gap"}
-       ]
+     "lint_results": {
+       "LINT-01": "pass",
+       "LINT-02": "pass",
+       "LINT-07": "fail"
      },
-     "assumptions": {
+     "coverage_items": [
+       {"name": "bilingual receipts", "status": "covered"},
+       {"name": "rollback procedure", "status": "gap"}
+     ],
+     "assumption_counts": {
        "total": 8,
        "verified": 6,
        "unverified": 1,
        "waived": 1
      },
-     "scenario_matrix": [
+     "scenario_statuses": [
        {"id": 1, "name": "Happy path", "status": "covered"},
        {"id": 5, "name": "Scale/volume edge", "status": "partial"}
      ],
-     "cross_cutting_concerns": [
+     "concern_statuses": [
        {"name": "API contract", "status": "ok"},
        {"name": "CORS", "status": "ok"},
        {"name": "Rate limiting", "status": "gap"}
      ],
-     "lint_rules": [
-       {"id": "LINT-01", "name": "No vague scope", "status": "pass"},
-       {"id": "LINT-07", "name": "Rollback defined", "status": "fail"}
-     ],
-     "dimension_scores": [
-       {"name": "Completeness", "score": 4},
-       {"name": "Feasibility", "score": 5}
-     ]
+     "infra_gaps": 1
    }
    ```
 
@@ -74,7 +68,7 @@ A baseline is a point-in-time snapshot stored as structured data (JSON) that rep
 
 5. **Generate a new baseline** after each comparison for future use.
 
-6. **Store baselines in version control** alongside the plan, in the plan folder: `docs/plans/{date}-{name}/baseline.json`
+6. **Store baselines in version control** alongside the plan, in the plan folder's `status.json` under the `baseline` key.
 
 ## Why It Prevents Gaps
 
@@ -108,6 +102,12 @@ When a plan is re-audited after changes, the new audit produces a fresh score. I
         {"name": "bilingual receipts", "status": "covered"},
         {"name": "rollback procedure", "status": "gap"}
       ],
+      "assumption_counts": {
+        "total": 8,
+        "verified": 6,
+        "unverified": 1,
+        "waived": 1
+      },
       "scenario_statuses": [
         {"id": 1, "status": "covered"},
         {"id": 5, "status": "partial"}
@@ -116,10 +116,7 @@ When a plan is re-audited after changes, the new audit produces a fresh score. I
         {"name": "API contract", "status": "ok"},
         {"name": "Rate limiting", "status": "gap"}
       ],
-      "dimension_scores": [
-        {"name": "Completeness", "score": 4},
-        {"name": "Feasibility", "score": 5}
-      ]
+      "infra_gaps": 1
     }
   }
   ```

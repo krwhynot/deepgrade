@@ -31,7 +31,7 @@ This is the one to be honest about, because the failure mode is enthusiasm.
 - You do not have Node 18+. Stage 2 cannot pass without the design-gate tools,
   and there is no degraded mode.
 
-**The learning curve is real.** Six stages, ten commands, and a gate that can
+**The learning curve is real.** Six stages, six commands, and a gate that can
 refuse your plan. Start with `/toque:quick-plan` or `/toque:quick-audit` on
 something small before you run the full workflow on something that matters.
 

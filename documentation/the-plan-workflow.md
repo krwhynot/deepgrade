@@ -5,7 +5,7 @@ takes to get past each gate.
 
 This is the longest page in the documentation because it is the feature with the
 most in it. If you want the short version first, read [When to use
-Toque](./when-to-use.md#toque-planning) — it includes the cases where this
+Toque](./when-to-use.md#toque) — it includes the cases where this
 workflow is the wrong tool.
 
 ---
@@ -445,4 +445,4 @@ scope, and a visible report — **no silent background work**.
 
 - [The plan workspace](./plan-workspace.md) — the folder, `status.json`, resume, staleness
 - [The design gate](./the-design-gate.md) — Stage 2's gate in full
-- [When to use Toque](./when-to-use.md#toque-planning) — including when not to
+- [When to use Toque](./when-to-use.md#toque) — including when not to

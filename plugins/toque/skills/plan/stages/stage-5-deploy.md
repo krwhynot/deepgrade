@@ -34,7 +34,7 @@ Tools: Read, Grep, Bash
 Inputs:
   - docs/plans/{date}-{plan-name}/plan.md (## Files that change)
   - docs/plans/{date}-{plan-name}/intent.md (## Constraints)
-  - git diff --name-only {base}..HEAD   ({base} = branch point recorded in status.json phases.build.base, else merge-base with main)
+  - git diff --name-only {base}..HEAD   ({base} = status.json phases.build.base if that optional field is present, else merge-base with main)
 Output: write to docs/plans/{date}-{plan-name}/.deploy-diff-check.md
 
 1. FILE DELTA

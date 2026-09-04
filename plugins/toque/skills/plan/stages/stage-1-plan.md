@@ -187,7 +187,7 @@ What we still don't know: [gaps, with assessment: blocking vs non-blocking]
 Open questions resolved: [X of Y]
 ```
 
-Update manifest.md: add intent.md and research files to Plan Files table with date.
+Update manifest.md: add intent.md and research files to the Artifacts table with date.
 Update status.json: record research file hashes under documents.
 
 ## Gate: acceptance by a named product owner

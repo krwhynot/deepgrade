@@ -97,7 +97,7 @@ After the automated audit completes, insert a human review checkpoint before Bui
 
 **Auto-generate a review checklist from audit findings** to give reviewers a structured starting point:
 
-- Audit score summary (overall score and per-dimension scores)
+- Verdict summary (MET / UNMET / N_A counts, plus one line per UNMET criterion giving its id, where in the plan the missing content should appear, and the gap)
 - Gap summary (count and severity of identified gaps)
 - Top 5 risks identified by the audit
 - Key assumptions that remain unverified

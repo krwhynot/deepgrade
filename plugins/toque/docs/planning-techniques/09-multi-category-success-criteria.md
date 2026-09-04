@@ -112,9 +112,9 @@ These mix automated and manual criteria without distinction. "All critical path 
 - **Add to status.json:**
   ```json
   {
-    "success_criteria": {
-      "automated": { "total": 12, "passed": 12, "failed": 0 },
-      "manual": { "total": 4, "verified": 2, "pending": 2 }
+    "test_gate": {
+      "automated": { "passed": 5, "failed": 0 },
+      "manual": { "verified": 4, "pending": 1, "verified_by": "J. Smith", "date": "..." }
     }
   }
   ```

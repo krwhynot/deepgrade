@@ -25,7 +25,7 @@ not investigate.
 
 When troubleshoot logs an incident against this plan that is EITHER
 - severity SEV1 or SEV2, OR
-- a recurrence of a known pattern (knowledge-base Recurrence count >= 2, or a
+- a recurrence of a known pattern (knowledge-base Recurrence count >= 3, or a
   RECURRENCE ALERT / Guardrail pattern message for this plan's code paths),
 
 propose a new intent. Write docs/plans/{date}-{new-name}/intent.md from
@@ -65,7 +65,7 @@ Record in status.json phases.maintain, updated on every linked incident:
   "started": "{ISO, set when deploy completed}",
   "incidents_linked": 0,
   "intents_proposed": [],
-  "repeat_incidents_same_class": 0
+  "repeat_incidents": 0
 }
 ```
 

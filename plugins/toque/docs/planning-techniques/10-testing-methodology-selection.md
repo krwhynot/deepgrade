@@ -221,8 +221,10 @@ test suite:
 Database Design." Prisma Data Guide. pgroll (Xata) automates this for
 PostgreSQL with versioned schemas and database-level dual writes via triggers.
 Flyway and Liquibase support versioned forward/backward migration scripts.
-The plugin's Migration Guard already enforces "never edit existing migrations"
-which is the foundation of this pattern.
+The plugin's Migration Guard enforced "never edit existing migrations" — the
+foundation of this pattern — until it was retired with `toque-guard` in 9.0.0
+(METHODOLOGY.md, "Why the plugin was retired"). The permission deny rules
+documented there carry that enforcement now.
 **Combines with:** Characterization (golden master of data before migration),
 Shadow/Parallel (dual-write during migrate phase), Contract Testing (old code
 + new schema compatibility), Property-Based (query performance under load).
@@ -290,7 +292,7 @@ SPARC methodology.
 ## Integration with Plugin Phases
 
 - **Phase 4 (Plan):** Select methodology per deliverable using decision framework
-- **Phase 5 (Audit):** Dimension 7 scores methodology selection quality
+- **Phase 5 (Audit):** Dimension 7 is the lens through which methodology selection is examined; the result is a per-criterion verdict (LINT-17, LINT-18 MET / UNMET / N_A), never a rating
 - **Phase 7 (Impact Review):** Verify methodology coverage for all changed code
 - **Phase 8 (Test):** Execute methodology-specific test procedures
 - **Phase 9 (Handoff):** Document which methodologies were used and results

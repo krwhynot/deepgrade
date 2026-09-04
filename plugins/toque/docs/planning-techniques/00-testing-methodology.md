@@ -4,30 +4,34 @@
 
 "Tested" means both **behavior is correct** AND **the plugin is actually wired to use it**. Fixture plans alone prove detection logic works; they do not prove the techniques are integrated into the command/agent pipeline.
 
-## 4 Test Layers
+## 7 Test Layers
 
 ### Layer 1: Config/Wiring Tests
 Parse `plugin.json`, `commands/`, and `agents/` to verify:
 - Manifest validity (required frontmatter fields present)
 - File existence (every file referenced in plugin.json exists)
 - Repo consistency (version matches across plugin.json, README, CHANGELOG)
-- Hook count consistency (README claims match plugin.json definitions)
+- Hook consistency (README claims match `hooks/hooks.json` definitions; an inline `hooks` key in plugin.json is a defect, because it silently disables the folder)
 - Command/agent cross-references resolve (agents referenced by commands exist)
 
 ### Layer 2: Hook Simulation Tests
-Feed canned JSON payloads into actual hook scripts and assert:
-- Migration guard blocks migration file edits
-- Git guard blocks force-push and hard reset
-- DB deploy guard blocks remote database operations
-- Change tracking increments counters correctly
-- Test tracking detects framework invocations
+Feed canned JSON payloads into actual hook scripts. Only the three plan-context handlers
+declared in `hooks/hooks.json` remain — SessionStart, SubagentStop, PreCompact. The guard,
+migration, tracker and Stop handlers shipped in toque-guard and were retired with it in 9.0.0,
+along with the hook corpus that exercised them. What the layer asserts today:
+- One falsifying test per surviving behaviour-ledger row, via `layer2-ledger-rows.js`
+- Row 10: SessionStart reads a pretty-printed `status.json` and reports that phase's own status, not the first one in the file
+- Row 4: SubagentStop appends the stop reason to the plan log — and creates neither log nor directory when there is no `troubleshooting/` dir
+- F26: every informational handler exits 0 emitting JSON only, with stderr empty
+- Retired parts stay retired: `layer2-hook-simulation.sh` and the hook corpus must be absent, not merely undispatched, since an undispatched test file reads as coverage
+- A missing `node` fails the layer rather than skipping it — the handlers run on node, so an absent interpreter means the layer proves nothing
 
 ### Layer 3: Fixture Lint Tests
 Known-gap plans with parser scripts (not grep-only):
 - Plans with unverified HIGH assumptions → LINT-08 blocks
 - Plans with no options analysis → LINT-13 fires
 - Plans with orphan code changes → LINT-11 fires
-- Plans with missing test infrastructure → LINT-15/LINT-16 fire
+- Plans with missing test infrastructure → LINT-15 fires
 - Clean plans → all lint rules pass
 
 ### Layer 4: Behavioral Smoke Tests
@@ -37,9 +41,25 @@ Periodically run actual commands against fixed fixtures:
 - `/toque:quick-audit` against known-gap plan detects expected gaps
 - Assert required sections/artifacts exist, not exact wording
 
+### Layer 5: Evidence Validator
+Require the real `scripts/tq-evidence-validate.js` module — no second copy of the rules to drift:
+- Evidence records carry a valid verdict
+- Quoted evidence matches the cited artifact byte for byte
+- Directory-level validation reports every malformed record
+
+### Layer 6: Canary
+Check the **auditor**, not the plan. A known defect is injected into a fixture spec; an audit that
+fails to report it is not a clean audit, it is a broken one.
+
+### Layer 7: Release Preflight
+Run `.github/release.sh check` against a scratch clone:
+- It passes on a clean released tree
+- It refuses each synthetic violation (missing breaking-change section, missing migration note, unpinned catalog)
+- Every violation is committed in the clone, so a preflight that only checked tree cleanliness cannot pass
+
 ## Drift Detection
 Repo-consistency assertions run on every test pass to catch:
 - Version string drift (plugin.json vs README vs CHANGELOG)
-- Hook count drift (README claims vs plugin.json definitions)
+- Hook drift (README claims vs `hooks/hooks.json` definitions)
 - Command list drift (help.md vs actual command files)
 - Agent reference drift (commands referencing agents that don't exist)

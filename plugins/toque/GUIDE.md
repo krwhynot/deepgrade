@@ -2,7 +2,7 @@
 
 # Toque Knowledge Guide v11.0.0
 
-**6 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **5 Skills** &nbsp;&bull;&nbsp; **7 Document Templates** &nbsp;&bull;&nbsp; **3 Safety Hooks** &nbsp;&bull;&nbsp; **2 Gate Tools** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
+**6 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **5 Skills** &nbsp;&bull;&nbsp; **7 Document Templates** &nbsp;&bull;&nbsp; **3 Plan-Context Hooks** &nbsp;&bull;&nbsp; **2 Gate Tools** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
 
 [![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/toque)
 [![Version](https://img.shields.io/badge/v11.0.0-stable-2ECC71?style=for-the-badge)](#)
@@ -237,7 +237,7 @@ of these flags:
 | `EVIDENCE-RANGE-INVALID` | The cited line range does not exist in the file |
 | `EVIDENCE-QUOTE-EMPTY` | The quote is empty or whitespace, so it evidences nothing |
 | `EVIDENCE-UNSUPPORTED` | An executable criterion has no citation that survived re-checking |
-| `EVIDENCE-VERDICT-INVALID` | The verdict is not one of MET, UNMET, N_A |
+| `EVIDENCE-VERDICT-INVALID` | The verdict is not one of MET, UNMET, N_A. A file that parses as JSON but is not a record object — `null`, a number, a string, an array — lands here too: it has no verdict to read |
 | `EVIDENCE-UNPARSEABLE` | The record file is not valid JSON |
 
 One flag is **advisory**: it is reported and changes nothing.
@@ -259,7 +259,7 @@ satisfy it with a quote.
 
 ```
 CANARY_OK   = the criterion the planted defect violates came back UNMET
-EVIDENCE_OK = tq-evidence-validate.js exited 0 (nothing was demoted)
+EVIDENCE_OK = tq-evidence-validate.js exited 0 (nothing was flagged)
 VERIFIED    = every applicable criterion is MET or N_A after validation
 INFRA_OK    = infra_gaps == 0
 
@@ -342,7 +342,7 @@ with a project's own choices.
 ### ![info](https://img.shields.io/badge/-INFO-2ECC71) Active Plan Display (SessionStart Hook)
 **Script:** `scripts/tq-session-start.js`
 **Fires when:** A session starts, resumes, or continues after a compaction in a repo with an active plan under `docs/plans/`.
-**What it does:** Parses the newest plan's `status.json` and reports the active plan, its stage and status, and nudges when a linked audit has gone stale (the staleness check is if-exists: it works with or without the audit plugin installed). It parses JSON rather than grepping it, which is what fixed two old bugs where pretty-printed files read as "phase: unknown" and a nested phase status was reported as the plan's status.
+**What it does:** Parses the newest plan's `status.json` and reports the active plan, its phase and that phase's status. The stale-audit nudge was removed in 11.0.0: it stat-ed a report this plugin does not produce, which made a session message depend on another tool having run in the same repository. It parses JSON rather than grepping it, which is what fixed two old bugs where pretty-printed files read as "phase: unknown" and a nested phase status was reported as the plan's status.
 
 ### ![info](https://img.shields.io/badge/-INFO-2ECC71) Subagent Log (SubagentStop Hook)
 **Script:** `scripts/tq-subagent-stop.js`
@@ -355,7 +355,7 @@ with a project's own choices.
 **What it does:** Emits the active plan name and current stage as JSON so Claude doesn't lose track of what you're working on. If this channel proves invisible in a given Claude Code build, the SessionStart handler's compact-resume path carries the same message, so this handler is not the only carrier.
 
 > [!TIP]
-> `[Toque] Compacting. Plan: worldpay-canada. Resume with /toque:plan worldpay-canada`
+> `[Toque] Compacting. Active plan: worldpay-canada at phase: design. Resume with /toque:plan worldpay-canada`
 
 ## The Scripts
 
@@ -372,7 +372,7 @@ them explicitly, and you can run them by hand.
 | `tq-evidence-validate.js` | Gate tool: checks the evidence | Stage 2, before any verdict is treated as MET | `node tq-evidence-validate.js <evidence-dir> [root-dir]` |
 
 Both gate tools have regression suites in the monorepo's `tests/` folder
-(layers 6 and 7 of `tests/run-all.sh`).
+(layers 5 and 6 of `tests/run-all.sh`).
 
 **What happens without Node.** The hooks cannot start, and Claude Code reports
 a hook error on each guarded event. That is deliberate: absent and loud beats

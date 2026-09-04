@@ -66,11 +66,12 @@ claude plugin marketplace add krwhynot/toque
 claude plugin install toque@toque-marketplace --scope user
 ```
 
-Two things do not migrate automatically:
+Two things to check by hand:
 
-- **Environment variables.** Anything you set in a shell profile or CI config
-  must be respelled to the `TQ_` prefix. The former spellings are not read and
-  fail silently.
+- **Environment variables.** Toque reads none. The `DG_*` and `TQ_*` settings
+  configured the blocking hooks that retired in 9.0.0, so anything left in a
+  shell profile or CI config can simply be deleted — no respelling required,
+  because nothing reads either spelling.
 - **Slash commands written into files.** Commands baked into scripts, prompts,
   or `CLAUDE.md` files must be respelled to the `/toque:` prefix.
 

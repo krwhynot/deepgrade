@@ -40,7 +40,8 @@ If vague, ask up to 3 clarifying questions:
 
 ## Step 2: Check for Existing Audit Data
 
-Look for Phase 2 audit data that would inform the plan:
+Look for audit data in `docs/audit/` that would inform the plan. Toque does not
+produce it; a codebase-analysis tool may have left it:
 ```bash
 ls docs/audit/risk-assessment.md docs/audit/feature-inventory.md \
    docs/audit/dependency-map.md docs/audit/integration-scan.md 2>/dev/null
@@ -66,7 +67,8 @@ the generated plan. Do NOT ask the user to run /toque:quick-audit separately.
 Spawn the plan-auditor agent with:
 - The generated plan at docs/specs/[plan-name].md
 - The codebase root path
-- Instruction: produce structured findings with scores per dimension
+- Instruction: produce structured findings — one verdict per criterion (MET,
+  UNMET or N_A) with evidence, never a score
 
 Record the audit results:
 - Findings by severity with evidence, reported only — they do not gate anything
@@ -75,7 +77,7 @@ Record the audit results:
 
 ## Step 5: Revision Loop (Optimizer)
 
-This uses the same gate as `/toque:plan` Phase 5. It has to: a command that
+This uses the same gate as `/toque:plan` Stage 2 (Design). It has to: a command that
 accepted a plan on a score the model gave itself would be a way around the gate
 rather than a lighter version of it, and the way around is the one that gets used.
 
@@ -96,7 +98,7 @@ current quality with audit findings attached.
 Track iteration history in the plan file:
 ```markdown
 ## Revision History
-| Version | Score | Gap-Checked | Gaps Found | Action |
+| Version | Verdict | Gap-Checked | Gaps Found | Action |
 |---------|-------|-------------|------------|--------|
 | v1      | NOT PASS | NO          | 7          | Revised sections 4, 5, 7 |
 | v2      | PASS     | YES         | 0          | Accepted |
@@ -106,8 +108,8 @@ Track iteration history in the plan file:
 
 After the loop completes:
 1. Show the plan summary (problem, phases, timeline, key risks)
-2. Show the final audit score and whether gap-checked
-3. If revisions occurred, note: "Plan was revised {N} time(s). Score improved from {X} to {Y}."
+2. Show the final gate verdict (PASS / NOT PASS), the MET/UNMET/N_A counts, and whether gap-checked
+3. If revisions occurred, note: "Plan was revised {N} time(s). {X} criteria moved from UNMET to MET."
 4. Show the Revision History table
 5. Note evidence basis distribution (should be <40% Tier C)
 6. Note: "This plan has been auto-audited. Review with your team before presenting."

@@ -16,7 +16,7 @@ The key principle: decisions are append-only, never edit-in-place. Silent edits 
 
 ## How It Works
 
-1. **When a plan decision is accepted** (Phase 3 scope lock, Phase 4 plan approval), the document is timestamped and marked ACCEPTED. From this point forward, the document's content is frozen.
+1. **When a plan decision is accepted** (Stage 1 Plan acceptance, Stage 2 Design approval), the document is timestamped and marked ACCEPTED. From this point forward, the document's content is frozen.
 
 2. **The accepted document cannot be edited directly.** Any attempt to modify the content of an accepted document must go through the change record process.
 
@@ -26,7 +26,6 @@ The key principle: decisions are append-only, never edit-in-place. Silent edits 
       - What changed
       - Why it changed
       - What it supersedes (specific document and section)
-      - Who approved the change
       - Impact on other phases
    c. The original document gets a status update: "SUPERSEDED by CR-{number}" (but content is NOT modified)
    d. The new decision/scope is the Change Record itself (or a new version of the document referenced by the CR)
@@ -41,7 +40,7 @@ The key principle: decisions are append-only, never edit-in-place. Silent edits 
 
 - **Prevents silent scope creep.** Every scope change is a formal, visible event with a dated record. Scope cannot drift incrementally through small, undocumented edits.
 - **Preserves original rationale.** "We originally chose X because of Y" is never lost. When a future engineer asks "why didn't we do X?", the answer is in the historical record, not in someone's memory.
-- **Creates accountability.** Change records have authors and approvers. Every decision can be traced to the person who made it and the person who approved it.
+- **Creates accountability.** Every change record carries a dated author, so each decision can be traced to the person who made it.
 - **Enables post-mortem analysis.** "What changed during the project and why?" is answerable by reading the CR chain. Without immutable records, post-mortems rely on faulty memory.
 - **Prevents contradictions.** Two team members cannot silently edit the same section in conflicting ways. Each change is a discrete, visible event that must be reconciled with the current state.
 - **Forces explicit justification for changes.** "I want to change the approach" requires explaining why the original approach is no longer valid. This friction is intentional — it prevents casual, unconsidered changes.
@@ -59,37 +58,34 @@ This has concrete consequences: when a build encounters a problem that was actua
 - **Add a `changes/` subdirectory** to the plan folder structure:
   ```
   docs/plans/{date}-{name}/
-    approach.md              <- Becomes immutable after Phase 3 lock
-    spec.md                  <- Becomes immutable after Phase 4 approval
+    intent.md                <- Becomes immutable after Stage 1 (Plan) acceptance
+    spec.md                  <- Becomes immutable after Stage 2 (Design) approval
     changes/
       CR-001.md              <- First change record
       CR-002.md              <- Second change record
   ```
 
-- **When any accepted phase document changes after its gate:**
-  1. Copy the original to `changes/CR-{N}-original-{phase}.md`
-  2. Write the change record to `changes/CR-{N}.md` with: what changed, why, what it supersedes, impact on other phases, approver
-  3. Update the phase document with the new content + add "Supersedes: CR-{N}" header
-  4. Update manifest.md with link to the Change Record
-  5. Update status.json with change record metadata
+- **When any accepted stage document changes after its gate:**
+  1. Write the change record to `changes/CR-{N}.md` with: what changed and why, which document/section it supersedes, the NEW content (the CR is the authoritative version going forward), and impact on other stages
+  2. Add a status line to the TOP of the original document: "SUPERSEDED by CR-{N} on {date}". Do NOT modify the original document's content — the CR holds the new version
+  3. Update manifest.md with link to the Change Record
+  4. Update status.json with change record metadata
 
 - **Add Change Record template:**
-  ```
+  ```markdown
   # CR-{N}: {Title}
   Date: {date}
   Author: {name}
-  Supersedes: {phase document or previous CR}
-  Approved by: {name}
+  Supersedes: {document or section}
 
   ## What Changed
   ## Why It Changed
   ## Impact on Other Phases
-  ## Risk Assessment of Change
   ```
 
-- **Display change count in /toque:plan-status output.** When a plan has change records, the status output should show "Change Records: 3 (latest: CR-003, 2026-03-18)" so that plan health includes visibility into how much the plan has evolved.
+- **Possible future enhancement: display change count in `/toque:plan-status` output.** The command does not report change records today — neither the overview loop nor the detail list mentions them. If added, the status output would show "Change Records: 3 (latest: CR-003, 2026-03-18)" so that plan health includes visibility into how much the plan has evolved.
 
-- **Add change history section to Phase 9 Handoff summary.** The handoff document should include a complete list of all change records with their dates, summaries, and impact assessments. This gives the receiving team full context on how the delivered plan differs from the original plan.
+- **Add change history section to the Stage 5 (Deploy) `review.md`.** The release review should include a complete list of all change records with their dates, summaries, and impact assessments. This gives the reviewer full context on how the delivered plan differs from the original plan.
 
 ## References
 

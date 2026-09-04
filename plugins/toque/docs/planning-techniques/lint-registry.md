@@ -1,12 +1,13 @@
 # Plan Lint Registry
 
-Single source of truth for all plan lint rules. Referenced by `plan-auditor.md`, `plan.md`, and `quick-plan.md`.
+Single source of truth for all plan lint rules. Referenced by `agents/plan-auditor.md`,
+`skills/plan/stages/stage-2-design.md`, and `skills/plan/stages/stage-3-build.md`.
 
 **This file is the only place rule text or rule counts may be written.** The claim used to be
 aspirational: every one of the rules had drifted into a second wording elsewhere, and LINT-17/18
 had drifted into a second *meaning* — the confidence-brief rules now numbered LINT-19/20 below were
 occupying those ids in `commands/plan.md` and `agents/plan-auditor.md`. Enforced since PH5-001 by
-`tests/layer1-config-wiring.sh`, in two halves:
+`tests/layer1-repo.sh` (dispatched by `tests/layer1-config-wiring.sh`), in two halves:
 
 - `commands/**` and `agents/**` are read into agent context, so they carry **bare ids only**. Text
   that drifts there is text a judge actually applies.
@@ -69,7 +70,7 @@ records are left as they were rather than rewritten, because they record what ra
 | LINT-17 | Audit quality (Phase 5) | Fails if any deliverable has no testing methodology or uses "unit tests" without justification. |
 | LINT-18 | Audit quality (Phase 5) | Fails if AI-generated code has the same agent as both implementation author and test author. |
 | LINT-19 | Audit quality (Phase 5) | Blocks on any HIGH-impact confidence entry marked [SOURCE NEEDED], [LINK DEAD], or [UNVERIFIED]. The same markers on MEDIUM/LOW entries are warnings. |
-| LINT-20 | Audit quality (Phase 5) | Fails if confidence.md is absent, has none of the 3 sections, or has an entry missing "What it is" / "Why it works" / "Connection to this plan". |
+| LINT-20 | Audit quality (Phase 5) | Fails if spec.md has no Evidence section (the confidence brief), the brief has none of the 3 sections, or an entry is missing "What it is" / "Why it works" / "Connection to this plan". A plan started before 8.0.0 carries the brief as a separate `confidence.md`. |
 | All others | Audit quality | Contribute to gap-checked status. Plan is gap-checked only when all applicable lint rules pass. |
 
 ## Lint Count by Context

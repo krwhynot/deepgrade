@@ -20,7 +20,7 @@ has one member. It was three until 11.0.0, when the audit and readiness
 plugins were removed.
 
 ```
-.claude-plugin/marketplace.json    # Three catalog entries, one shared ref+SHA pin
+.claude-plugin/marketplace.json    # One catalog entry, pinned to a ref+SHA
 plugins/toque/                 # Planning core (6 commands, 2 agents, 5 skills, 3 hooks)
 tests/                             # One suite for the whole monorepo
 ```
@@ -100,17 +100,21 @@ every shipped handler while looking correct. `layer1` asserts the key's absence.
 
 Each handler:
 - parses stdin with `JSON.parse` and reads the **named** field it needs
-- splits commands into shell words before matching, so quoted text is data
+- emits JSON on exit 0 — **never stderr on exit 0**, which is not surfaced
+- exits 0 on every path; none of the three can deny, prompt, or block
+
+The rules the retired rails were held to come back with any blocking hook, and
+none of them apply to what ships today:
+- split commands into shell words before matching, so quoted text is data
   (`git commit -m "no git push --force"` must be allowed; `git push "--force"`
   must not)
-- emits JSON on exit 0 — **never stderr on exit 0**, which is not surfaced
-- denies with exit 2, asks with `permissionDecision: "ask"` at exit 0
+- deny with exit 2, ask with `permissionDecision: "ask"` at exit 0
+- a Stop hook must use exit 0 (never exit 2, causes an infinite loop)
 
 When editing hooks:
 - add a falsifying case to `tests/layer2-ledger-rows.js` first; a change that
   fails a row fails regardless of how it is written
 - security guards must never fail open; informational hooks must never fail closed
-- Stop hooks must use exit 0 (never exit 2, causes an infinite loop)
 - every file in a plugin's `scripts/` must be referenced by that plugin's
   `hooks/hooks.json` (or invoked as `node .../scripts/NAME` from its commands),
   and every reference must resolve — `layer1` sweeps both directions
