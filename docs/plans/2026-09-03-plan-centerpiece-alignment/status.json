@@ -3,7 +3,7 @@
   "plan_name": "plan-centerpiece-alignment",
   "plan_dir": "docs/plans/2026-09-03-plan-centerpiece-alignment",
   "created": "2026-09-03",
-  "current_phase": "design",
+  "current_phase": "test",
   "documents": {
     "intent.md": {
       "stage": 1,
@@ -92,93 +92,33 @@
       ]
     },
     "design": {
-      "status": "in_progress",
-      "started": "2026-09-03",
-      "part_a": "revision 2 complete",
-      "scope_locked": "2026-09-03",
-      "scope_locked_by": "Kyle",
-      "decision": "Option A amended - findings with explicit per-dimension verdict (FR-3a)",
-      "adversarial_review": {
-        "reviewer": "Codex CLI 0.153.0",
-        "date": "2026-09-03",
-        "file": "research/codex-design-review.md",
-        "findings_absorbed": [
-          "coverage hole -> FR-3a",
-          "expand/contract is ceremony -> removed"
-        ],
-        "recommendation_not_adopted": "Option D (keep scores, add per-dimension floor) - closes the defect but leaves two currencies; owner scope decision"
-      },
-      "part_b": "revision 2 complete",
-      "awaiting": "design gate (Part C)",
-      "decisions_part_b": [
-        {
-          "id": "OQ2",
-          "question": "verdict vocabulary",
-          "decision": "PASS/FAIL per dimension; FAIL carries HIGH/MEDIUM/LOW",
-          "decided_by": "agent, on evidence",
-          "date": "2026-09-03",
-          "rationale": "planning plugin already uses HIGH/MEDIUM/LOW 83/42/39 times; the audit plugin's ladder lives in a plugin being split to another repo",
-          "reversible": "naming only, one search-and-replace",
-          "flagged_for_owner": true
-        }
-      ],
-      "gate": {
-        "result": "NOT_PASS",
-        "date": "2026-09-03",
-        "canary_ok": true,
-        "evidence_ok": false,
-        "verified": false,
-        "infra_ok": false,
-        "canary": {
-          "class": "assumption-inject",
-          "criterion": "LINT-08",
-          "caught": true,
-          "resolved": "stripped - rests only on the planted row, absent from the original",
-          "isolation": "imperfect - canary.json sat in the audited directory and was read; disclosed by the auditor"
-        },
-        "evidence_validator": {
-          "exit": 1,
-          "records": 18,
-          "demoted": [
-            "LINT-15"
-          ],
-          "flag": "EVIDENCE-UNEXECUTED"
-        },
-        "verdicts": {
-          "MET": 10,
-          "UNMET": 6,
-          "N_A": 1,
-          "stripped_canary": 1
-        },
-        "gap_check": {
-          "gap_checked": false,
-          "coverage_gaps": 19,
-          "assumption_gaps": 10,
-          "scenario_gaps": 4,
-          "cross_cutting_gaps": 5,
-          "lint": "11/17"
-        },
-        "root_cause": "the scoring inventory used a pattern matching /40 but not N/5; 4 hits found and 4 missed in round-loop.md alone, so the phase tables were built on a wrong measurement",
-        "revision_loop": "permitted (canary caught)"
-      },
-      "gate_attempt": 3,
-      "inventory": {
-        "method": "pattern self-tested on 7 positives / 4 negatives before use",
-        "in_scope": "40 lines / 12 files",
-        "out_of_scope": "28 lines - readiness grading and unrelated senses",
-        "rev1_claimed": "31 lines / 10 files",
-        "pre_CR_true": "114 lines / 21 files"
-      },
-      "phases_complete": [
-        "0 instrument",
-        "1 enumerate"
-      ]
+      "status": "complete",
+      "note": "gate NOT PASS twice; owner elected to proceed - recorded in 9f60af5"
     },
     "build": {
-      "status": "not_started"
+      "status": "complete",
+      "started": "2026-09-03",
+      "completed": "2026-09-03",
+      "phases_done": [
+        "0 instrument",
+        "1 enumerate",
+        "2 delete codex-challenge",
+        "3 citations + METHODOLOGY s7",
+        "4 quick-audit + fixtures",
+        "5 retire rubric doc",
+        "7 widen guard to enforce"
+      ],
+      "instrument": "88 -> 0 violations",
+      "suite": "7/7 green",
+      "mutation_proof": "4 directions: 3/5 and X/40 in plugin redden; 3/5 in s7 reddens; 3/5 in s8 correctly ignored"
     },
     "test": {
-      "status": "not_started"
+      "status": "tier1_complete",
+      "tier1": "suite 7/7, sweep 0, guard mutation-proven",
+      "tier2_pending": [
+        "read rendered /toque:help",
+        "promote one real quick-plan spec"
+      ]
     },
     "deploy": {
       "status": "not_started"

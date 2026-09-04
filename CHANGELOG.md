@@ -1,5 +1,80 @@
 # Changelog
 
+## Unreleased
+
+### BREAKING
+
+- **`/toque:codex-challenge` is removed.** The adversarial review loop against
+  the OpenAI Codex CLI is deleted, along with its 447-line parser test and seven
+  fixtures. The planning plugin goes from 10 command surfaces to 9 and from 6
+  skills to 5. There is no replacement command; anyone wanting a cross-model
+  second opinion now runs the Codex CLI directly.
+
+  **Why.** The loop reported success at 36/40, so a plan whose rollback scored
+  the worst possible 1 out of 5 could still total exactly 36 on seven perfect
+  dimensions and be declared converged — six unrelated strengths outvoting one
+  fatal flaw. That is precisely the compensating sum this project's design gate
+  forbids: *"There is no weighted sum. A strong showing on seven criteria cannot
+  offset a miss on the eighth."* Repairing it meant changing the prompt, the JSON
+  response schema, four fixtures and the parser — a contract migration with an
+  external tool — to keep a command that could not run without that tool
+  installed. Deleting it was cheaper and more honest.
+
+  **What is genuinely lost:** adversarial review by a different model family.
+  Nothing replaces it. The design gate's canary and evidence validator check
+  whether an audit was performed *honestly*; they do not offer a second opinion
+  on whether a plan is *good*.
+
+- **`/toque:quick-audit` no longer prints a score.** It reports PASS or NOT PASS
+  with the criteria that failed, and findings by severity citing `file:line`.
+  The `X/40` total and the Green/Yellow/Orange/Red band are gone, as is the
+  scorecard table.
+
+- **Plan fixture shape.** `tests/fixtures/plan-*/status.json` carry
+  `"verdict": "PASS" | "NOT_PASS"` in place of `"score"` and `"rating"`. Anything
+  parsing those fixtures must be updated.
+
+- **`METHODOLOGY.md` §7 is retitled** from "The Plan Audit Scoring System" to
+  "The Plan Audit". Its "Score Thresholds" subsection and 0-40 traffic-light
+  diagram are deleted; "The 8-Dimension Scorecard" becomes "The 8 Review
+  Dimensions" with its `/5` columns removed. Six of its nine subsections are
+  unchanged — the evidence requirement, the four gap checks, the lint rules, the
+  five subagents, the verification pass and the sources all still describe the
+  gate accurately. Section 8 shifts from line 1258 to 1236; the only
+  cross-reference into this document points at §6 and is unaffected.
+
+- **`docs/planning-techniques/10-llm-rubric-calibration.md` is retired.** 157
+  lines arguing that plan scoring should be made consistent via 1-5 rubrics, in a
+  product that no longer scores. It had no inbound references.
+
+- **The suite drops from 8 layers to 7.** Layer 5 tested the deleted parser;
+  layers 6, 7 and 8 renumber to 5, 6 and 7. `tests/run-all.sh` accepts `1-7`.
+
+### Changed
+
+- **`PH5-051` is widened from three hand-listed paths to a derived subject set**,
+  and its pattern is self-tested before it is trusted. The old list was the hole:
+  two commands, an agent, three planning-technique docs, two fixtures and
+  METHODOLOGY §7 all kept scoring vocabulary while the guard reported clean,
+  because none of them was on it. The guard now sweeps 54 subjects, refuses to
+  report on a tree if its own known-positive and known-negative probes fail, and
+  fails loudly if the derivation collapses below 20 subjects.
+
+  It matches placeholder numerators (`X/40`, `{total}/40`) and `N/5` dimension
+  scores as well as `N/40` totals — three forms a narrower pattern missed during
+  this work. `METHODOLOGY.md` is scoped by header-derived bounds, so §8 onward,
+  where the readiness scan's letter grades legitimately live, stays out of scope.
+
+  Proven by mutation in four directions: a planted `3/5` and a planted `X/40` in
+  the plugin each redden Layer 1; a planted `3/5` inside §7 reddens it; a planted
+  `3/5` inside §8 correctly does not.
+
+- Scoring vocabulary replaced with verdicts in `plan-scaffolder.md`,
+  `quick-plan.md`, `GUIDE.md`, `02-evaluator-optimizer-loop.md` and
+  `09-multi-category-success-criteria.md`. The phantom `score_history` sentence
+  in `GUIDE.md` is deleted — that field was documented but never written by
+  anything.
+
 ## 10.0.0 (2026-09-03)
 
 ### BREAKING

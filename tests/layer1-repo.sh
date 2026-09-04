@@ -847,17 +847,72 @@ grep -qxF "$HOL_LINE" plugins/toque/skills/plan/stages/stage-2-design.md \
 [ "$hol_bad" -eq 0 ] && pass "PH5-050: a rubric-free pass runs and its unmapped findings land in lint-candidates.md"
 
 # ===========================================================================
-# PH5-051 / row A15 (inverted in 8.0.0): no score survives anywhere the plan
-# skill or the auditor can see. The score used to be retained as a series for
-# threshold-aiming detection; 8.0.0 dropped scoring altogether, so the guard now
-# asserts the removal held.
+# PH5-051 / row A15 (inverted in 8.0.0, WIDENED in 11.0.0): no scoring
+# vocabulary survives anywhere in the planning plugin's live surface.
+#
+# 8.0.0 dropped scoring from the design gate and this guard asserted the removal
+# held across three hand-listed paths. That list was the hole. Two commands, an
+# agent, three planning-technique docs, two fixtures and METHODOLOGY section 7
+# all kept scoring while the guard reported clean, because none was on the list.
+#
+# The subject set is now DERIVED and the pattern is SELF-TESTED before it is
+# trusted. Each alternative earns its place from a real miss:
+#   [0-9]+/(40|5)               "36/40", "3/5"
+#   ([A-Z]|\{[a-z_]+\})/(40|5)  "X/40", "{total}/40"  - placeholder numerators
+#   score_history               a status.json field that never existed
+#   scorecard                   the table quick-audit used to render
+#   \b(GREEN|YELLOW|ORANGE|RED)\b   word-bounded, so REQUIRED does not match
+#   scored [0-9]-[0-9] / 3[0-9]\+/40
+#
+# METHODOLOGY.md is split by DERIVED header bounds: section 7 is the plan audit
+# and is in scope; section 8 onward is the readiness product's letter grades,
+# which grade codebases on purpose. A guard reddening on those would break a
+# working feature rather than protect this one.
 # ===========================================================================
+echo ""
+echo "--- PH5-051 scoring sweep ---"
+
+SC_RE='[0-9]+/(40|5)\b|([A-Z]|\{[a-z_]+\})/(40|5)\b|score_history|scorecard|\b(GREEN|YELLOW|ORANGE|RED)\b|scored [0-9]-[0-9]|3[0-9]\+/40'
 score_bad=0
-for sf in plugins/toque/skills/plan/SKILL.md plugins/toque/skills/plan/stages/*.md plugins/toque/agents/plan-auditor.md; do
-  hits=$(grep -nE 'score_history|/40\b|[0-9]+-[0-9]+ = (GREEN|YELLOW|ORANGE|RED)' "$sf" || true)
-  [ -n "$hits" ] && { fail "PH5-051: $sf still carries scoring vocabulary: $(printf '%s' "$hits" | head -1)"; score_bad=1; }
+sc_subjects=0
+
+# Instrument self-test. A sweep whose pattern is unproven reports a clean tree it
+# never really checked - the vacuous pass this file guards against elsewhere.
+sc_st=0
+for probe in 'Score: {total}/40 (GREEN)' 'dimension at 1/5 persists' 'Overall score (X/40), reported only' 'keeps a score_history for trend-watching' 'The scorecard table (8 dimensions)'; do
+  printf '%s' "$probe" | grep -qE "$SC_RE" || { fail "PH5-051: pattern missed a known positive: $probe"; sc_st=1; }
 done
-[ "$score_bad" -eq 0 ] && pass "PH5-051: no score history or band vocabulary in the plan skill or the auditor"
+for probe in 'TESTING METHODOLOGY SELECTION (REQUIRED):' 'GATE: User confirmation REQUIRED.'; do
+  printf '%s' "$probe" | grep -qE "$SC_RE" && { fail "PH5-051: pattern matched a known negative: $probe"; sc_st=1; }
+done
+[ "$sc_st" -eq 0 ] || score_bad=1
+
+if [ "$sc_st" -eq 0 ]; then
+  m_a=$(grep -nE '^## 7\.' METHODOLOGY.md 2>/dev/null | head -1 | cut -d: -f1)
+  m_b=$(grep -nE '^## 8\.' METHODOLOGY.md 2>/dev/null | head -1 | cut -d: -f1)
+  if [ -z "$m_a" ] || [ -z "$m_b" ]; then
+    fail "PH5-051: METHODOLOGY section bounds not derivable - the sweep cannot scope itself"
+    score_bad=1
+  else
+    m_hits=$(sed -n "${m_a},$((m_b - 1))p" METHODOLOGY.md | grep -cE "$SC_RE")
+    [ "$m_hits" -gt 0 ] && { fail "PH5-051: METHODOLOGY.md section 7 carries $m_hits scoring line(s)"; score_bad=1; }
+  fi
+
+  while IFS= read -r sf; do
+    case "$sf" in */toque-audit/*|*readability-score*|*readiness*|tests/mutation/*) continue ;; esac
+    [ -f "$sf" ] || continue
+    sc_subjects=$((sc_subjects + 1))
+    hits=$(grep -nE "$SC_RE" "$sf" || true)
+    [ -n "$hits" ] && { fail "PH5-051: $sf carries scoring vocabulary: $(printf '%s' "$hits" | head -1 | cut -c1-88)"; score_bad=1; }
+  done < <(git ls-files 'plugins/toque/*.md' 'plugins/toque/**/*.md' 'tests/fixtures/plan-*/status.json' 2>/dev/null)
+
+  if [ "$sc_subjects" -lt 20 ]; then
+    fail "PH5-051: derived only $sc_subjects subjects (expected >= 20) - the derivation collapsed, so a pass here is vacuous"
+    score_bad=1
+  fi
+fi
+
+[ "$score_bad" -eq 0 ] && pass "PH5-051: no scoring vocabulary in the planning plugin ($sc_subjects subjects swept, pattern self-tested)"
 
 # ===========================================================================
 # 16R. Root-doc conformance (§9.2, class G) — the root-level docs.
