@@ -195,8 +195,8 @@ console.log('\n4. Executable criteria');
   }, ROOT);
   check('a fabricated command with exit_code 0 does not satisfy an executable criterion',
     out.verdict === 'UNMET', `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
-  check('command-only evidence is flagged EVIDENCE-UNEXECUTED',
-    (out.flags || []).includes('EVIDENCE-UNEXECUTED'),
+  check('command-only evidence is flagged EVIDENCE-UNSUPPORTED',
+    (out.flags || []).includes('EVIDENCE-UNSUPPORTED'),
     `flags=${JSON.stringify(out.flags)}`);
 }
 
@@ -253,7 +253,7 @@ console.log('\n4. Executable criteria');
     verdict: 'MET',
   }, ROOT);
   check('an executable criterion with a failing citation forces UNMET',
-    out.verdict === 'UNMET' && (out.flags || []).includes('EVIDENCE-UNEXECUTED'),
+    out.verdict === 'UNMET' && (out.flags || []).includes('EVIDENCE-UNSUPPORTED'),
     `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
 }
 
@@ -306,6 +306,85 @@ console.log('\n4c. Citations stay inside the audited tree');
       out.verdict === 'UNMET' && (out.flags || []).includes('EVIDENCE-PATH-ESCAPE'),
       `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
   }
+}
+
+console.log('\n4d. An empty quote evidences nothing');
+
+// The hole the previous round's fix left open, and the reason this section is
+// separate from the quote-fidelity tests above.
+//
+// Making executable criteria depend on "a citation that survives re-checking"
+// closed the fabricated-exit-code route and opened a narrower one: cite a blank
+// line with exact_quote: "" and the byte comparison is '' === '', which is true.
+// The record passes re-checking having quoted nothing. A fabricated INFRA-*
+// criterion returned MET this way with a failing exit code attached.
+{
+  const fs = require('fs');
+  const raw = fs.readFileSync(path.join(ROOT, ARTIFACT), 'utf8').replace(/\r\n/g, '\n');
+  const lines = raw.split('\n');
+  let blank = -1;
+  for (let i = 0; i < lines.length; i++) { if (lines[i] === '') { blank = i + 1; break; } }
+  check('the fixture has a blank line to attack with', blank > 0, `blank=${blank}`);
+
+  for (const [name, quote] of [['empty string', ''], ['whitespace only', '   '], ['a newline', '\n']]) {
+    const out = validateRecord(record({
+      evidence: [{ artifact: ARTIFACT, line_start: blank, line_end: blank, exact_quote: quote, sha256: FIXTURE_SHA }],
+    }), ROOT);
+    check(`a quote that is ${name} is refused`,
+      out.verdict === 'UNMET' && (out.flags || []).includes('EVIDENCE-QUOTE-EMPTY'),
+      `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
+  }
+
+  // The shape verbatim, on both executable criterion kinds. A fabricated
+  // INFRA- id is included because that branch is matched by prefix, so anyone
+  // can mint one.
+  for (const id of ['LINT-15', 'INFRA-FAKE']) {
+    const out = validateRecord({
+      criterion_id: id,
+      evidence: [{ artifact: ARTIFACT, line_start: blank, line_end: blank, exact_quote: '', sha256: FIXTURE_SHA, exit_code: 137 }],
+      reasoning: 'Cites a blank line.',
+      verdict: 'MET',
+    }, ROOT);
+    check(`${id} cannot be satisfied by a pinned blank line`, out.verdict === 'UNMET',
+      `got ${out.verdict} flags=${JSON.stringify(out.flags)}`);
+  }
+}
+
+console.log('\n4e. Containment follows the filesystem, not just the string');
+
+// The lexical check resolves ".." and compares paths; it does not follow links.
+// A symlink or Windows junction inside the tree passes it and reads a file
+// outside. Skipped rather than faked where the platform will not create one —
+// on Windows a symlink needs elevation or developer mode, and a test that
+// silently passes because it could not run is worse than one that says so.
+{
+  const fs = require('fs');
+  const os = require('os');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-link-'));
+  process.on('exit', () => { try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 3 }); } catch { /* leave it */ } });
+
+  const outside = path.join(tmp, 'outside.md');
+  fs.writeFileSync(outside, 'secret\n');
+  const inside = path.join(tmp, 'repo');
+  fs.mkdirSync(path.join(inside, 'fixtures', 'evidence'), { recursive: true });
+
+  let linked = false;
+  try {
+    fs.symlinkSync(outside, path.join(inside, 'link.md'), 'file');
+    linked = true;
+  } catch { /* no privilege on this host */ }
+
+  if (!linked) {
+    console.log('  - symlink escape not exercised (this host cannot create one)');
+  } else {
+    const out = validateRecord(record({
+      evidence: [{ artifact: 'link.md', line_start: 1, line_end: 1, exact_quote: 'secret', sha256: 'x'.repeat(64) }],
+    }), inside);
+    check('a symlink pointing out of the tree is refused',
+      (out.flags || []).includes('EVIDENCE-PATH-ESCAPE'),
+      `flags=${JSON.stringify(out.flags)}`);
+  }
+  fs.rmSync(tmp, { recursive: true, force: true });
 }
 
 console.log('\n5. CLI contract');

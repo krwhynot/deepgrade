@@ -90,6 +90,26 @@ console.log('\n3. Detection');
   // no amount of reading its output would tell you that.
   check('audit reporting zero gaps is not trusted',
     canary.wasFound(c, []) === false);
+
+  // The opposite mask on the same lazy failure, and it passed for several
+  // releases. An auditor that returns EVERY criterion as UNMET hits the canary
+  // by construction — it would "find" a planted defect in a document with no
+  // defect in it. Membership alone cannot tell those apart, so the applicable
+  // set is supplied and a blanket rejection reports NOT found.
+  const applicable = ['LINT-04', 'LINT-07', 'LINT-10'];
+  check('audit that rejects every applicable criterion is not trusted',
+    canary.wasFound(c, applicable, applicable) === false);
+
+  // The control. Rejecting the canary and some others, but not all, is a real
+  // detection and must stay trusted — otherwise a genuinely bad plan with many
+  // true findings would be read as a lazy audit.
+  check('audit that rejects most but not all criteria is still trusted',
+    canary.wasFound(c, ['LINT-10', 'LINT-04'], applicable) === true);
+
+  // Without an applicable set there is no denominator, so the check degrades to
+  // membership rather than inventing one.
+  check('no applicable set degrades to the membership check',
+    canary.wasFound(c, ['LINT-10']) === true);
 }
 
 console.log('\n4. Strip and recheck');

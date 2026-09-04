@@ -149,7 +149,30 @@ do_run() {
   echo "running the suite against the bumped tree..."
   bash tests/run-all.sh || { echo "ERROR: suite red — release aborted, tree left for inspection"; exit 1; }
 
-  git add -A
+  # Stage the release edits BY PATHSPEC, never `git add -A`.
+  #
+  # The clean-tree check runs before the version bump; the suite then runs, and
+  # `git add -A` came after it. Anything a layer left behind — a scratch fixture,
+  # a diagnostic file, a stray artifact from a crashed test — went into the
+  # release commit silently, and the dry-run path never exercises this line. A
+  # release commit should contain the release and nothing it happened to find.
+  git add -- CHANGELOG.md README.md .claude-plugin/marketplace.json
+  while IFS= read -r m; do
+    d=$(dirname "$(dirname "$m")")
+    git add -- "$m"
+    [ -f "$d/README.md" ] && git add -- "$d/README.md"
+    [ -f "$d/GUIDE.md" ] && git add -- "$d/GUIDE.md"
+  done < <(manifests)
+
+  # Anything still unstaged is something the release did not intend to touch.
+  # Refusing is the whole point: it is the state `git add -A` used to swallow.
+  if [ -n "$(git status --porcelain --untracked-files=all | grep -v '^[MARC]')" ]; then
+    echo "ERROR: the tree holds changes the release did not make:"
+    git status --porcelain --untracked-files=all | grep -v '^[MARC]' | sed 's/^/    /'
+    echo "The suite may have left files behind. Nothing has been committed or pushed."
+    exit 1
+  fi
+
   git commit -m "release: $NEW"
   git tag -a "v$NEW" -m "$NEW — see CHANGELOG"
   git push origin main --follow-tags

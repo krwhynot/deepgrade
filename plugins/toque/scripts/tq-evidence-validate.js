@@ -111,6 +111,27 @@ function checkQuote(item, rootDir) {
     return 'EVIDENCE-ARTIFACT-MISSING';
   }
 
+  // Containment again, this time against the filesystem rather than the string.
+  //
+  // The check above is lexical: it resolves ".." and compares paths. A symlink or
+  // a Windows junction inside the tree passes it and still reads a file outside,
+  // because resolve() does not follow links. Re-checking the REAL path after the
+  // read is what closes that — and it has to be after, since realpath on a
+  // nonexistent file throws and would turn a missing artifact into a confusing
+  // path error.
+  try {
+    const realRoot = fs.realpathSync(path.resolve(rootDir));
+    const realAbs = fs.realpathSync(abs);
+    const realRel = path.relative(realRoot, realAbs);
+    if (realRel === '' || realRel.startsWith('..') || path.isAbsolute(realRel)) {
+      return 'EVIDENCE-PATH-ESCAPE';
+    }
+  } catch (err) {
+    // realpath can fail on a path that readFileSync accepted — a permissions
+    // quirk, a race. Unresolvable containment is not proven containment.
+    return 'EVIDENCE-PATH-ESCAPE';
+  }
+
   // Staleness dominates every other check. If the artifact has moved on since the
   // record was written, the line numbers and the quote are being compared against a
   // document the auditor never saw, and agreement would be coincidence rather than
@@ -146,6 +167,21 @@ function checkQuote(item, rootDir) {
   const actual = lines.slice(start - 1, end).join('\n');
   const quoted = String(item.exact_quote == null ? '' : item.exact_quote)
     .replace(/\r\n/g, '\n');
+
+  // An empty quote is not evidence, and this is the hole the previous fix left.
+  //
+  // Making executable criteria depend on "a citation that survives re-checking"
+  // closed the fabricated-exit-code route and opened a narrower one: cite a blank
+  // line, supply exact_quote: "", and the comparison below is '' === '' — true.
+  // The record passes re-checking having quoted nothing. A fabricated INFRA-*
+  // criterion returned MET this way, with a failing exit code attached.
+  //
+  // Whitespace counts as nothing too, or the same trick works on any indented
+  // blank line. Every criterion is covered, not just the executable ones: a quote
+  // that says nothing supports nothing, whatever it is cited for.
+  if (quoted.trim() === '') {
+    return 'EVIDENCE-QUOTE-EMPTY';
+  }
 
   return actual === quoted ? null : 'EVIDENCE-INVALID';
 }
@@ -219,7 +255,13 @@ function validateRecord(rec, rootDir) {
       (e) => e && typeof e.artifact === 'string' && e.artifact && checkQuote(e, rootDir) === null,
     );
     if (verifiedCitations.length === 0) {
-      flags.push('EVIDENCE-UNEXECUTED');
+      // Named for what it now means. It used to fire when no evidence item
+      // carried a command, so EVIDENCE-UNEXECUTED described its trigger exactly.
+      // It now fires when no citation survived re-checking, which a genuinely
+      // executed command can also hit — a stale hash, a wrong line range — and
+      // the old name sent the reader hunting for a missing command instead of a
+      // broken citation.
+      flags.push('EVIDENCE-UNSUPPORTED');
     }
     if (evidence.some((e) => e && e.exit_code !== undefined)) {
       // Not a demotion on its own — the citations above decide the verdict. This
@@ -292,7 +334,13 @@ if (require.main === module) {
   const { records, demoted, flagged } = validateDirectory(dir, rootDir);
 
   for (const r of records) {
-    const mark = r.flags.length ? '✗' : '✓';
+    // Three marks, not two. A record whose only flags are advisory keeps its
+    // verdict and does not fail the run, so printing it with the same ✗ as a
+    // rejected record produced "✗ LINT-15: MET ... 0 flagged" and exit 0 — a
+    // screen contradicting itself, above a comment claiming every mark was a
+    // record the validator could not support.
+    const demoting = r.flags.filter((f) => !ADVISORY_FLAGS.has(f));
+    const mark = demoting.length ? '✗' : (r.flags.length ? '!' : '✓');
     const why = r.flags.length ? `  [${r.flags.join(', ')}]` : '';
     console.log(`  ${mark} ${r.criterion_id || r.file}: ${r.verdict}${why}`);
   }

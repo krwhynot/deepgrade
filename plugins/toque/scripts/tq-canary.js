@@ -136,12 +136,32 @@ function inject(text, className) {
  * clean result on a document known to contain a defect is not evidence of a good
  * plan — it is evidence of an audit that did not run.
  */
-function wasFound(canaryRecord, unmetCriteria) {
+function wasFound(canaryRecord, unmetCriteria, applicableCriteria) {
   if (!canaryRecord || !canaryRecord.criterion) {
     throw new Error('wasFound requires a canary record produced by inject()');
   }
   const unmet = new Set((unmetCriteria || []).map((c) => String(c).trim()));
-  return unmet.has(canaryRecord.criterion);
+  if (!unmet.has(canaryRecord.criterion)) return false;
+
+  // Hitting the criterion is necessary and not sufficient.
+  //
+  // The check above, alone, is passed by an auditor that returns EVERY criterion
+  // as UNMET. That auditor discriminates nothing — it would "detect" a canary in
+  // a document with no defect in it — and this function exists to say whether the
+  // audit can tell a defect from its absence. A blanket rejection is the lazy
+  // failure mode wearing the opposite mask from the one the canary was built for,
+  // and it passed for several releases.
+  //
+  // So: if the audit rejected everything it looked at, the run is not evidence of
+  // anything and the canary reports NOT found. The caller supplies the applicable
+  // set; when it does not, this degrades to the old behaviour rather than
+  // inventing a denominator, and the caller is the only thing that knows it.
+  const applicable = (applicableCriteria || []).map((c) => String(c).trim()).filter(Boolean);
+  if (applicable.length > 0) {
+    const rejectedAll = applicable.every((c) => unmet.has(c));
+    if (rejectedAll) return false;
+  }
+  return true;
 }
 
 /**

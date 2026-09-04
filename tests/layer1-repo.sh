@@ -1173,6 +1173,78 @@ else
 fi
 
 # ===========================================================================
+# PH5-052: the documented flag vocabulary matches the flags the code emits.
+#
+# WHY THIS EXISTS. 11.0.0 deleted EVIDENCE-COMMAND-FAILED, added four flags, and
+# changed what EVIDENCE-UNEXECUTED means. Two documents list those flags for a
+# reader: the GUIDE's table and stage-2-design.md's inline list, which is what an
+# agent reads mid-workflow to interpret a validator run. Both kept describing the
+# old set, including a flag that no longer exists and a trigger that had changed.
+# Nothing noticed, because a flag table is prose and prose is not executed.
+#
+# The failure is worse than cosmetic. A reader who sees EVIDENCE-COMMAND-FAILED
+# in the list and never in a run concludes the check is not firing. A reader who
+# hits EVIDENCE-UNPINNED and cannot find it documented concludes the tool is
+# broken. Both send the next person to the wrong place.
+#
+# The derivation is one-way-safe: flags come FROM the code, never from the docs,
+# so a flag that is deleted from the source disappears from the subject set and a
+# flag added to a document without a source counterpart is caught by the reverse
+# check below.
+# ===========================================================================
+echo ""
+echo "--- Evidence flag vocabulary (PH5-052) ---"
+
+FLAG_SRC="plugins/toque/scripts/tq-evidence-validate.js"
+FLAG_DOCS="plugins/toque/GUIDE.md plugins/toque/skills/plan/stages/stage-2-design.md"
+flag_bad=0
+
+# Self-test FIRST. An extractor that finds nothing turns this whole check into a
+# clean report about an empty set — the exact shape of the F07 defect this suite
+# has already shipped once.
+flag_probe=$(printf "%s\n" "  flags.push('EVIDENCE-EXAMPLE-ONE');" | grep -oE "EVIDENCE-[A-Z-]+")
+if [ "$flag_probe" != "EVIDENCE-EXAMPLE-ONE" ]; then
+  fail "PH5-052: flag extractor fails its known-positive — the sweep would be vacuous"
+  flag_bad=1
+fi
+if printf '%s\n' "the word EVIDENCE alone" | grep -qE "EVIDENCE-[A-Z-]+"; then
+  fail "PH5-052: flag extractor matches a bare mention — it would invent flags"
+  flag_bad=1
+fi
+
+if [ "$flag_bad" -eq 0 ]; then
+  flags_in_code=$(grep -oE "'EVIDENCE-[A-Z-]+'" "$FLAG_SRC" 2>/dev/null | tr -d "'" | sort -u)
+  flag_n=$(printf '%s\n' "$flags_in_code" | grep -c .)
+
+  # Floor: the validator has never had fewer than eight distinct flags, and a
+  # collapsed extractor reporting two would otherwise sweep clean.
+  if [ "$flag_n" -lt 8 ]; then
+    fail "PH5-052: derived only $flag_n flags from $FLAG_SRC (expected >= 8) — the extractor is broken, not the code"
+    flag_bad=1
+  else
+    for fdoc in $FLAG_DOCS; do
+      if [ ! -f "$fdoc" ]; then
+        fail "PH5-052: $fdoc is missing — the flag vocabulary is undocumented"
+        flag_bad=1
+        continue
+      fi
+      # Forward: every flag the code can emit is documented.
+      for fl in $flags_in_code; do
+        grep -qF "$fl" "$fdoc" \
+          || { fail "PH5-052: $fdoc does not document $fl, which the validator emits"; flag_bad=1; }
+      done
+      # Reverse: every flag the document names still exists in the code. This is
+      # the direction that caught EVIDENCE-COMMAND-FAILED outliving its removal.
+      for fl in $(grep -oE "EVIDENCE-[A-Z-]+" "$fdoc" | sort -u); do
+        printf '%s\n' "$flags_in_code" | grep -qx "$fl" \
+          || { fail "PH5-052: $fdoc documents $fl, which the validator can no longer emit"; flag_bad=1; }
+      done
+    done
+  fi
+  [ "$flag_bad" -eq 0 ] && pass "PH5-052: all $flag_n validator flags are documented, and no document names a flag the code cannot emit"
+fi
+
+# ===========================================================================
 # INTEROP: the optional inputs Toque reads but does not write.
 #
 # Until 11.0.0 the producers were sibling plugins here and this swept both

@@ -583,10 +583,18 @@ A record comes back UNMET, with a flag naming the reason, when:
   EVIDENCE-INVALID           the quote does not match the lines it cites
   EVIDENCE-MISSING           MET was claimed with no evidence at all
   EVIDENCE-STALE             the artifact changed after the record was written
+  EVIDENCE-UNPINNED          the citation carries no sha256
   EVIDENCE-ARTIFACT-MISSING  the cited file does not exist
+  EVIDENCE-PATH-ESCAPE       the citation is absolute, or leaves the audited tree
   EVIDENCE-RANGE-INVALID     the cited line range does not exist in the file
-  EVIDENCE-UNEXECUTED        an executable criterion retained no command
-  EVIDENCE-COMMAND-FAILED    the retained command exited non-zero
+  EVIDENCE-QUOTE-EMPTY       the quote is empty or whitespace, evidencing nothing
+  EVIDENCE-UNSUPPORTED       an executable criterion has no citation that verified
+  EVIDENCE-VERDICT-INVALID   the verdict is not one of MET, UNMET, N_A
+  EVIDENCE-UNPARSEABLE       the record file is not valid JSON
+
+One flag is ADVISORY. It is printed, it does not demote, and it does not fail the
+run:
+  EVIDENCE-EXITCODE-IGNORED  the record supplied an exit_code; it carried no weight
 
 The fourth rule is the one that matters most and is easiest to soften by accident:
 an externally checkable claim with no evidence is UNMET. Not PARTIAL, not a warning,

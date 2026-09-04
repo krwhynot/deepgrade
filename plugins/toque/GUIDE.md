@@ -231,10 +231,25 @@ of these flags:
 | `EVIDENCE-INVALID` | The quote does not match the lines it cites |
 | `EVIDENCE-MISSING` | MET was claimed with no evidence at all |
 | `EVIDENCE-STALE` | The artifact changed after the record was written |
+| `EVIDENCE-UNPINNED` | The citation carries no `sha256`, so staleness cannot be detected |
 | `EVIDENCE-ARTIFACT-MISSING` | The cited file does not exist |
+| `EVIDENCE-PATH-ESCAPE` | The citation is absolute, or resolves outside the audited tree |
 | `EVIDENCE-RANGE-INVALID` | The cited line range does not exist in the file |
-| `EVIDENCE-UNEXECUTED` | An executable criterion retained no command |
-| `EVIDENCE-COMMAND-FAILED` | The retained command exited non-zero |
+| `EVIDENCE-QUOTE-EMPTY` | The quote is empty or whitespace, so it evidences nothing |
+| `EVIDENCE-UNSUPPORTED` | An executable criterion has no citation that survived re-checking |
+| `EVIDENCE-VERDICT-INVALID` | The verdict is not one of MET, UNMET, N_A |
+| `EVIDENCE-UNPARSEABLE` | The record file is not valid JSON |
+
+One flag is **advisory**: it is reported and changes nothing.
+
+| Flag | Meaning |
+|------|---------|
+| `EVIDENCE-EXITCODE-IGNORED` | The record supplied an `exit_code`; it carried no weight |
+
+`exit_code` is ignored because the record's author wrote it. A number you supply
+about your own work is not evidence, and the validator will not run a
+model-authored command string to check it. An executable criterion is settled by
+a citation that survives re-checking instead.
 
 Which criteria are executable is fixed in the validator, not declared by the
 record, so the judge cannot relabel a run-it check as a read-it check and

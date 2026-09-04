@@ -38,7 +38,18 @@ if (!latest) quiet();
 const dir = path.join(plansDir, latest.name, 'troubleshooting');
 if (!fs.existsSync(dir)) quiet();
 
-const reason = payload && typeof payload.reason === 'string' && payload.reason ? payload.reason : 'completed';
+// The reason is written by whatever produced the payload, and it lands in a log
+// a human later reads as a record of what happened. A newline in it forges a new
+// entry — timestamp, prefix and all — so the log stops being a record and becomes
+// a place to write whatever you like. Control characters are collapsed to spaces
+// and the value is capped, because one line in means one line out.
+const rawReason = payload && typeof payload.reason === 'string' && payload.reason
+  ? payload.reason
+  : 'completed';
+const reason = rawReason
+  .replace(/[\r\n\u0000-\u001f\u007f]+/g, ' ')
+  .trim()
+  .slice(0, 200) || 'completed';
 try {
   fs.appendFileSync(path.join(dir, 'subagent-log.txt'),
     `[${new Date().toISOString()}] Subagent stopped: ${reason}\n`);

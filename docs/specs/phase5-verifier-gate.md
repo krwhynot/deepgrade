@@ -117,7 +117,7 @@ been bitten by repeatedly; the absence/equality formulation avoids it entirely.
 | Threshold visibility | Stated to generator and judge | Stated to neither; the harness computes totals |
 | Judge input | Session context | An explicit file manifest; enumerated forbidden inputs |
 | Judge output | Numeric scores | Per-criterion `MET`/`UNMET`/`N_A` + evidence records. No total field in the schema |
-| Verification | Self-reported prose | Command + exit code + stdout retained per criterion; quotes byte-validated against the artifact |
+| Verification | Self-reported prose | Quotes byte-validated against the artifact and pinned by hash; a retained command is provenance for a human, never proof |
 | Audit trustworthiness | Assumed | Measured by a seeded canary defect |
 | Revision feedback | "Dimension 4 scored 2" | "LINT-03 UNMET: Phase 2 migration has no rollback step (spec.md:142)" |
 | Human waiver | Unconditional in solo mode | Blocked when `infra_gaps > 0` OR score in guard band OR canary missed |
@@ -230,9 +230,20 @@ A new validator, `scripts/tq-evidence-validate.js`, enforces four rules:
    Mismatch → verdict forced to `UNMET`, flagged `EVIDENCE-INVALID`.
 2. **No bare MET.** `verdict == MET` with an empty `evidence` array → forced
    `UNMET`, flagged `EVIDENCE-MISSING`.
-3. **Command retention.** Criteria whose check is executable (file existence,
-   grep count, test invocation) must carry `command` + `exit_code`. Absent →
-   forced `UNMET`.
+3. **Executable criteria need a citation, not a claim.** Criteria whose check is
+   executable (file existence, grep count, test invocation) must carry at least
+   one citation that survives re-checking — a real file, at real lines, quoted
+   byte-for-byte and pinned. Absent → forced `UNMET`, flagged
+   `EVIDENCE-UNSUPPORTED`.
+
+   **Revised in 11.0.0.** This rule was "must carry `command` + `exit_code`", and
+   both fields are written by the judge. A record claiming
+   `command: "definitely-not-run", exit_code: 0` returned `MET`: the judge
+   asserting it had run something stood in for having run it, on precisely the
+   criteria that exist to stop that. `exit_code` is now ignored outright and a
+   supplied one is reported as `EVIDENCE-EXITCODE-IGNORED`. The validator does not
+   re-run the command — these records are model-authored, and executing a string
+   one wrote is a worse problem than the one it solves.
 4. **Unverifiable-claim policy.** An externally checkable claim with no valid
    evidence is `UNMET`. Not partial credit, not a warning.
 

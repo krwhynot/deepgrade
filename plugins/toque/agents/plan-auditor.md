@@ -398,9 +398,7 @@ with it.
 LF-normalised content:
 
 ```
-node -e "const f=require('fs'),c=require('crypto');console.log(c.createHash('sha256').update(f.readFileSync(process.argv[1],'utf8').replace(/
-/g,'
-'),'utf8').digest('hex'))" <path>
+node -e "const f=require('fs'),c=require('crypto');console.log(c.createHash('sha256').update(f.readFileSync(process.argv[1],'utf8').replace(/\r\n/g,'\n'),'utf8').digest('hex'))" <path>
 ```
 
 It pins the record to the version of the file you actually read. Without it your

@@ -51,6 +51,69 @@
   layers 6, 7 and 8 renumber to 5, 6 and 7. `tests/run-all.sh` accepts `1-7`.
 
 
+- **A second adversarial review found nine more, including one my own fix
+  opened.** The reviewer was asked to attack the previous round rather than
+  re-run it, and the headline finding is that the executable-criterion fix
+  replaced one bypass with a narrower one.
+
+  **An empty quote satisfied any criterion.** Requiring "a citation that
+  survives re-checking" closed the fabricated-exit-code route and opened this:
+  cite a blank line with `exact_quote: ""` and the byte comparison is
+  `'""' === '""'`, which is true. The record passed re-checking having quoted
+  nothing. A fabricated `INFRA-FAKE` criterion returned `MET` this way, with a
+  failing exit code attached. Empty and whitespace-only quotes are now
+  `EVIDENCE-QUOTE-EMPTY`, for every criterion — a quote that says nothing
+  supports nothing, whatever it is cited for.
+
+  **Containment was lexical, so a symlink walked through it.** `path.resolve`
+  does not follow links, so a symlink or Windows junction inside the tree passed
+  the check and read a file outside. The real path is now re-checked after the
+  read, and an unresolvable one is refused rather than assumed contained.
+
+  **The canary trusted an auditor that failed everything.** `wasFound` reduced
+  the audit to a set of criterion ids, so an auditor returning every criterion
+  as `UNMET` hit the canary by construction — it would "detect" a planted defect
+  in a document with none. That is the lazy failure mode wearing the opposite
+  mask from the one the canary was built for. It now takes the applicable set
+  and reports NOT found on a blanket rejection.
+
+  **`EVIDENCE-UNEXECUTED` named the wrong defect** once it started firing on
+  "no citation survived" rather than "no command retained": a genuinely executed
+  command with a stale hash got a flag telling the reader to look for a missing
+  command. Renamed `EVIDENCE-UNSUPPORTED`.
+
+  **An advisory-only record printed as a failure.** Every flagged record got
+  `✗`, so the screen could show a record marked failed while still reading `MET`, above a summary of `0 flagged`, and then exit 0.
+  Advisory-only records now print `!`.
+
+  **The normative spec still mandated the discarded contract.**
+  `docs/specs/phase5-verifier-gate.md` required `command` + `exit_code` and
+  promised retained command output as verification, while the validator had
+  stopped reading either. Two consumers, incompatible contracts.
+
+  **The release commit staged everything.** `.github/release.sh` ran
+  `git add -A` AFTER the suite, so anything a layer left behind went into the
+  release commit silently, and the dry-run path never exercised that line.
+  Staging is now by pathspec, and any unexpected change aborts the release.
+
+  **A hook forged its own log entries.** `tq-subagent-stop.js` appended
+  `payload.reason` verbatim, so a newline in it wrote a second entry with its
+  own timestamp. Control characters are collapsed and the value capped.
+
+  **The hashing command shipped broken.** The command `plan-auditor.md` tells
+  the auditor to run for its `sha256` was split across four physical lines by an
+  escaping error in the commit that added it, so it did not parse. Repaired and
+  verified to produce the hash the tests expect.
+
+  **New guard, `PH5-052`:** every flag the validator can emit is documented, and
+  no document names a flag the code cannot emit. It caught the two stale flag
+  tables that carried `EVIDENCE-COMMAND-FAILED` after its removal, and it caught
+  the rename above while this entry was being written. Mutation-proven in both
+  directions.
+
+  All five code fixes are mutation-proven. Layer 5 goes from 59 assertions to 66,
+  Layer 6 from 32 to 35.
+
 - **Nine defects from an external adversarial review are fixed.** An independent
   reviewer audited the plugin at the 11.0.0 tree and every finding was reproduced
   before being acted on. Four were in the design gate itself, and two of those
