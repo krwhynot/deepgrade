@@ -2,13 +2,14 @@
   "criterion_id": "LINT-16",
   "rule": "All \"Monitored\" claims have verified monitoring infrastructure",
   "phase": 5,
-  "verdict": "FAIL",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "111",
-      "quote": "| Plans promoted from `quick-plan` | ≥1 without rework | 60 days | An additive `promoted_from` field in `status.json` (permitted by revised NFR-4) | 60 days |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 111,
+      "line_end": 111,
+      "exact_quote": "| Plans promoted from `quick-plan` | ≥1 without rework | 60 days | An additive `promoted_from` field in `status.json` (permitted by revised NFR-4) | 60 days |"
     }
   ],
-  "note": "The only lagging metric is measured by a status.json field that does not exist yet. Nothing in the spec names what reads the field, what aggregates it across plan folders, who evaluates it on day 60, or where the result is recorded. There is no monitoring infrastructure to verify — the measurement method is a field, not a mechanism."
+  "reasoning": "The only lagging metric is measured by a status.json field that does not exist yet. Nothing in the spec names what reads the field, what aggregates it across plan folders, who evaluates it on day 60, or where the result is recorded. There is no monitoring infrastructure to verify — the measurement method is a field, not a mechanism.",
+  "verdict": "UNMET"
 }

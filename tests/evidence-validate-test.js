@@ -9,7 +9,7 @@
  */
 
 const path = require('path');
-const { validateRecord } = require('../plugins/toque/scripts/tq-evidence-validate.js');
+const { validateRecord, validateDirectory, VALID_VERDICTS } = require('../plugins/toque/scripts/tq-evidence-validate.js');
 
 const ROOT = __dirname;
 const ARTIFACT = 'fixtures/evidence/spec-sample.md';
@@ -287,6 +287,140 @@ console.log('\n5. CLI contract');
   check('empty evidence directory exits 2, not 0', r.code === 2, `code=${r.code}`);
 
   fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// ---------------------------------------------------------------------------
+// The verdict vocabulary is closed.
+//
+// Every test above this point builds its own record, in the shape the validator
+// expects, with a verdict the validator recognises. That is why the suite was
+// green while the validator had never successfully read a record the auditor
+// actually wrote. These tests cover the gap in both directions: unrecognised
+// verdicts, and records shaped like the ones on disk.
+// ---------------------------------------------------------------------------
+{
+  console.log('\nVerdict vocabulary:');
+
+  for (const bogus of ['PASS', 'FAIL', 'PARTIAL', 'met', '', undefined, null, 0]) {
+    const out = validateRecord(record({ verdict: bogus }), ROOT);
+    check(
+      `${JSON.stringify(bogus)} is refused, not exempted`,
+      out.verdict === 'UNMET' && out.flags.includes('EVIDENCE-VERDICT-INVALID'),
+      `got ${out.verdict} [${out.flags}]`,
+    );
+  }
+
+  // The direction that matters: PASS must not inherit the "not MET, nothing to
+  // check" exemption. A record claiming PASS with evidence that does not survive
+  // re-checking used to print a tick.
+  const lying = record({ verdict: 'PASS', evidence: [{ artifact: ARTIFACT, line_start: 9, line_end: 9, exact_quote: 'not what line 9 says' }] });
+  check('PASS with false evidence does not pass', validateRecord(lying, ROOT).verdict === 'UNMET');
+
+  for (const good of ['MET', 'UNMET', 'N_A']) {
+    const out = validateRecord(record({ verdict: good, evidence: good === 'MET' ? undefined : [] }), ROOT);
+    check(`${good} is accepted`, !out.flags.includes('EVIDENCE-VERDICT-INVALID'), `flags=${out.flags}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// A malformed citation demotes one record; it does not abort the run.
+// ---------------------------------------------------------------------------
+{
+  console.log('\nMalformed citations:');
+
+  for (const [name, item] of [
+    ['artifact undefined', { line_start: 1, line_end: 1, exact_quote: 'x' }],
+    ['artifact null', { artifact: null, line_start: 1, line_end: 1 }],
+    ['artifact empty string', { artifact: '', line_start: 1, line_end: 1 }],
+    ['artifact not a string', { artifact: 42, line_start: 1, line_end: 1 }],
+    ['item is null', null],
+    ['item is a string', 'docs/x.md'],
+  ]) {
+    let out;
+    try {
+      out = validateRecord(record({ evidence: [item] }), ROOT);
+    } catch (err) {
+      check(`${name} does not throw`, false, `threw ${err.code || err.message}`);
+      continue;
+    }
+    check(
+      `${name} demotes rather than throwing`,
+      out.verdict === 'UNMET' && out.flags.includes('EVIDENCE-ARTIFACT-MISSING'),
+      `got ${out.verdict} [${out.flags}]`,
+    );
+  }
+
+  // One bad item among good ones must not cost the good ones their evaluation.
+  const mixed = record({
+    evidence: [
+      { artifact: ARTIFACT, line_start: 9, line_end: 9, exact_quote: TRUE_QUOTE },
+      { line_start: 1, line_end: 1, exact_quote: 'x' },
+    ],
+  });
+  const out = validateRecord(mixed, ROOT);
+  check('a bad item flags only itself', out.flags.length === 1 && out.flags[0] === 'EVIDENCE-ARTIFACT-MISSING', `flags=${out.flags}`);
+}
+
+// ---------------------------------------------------------------------------
+// The regression this file existed to catch and did not.
+//
+// The validator read `item.artifact`; the records on disk were written with
+// `path`. Nothing pointed the validator at a real record, so the mismatch
+// survived every run of this suite and surfaced only when the script was invoked
+// by hand — where it did not report a demotion, it threw ERR_INVALID_ARG_TYPE and
+// validated nothing at all.
+//
+// This test asserts the property that was actually violated: real records are
+// readable by the real validator. It deliberately does NOT assert that they all
+// come back MET. Several cite live files the plan then edited, and demanding a
+// clean run would create pressure to rewrite quotes until they matched — turning
+// the evidence corpus into a record of what makes the test pass.
+// ---------------------------------------------------------------------------
+{
+  console.log('\nReal evidence corpus:');
+
+  const fs = require('fs');
+  const REPO = path.join(__dirname, '..');
+  const corpora = fs.existsSync(path.join(REPO, 'docs/plans'))
+    ? fs.readdirSync(path.join(REPO, 'docs/plans'))
+        .map((d) => path.join(REPO, 'docs/plans', d, 'evidence'))
+        .filter((d) => fs.existsSync(d))
+    : [];
+
+  check('at least one real evidence corpus exists to test against', corpora.length > 0);
+
+  for (const dir of corpora) {
+    const rel = path.relative(REPO, dir).replace(/\\/g, '/');
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
+
+    // Field names, checked directly. The crash was a schema mismatch, so the
+    // schema is what gets asserted — reaching it through the validator's output
+    // would only tell us a record failed, not that it was shaped wrongly.
+    const wrong = [];
+    for (const f of files) {
+      const rec = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+      if (!VALID_VERDICTS.has(rec.verdict)) wrong.push(`${f}: verdict ${JSON.stringify(rec.verdict)}`);
+      for (const e of rec.evidence || []) {
+        for (const legacy of ['path', 'lines', 'quote']) {
+          if (legacy in e) wrong.push(`${f}: evidence uses legacy field "${legacy}"`);
+        }
+        if (typeof e.artifact !== 'string') wrong.push(`${f}: evidence.artifact is not a string`);
+      }
+    }
+    check(`${rel}: every record uses the documented schema`, wrong.length === 0, wrong.slice(0, 5).join('; '));
+
+    let result;
+    try {
+      result = validateDirectory(dir, REPO);
+    } catch (err) {
+      check(`${rel}: validates without throwing`, false, `threw ${err.code || err.message}`);
+      continue;
+    }
+    check(`${rel}: validates without throwing`, true);
+    check(`${rel}: every record produced a verdict`, result.records.every((r) => VALID_VERDICTS.has(r.verdict)),
+      result.records.filter((r) => !VALID_VERDICTS.has(r.verdict)).map((r) => r.file).join(', '));
+    console.log(`    ${result.records.length} record(s) read, ${result.demoted} demoted on re-check`);
+  }
 }
 
 console.log(`\n${'═'.repeat(40)}`);

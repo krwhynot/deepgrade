@@ -2,19 +2,21 @@
   "criterion_id": "LINT-19",
   "rule": "Confidence brief exists with no unresolved HIGH-impact markers",
   "phase": 5,
-  "verdict": "FAIL",
   "evidence": [
     {
-      "path": "plugins/toque/docs/planning-techniques/lint-registry.md",
-      "lines": "71",
-      "quote": "| LINT-19 | Audit quality (Phase 5) | Blocks on any HIGH-impact confidence entry marked [SOURCE NEEDED], [LINK DEAD], or [UNVERIFIED]. The same markers on MEDIUM/LOW entries are warnings. |"
+      "artifact": "plugins/toque/docs/planning-techniques/lint-registry.md",
+      "line_start": 71,
+      "line_end": 71,
+      "exact_quote": "| LINT-19 | Audit quality (Phase 5) | Blocks on any HIGH-impact confidence entry marked [SOURCE NEEDED], [LINK DEAD], or [UNVERIFIED]. The same markers on MEDIUM/LOW entries are warnings. |"
     },
     {
-      "path": "plugins/toque/docs/planning-techniques/lint-registry.md",
-      "lines": "72",
-      "quote": "| LINT-20 | Audit quality (Phase 5) | Fails if confidence.md is absent, has none of the 3 sections, or has an entry missing \"What it is\" / \"Why it works\" / \"Connection to this plan\". |"
+      "artifact": "plugins/toque/docs/planning-techniques/lint-registry.md",
+      "line_start": 72,
+      "line_end": 72,
+      "exact_quote": "| LINT-20 | Audit quality (Phase 5) | Fails if confidence.md is absent, has none of the 3 sections, or has an entry missing \"What it is\" / \"Why it works\" / \"Connection to this plan\". |"
     }
   ],
-  "note": "No confidence.md exists in the plan folder. The folder contains audit.md, intent.md, manifest.md, spec.md, status.json, .canary/, changes/, evidence/ and research/ — no confidence brief. With no brief there is nothing to check for HIGH-impact markers, and the rule cannot pass.",
+  "reasoning": "No confidence.md exists in the plan folder. The folder contains audit.md, intent.md, manifest.md, spec.md, status.json, .canary/, changes/, evidence/ and research/ — no confidence brief. With no brief there is nothing to check for HIGH-impact markers, and the rule cannot pass.",
+  "verdict": "UNMET",
   "command_run": "ls docs/plans/2026-09-03-plan-centerpiece-alignment/confidence.md  ->  No such file or directory"
 }

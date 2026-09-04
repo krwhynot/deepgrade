@@ -1,18 +1,20 @@
 {
   "criterion_id": "C-09",
   "criterion": "Testing strategy assigns a methodology per deliverable and separates test authorship for generated code",
-  "verdict": "UNMET",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "238-239",
-      "quote": "**AI-specific.** Separate test authorship applies to D4: the pass that widens the\nguard does not write the mutation proving it bites. Tautological tests remain the"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 238,
+      "line_end": 239,
+      "exact_quote": "**AI-specific.** Separate test authorship applies to D4: the pass that widens the\nguard does not write the mutation proving it bites. Tautological tests remain the"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "235",
-      "quote": "| D5 | `quick-plan` promotion path | **BDD** | Acceptance criteria already Given/When/Then in FR-5. |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 235,
+      "line_end": 235,
+      "exact_quote": "| D5 | `quick-plan` promotion path | **BDD** | Acceptance criteria already Given/When/Then in FR-5. |"
     }
   ],
-  "note": "All six deliverables carry a methodology and none uses bare 'unit tests'. But D5 is the only deliverable producing genuinely new executable behaviour (a promotion path that creates a plan folder and writes status.json), and separate test authorship is scoped explicitly and only to D4. D1-D3 get independently written expected file lists; D5 gets nothing. The deliverable most able to hide a self-confirming test is the one exempted."
+  "reasoning": "All six deliverables carry a methodology and none uses bare 'unit tests'. But D5 is the only deliverable producing genuinely new executable behaviour (a promotion path that creates a plan folder and writes status.json), and separate test authorship is scoped explicitly and only to D4. D1-D3 get independently written expected file lists; D5 gets nothing. The deliverable most able to hide a self-confirming test is the one exempted.",
+  "verdict": "UNMET"
 }

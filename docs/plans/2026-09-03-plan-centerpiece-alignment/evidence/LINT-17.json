@@ -2,13 +2,14 @@
   "criterion_id": "LINT-17",
   "rule": "Every deliverable in the Phase 4 spec must have a testing methodology assigned",
   "phase": 5,
-  "verdict": "PASS",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "229-236",
-      "quote": "| # | Deliverable | Methodology | Why |\n| --- | --- | --- | --- |\n| D1 | Delete `codex-challenge` + clean 10 references | **TDD** | The assertion is absence: a grep must return only historical records, and the suite must be green at 7 layers. |\n| D2 | Stale citations, `score_history`, §7, rubric-calibration doc | **TDD** | Absence assertions again. |\n| D3 | `quick-audit` scoring + two fixtures | **TDD** | Same shape. |\n| D4 | Widen the `PH5-051` guard | **Mutation testing** | A guard that cannot fail is worse than none. Plant `3/5` — the case revision 1 missed — and confirm Layer 1 reddens. |\n| D5 | `quick-plan` promotion path | **BDD** | Acceptance criteria already Given/When/Then in FR-5. |\n| D6 | Relationship lines | **Snapshot / approval** | Rendered help text; review once by eye. |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 229,
+      "line_end": 236,
+      "exact_quote": "| # | Deliverable | Methodology | Why |\n| --- | --- | --- | --- |\n| D1 | Delete `codex-challenge` + clean 10 references | **TDD** | The assertion is absence: a grep must return only historical records, and the suite must be green at 7 layers. |\n| D2 | Stale citations, `score_history`, §7, rubric-calibration doc | **TDD** | Absence assertions again. |\n| D3 | `quick-audit` scoring + two fixtures | **TDD** | Same shape. |\n| D4 | Widen the `PH5-051` guard | **Mutation testing** | A guard that cannot fail is worse than none. Plant `3/5` — the case revision 1 missed — and confirm Layer 1 reddens. |\n| D5 | `quick-plan` promotion path | **BDD** | Acceptance criteria already Given/When/Then in FR-5. |\n| D6 | Relationship lines | **Snapshot / approval** | Rendered help text; review once by eye. |"
     }
   ],
-  "note": "Six deliverables, six named methodologies, each with a stated justification. None uses 'unit tests' as an unjustified default. Mutation testing on D4 is the correct choice for a guard and the justification is the right one."
+  "reasoning": "Six deliverables, six named methodologies, each with a stated justification. None uses 'unit tests' as an unjustified default. Mutation testing on D4 is the correct choice for a guard and the justification is the right one.",
+  "verdict": "MET"
 }

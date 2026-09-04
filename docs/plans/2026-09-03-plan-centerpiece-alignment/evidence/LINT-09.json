@@ -2,18 +2,20 @@
   "criterion_id": "LINT-09",
   "rule": "No unaddressed cross-cutting concern for in-scope features",
   "phase": 5,
-  "verdict": "FAIL",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "186",
-      "quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 186,
+      "line_end": 186,
+      "exact_quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "179",
-      "quote": "- No brand, accessibility, or compliance standard applies."
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 179,
+      "line_end": 179,
+      "exact_quote": "- No brand, accessibility, or compliance standard applies."
     }
   ],
-  "note": "Security (NFR-1), data scope (NFR-2), dependencies (NFR-3), compatibility (NFR-4), release discipline (NFR-5) and breaking-change documentation (NFR-6) are all addressed, and accessibility/brand/compliance are explicitly and correctly ruled out at line 179. Performance is the exception: the spec raises a throughput and connection-pool concern at line 186 and then addresses it with the word 'unverified'. A concern raised and left open is an unaddressed cross-cutting concern by definition. The correct resolution is to delete the row (performance is genuinely N/A for a documentation-and-test change), not to answer it."
+  "reasoning": "Security (NFR-1), data scope (NFR-2), dependencies (NFR-3), compatibility (NFR-4), release discipline (NFR-5) and breaking-change documentation (NFR-6) are all addressed, and accessibility/brand/compliance are explicitly and correctly ruled out at line 179. Performance is the exception: the spec raises a throughput and connection-pool concern at line 186 and then addresses it with the word 'unverified'. A concern raised and left open is an unaddressed cross-cutting concern by definition. The correct resolution is to delete the row (performance is genuinely N/A for a documentation-and-test change), not to answer it.",
+  "verdict": "UNMET"
 }

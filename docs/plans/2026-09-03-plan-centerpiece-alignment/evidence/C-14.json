@@ -1,13 +1,14 @@
 {
   "criterion_id": "C-14",
   "criterion": "Open questions are owned and their blocking relationship is stated",
-  "verdict": "MET",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "221-225",
-      "quote": "1. **Does `METHODOLOGY.md` §7 get rewritten or removed?** It is the methodology\n   document's account of plan auditing. With scoring gone it needs a new title\n   and body, but the gap-detection and evidence content is still accurate.\n   *Owner: Kyle. Blocks Phase 2.*\n2. **Round cap / relationship-line wording.** Cosmetic. *Owner: agent.*"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 221,
+      "line_end": 225,
+      "exact_quote": "1. **Does `METHODOLOGY.md` §7 get rewritten or removed?** It is the methodology\n   document's account of plan auditing. With scoring gone it needs a new title\n   and body, but the gap-detection and evidence content is still accurate.\n   *Owner: Kyle. Blocks Phase 2.*\n2. **Round cap / relationship-line wording.** Cosmetic. *Owner: agent.*"
     }
   ],
-  "note": "Both listed questions carry an owner and OQ1 states what it blocks. Judged on what is listed; the omission of intent.md OQ4 is recorded against C-11, not here."
+  "reasoning": "Both listed questions carry an owner and OQ1 states what it blocks. Judged on what is listed; the omission of intent.md OQ4 is recorded against C-11, not here.",
+  "verdict": "MET"
 }

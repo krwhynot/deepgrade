@@ -2,14 +2,15 @@
   "criterion_id": "LINT-20",
   "rule": "Confidence brief has all 3 sections and each entry has required fields",
   "phase": 5,
-  "verdict": "FAIL",
   "evidence": [
     {
-      "path": "plugins/toque/docs/planning-techniques/lint-registry.md",
-      "lines": "72",
-      "quote": "| LINT-20 | Audit quality (Phase 5) | Fails if confidence.md is absent, has none of the 3 sections, or has an entry missing \"What it is\" / \"Why it works\" / \"Connection to this plan\". |"
+      "artifact": "plugins/toque/docs/planning-techniques/lint-registry.md",
+      "line_start": 72,
+      "line_end": 72,
+      "exact_quote": "| LINT-20 | Audit quality (Phase 5) | Fails if confidence.md is absent, has none of the 3 sections, or has an entry missing \"What it is\" / \"Why it works\" / \"Connection to this plan\". |"
     }
   ],
-  "note": "confidence.md is absent, which the registry names as the first failure condition for this rule verbatim.",
+  "reasoning": "confidence.md is absent, which the registry names as the first failure condition for this rule verbatim.",
+  "verdict": "UNMET",
   "command_run": "ls docs/plans/2026-09-03-plan-centerpiece-alignment/confidence.md  ->  No such file or directory"
 }

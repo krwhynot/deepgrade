@@ -1,23 +1,26 @@
 {
   "criterion_id": "C-11",
   "criterion": "Spec is consistent with CR-001 and with the amended intent.md",
-  "verdict": "UNMET",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/changes/CR-001.md",
-      "lines": "93-95",
-      "quote": "**Success metrics affected:** the lagging metric \"`codex-challenge` runs that\nterminate\" is withdrawn. The scoring-sites metric now measures against 114, not\n31."
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/changes/CR-001.md",
+      "line_start": 93,
+      "line_end": 95,
+      "exact_quote": "**Success metrics affected:** the lagging metric \"`codex-challenge` runs that\nterminate\" is withdrawn. The scoring-sites metric now measures against 114, not\n31."
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "108",
-      "quote": "| In-scope scoring lines | 40 → 0 | At merge | The FR-1/FR-2 greps, enforced by the guard | Merge day |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 108,
+      "line_end": 108,
+      "exact_quote": "| In-scope scoring lines | 40 → 0 | At merge | The FR-1/FR-2 greps, enforced by the guard | Merge day |"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/intent.md",
-      "lines": "135-138",
-      "quote": "4. **Should `/toque:documentation` be counted as part of the centerpiece or as a\n   standalone generator?** It serves Stage 2 and Stage 5 but is also used alone.\n   Affects only what its one-line relationship statement says. *Deferred to\n   design; non-blocking.*"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/intent.md",
+      "line_start": 135,
+      "line_end": 138,
+      "exact_quote": "4. **Should `/toque:documentation` be counted as part of the centerpiece or as a\n   standalone generator?** It serves Stage 2 and Stage 5 but is also used alone.\n   Affects only what its one-line relationship statement says. *Deferred to\n   design; non-blocking.*"
     }
   ],
-  "note": "Two inconsistencies. (a) CR-001 directs the scoring-sites metric to measure against 114; the spec measures against 40. The arithmetic does reconcile (114 total − 46 deleted = 68, of which 40 IN and 26+1+1=28 OUT) but the spec never shows that reconciliation, so on its face it contradicts its own change record. (b) intent.md open question 4 was deferred TO DESIGN and this spec is the design artifact, yet /toque:documentation appears nowhere in the spec and the Open questions list (lines 221-225) carries only two items, neither of them OQ4. A question explicitly handed to this document is neither answered nor re-deferred — and it is the one command whose relationship to the centerpiece was flagged as undecided, which FR-6 now requires every command to state."
+  "reasoning": "Two inconsistencies. (a) CR-001 directs the scoring-sites metric to measure against 114; the spec measures against 40. The arithmetic does reconcile (114 total − 46 deleted = 68, of which 40 IN and 26+1+1=28 OUT) but the spec never shows that reconciliation, so on its face it contradicts its own change record. (b) intent.md open question 4 was deferred TO DESIGN and this spec is the design artifact, yet /toque:documentation appears nowhere in the spec and the Open questions list (lines 221-225) carries only two items, neither of them OQ4. A question explicitly handed to this document is neither answered nor re-deferred — and it is the one command whose relationship to the centerpiece was flagged as undecided, which FR-6 now requires every command to state.",
+  "verdict": "UNMET"
 }

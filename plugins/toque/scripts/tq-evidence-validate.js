@@ -44,6 +44,16 @@ function hashContent(text) {
  */
 const EXECUTABLE_CRITERIA = new Set(['LINT-15', 'LINT-16']);
 
+/**
+ * The closed verdict vocabulary, from the schema block in plan-auditor.md.
+ *
+ * Kept as a set rather than an inequality against 'MET' because the rest of this
+ * module treats "not MET" as "nothing to check". That is sound only when every
+ * other value is a deliberate non-claim; a typo or a synonym must not inherit the
+ * exemption.
+ */
+const VALID_VERDICTS = new Set(['MET', 'UNMET', 'N_A']);
+
 function isExecutableCriterion(id) {
   return EXECUTABLE_CRITERIA.has(id) || /^INFRA-/.test(String(id || ''));
 }
@@ -53,6 +63,14 @@ function isExecutableCriterion(id) {
  * Returns null when they agree, or a flag string naming the disagreement.
  */
 function checkQuote(item, rootDir) {
+  // A citation with no artifact is not a citation. Before this guard the field was
+  // passed straight to path.resolve, which throws ERR_INVALID_ARG_TYPE on undefined
+  // and took down the whole run — one malformed item meant zero records validated,
+  // so the failure mode of a bad record was "no audit" rather than "one demotion".
+  if (typeof item !== 'object' || item === null || typeof item.artifact !== 'string' || !item.artifact) {
+    return 'EVIDENCE-ARTIFACT-MISSING';
+  }
+
   const abs = path.resolve(rootDir, item.artifact);
 
   let raw;
@@ -100,6 +118,17 @@ function checkQuote(item, rootDir) {
 function validateRecord(rec, rootDir) {
   const flags = [];
   const claimed = rec && rec.verdict;
+
+  // The vocabulary is closed: plan-auditor.md's schema block states "verdict is one
+  // of MET, UNMET, N_A". Enforcing it here is not pedantry about spelling — the
+  // check below exempts every non-MET verdict from evidence validation, so any
+  // token outside the set is a free pass. Records written as PASS took exactly that
+  // route: not equal to MET, therefore never examined, and printed with a tick.
+  // An unrecognised verdict is the one case where the validator cannot know what
+  // was claimed, so it resolves to the safe direction.
+  if (!VALID_VERDICTS.has(claimed)) {
+    return { criterion_id: rec && rec.criterion_id, verdict: 'UNMET', flags: ['EVIDENCE-VERDICT-INVALID'] };
+  }
 
   if (claimed !== 'MET') {
     return { criterion_id: rec && rec.criterion_id, verdict: claimed, flags };
@@ -203,4 +232,5 @@ if (require.main === module) {
 
 module.exports = {
   validateRecord, checkQuote, hashContent, isExecutableCriterion, validateDirectory,
+  VALID_VERDICTS,
 };

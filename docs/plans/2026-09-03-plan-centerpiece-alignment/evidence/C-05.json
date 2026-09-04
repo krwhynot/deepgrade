@@ -1,18 +1,20 @@
 {
   "criterion_id": "C-05",
   "criterion": "The chosen approach is justified against evaluated alternatives",
-  "verdict": "UNMET",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "140",
-      "quote": "### Options analysis — superseded"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 140,
+      "line_end": 140,
+      "exact_quote": "### Options analysis — superseded"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "143-144",
-      "quote": "loop and chose findings-with-per-dimension-verdicts. **CR-001 supersedes all\nfour**: the tool is deleted, so there is no loop to redesign."
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 143,
+      "line_end": 144,
+      "exact_quote": "loop and chose findings-with-per-dimension-verdicts. **CR-001 supersedes all\nfour**: the tool is deleted, so there is no loop to redesign."
     }
   ],
-  "note": "The spec's only options-analysis section evaluates alternatives for a question that no longer exists and declares itself superseded. The decision actually being made in revision 2 — delete /toque:codex-challenge rather than de-score it — has zero evaluated alternatives anywhere in the spec. CR-001 gives three reasons for the change but no alternatives matrix either. A pointer to commit f21f550 preserves reasoning about the wrong question."
+  "reasoning": "The spec's only options-analysis section evaluates alternatives for a question that no longer exists and declares itself superseded. The decision actually being made in revision 2 — delete /toque:codex-challenge rather than de-score it — has zero evaluated alternatives anywhere in the spec. CR-001 gives three reasons for the change but no alternatives matrix either. A pointer to commit f21f550 preserves reasoning about the wrong question.",
+  "verdict": "UNMET"
 }

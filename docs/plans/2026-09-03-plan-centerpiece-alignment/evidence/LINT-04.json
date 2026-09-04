@@ -2,13 +2,14 @@
   "criterion_id": "LINT-04",
   "rule": "Every external dependency has an owner",
   "phase": 5,
-  "verdict": "PASS",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "169",
-      "quote": "- **External:** none after Phase 1. The Codex CLI dependency leaves with the tool."
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 169,
+      "line_end": 169,
+      "exact_quote": "- **External:** none after Phase 1. The Codex CLI dependency leaves with the tool."
     }
   ],
-  "note": "The single external dependency is eliminated in the first phase and nothing in the plan consumes it thereafter. No ownership assignment is required for a dependency that is being removed rather than relied on. Verified that the dependency is real and confined: the Codex CLI is reachable only through plugins/toque/skills/codex-challenge, all five files of which are deleted."
+  "reasoning": "The single external dependency is eliminated in the first phase and nothing in the plan consumes it thereafter. No ownership assignment is required for a dependency that is being removed rather than relied on. Verified that the dependency is real and confined: the Codex CLI is reachable only through plugins/toque/skills/codex-challenge, all five files of which are deleted.",
+  "verdict": "MET"
 }

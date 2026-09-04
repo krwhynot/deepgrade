@@ -1,24 +1,27 @@
 {
   "criterion_id": "C-07",
   "criterion": "Risk register contains only applicable, evidenced risks with real mitigations",
-  "verdict": "UNMET",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "186",
-      "quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 186,
+      "line_end": 186,
+      "exact_quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "187",
-      "quote": "| 2 | Reference cleanup misses a file and `/toque:help` advertises a command that no longer exists | MEDIUM | A grep for `codex-challenge` returning only historical records is a Phase 1 exit condition, and Layer 1 already fails on a command reference that does not resolve. |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 187,
+      "line_end": 187,
+      "exact_quote": "| 2 | Reference cleanup misses a file and `/toque:help` advertises a command that no longer exists | MEDIUM | A grep for `codex-challenge` returning only historical records is a Phase 1 exit condition, and Layer 1 already fails on a command reference that does not resolve. |"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/intent.md",
-      "lines": "66-67",
-      "quote": "- **Data scope:** documentation and test files only. No user data, no network\n  calls, no new persisted state."
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/intent.md",
+      "line_start": 66,
+      "line_end": 67,
+      "exact_quote": "- **Data scope:** documentation and test files only. No user data, no network\n  calls, no new persisted state."
     }
   ],
-  "note": "Line 186 is a foreign row. This change touches documentation and test files only, per the accepted intent quoted above; there is no service, no database, no connection pool and no write path, so peak write throughput cannot be a risk of it. Its Mitigation cell is the literal word 'unverified' — an unmitigated launch-blocking impact. It also duplicates the id '2' held by the next row, so the table numbers 1,2,2,3,4. This row must be deleted. NOTE: the row exists ONLY in .canary/spec.md; the sibling docs/plans/.../spec.md is byte-identical apart from its absence (diff reports exactly '186d185'). The remaining four rows are applicable and mitigated, and Gotcha 2's mitigation claim is true — tests/layer1-core.sh:876 and :896 fail on a /toque:* reference that resolves to neither commands/X.md nor skills/X/SKILL.md.",
+  "reasoning": "Line 186 is a foreign row. This change touches documentation and test files only, per the accepted intent quoted above; there is no service, no database, no connection pool and no write path, so peak write throughput cannot be a risk of it. Its Mitigation cell is the literal word 'unverified' — an unmitigated launch-blocking impact. It also duplicates the id '2' held by the next row, so the table numbers 1,2,2,3,4. This row must be deleted. NOTE: the row exists ONLY in .canary/spec.md; the sibling docs/plans/.../spec.md is byte-identical apart from its absence (diff reports exactly '186d185'). The remaining four rows are applicable and mitigated, and Gotcha 2's mitigation claim is true — tests/layer1-core.sh:876 and :896 fail on a /toque:* reference that resolves to neither commands/X.md nor skills/X/SKILL.md.",
+  "verdict": "UNMET",
   "command_run": "diff docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md docs/plans/2026-09-03-plan-centerpiece-alignment/spec.md ; grep -n 'must resolve' tests/layer1-core.sh"
 }

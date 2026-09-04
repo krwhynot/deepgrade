@@ -2,23 +2,26 @@
   "criterion_id": "LINT-13",
   "rule": "Approach has options analysis with min 2 alternatives evaluated",
   "phase": 5,
-  "verdict": "FAIL",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "140",
-      "quote": "### Options analysis — superseded"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 140,
+      "line_end": 140,
+      "exact_quote": "### Options analysis — superseded"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "143-144",
-      "quote": "loop and chose findings-with-per-dimension-verdicts. **CR-001 supersedes all\nfour**: the tool is deleted, so there is no loop to redesign."
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 143,
+      "line_end": 144,
+      "exact_quote": "loop and chose findings-with-per-dimension-verdicts. **CR-001 supersedes all\nfour**: the tool is deleted, so there is no loop to redesign."
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "156-157",
-      "quote": "**Deletion first, then cleanup, then the guard.** No staging pattern, no\nExpand/Contract — there is no contract left to migrate, and the audit was right"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 156,
+      "line_end": 157,
+      "exact_quote": "**Deletion first, then cleanup, then the guard.** No staging pattern, no\nExpand/Contract — there is no contract left to migrate, and the audit was right"
     }
   ],
-  "note": "The spec's options-analysis section contains zero alternatives for the approach it actually adopts. The four options it references were alternatives for redesigning codex-challenge's loop, a question the spec itself declares dead. Delete-versus-de-score is the live decision and it is presented as settled by CR-001 with reasons but no evaluated alternative. The Approach section states the chosen sequence directly."
+  "reasoning": "The spec's options-analysis section contains zero alternatives for the approach it actually adopts. The four options it references were alternatives for redesigning codex-challenge's loop, a question the spec itself declares dead. Delete-versus-de-score is the live decision and it is presented as settled by CR-001 with reasons but no evaluated alternative. The Approach section states the chosen sequence directly.",
+  "verdict": "UNMET"
 }

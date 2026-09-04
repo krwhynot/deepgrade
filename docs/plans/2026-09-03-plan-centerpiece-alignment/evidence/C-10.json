@@ -1,18 +1,20 @@
 {
   "criterion_id": "C-10",
   "criterion": "Success metrics are measurable with infrastructure that exists",
-  "verdict": "UNMET",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "111",
-      "quote": "| Plans promoted from `quick-plan` | ≥1 without rework | 60 days | An additive `promoted_from` field in `status.json` (permitted by revised NFR-4) | 60 days |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 111,
+      "line_end": 111,
+      "exact_quote": "| Plans promoted from `quick-plan` | ≥1 without rework | 60 days | An additive `promoted_from` field in `status.json` (permitted by revised NFR-4) | 60 days |"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "108",
-      "quote": "| In-scope scoring lines | 40 → 0 | At merge | The FR-1/FR-2 greps, enforced by the guard | Merge day |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 108,
+      "line_end": 108,
+      "exact_quote": "| In-scope scoring lines | 40 → 0 | At merge | The FR-1/FR-2 greps, enforced by the guard | Merge day |"
     }
   ],
-  "note": "The 60-day metric measures a field that does not exist yet, with no named reader, aggregator, or person responsible for evaluating it on day 60 — no monitoring infrastructure is claimed or verified anywhere in the spec. The merge-day metric '40 → 0' is not reproducible either: the spec never states the pattern that produced 40 (see C-13), so no third party can confirm the target was hit, and C-03 shows the 40 is wrong by at least one line. The other three metrics are merge-day booleans and are sound."
+  "reasoning": "The 60-day metric measures a field that does not exist yet, with no named reader, aggregator, or person responsible for evaluating it on day 60 — no monitoring infrastructure is claimed or verified anywhere in the spec. The merge-day metric '40 → 0' is not reproducible either: the spec never states the pattern that produced 40 (see C-13), so no third party can confirm the target was hit, and C-03 shows the 40 is wrong by at least one line. The other three metrics are merge-day booleans and are sound.",
+  "verdict": "UNMET"
 }

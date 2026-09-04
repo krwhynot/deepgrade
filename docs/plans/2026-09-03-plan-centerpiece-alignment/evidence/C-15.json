@@ -1,24 +1,27 @@
 {
   "criterion_id": "C-15",
   "criterion": "The scope treats each in-scope document at the granularity its content requires",
-  "verdict": "UNMET",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "121",
-      "quote": "- `10-llm-rubric-calibration.md` (17 lines) · `02-evaluator-optimizer-loop.md` (2) · `09-multi-category-success-criteria.md` (1)"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 121,
+      "line_end": 121,
+      "exact_quote": "- `10-llm-rubric-calibration.md` (17 lines) · `02-evaluator-optimizer-loop.md` (2) · `09-multi-category-success-criteria.md` (1)"
     },
     {
-      "path": "plugins/toque/docs/planning-techniques/10-llm-rubric-calibration.md",
-      "lines": "5",
-      "quote": "LLM Rubric Calibration is a technique that makes AI-based plan scoring consistent and reproducible by defining explicit rubrics with reasoning requirements, calibration examples, and consistency tracking."
+      "artifact": "plugins/toque/docs/planning-techniques/10-llm-rubric-calibration.md",
+      "line_start": 5,
+      "line_end": 5,
+      "exact_quote": "LLM Rubric Calibration is a technique that makes AI-based plan scoring consistent and reproducible by defining explicit rubrics with reasoning requirements, calibration examples, and consistency tracking."
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "188",
-      "quote": "| 3 | `METHODOLOGY.md` §7 is a 227-line section, not a line edit. Rewriting it can introduce new claims that are themselves unverified. | MEDIUM | The rewrite describes what the gate does **now**, and every claim in it is checkable against `plan-auditor.md` and `tests/layer1-repo.sh`. No forward-looking statements. |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 188,
+      "line_end": 188,
+      "exact_quote": "| 3 | `METHODOLOGY.md` §7 is a 227-line section, not a line edit. Rewriting it can introduce new claims that are themselves unverified. | MEDIUM | The rewrite describes what the gate does **now**, and every claim in it is checkable against `plan-auditor.md` and `tests/layer1-repo.sh`. No forward-looking statements. |"
     }
   ],
-  "note": "The spec correctly recognises that METHODOLOGY §7 is a rewrite and not a line edit, and raises the resulting risk. It does not apply the same recognition to 10-llm-rubric-calibration.md, which it books as a 17-line edit. My count confirms 17 matching lines, so the number is right — but the document is 157 lines whose entire thesis is that plan scoring should be made consistent via explicit 1-5 rubrics, which FR-1 abolishes. Deleting 17 lines leaves a 140-line document arguing for the thing the spec exists to remove. Same defect class as §7, flagged for one file and not the other.",
+  "reasoning": "The spec correctly recognises that METHODOLOGY §7 is a rewrite and not a line edit, and raises the resulting risk. It does not apply the same recognition to 10-llm-rubric-calibration.md, which it books as a 17-line edit. My count confirms 17 matching lines, so the number is right — but the document is 157 lines whose entire thesis is that plan scoring should be made consistent via explicit 1-5 rubrics, which FR-1 abolishes. Deleting 17 lines leaves a 140-line document arguing for the thing the spec exists to remove. Same defect class as §7, flagged for one file and not the other.",
+  "verdict": "UNMET",
   "command_run": "wc -l plugins/toque/docs/planning-techniques/10-llm-rubric-calibration.md ; grep -cE '[0-9X]+/40\\b|\\b[0-9N]/5\\b' plugins/toque/docs/planning-techniques/10-llm-rubric-calibration.md"
 }

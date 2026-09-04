@@ -2,18 +2,20 @@
   "criterion_id": "LINT-05",
   "rule": "Every new endpoint/API has a contract or test entry",
   "phase": 5,
-  "verdict": "FAIL",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "100-102",
-      "quote": "immutability. FR-5 may add an additive, optional field; it may not change or\nremove an existing one, and a plan folder written before this change must still\nresume."
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 100,
+      "line_end": 102,
+      "exact_quote": "immutability. FR-5 may add an additive, optional field; it may not change or\nremove an existing one, and a plan folder written before this change must still\nresume."
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "111",
-      "quote": "| Plans promoted from `quick-plan` | ≥1 without rework | 60 days | An additive `promoted_from` field in `status.json` (permitted by revised NFR-4) | 60 days |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 111,
+      "line_end": 111,
+      "exact_quote": "| Plans promoted from `quick-plan` | ≥1 without rework | 60 days | An additive `promoted_from` field in `status.json` (permitted by revised NFR-4) | 60 days |"
     }
   ],
-  "note": "FR-5 introduces a change to the status.json contract (schema 2 gains an optional promoted_from field). No contract entry states the schema version after the change, and no test row covers it: D5 is BDD over FR-5's Given/When/Then, which describe folder creation, not the field. The only backwards-compatibility assertion (NFR-4's measure, 'The two existing plan folders resume without migration') sits in the NFR table with no deliverable, no methodology, and no place in the Tier 1 or Tier 2 verification split."
+  "reasoning": "FR-5 introduces a change to the status.json contract (schema 2 gains an optional promoted_from field). No contract entry states the schema version after the change, and no test row covers it: D5 is BDD over FR-5's Given/When/Then, which describe folder creation, not the field. The only backwards-compatibility assertion (NFR-4's measure, 'The two existing plan folders resume without migration') sits in the NFR table with no deliverable, no methodology, and no place in the Tier 1 or Tier 2 verification split.",
+  "verdict": "UNMET"
 }

@@ -2,13 +2,14 @@
   "criterion_id": "LINT-10",
   "rule": "Every phase has go/no-go criteria",
   "phase": 5,
-  "verdict": "PASS",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "284-290",
-      "quote": "| Boundary | Go requires | No-go |\n| --- | --- | --- |\n| 1 → 4 | Suite 7/7; no dangling references | Fix forward; deletion is reversible by revert |\n| 2 → 4 | FR-2 greps empty | **Stop if §7's rewrite introduces unverifiable claims** |\n| 3 → 4 | Suite 7/7 | Fix forward |\n| 4 → 5 | Mutation proves the guard bites | **Stop.** A guard that cannot fail is worse than none |\n| 5 → Stage 4 | Suite 7/7; preflight clean | Fix forward |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 284,
+      "line_end": 290,
+      "exact_quote": "| Boundary | Go requires | No-go |\n| --- | --- | --- |\n| 1 → 4 | Suite 7/7; no dangling references | Fix forward; deletion is reversible by revert |\n| 2 → 4 | FR-2 greps empty | **Stop if §7's rewrite introduces unverifiable claims** |\n| 3 → 4 | Suite 7/7 | Fix forward |\n| 4 → 5 | Mutation proves the guard bites | **Stop.** A guard that cannot fail is worse than none |\n| 5 → Stage 4 | Suite 7/7; preflight clean | Fix forward |"
     }
   ],
-  "note": "All five phases appear as the left side of a boundary with both a Go condition and a No-go action. Two of the five are real Stops rather than fix-forward, and both are placed on the steps that can silently produce a false green (an unverifiable §7 rewrite, and a guard that cannot fail)."
+  "reasoning": "All five phases appear as the left side of a boundary with both a Go condition and a No-go action. Two of the five are real Stops rather than fix-forward, and both are placed on the steps that can silently produce a false green (an unverifiable §7 rewrite, and a guard that cannot fail).",
+  "verdict": "MET"
 }

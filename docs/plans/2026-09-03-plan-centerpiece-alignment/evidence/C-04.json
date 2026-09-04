@@ -1,39 +1,45 @@
 {
   "criterion_id": "C-04",
   "criterion": "Every cited path and line number exists and says what the spec claims",
-  "verdict": "MET",
   "evidence": [
     {
-      "path": "METHODOLOGY.md",
-      "lines": "1031",
-      "quote": "## 7. The Plan Audit Scoring System"
+      "artifact": "METHODOLOGY.md",
+      "line_start": 1031,
+      "line_end": 1031,
+      "exact_quote": "## 7. The Plan Audit Scoring System"
     },
     {
-      "path": "METHODOLOGY.md",
-      "lines": "1037",
-      "quote": "Toque's plan audit applies the same grading philosophy from Section 1 to technical plans, migration specs, and refactoring proposals. Instead of a binary \"looks good\" or \"needs work,\" you get a numeric score across 8 dimensions, structured gap detection, and evidence-backed findings. The methodology is implemented in the [plan-auditor agent](agents/plan-auditor.md)."
+      "artifact": "METHODOLOGY.md",
+      "line_start": 1037,
+      "line_end": 1037,
+      "exact_quote": "Toque's plan audit applies the same grading philosophy from Section 1 to technical plans, migration specs, and refactoring proposals. Instead of a binary \"looks good\" or \"needs work,\" you get a numeric score across 8 dimensions, structured gap detection, and evidence-backed findings. The methodology is implemented in the [plan-auditor agent](agents/plan-auditor.md)."
     },
     {
-      "path": "plugins/toque/agents/plan-auditor.md",
-      "lines": "61-63",
-      "quote": "The 8 dimensions below organise the specialist review. They are lenses for finding\ngaps and locating evidence, not things to be rated: every conclusion is expressed as\na per-criterion verdict (MET / UNMET / N_A) with evidence, never as a number."
+      "artifact": "plugins/toque/agents/plan-auditor.md",
+      "line_start": 61,
+      "line_end": 63,
+      "exact_quote": "The 8 dimensions below organise the specialist review. They are lenses for finding\ngaps and locating evidence, not things to be rated: every conclusion is expressed as\na per-criterion verdict (MET / UNMET / N_A) with evidence, never as a number."
     },
     {
-      "path": "tests/layer1-repo.sh",
-      "lines": "855-856",
-      "quote": "score_bad=0\nfor sf in plugins/toque/skills/plan/SKILL.md plugins/toque/skills/plan/stages/*.md plugins/toque/agents/plan-auditor.md; do"
+      "artifact": "tests/layer1-repo.sh",
+      "line_start": 855,
+      "line_end": 856,
+      "exact_quote": "score_bad=0\nfor sf in plugins/toque/skills/plan/SKILL.md plugins/toque/skills/plan/stages/*.md plugins/toque/agents/plan-auditor.md; do"
     },
     {
-      "path": "plugins/toque/commands/quick-audit.md",
-      "lines": "59-60",
-      "quote": "1. Overall score (X/40) with color (Green/Yellow/Orange/Red)\n2. The scorecard table (8 dimensions)"
+      "artifact": "plugins/toque/commands/quick-audit.md",
+      "line_start": 59,
+      "line_end": 60,
+      "exact_quote": "1. Overall score (X/40) with color (Green/Yellow/Orange/Red)\n2. The scorecard table (8 dimensions)"
     },
     {
-      "path": "plugins/toque/GUIDE.md",
-      "lines": "265",
-      "quote": "miss on the eighth. `status.json` keeps a `score_history` for trend-watching,"
+      "artifact": "plugins/toque/GUIDE.md",
+      "line_start": 265,
+      "line_end": 265,
+      "exact_quote": "miss on the eighth. `status.json` keeps a `score_history` for trend-watching,"
     }
   ],
-  "note": "All six externally checkable citations verified byte-for-byte. E1's correction is genuine: plan-auditor.md:60 is the bare tag <review_dimensions>, and the quoted sentence spans 61-63. E2's correction is genuine: layer1-repo.sh:856 iterates two literals (skills/plan/SKILL.md, agents/plan-auditor.md) plus one glob (stages/*.md). E14, E3 and E10 all land on the claimed lines. Also verified independently: METHODOLOGY §7 spans 1031-1257 = 227 lines, matching Gotcha 3's '227-line section'; and Layer 1 really does execute the guard — tests/layer1-config-wiring.sh:48 runs layer1-repo.sh.",
+  "reasoning": "All six externally checkable citations verified byte-for-byte. E1's correction is genuine: plan-auditor.md:60 is the bare tag <review_dimensions>, and the quoted sentence spans 61-63. E2's correction is genuine: layer1-repo.sh:856 iterates two literals (skills/plan/SKILL.md, agents/plan-auditor.md) plus one glob (stages/*.md). E14, E3 and E10 all land on the claimed lines. Also verified independently: METHODOLOGY §7 spans 1031-1257 = 227 lines, matching Gotcha 3's '227-line section'; and Layer 1 really does execute the guard — tests/layer1-config-wiring.sh:48 runs layer1-repo.sh.",
+  "verdict": "MET",
   "command_run": "sed -n '1031p;1037p' METHODOLOGY.md ; sed -n '58,66p' plugins/toque/agents/plan-auditor.md ; sed -n '850,865p' tests/layer1-repo.sh ; sed -n '55,64p' plugins/toque/commands/quick-audit.md ; sed -n '262,268p' plugins/toque/GUIDE.md ; grep -n 'layer1-repo' tests/layer1-config-wiring.sh"
 }

@@ -2,13 +2,14 @@
   "criterion_id": "LINT-07",
   "rule": "Every new behavior has a test or test delta",
   "phase": 5,
-  "verdict": "PASS",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "231-236",
-      "quote": "| D1 | Delete `codex-challenge` + clean 10 references | **TDD** | The assertion is absence: a grep must return only historical records, and the suite must be green at 7 layers. |\n| D2 | Stale citations, `score_history`, §7, rubric-calibration doc | **TDD** | Absence assertions again. |\n| D3 | `quick-audit` scoring + two fixtures | **TDD** | Same shape. |\n| D4 | Widen the `PH5-051` guard | **Mutation testing** | A guard that cannot fail is worse than none. Plant `3/5` — the case revision 1 missed — and confirm Layer 1 reddens. |\n| D5 | `quick-plan` promotion path | **BDD** | Acceptance criteria already Given/When/Then in FR-5. |\n| D6 | Relationship lines | **Snapshot / approval** | Rendered help text; review once by eye. |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 231,
+      "line_end": 236,
+      "exact_quote": "| D1 | Delete `codex-challenge` + clean 10 references | **TDD** | The assertion is absence: a grep must return only historical records, and the suite must be green at 7 layers. |\n| D2 | Stale citations, `score_history`, §7, rubric-calibration doc | **TDD** | Absence assertions again. |\n| D3 | `quick-audit` scoring + two fixtures | **TDD** | Same shape. |\n| D4 | Widen the `PH5-051` guard | **Mutation testing** | A guard that cannot fail is worse than none. Plant `3/5` — the case revision 1 missed — and confirm Layer 1 reddens. |\n| D5 | `quick-plan` promotion path | **BDD** | Acceptance criteria already Given/When/Then in FR-5. |\n| D6 | Relationship lines | **Snapshot / approval** | Rendered help text; review once by eye. |"
     }
   ],
-  "note": "Every deliverable in the Delivery table has a corresponding row in the verification table, and the two sets cover the same work. The tautological-test risk is named and countered for D1-D3 with independently written expected file lists."
+  "reasoning": "Every deliverable in the Delivery table has a corresponding row in the verification table, and the two sets cover the same work. The tautological-test risk is named and countered for D1-D3 with independently written expected file lists.",
+  "verdict": "MET"
 }

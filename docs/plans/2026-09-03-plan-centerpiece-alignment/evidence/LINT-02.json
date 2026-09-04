@@ -2,13 +2,14 @@
   "criterion_id": "LINT-02",
   "rule": "Every HIGH risk has a mitigation",
   "phase": 5,
-  "verdict": "FAIL",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "186",
-      "quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 186,
+      "line_end": 186,
+      "exact_quote": "| 2 | Peak write throughput fits the current connection pool | Writes stall at launch | unverified |"
     }
   ],
-  "note": "An impact of 'Writes stall at launch' is HIGH-impact on any plain reading, and the Mitigation cell contains the single word 'unverified' — no mitigation at all. The row additionally reuses the id '2' already held by the next row."
+  "reasoning": "An impact of 'Writes stall at launch' is HIGH-impact on any plain reading, and the Mitigation cell contains the single word 'unverified' — no mitigation at all. The row additionally reuses the id '2' already held by the next row.",
+  "verdict": "UNMET"
 }

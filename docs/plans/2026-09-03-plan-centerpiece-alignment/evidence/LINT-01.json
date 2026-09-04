@@ -2,19 +2,21 @@
   "criterion_id": "LINT-01",
   "rule": "Every goal has at least one mapped ticket",
   "phase": 5,
-  "verdict": "FAIL",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "253-254",
-      "quote": "| Phase | Risk | Est. | Depends on |\n| --- | --- | --- | --- |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 253,
+      "line_end": 254,
+      "exact_quote": "| Phase | Risk | Est. | Depends on |\n| --- | --- | --- | --- |"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "271",
-      "quote": "*Exit:* FR-2's greps empty over `plugins/toque/**` and `METHODOLOGY.md`."
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 271,
+      "line_end": 271,
+      "exact_quote": "*Exit:* FR-2's greps empty over `plugins/toque/**` and `METHODOLOGY.md`."
     }
   ],
-  "note": "The Delivery table has no requirement-id column, and across the whole Delivery and Verification sections (lines 227-297) only FR-2 and FR-5 are ever named. FR-1, FR-4, FR-6, FR-7 and every one of NFR-1 through NFR-6 have no phase or deliverable mapping at all — the reader must infer from phase titles. FR-1 appears once, in the Tier 1 verification list, never in a phase.",
+  "reasoning": "The Delivery table has no requirement-id column, and across the whole Delivery and Verification sections (lines 227-297) only FR-2 and FR-5 are ever named. FR-1, FR-4, FR-6, FR-7 and every one of NFR-1 through NFR-6 have no phase or deliverable mapping at all — the reader must infer from phase titles. FR-1 appears once, in the Tier 1 verification list, never in a phase.",
+  "verdict": "UNMET",
   "command_run": "sed -n '227,297p' docs/plans/.../.canary/spec.md | grep -nE 'FR-[0-9]|NFR-[0-9]'  -> only 4 hits, all FR-2/FR-5/FR-1-in-grep-name"
 }

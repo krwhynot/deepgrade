@@ -1,18 +1,20 @@
 {
   "criterion_id": "C-06",
   "criterion": "Phase ordering and dependencies are internally consistent",
-  "verdict": "UNMET",
   "evidence": [
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "255-259",
-      "quote": "| 1 — Delete `codex-challenge` | MEDIUM | 1 | — |\n| 2 — Citations, `score_history`, §7, rubric doc | LOW | 1 | — |\n| 3 — `quick-audit` + fixtures | LOW | 0.5 | — |\n| 4 — Widen the guard | LOW | 0.5 | 1, 2, 3 |\n| 5 — Promotion path + labels | LOW | 1 | — |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 255,
+      "line_end": 259,
+      "exact_quote": "| 1 — Delete `codex-challenge` | MEDIUM | 1 | — |\n| 2 — Citations, `score_history`, §7, rubric doc | LOW | 1 | — |\n| 3 — `quick-audit` + fixtures | LOW | 0.5 | — |\n| 4 — Widen the guard | LOW | 0.5 | 1, 2, 3 |\n| 5 — Promotion path + labels | LOW | 1 | — |"
     },
     {
-      "path": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
-      "lines": "289",
-      "quote": "| 4 → 5 | Mutation proves the guard bites | **Stop.** A guard that cannot fail is worse than none |"
+      "artifact": "docs/plans/2026-09-03-plan-centerpiece-alignment/.canary/spec.md",
+      "line_start": 289,
+      "line_end": 289,
+      "exact_quote": "| 4 → 5 | Mutation proves the guard bites | **Stop.** A guard that cannot fail is worse than none |"
     }
   ],
-  "note": "The dependency column says Phase 5 depends on nothing, so it may run at any time; the go/no-go table nonetheless gates 4 → 5 and makes that boundary a hard Stop. Either Phase 5 depends on Phase 4 (dependency column wrong) or the 4 → 5 gate is not a real boundary (go/no-go table wrong). The 'guard lands last' rule the Approach section calls the one forcing constraint is stated for Phase 4, yet Phase 5 is scheduled after it with no stated reason."
+  "reasoning": "The dependency column says Phase 5 depends on nothing, so it may run at any time; the go/no-go table nonetheless gates 4 → 5 and makes that boundary a hard Stop. Either Phase 5 depends on Phase 4 (dependency column wrong) or the 4 → 5 gate is not a real boundary (go/no-go table wrong). The 'guard lands last' rule the Approach section calls the one forcing constraint is stated for Phase 4, yet Phase 5 is scheduled after it with no stated reason.",
+  "verdict": "UNMET"
 }

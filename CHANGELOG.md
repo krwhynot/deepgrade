@@ -75,6 +75,52 @@
   in `GUIDE.md` is deleted — that field was documented but never written by
   anything.
 
+### Fixed
+
+- **The evidence validator had never read a real evidence record.**
+  `tq-evidence-validate.js` reads `evidence[].artifact` / `line_start` /
+  `line_end` / `exact_quote` — the schema documented in `plan-auditor.md`. Every
+  record written to disk used `path` / `lines` / `quote`. The two sets do not
+  overlap, so `path.resolve(root, undefined)` threw `ERR_INVALID_ARG_TYPE` on the
+  first record and validated none of them. `tests/evidence-validate-test.js`
+  passed throughout because it built its own records in the validator's shape and
+  never opened one the auditor produced.
+
+  All 32 records under `docs/plans/2026-09-03-plan-centerpiece-alignment/evidence`
+  are migrated to the documented schema. The migration is mechanical — field
+  renames and the verdict mapping below. No quote text, line number or exit code
+  was altered, because the point of the repair is to let the validator judge this
+  evidence, and adjusting it to pass would have made the corpus a record of what
+  satisfies the test.
+
+- **Verdicts outside the documented vocabulary were exempt from checking.**
+  `validateRecord` returned early for anything that was not `MET`, on the
+  assumption that every other value is a deliberate non-claim. Records were
+  written with `PASS` (7) and `FAIL` (10) — outside the `MET` / `UNMET` / `N_A`
+  vocabulary — so seven records asserting a pass were never examined and printed
+  with a tick. The vocabulary is now closed: an unrecognised verdict resolves to
+  `UNMET` with `EVIDENCE-VERDICT-INVALID`. `PASS` maps to `MET` and `FAIL` to
+  `UNMET` in the migrated records.
+
+- **A malformed citation aborted the entire run.** A missing or non-string
+  `artifact` reached `path.resolve` directly, so one bad item meant zero records
+  validated rather than one demotion. It now returns
+  `EVIDENCE-ARTIFACT-MISSING` and the remaining records are still evaluated.
+
+- **The suite now validates real evidence.** Layer 5 runs the real validator over
+  every `docs/plans/*/evidence` directory, asserting the records parse in the
+  documented schema and that validation completes without throwing. It
+  deliberately does not require them all to come back `MET`: two records cite
+  live files the plan subsequently edited, and demanding a clean run would create
+  pressure to rewrite quotes until they matched. Layer 5 goes from 32 assertions
+  to 48; all three guards are mutation-proven.
+
+  Re-checked for the first time, the corpus demotes two records. `C-04` and
+  `LINT-15` quote five lines that have since changed — including METHODOLOGY §7's
+  old title, which this release is what changed. Both were already inside an audit
+  whose verdict was NOT PASS, so no conclusion moves. Records citing the frozen
+  `.canary/spec.md` copy all still verify.
+
 ## 10.0.0 (2026-09-03)
 
 ### BREAKING
