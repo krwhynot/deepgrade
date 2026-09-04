@@ -142,7 +142,7 @@ pass without them.
 
 See the monorepo [CHANGELOG](https://github.com/krwhynot/toque/blob/main/CHANGELOG.md).
 
-Current: v10.0.0
+Current: v11.0.0
 
 ## License
 

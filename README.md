@@ -153,7 +153,7 @@ for the recommended `settings.json` rules.
 
 See [CHANGELOG.md](CHANGELOG.md) for full history.
 
-Current: v10.0.0
+Current: v11.0.0
 
 ## Contributing
 
