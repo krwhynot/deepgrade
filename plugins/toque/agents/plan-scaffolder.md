@@ -4,8 +4,8 @@ description: |
   Use this agent to create a structured technical plan from a vague objective
   or requirement. Reads the codebase to understand the current state, then
   generates a phased plan with risk assessment, timeline estimates, testing
-  strategy, and rollback plan. Produces a plan that would score well on the
-  plan-auditor's 8 dimensions. Called by /toque:quick-plan.
+  strategy, and rollback plan. Produces a plan built to survive the
+  plan-auditor's criteria. Called by /toque:quick-plan.
 model: opus
 color: cyan
 tools: Read, Grep, Glob, Bash, Write, Agent, Skill

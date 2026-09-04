@@ -161,6 +161,14 @@
     drift has no second party at a count of one; the surviving half is the one
     that actually shipped broken in 5.0.0.
 
+- **Three stale descriptions of the removed scorecard are corrected.** The
+  `/toque:quick-plan` command description, `plan-scaffolder`'s frontmatter and
+  `02-evaluator-optimizer-loop.md` all still promised a plan that "scores well
+  on the plan auditor's 8 dimensions". The scorecard was removed earlier in this
+  release; the PH5-051 guard matches numerals like `3/5`, not prose, so it could
+  not see them. The command description is the one a user actually reads before
+  running it.
+
 - **`METHODOLOGY.md` carries a scope note.** Sections 1, 2, 4 and 9 document
   ai-scan; 3, 5, 6, 7, 8, 10 and 11 document Toque. Sections are **not**
   renumbered — specs, plan records and the PH5-051 guard's derived section-7
