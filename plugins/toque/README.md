@@ -44,7 +44,7 @@ Verify inside a Claude Code session:
 | Command | Description |
 | ------- | ----------- |
 | `/toque:plan` | Plan, Design, Build, Test, Deploy, Maintain. Recorded human approvals; Maintain stays open |
-| `/toque:quick-plan` | Lightweight plan for small changes |
+| `/toque:quick-plan` | Spec for a small change, run through the same design gate as Stage 2 |
 | `/toque:plan-status` | Check plan progress and stage status |
 | `/toque:plan-export` | Export a plan as a portable package |
 
@@ -52,7 +52,7 @@ Verify inside a Claude Code session:
 
 | Command | Description |
 | ------- | ----------- |
-| `/toque:quick-audit` | Audit any technical plan or spec through 8 review dimensions with evidence |
+| `/toque:quick-audit` | Run the design gate against any technical plan or spec: verdicts with evidence, canary, evidence validation |
 
 ### Documentation and Support
 
@@ -143,7 +143,9 @@ pass without them.
 | Audit evidence | `docs/plans/{date}-{name}/evidence/` | Yes |
 | Canary working copy | `docs/plans/{date}-{name}/.canary/` | No |
 | Troubleshooting logs, postmortems, knowledge base | `docs/troubleshooting/` or the plan's `troubleshooting/` | Yes |
-| Specifications and quick plans | `docs/specs/` | Yes |
+| Specifications and quick plans | `docs/specs/{name}.md` | Yes |
+| Gate record for a standalone spec or audited file | `docs/specs/{name}/audit.md`, `docs/specs/{name}/evidence/` | Yes |
+| Canary working copy for a standalone gate run | `docs/specs/{name}/.canary/` | No |
 | ADRs, BRDs, PRDs | `docs/adr/`, `docs/brd/`, `docs/prd/` | Yes |
 | Runbooks | `docs/runbooks/` or the plan folder | Yes |
 | Plan export | `{plan-name}-export.zip` at project root | No |

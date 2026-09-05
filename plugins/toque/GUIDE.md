@@ -46,11 +46,11 @@ This is not a draft-only command: after approval it can implement and test. It m
 /toque:quick-plan Extract pricing logic from Order.vb
 ```
 
-Clarifies a vague request as needed, uses the scaffolder, writes a spec, then runs an audit/revision loop with up to two revisions. Remaining findings are delivered for review.
+Clarifies a vague request as needed, uses the scaffolder, writes a spec to `docs/specs/{name}.md`, then runs the design gate with up to two revisions. The gate record (`audit.md`, `evidence/`) is written beside the spec in `docs/specs/{name}/`; commit it with the spec. `.canary/` in that folder is scratch.
 
-`--plan {name}` links output to an existing plan and updates its records; it does not create a full plan workspace on its own.
+`--plan {name}` links output to an existing plan and adds rows to its manifest; it does not create a full plan workspace on its own, and it does not write into the plan folder's own gate record.
 
-The command claims the same gate as Design, but does not explicitly orchestrate Stage 2's canary and evidence tools. Treat its result as an audited draft, not a full design-gate pass or authorization to build or deploy.
+The gate is the same one Stage 2 runs, executed from the same `<design_gate>` block in the stage file: canary, evidence validation, lint registry, gap outputs, and the gate expression. A `PASS` here is a design-gate pass for that document. It is not a human review, and it does not authorize a build or a release.
 
 ### Quick audit
 
@@ -59,9 +59,9 @@ The command claims the same gate as Design, but does not explicitly orchestrate 
 /toque:quick-audit docs/plans/YYYY-MM-DD-scheduled-reports/spec.md --plan scheduled-reports
 ```
 
-Runs the auditor and reports criterion verdicts and findings. A named or detected plan receives `audit.md` and index/state updates. Standalone results stay in the conversation; there is no fallback report in `docs/audit/`.
+Runs the design gate against one file and reports criterion verdicts, canary result, evidence validation, and findings. A named or detected plan receives `audit.md` and index/state updates in its own folder. Any other file gets a gate folder beside it, named after the file without its extension (`docs/specs/pricing.md` is audited into `docs/specs/pricing/`); there is no conversation-only result and no fallback report in `docs/audit/`. A pasted plan is written to `docs/specs/` first.
 
-Quick audit does not itself explicitly run the complete Stage 2 tool sequence. A reported pass is not a substitute for that gate, human review, or production authorization.
+There is no generator to revise the document, so `NOT PASS` is reported with the unmet criteria named. A pass is a design-gate pass for that file, not human review or production authorization.
 
 ### Status
 
@@ -264,7 +264,7 @@ node scripts/tq-canary.js detected <canary.json> <unmet-csv> <applicable-csv>
 node scripts/tq-evidence-validate.js <evidence-dir> [root-dir]
 ```
 
-Injection prepares scratch; it does not establish detection. The `detected` command checks the audit's unmet criteria against the planted defect. Supply the complete applicable-criteria list so blanket rejection can be rejected. Stage 2 owns the full sequence.
+Injection prepares scratch; it does not establish detection. The `detected` command checks the audit's unmet criteria against the planted defect. Supply the complete applicable-criteria list so blanket rejection can be rejected. The full sequence is defined once, in the `<design_gate>` block of the Stage 2 file, and run from there by `/toque:plan`, `/toque:quick-plan`, and `/toque:quick-audit`.
 
 The evidence validator exits 0 with no failing validation flags, 1 for validation failures, and 2 for missing/unusable input such as an empty evidence directory. An existing `UNMET` can coexist with exit 0: the caller must still evaluate `VERIFIED`.
 

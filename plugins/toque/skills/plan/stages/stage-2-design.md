@@ -14,6 +14,7 @@ Gate: Design gate PASS + human review (or waiver) + spec.md Status: Approved
 - Part A: Scope lock (user gate, mid-stage)
 - Part B: Verification plan and Delivery (spec.md completed)
 - Part C: Design gate (the audit) - checks, outputs A-D, canary, evidence validation
+- Part C: the <design_gate> block and its bindings, shared with /toque:quick-plan and /toque:quick-audit
 - Part C: Infrastructure verification, plan lint rules, gap summary
 - Part C: Evidence reinforcement and baseline snapshot
 - Part C: Gate expression, revision loop, auditor isolation
@@ -418,8 +419,25 @@ Commit spec.md. Update manifest.md: add spec.md to the Artifacts table with date
 
 Question: What is weak or missing?
 
-Run the checks below using the plan-auditor agent against
-docs/plans/{date}-{plan-name}/spec.md.
+<design_gate>
+This block is the design gate, defined once. /toque:plan runs it here;
+/toque:quick-plan and /toque:quick-audit run this same block by reading this
+file, so there is one gate and no lighter copy of it. Three bindings are set by
+the caller before the block runs:
+
+  {doc}        the document under audit
+  {gate_dir}   the folder that receives audit.md, evidence/ and .canary/
+  {generator}  the agent that revises {doc} on NOT PASS, or none
+
+Stage 2 binds {doc} = docs/plans/{date}-{plan-name}/spec.md,
+{gate_dir} = docs/plans/{date}-{plan-name}/, and {generator} = the spec writer
+of Parts A and B. When {gate_dir} is a plan folder, the status.json and
+manifest.md updates below apply; otherwise the same facts are recorded in the
+header of {gate_dir}/audit.md, which is the gate record for a standalone
+document. {gate_dir}/.canary/ is scratch and is never committed;
+{gate_dir}/audit.md and {gate_dir}/evidence/ are committed together with {doc}.
+
+Run the checks below using the plan-auditor agent against {doc}.
 
 CHECK 1 - CRITERION RECORDS:
 The auditor returns criterion records, not a score; each record carries a
@@ -534,7 +552,7 @@ Every other check in the design gate examines the plan. This one examines the au
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/tq-canary.js" inject \
-  docs/plans/{date}-{plan-name}/spec.md docs/plans/{date}-{plan-name}/.canary/
+  {doc} {gate_dir}/.canary/
 ```
 
 One known defect is injected into a working copy of the spec — a rollback line
@@ -548,7 +566,7 @@ Afterwards, run the check — do not perform it by eye:
 
 ```
 node "${CLAUDE_PLUGIN_ROOT}/scripts/tq-canary.js" detected \
-  docs/plans/{date}-{plan-name}/.canary/canary.json \
+  {gate_dir}/.canary/canary.json \
   "<comma-separated UNMET criterion ids>" \
   "<comma-separated ids of EVERY criterion the audit considered>"
 ```
@@ -588,7 +606,7 @@ a PROPOSAL, not a result. Re-check every one of them mechanically:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/tq-evidence-validate.js" \
-  docs/plans/{date}-{plan-name}/evidence/
+  {gate_dir}/evidence/
 ```
 
 The validator re-reads each cited artifact, confirms its hash still matches, slices
@@ -716,16 +734,17 @@ A plan is gap-checked ONLY when:
 - Cross-cutting sweep has zero GAPs
 - Infrastructure verification has zero INFRA-GAPs
 
-Write docs/plans/{date}-{plan-name}/audit.md with: criterion records (verdict and
-evidence per criterion), challenges, verification results, ALL 4 gap verification
-outputs, lint results, gap summary.
+Write {gate_dir}/audit.md with: criterion records (verdict and evidence per
+criterion), challenges, verification results, ALL 4 gap verification outputs,
+lint results, gap summary.
 
-Update manifest.md: add audit.md to the Artifacts table with date and gate result.
+When {gate_dir} is a plan folder, update manifest.md: add audit.md to the
+Artifacts table with date and gate result.
 
 EVIDENCE REINFORCEMENT (after audit, before baseline):
 
-Re-read the spec.md Evidence section (written in Part A) and reinforce it with
-audit findings:
+Re-read the Evidence section of {doc} (spec.md writes it in Part A) and reinforce
+it with audit findings:
 
 1. AUDIT-DRIVEN ADDITIONS:
    - If the audit identified new dependencies, patterns, or tools not in the
@@ -754,10 +773,13 @@ audit findings:
    If the audit revision introduced tools/patterns that exist in other plans,
    add "Also referenced in" links.
 
-Update manifest.md: update the spec.md row with the reinforcement date.
+When {gate_dir} is a plan folder, update manifest.md: update the spec.md row
+with the reinforcement date.
 
 BASELINE SNAPSHOT:
-After writing the audit, capture a per-element baseline in status.json:
+After writing the audit, capture a per-element baseline in status.json when
+{gate_dir} is a plan folder, otherwise under a `## Baseline` heading in
+{gate_dir}/audit.md:
 ```json
 {
   "baseline": {
@@ -787,8 +809,8 @@ Only an element that was covered/passing in the previous baseline and is now
 gap/failing counts; pre-existing gaps do not trigger it. Skipped on the first audit,
 when no baseline exists.
 
-Update the baseline in status.json after each comparison (append to history array
-for trend tracking).
+Update the baseline (status.json, or the audit.md Baseline section) after each
+comparison (append to history array for trend tracking).
 
 GATE: Evaluator-Optimizer Loop.
 
@@ -841,9 +863,11 @@ IF NOT PASS:
   -> If CANARY_OK is false after a re-run: STOP. Do not revise. The audit could not
      see a defect placed for it to find, so its other findings are not a basis for
      rewriting anything.
-  -> Otherwise auto-trigger revision of spec.md, using the feedback form below.
-  -> Revise ONLY the failing sections (not the entire spec).
-  -> Re-run the audit on the revised spec.
+  -> Otherwise, when a {generator} is bound, auto-trigger revision of {doc}
+     through it, using the feedback form below. With no generator bound
+     (quick-audit), report NOT PASS with the list of unmet criteria and stop.
+  -> Revise ONLY the failing sections (not the entire document).
+  -> Re-run the audit on the revised document.
   -> Compare re-audit against baseline: flag any regressions (items that
      were passing in v1 but now fail in v2). Regressions indicate the
      revision broke something that was previously working.
@@ -908,8 +932,10 @@ Track revision history in audit.md:
 | v2      | (none)         | 0    | Accepted |
 ```
 
-Update status.json (include gate_passed boolean, unmet_criteria list, gap_checked
-boolean, gap_count, canary_found), manifest.md.
+Record the gate result (gate_passed boolean, unmet_criteria list, gap_checked
+boolean, gap_count, canary_found): in status.json and manifest.md when {gate_dir}
+is a plan folder, otherwise in the header of {gate_dir}/audit.md.
+</design_gate>
 
 HUMAN REVIEW GATE (conditionally waivable):
 After the automated design gate completes, prompt for human review before Build:

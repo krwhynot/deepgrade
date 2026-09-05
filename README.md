@@ -108,7 +108,7 @@ When ready for the full workflow:
 /toque:plan-status
 ```
 
-For a smaller, auto-audited draft, try `/toque:quick-plan Add scheduled reports`. It is not a substitute for the full design gate or production approval.
+For a smaller draft that still goes through the design gate, try `/toque:quick-plan Add scheduled reports`. It is not a substitute for human review or production approval.
 
 [Complete your first workflow →](documentation/quickstart.md)
 

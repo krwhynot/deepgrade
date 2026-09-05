@@ -31,7 +31,8 @@ gap you find, you suggest what should be added.
 <objective>
 Read the provided plan document(s). Verify it against the criterion registry with
 evidence. Identify gaps, risks, and strengths. Produce an audit report. Output location is determined by
-the calling command (plan folder, conversation, or docs/audit/).
+the calling command: the gate folder it names, either a plan folder or the
+standalone gate folder beside the audited document.
 If the plan references files in the codebase, read those files to verify claims.
 </objective>
 
@@ -339,12 +340,16 @@ Based on the audit, define:
 
 ## Step 7: Write the Audit Report
 
-Write the audit report to the location specified by the calling command.
-If called from /toque:plan: write to docs/plans/{date}-{name}/audit.md
-If called from /toque:quick-audit with --plan: write to docs/plans/{date}-{name}/audit.md
-If called from /toque:quick-audit standalone: present in conversation (no file)
-If called from /toque:quick-plan: present in conversation (no file)
-If the caller is none of these: present in conversation (no file)
+Write the audit report to {gate_dir}/audit.md, where {gate_dir} is the gate
+folder the calling command bound when it ran the design gate:
+If called from /toque:plan: docs/plans/{date}-{name}/
+If called from /toque:quick-audit on a plan's document: docs/plans/{date}-{name}/
+If called from /toque:quick-audit on any other file: the folder beside that
+file, named after it without the extension
+If called from /toque:quick-plan: docs/specs/{name}/
+If the caller named no gate folder: stop and ask for one. There is no
+conversation-only mode; a report with no evidence directory cannot be re-checked
+and does not count as an audit.
 
 Use this structure:
 
@@ -394,22 +399,19 @@ A `MET` verdict with an empty `evidence` array is not a `MET`. If a claim is
 externally checkable and you could not find evidence for it, the verdict is `UNMET`
 — not partial credit, not a warning.
 
-In Full mode — the two callers above that write audit.md into a plan folder,
-/toque:plan and /toque:quick-audit with --plan:
+For every caller, in Full mode and in Lite mode alike:
 
 WRITE one evidence record per criterion to evidence/{criterion_id}.json before reporting anything.
 
-The directory sits beside audit.md in the plan folder. Write the files first, then
+The directory sits beside audit.md in the gate folder. Write the files first, then
 write the report, in that order — a report composed before the records exist is a
 summary of what you intended to find, and the records end up reconstructed to agree
 with it.
 
-The conversation-only callers — standalone /toque:quick-audit and /toque:quick-plan —
-produce no file and have no plan folder, so there is nothing for the directory to sit
-beside. Report each criterion's verdict inline, in the same field order (evidence,
-then reasoning, then verdict), and write no evidence records. Do not put them
-somewhere else instead: a records directory outside a plan folder is committed by
-nobody and re-checked by nothing, which is the state the records exist to replace.
+There is no conversation-only mode. Every caller runs the same design gate, and
+the gate re-checks these records with the evidence validator; a standalone gate
+folder is committed with the document it audits, so its records are committed
+by the same person and re-checked by the same script as a plan folder's.
 
 `sha256` is REQUIRED on every citation. Compute it over the artifact's
 LF-normalised content:

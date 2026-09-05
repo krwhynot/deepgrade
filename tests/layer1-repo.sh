@@ -1361,6 +1361,56 @@ else
 fi
 
 # ===========================================================================
+# PH5-070: ONE design gate.
+#
+# quick-plan.md claimed "the same gate as Stage 2" for two releases while
+# spawning the auditor on its own terms, with no canary and no evidence
+# validation; quick-audit had no gate at all. A lighter copy of a gate is the
+# route around it, and the route around is the one that gets used.
+#
+# The gate is now defined once, inside a delimited <design_gate> block in the
+# Stage 2 file, and the two shortcuts run that block by reference. Decidable by
+# grep: the block exists and carries the executable pieces; each shortcut names
+# the stage file and the block; neither shortcut carries a second copy of the
+# gate expression or its own canary orchestration.
+# ===========================================================================
+echo ""
+echo "--- One design gate (PH5-070) ---"
+
+DG_STAGE="plugins/toque/skills/plan/stages/stage-2-design.md"
+dg_block=$(sed -n '/^<design_gate>$/,/^<\/design_gate>$/p' "$DG_STAGE" 2>/dev/null)
+dg_bad=0
+if [ -z "$dg_block" ]; then
+  fail "PH5-070: $DG_STAGE has no delimited <design_gate> block"
+  dg_bad=1
+else
+  for piece in 'tq-canary.js" inject' 'tq-canary.js" detected' 'tq-evidence-validate.js' '<gate_expression>' '<revision_feedback>' '{gate_dir}' '{doc}' '{generator}'; do
+    printf '%s\n' "$dg_block" | grep -qF -- "$piece" \
+      || { fail "PH5-070: <design_gate> block does not contain '$piece' — the shared block is missing part of the gate"; dg_bad=1; }
+  done
+  # The human review gate is Stage 2's own decision, not part of the shared gate.
+  if printf '%s\n' "$dg_block" | grep -qF '<waiver_condition>'; then
+    fail "PH5-070: <design_gate> block contains the review waiver — that belongs to Stage 2, not to every caller"
+    dg_bad=1
+  fi
+fi
+for cmd in plugins/toque/commands/quick-plan.md plugins/toque/commands/quick-audit.md; do
+  grep -qF 'stages/stage-2-design.md' "$cmd" \
+    || { fail "PH5-070: $cmd does not name the Stage 2 file it runs the gate from"; dg_bad=1; }
+  grep -qF '<design_gate>' "$cmd" \
+    || { fail "PH5-070: $cmd does not name the <design_gate> block"; dg_bad=1; }
+  if grep -qF 'PASS = CANARY_OK' "$cmd"; then
+    fail "PH5-070: $cmd carries its own copy of the gate expression — two definitions drift"
+    dg_bad=1
+  fi
+  if grep -qF 'tq-canary.js' "$cmd"; then
+    fail "PH5-070: $cmd orchestrates the canary itself instead of running the shared block"
+    dg_bad=1
+  fi
+done
+[ "$dg_bad" -eq 0 ] && pass "PH5-070: the design gate is defined once in Stage 2 and run by reference from quick-plan and quick-audit"
+
+# ===========================================================================
 # RESULTS (part subtotal — the dispatcher owns the anchored Results line)
 # ===========================================================================
 echo "==========================================="

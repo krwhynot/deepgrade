@@ -16,5 +16,8 @@ desktop.ini
 *.local.md
 *.local.json
 
-# Design-gate canary working copies — never committed (plan workspace spec)
+# Design-gate canary working copies — never committed (plan workspace spec).
+# The second pattern is the gate folder a standalone quick-plan or quick-audit
+# writes beside its document.
 docs/plans/*/.canary/
+docs/specs/*/.canary/

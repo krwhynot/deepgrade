@@ -5,15 +5,20 @@ allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
 <plan_awareness>
-If $ARGUMENTS contains --plan {name}, write output to
-docs/plans/{date}-{name}/audit.md and update docs/plans/{date}-{name}/manifest.md
-with a link to the audit. Also update status.json.
+Every audit has a gate folder that receives audit.md, evidence/ and the .canary/
+scratch copy. Which folder depends on what is being audited:
 
-If the file path starts with docs/plans/, auto-detect the plan context and write
-audit output into that plan's folder: docs/plans/{date}-{name}/audit.md.
+If $ARGUMENTS contains --plan {name}, or the file path starts with docs/plans/,
+the gate folder is that plan's folder, docs/plans/{date}-{name}/. This is the
+plan's Stage 2 gate run again against the same document; update manifest.md
+with a link to the audit and update status.json.
 
-If no --plan flag and no auto-detect, present the audit results directly in the
-conversation. Do NOT create docs/audit/plan-audit.md.
+Otherwise the gate folder sits beside the audited file, named after it without
+the extension: docs/specs/pricing.md is audited into docs/specs/pricing/.
+
+If the plan was pasted rather than given as a path, write it to
+docs/specs/{slug}.md first and say so; the gate needs a file to mutate and
+evidence records need a file to cite. Do NOT create docs/audit/plan-audit.md.
 </plan_awareness>
 
 <context>
@@ -45,25 +50,41 @@ If no plan is found, ask the user to provide the plan:
 2. Provide the exact file path
 3. Describe what plan you want audited"
 
-## Step 2: Deploy Plan Auditor
+## Step 2: Design gate (the same gate as /toque:plan Stage 2)
 
-Spawn the plan-auditor agent with:
-- The full plan text
-- The codebase root path (so it can verify claims against actual files)
-- If linked to a plan: write output to docs/plans/{date}-{name}/audit.md
-- If standalone: present results in conversation (no file creation)
+Do not spawn the plan-auditor on your own terms. The gate is defined once, in
+the stage file, and this command runs that definition:
+
+Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/stages/stage-2-design.md` and execute
+its `<design_gate>` block, verbatim, with these bindings:
+
+  {doc}        the file located in Step 1
+  {gate_dir}   the gate folder chosen in <plan_awareness>
+  {generator}  none
+
+The block spawns the plan-auditor on a canary-mutated working copy, checks that
+the planted defect was found, validates every evidence record mechanically,
+applies the lint registry and the gap outputs, and derives PASS or NOT PASS
+from its gate expression. With no generator bound there is no revision loop:
+NOT PASS is reported with the unmet criteria named, and the document's author
+decides what to do. If the block and this description ever disagree, the block
+wins.
 
 ## Step 3: Present Results
 
-After the auditor completes, present:
+After the gate completes, present:
 1. The canonical gate result: `PASS` — passed the pass, or `NOT PASS` — back to
    the kitchen, with the criteria that failed. For each criterion, add the
    kitchen translation after its canonical token: `MET` — passed the pass;
    `UNMET` — back to the kitchen; `N_A` — not on this plate.
-2. Findings by severity, each citing file:line evidence
-3. Top 3 gaps that must be addressed
-4. Go/No-Go recommendation
-5. If linked to a plan, link to full report at docs/plans/{date}-{name}/audit.md
+2. Canary found or missed, and the evidence validator's exit code; a missed
+   canary means the audit could not be trusted and its findings are not shown
+   as findings
+3. Findings by severity, each citing file:line evidence
+4. Top 3 gaps that must be addressed
+5. Go/No-Go recommendation
+6. The gate record: {gate_dir}/audit.md and {gate_dir}/evidence/, to be
+   committed with the audited document
 
 If the user mentioned presenting to leadership, also highlight:
 - The 5-6 slide outline from the report

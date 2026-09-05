@@ -363,10 +363,13 @@ withdrawn; the workflow's rationale is explicit decisions and reviewable evidenc
 #### Shortcuts, intake, and document generation
 
 `quick-plan` writes a standalone spec (optionally linked to an existing plan),
-calls the scaffolder and auditor, and attaches findings after at most two
-revisions. `quick-audit` calls the auditor, using Full or Lite inputs as available.
-Neither command wires the complete Design-stage canary/validator sequence.
-A shortcut's displayed PASS is not evidence of the full Design gate.
+calls the scaffolder, then runs the design gate with at most two revisions.
+`quick-audit` runs the design gate against one file, with no revision loop.
+Both execute the `<design_gate>` block of the Stage 2 file with their own
+bindings for the document, the gate folder and the generator, so the canary,
+the evidence validator, the lint registry and the gate expression are defined
+once and there is no lighter copy. A shortcut's PASS is a design-gate pass for
+that document; it is not human review, scope lock, or authorization.
 
 `quick-cleanup` inventories and interviews before schema-based extraction,
 then verifies fields against sources, writes a source index, marks unreadable
