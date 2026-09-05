@@ -398,7 +398,14 @@ Detail level per phase based on risk:
 - MEDIUM risk: file paths, approach, key decisions
 - LOW risk: goals, scope, success criteria
 
-Include:
+Include, in the shapes the design gate keys on (the canary attaches to them and
+the registry's rules read them; the template shows each):
+- Under each phase, a line starting `Rollback:` and a line starting `Go/No-Go:`
+- A Dependencies table with an Owner column naming the owning team
+- An Assumption register table (`| # | Assumption | Impact If False | How to
+  Verify | By When | Owner | Status |`)
+- Test file paths (`tests/<name>.test.js` or the project's equivalent) in the
+  Verification plan wherever a phase claims test coverage
 - Timeline table with dependencies and critical path
 - Operational readiness section (if deployment involved): monitoring, config rollout, incident fallback, success metrics
 - Rollback plan per phase
@@ -437,11 +444,17 @@ manifest.md updates below apply; otherwise the same facts are recorded in
 rewrites it on every iteration). {gate_dir}/.canary/ is scratch: never
 committed, and deleted once the canary result is recorded. {gate_dir}/audit.md,
 {gate_dir}/evidence/ and, for a standalone document, {gate_dir}/gate.json are
-committed together with {doc}.
+committed together with {doc}. A reaudits/{date}/ folder under a plan folder
+takes the gate.json branch for the gate result, baseline and history, plus the
+manifest.md row and the status.json `documents` entry the command names.
 
-The checks key on the spec template's shapes. A document written outside the
-template can be audited, and its findings are the point of auditing it, but it
-cannot PASS this gate; the canary step below says why.
+The checks key on the spec template's shapes: a `Rollback:` line and a
+`Go/No-Go:` line per phase, a dependency row with an owning team, an assumption
+register, a cited test file, and an Evidence section. A document written
+outside the template can be audited, and its findings are the point of
+auditing it; it can PASS only if it carries those shapes, because the canary
+attaches to them and the registry's rules ask for them. When it cannot, the
+gate reports NOT PASS with the reasons rather than skipping a check.
 
 Run the checks below using the plan-auditor agent against {doc}.
 
@@ -516,7 +529,8 @@ For each assumption where impact = HIGH and status = unverified:
   2. If verification method mentions API/endpoint: note as REQUIRES_MANUAL
   3. If verification method mentions schema/database: search for schema files
   4. If verification method mentions config: search config files
-  5. Update assumption status in status.json:
+  5. Update assumption status in status.json when {gate_dir} is a plan folder,
+     otherwise in {gate_dir}/gate.json under baseline.assumption_counts:
      - verified: automated check passed
      - unverified: automated check failed or not automatable
      - falsified: automated check proved assumption false
@@ -574,18 +588,22 @@ original, record canary_found = false with reason "not-applicable", and report
 NOT PASS with the auditor's unmet list: a plan without those shapes is missing
 what the rollback, dependency-owner, assumption and coverage criteria require,
 and the unmet list names which. The gate cannot open on a document it cannot
-check the auditor against; the findings are still the audit's value.
+check the auditor against; the findings are still the audit's value. In this
+case skip the mutated-copy audit, the `detected` check, the re-anchoring and
+the .canary/ deletion below: inject wrote no canary.json and no .canary/, and
+the auditor audits {doc} itself.
 
 The auditor then audits the MUTATED copy, knowing nothing of any of this. Point
-it at the mutated copy as the document; it cites what it reads. Before
-validation, re-anchor every record to {doc}: set `artifact` to {doc}'s committed
-path, locate `exact_quote` in {doc} to set `line_start` and `line_end`, and
-recompute `sha256` from {doc}. A quote that cannot be found in {doc} came from
-the mutation: drop it, and re-check that criterion against the original (step 2
-below). A record that still cites {gate_dir}/.canary/ points at a file nobody
-commits and nobody can re-check.
+it at the mutated copy as the document; it cites what it reads, in its records
+and in audit.md, and the caller re-anchors both afterwards (step 3 below).
 
-Afterwards, run the check — do not perform it by eye:
+If no tool in this session can spawn a fresh instance, the canary cannot
+measure an independent auditor. Do not audit in the context that ran inject
+and present the result as a gate: record canary_found = false with reason
+"no-isolation", CANARY_OK is false, and report NOT PASS with the findings.
+
+Afterwards, run the check on the UNMET list exactly as the auditor returned it,
+before anything is re-anchored — do not perform it by eye:
 
 ```
 node "${CLAUDE_PLUGIN_ROOT}/scripts/tq-canary.js" detected \
@@ -615,8 +633,17 @@ membership by hand, so nothing ever ran it.
      criterion against the unmutated original. The strip alone is unsafe: if the
      plan has a genuine gap on the same criterion, removing "the LINT-03 finding"
      would remove the real one with it. The strip removes the artefact; the
-     recheck decides the truth.
-  3. Record the result (canary_found, the class and its criterion, from
+     recheck decides the truth. Both are the caller's work: the auditor cannot
+     be handed the canary and stay blind to it.
+  3. Re-anchor every record to {doc}: set `artifact` to {doc}'s repo-relative
+     path, locate `exact_quote` in {doc} to set `line_start` and `line_end`,
+     and recompute `sha256` from {doc}. A quote that cannot be found in {doc}
+     came from the mutation: drop it; its criterion was re-checked in step 2.
+     Apply the same line shift to the `spec:N` references in audit.md, or add
+     a line-offset note at its top. A record that still cites
+     {gate_dir}/.canary/ points at a file nobody commits and nobody can
+     re-check.
+  4. Record the result (canary_found, the class and its criterion, from
      canary.json) in the gate record, then delete {gate_dir}/.canary/. Nothing
      after this step reads it, and a consumer repository has nothing that keeps
      it out of a commit.
@@ -722,14 +749,22 @@ List all INFRA-GAPs with the claim, expected file, and actual status.
 PLAN LINT RULES (automated, run before presenting results):
 These are binary pass/fail checks. Any FAIL is a gap.
 
-Rule text and the applicable rule set live in `docs/planning-techniques/lint-registry.md`.
-Read it and apply every rule the registry assigns to Phase 5 in the current audit mode.
-This file names ids only — it does not restate what a rule means, so the two cannot
-drift apart. Report one PASS/FAIL per id, using the ids exactly as the registry
-numbers them.
+Rule text and the applicable rule set live in
+`${CLAUDE_PLUGIN_ROOT}/docs/planning-techniques/lint-registry.md` (the plugin's
+copy; the audited repository has none). Read it and apply every rule the
+registry assigns to Phase 5 in the current audit mode. This file names ids only
+— it does not restate what a rule means, so the two cannot drift apart. Report
+one PASS/FAIL/N_A per id, using the ids exactly as the registry numbers them;
+N_A only where this file or the registry says the rule does not apply, with the
+reason in the record.
 
 Apply at Phase 5: the registry's Phase 5 set.
-LINT-14 is skipped on the first audit (no baseline exists to regress from).
+LINT-14 is recorded N_A whenever no baseline exists in the record set this run
+compares against (a first audit, or a predecessor that wrote none); it stays in
+the denominator. It is the CALLER's verdict, decided by the baseline comparison
+below: the auditor records it N_A with justification "caller compares", and the
+caller then writes the LINT-14 record — UNMET on any regression, MET otherwise —
+citing the baseline entries it compared.
 LINT-11 and LINT-12 belong to Phase 7 and do not run here.
 
 (The registry still keys its rule sets by the old phase numbers: "Phase 5" is the
@@ -743,13 +778,13 @@ After all 4 outputs + lint rules, produce:
 ```markdown
 ## Gap Summary
 
-Lint: {N}/{applicable} passed, {M} failed   <- denominator = the registry's Phase 5 set for this mode
+Lint: {N}/{applicable} passed, {M} failed, {K} N_A   <- denominator = the registry's Phase 5 set for this mode
 Coverage Matrix: {N} items, {M} gaps
 Assumption Register: {N} assumptions, {M} unverified high-impact
 Scenario Matrix: 8 scenarios, {M} gaps
 Cross-Cutting Sweep: {N} concerns, {M} gaps
 
-Total gaps: {sum}
+Total gaps: {lint FAILs + coverage gaps + unverified HIGH-impact assumptions + scenario gaps + cross-cutting gaps + INFRA-GAPs}
 Total warnings: {sum}
 
 Gap-checked: YES / NO
@@ -810,6 +845,11 @@ it with audit findings:
    If the audit revision introduced tools/patterns that exist in other plans,
    add "Also referenced in" links.
 
+Reinforcement changes {doc} after the records were pinned. Re-anchor every
+record to the reinforced {doc} (same quotes, recomputed lines and sha256) and
+run the validator again; a quote that no longer exists is a demotion, not a
+reason to re-audit.
+
 When {gate_dir} is a plan folder, update manifest.md: update the spec.md row
 with the reinforcement date.
 
@@ -856,12 +896,17 @@ RUN one additional judge with no rubric, no criterion list, and no dimension nam
 
 Its entire prompt is: "Ignore any checklist. What would make this plan fail in
 production?" Fresh instance, same input manifest as the auditor, none of the
-criterion files.
+criterion files. If no fresh instance can be spawned, skip this pass and record
+it as not run; a judge that has already read the criteria is not rubric-free.
 
 Map its findings against the criterion set afterwards. A finding that maps to an
 existing criterion is discarded — the gate already covers it. A finding that maps
-to NOTHING is appended to docs/planning-techniques/lint-candidates.md with the plan
-name and date, as a candidate rule for owner review.
+to NOTHING is appended to
+`${CLAUDE_PLUGIN_ROOT}/docs/planning-techniques/lint-candidates.md` with the plan
+name and date, as a candidate rule for owner review, when that file is writable
+from this session; otherwise it is recorded under `holistic_pass.candidates` in
+the gate record (status.json or gate.json), never in a new file in the audited
+repository.
 
 This pass never gates, and that is deliberate. Every other mechanism in the design
 gate makes the judge honest ABOUT the criteria; none of them can notice that the
@@ -874,7 +919,9 @@ prose judgment the gate rewrite removed.
 The gate reads whether the claims survived checking.
 
 <gate_expression>
-CANARY_OK   = the criterion the planted defect violates came back UNMET
+CANARY_OK   = a defect was planted AND the criterion it violates came back UNMET
+              (false when canary_found is false for any reason: missed twice,
+              not-applicable, no-isolation)
 EVIDENCE_OK = tq-evidence-validate.js exited 0 (nothing was flagged)
 VERIFIED    = every applicable criterion is MET or N_A after validation
 INFRA_OK    = infra_gaps == 0
@@ -971,10 +1018,25 @@ rewrites audit.md on every iteration, so append only after the final one:
 | v2      | (none)         | 0    | Accepted |
 ```
 
-Record the gate result (gate_passed boolean, unmet_criteria list, gap_checked
-boolean, gap_count, canary_found, canary_class): in status.json and manifest.md
-when {gate_dir} is a plan folder, otherwise in {gate_dir}/gate.json together
-with the baseline and its history.
+Record the gate result: in status.json and manifest.md when {gate_dir} is a plan
+folder, otherwise in {gate_dir}/gate.json. gate.json has exactly this top-level
+shape; add fields, never nest these:
+
+```json
+{
+  "gate_passed": false,
+  "unmet_criteria": ["LINT-03"],
+  "gap_checked": false,
+  "gap_count": 4,
+  "canary_found": true,
+  "canary_class": "rollback-strip",
+  "canary_reason": "found | missed | not-applicable | no-isolation",
+  "validator_exit": 0,
+  "mode": "LITE",
+  "baseline": {},
+  "history": []
+}
+```
 </design_gate>
 
 HUMAN REVIEW GATE (conditionally waivable):

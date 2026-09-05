@@ -749,7 +749,7 @@ These are instructed checks, not a shipped general-purpose executable plan linte
 | LINT-05 | Every new endpoint/API has a contract or test entry | 5 |
 | LINT-06 | Backward compatibility claimed but no mixed-state scenario | 5 |
 | LINT-07 | Every new behavior has a test or test delta | 5 |
-| LINT-08 | No unverified HIGH-impact assumption exists | 5 (hard gate) |
+| LINT-08 | No unverified or falsified HIGH-impact assumption exists | 5 (hard gate) |
 | LINT-09 | No unaddressed cross-cutting concern for in-scope features | 5 |
 | LINT-10 | Every phase has go/no-go criteria | 5 |
 | LINT-11 | Every code change maps to a plan ticket | 7 (Full only) |

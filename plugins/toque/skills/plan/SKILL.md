@@ -26,8 +26,10 @@ Hard rules, in every stage:
 <parallel_execution_strategy>
 USE PARALLEL AGENTS WHENEVER POSSIBLE.
 
-RULE: If a stage has 2+ tasks that don't depend on each other,
-run them as parallel subagents. Do NOT run them sequentially.
+RULE: If a stage has 3+ tasks that don't depend on each other, run them as
+parallel subagents. Do NOT run them one after another. Two independent tasks
+run inline, in either order; the subagent overhead is not worth it for two
+(scaling rules below).
 
 When to parallelize (by stage):
 - Stage 1 (Plan): the 3 research tracks are independent -> 3 parallel subagents

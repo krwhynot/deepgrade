@@ -75,11 +75,16 @@ Every finding MUST include:
   and placed in a separate section. It does NOT support any verdict.
 
 Reference the toque:self-audit-knowledge skill for claim tier definitions and failure
-mode taxonomy. Map each finding to Tier A/B/C alongside the confidence level:
-- Tier A: deterministic keyword check or file existence (HIGH [A])
-- Tier B: direct evidence from plan text or codebase file (HIGH [B] or MEDIUM [B])
-- Tier C: agent judgment, naming inference, absence-based detection (MEDIUM [C] or LOW [C])
-Format: `HIGH [A]: direct quote from plan section 3.2`
+mode taxonomy. The tier says how the claim was derived; the confidence follows
+from the tier, never the other way round:
+- Tier A: a deterministic tool result — grep, glob, `test -f`, a count. HIGH [A].
+- Tier B: read directly from the plan text or a codebase file. HIGH [B] when the
+  whole file was read, MEDIUM [B] for a partial read.
+- Tier C: agent judgment, naming inference, absence-based detection. MEDIUM [C]
+  or LOW [C], never HIGH.
+A quote from the plan is Tier B (it was read), not Tier A. Formats:
+`HIGH [B]: direct quote from plan section 3.2, full file read` and
+`HIGH [A]: test -f confirmed tests/reports.test.js exists`.
 
 Plan audit failure mode flags (append where applicable):
 - `[PLAN-GAP-INFERRED]` — gap detected by absence of keywords, not by understanding plan intent
@@ -130,7 +135,7 @@ Plan audit failure mode flags (append where applicable):
 ## 7. Testing & Validation (How do we PROVE it works?)
 - Is a testing strategy defined per phase?
 - Has each deliverable been assigned a testing methodology (not just "unit tests")?
-  Reference: docs/planning-techniques/10-testing-methodology-selection.md
+  Reference: ${CLAUDE_PLUGIN_ROOT}/docs/planning-techniques/10-testing-methodology-selection.md (the plugin's copy; not in the audited repository)
   11 methodologies: TDD, BDD, Characterization, Contract, Property-Based,
   Snapshot, Shadow/Parallel, ATDD, Mutation, Exploratory, Expand/Contract
 - Is the methodology appropriate for the type of change?
@@ -199,8 +204,9 @@ If the plan references specific files, functions, or patterns:
 
 ## Step 4: Parallel Specialist Review (5 subagents)
 
-Deploy 4 specialist reviewers in parallel. Each gets the plan text + relevant
-codebase files + the deterministic pre-check results from Step 2.
+Deploy 4 specialist reviewers in parallel, plus the Gap Verifier: five subagents
+in all (see WHY 5 AGENTS below). Each gets the plan text + relevant codebase
+files + the deterministic pre-check results from Step 2.
 
 ### Subagent 1: Architecture Reviewer (Opus)
 **Dimensions:** 1 (Problem Definition), 2 (Architecture & Design), 3 (Phasing)
@@ -210,13 +216,13 @@ codebase files + the deterministic pre-check results from Step 2.
 
 ### Subagent 2: Risk Reviewer (Opus)
 **Dimensions:** 4 (Risk Assessment), 5 (Rollback & Safety)
-**Context:** Plan text + docs/audit/risk-assessment.md + docs/audit/integration-scan.md
+**Context:** Plan text + docs/audit/risk-assessment.md + docs/audit/integration-scan.md (optional inputs; when absent, the plan text and codebase only)
 **Focus:** What could go wrong? Can we undo it? Are mitigations sufficient?
 **Output:** Findings for dimensions 4-5 with evidence. Also generates the Top 5 Risks table.
 
 ### Subagent 3: Execution Reviewer (Sonnet)
 **Dimensions:** 6 (Timeline & Effort), 8 (Team & Resources)
-**Context:** Plan text + docs/audit/dependency-map.md + project structure
+**Context:** Plan text + docs/audit/dependency-map.md (optional input; when absent, project structure only) + project structure
 **Focus:** Is the timeline realistic? Who does the work? What about capacity?
 **Output:** Findings for dimensions 6 and 8 with evidence.
 
@@ -271,6 +277,8 @@ LITE MODE (called from /toque:quick-plan or standalone /toque:quick-audit):
   - LINT-11 and LINT-12 are skipped: no build phase in quick-plan, no changed files
   - LINT-13 is evaluated against the spec's Architecture section
   - LINT-15 and LINT-16 apply only if the spec references test files or monitoring
+  - LINT-18 is UNMET when a code deliverable names no test author; unspecified
+    authorship is not N_A, because separation cannot be confirmed
 
   Gap matrices in LITE MODE:
   - Coverage Matrix: goals extracted from spec, mapped to phases in spec
@@ -367,6 +375,9 @@ Auditor: Toque Plan Auditor v1.0
 [3-4 sentences: overall assessment, biggest strength, biggest gap, recommendation]
 
 ## Criterion Verdicts
+
+Records live in evidence/{criterion_id}.json beside this report; this section
+lists each id with its verdict and points there. Do not inline the records.
 
 Emit one record per applicable criterion, in this shape and this field order:
 
@@ -538,12 +549,13 @@ this withholding exists to prevent — report the verdicts and the gaps.
 
 ### Plan Lint Results
 One row per rule in the registry's Phase 5 set for the detected audit mode. Take the
-Rule and Description columns verbatim from `docs/planning-techniques/lint-registry.md`
-— do not paraphrase them, and do not carry a copy of the rule text in this file.
+Rule and Description columns verbatim from
+`${CLAUDE_PLUGIN_ROOT}/docs/planning-techniques/lint-registry.md` — do not
+paraphrase them, and do not carry a copy of the rule text in this file.
 
 | Rule | Description | Result |
 |------|-----------|--------|
-| (one row per applicable id, description copied from the registry) | | PASS/FAIL |
+| (one row per applicable id, description copied from the registry) | | PASS/FAIL/N_A (N_A only for LINT-14 with no baseline, LINT-15/16 when the spec makes no such claim; state the reason) |
 
 ### Gap Summary
 - Lint: X/Y passed, where Y is the size of the registry's Phase 5 set for this mode

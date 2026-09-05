@@ -26,8 +26,11 @@ manifest.md row in that plan linking the audit; nothing is written into the
 plan's own gate record.
 
 A plan written outside the spec template can be audited, and the findings are
-the value; it cannot PASS, because the canary has nothing to attach to. The
-gate says so in its result rather than skipping the check.
+the value. It can PASS only if it carries the shapes the checks key on (a
+`Rollback:` and a `Go/No-Go:` line per phase, a dependency row with an owning
+team, an assumption register, a cited test file, an Evidence section): the
+canary attaches to them and the registry's rules ask for them. When it cannot,
+the gate says so in its result rather than skipping a check.
 
 If the plan was pasted rather than given as a path, write it to
 docs/specs/{slug}.md first and say so; the gate needs a file to mutate and
@@ -90,9 +93,10 @@ After the gate completes, present:
    the kitchen, with the criteria that failed. For each criterion, add the
    kitchen translation after its canonical token: `MET` — passed the pass;
    `UNMET` — back to the kitchen; `N_A` — not on this plate.
-2. Canary found or missed, and the evidence validator's exit code; a missed
-   canary means the audit could not be trusted and its findings are not shown
-   as findings
+2. Canary found, missed, not applicable (the document has none of the shapes
+   a canary attaches to), or no-isolation (no fresh auditor could be spawned),
+   and the evidence validator's exit code; a canary missed twice means the
+   audit could not be trusted and its findings are not shown as findings
 3. Findings by severity, each citing file:line evidence
 4. Top 3 gaps that must be addressed
 5. Go/No-Go recommendation

@@ -109,8 +109,8 @@ spec.
 After the loop completes:
 1. Show the plan summary (problem, phases, timeline, key risks)
 2. Show the final gate result (`PASS` — passed the pass, or `NOT PASS` — back to
-   the kitchen), the MET/UNMET/N_A counts, canary found or missed, evidence
-   validation exit code, and whether gap-checked
+   the kitchen), the MET/UNMET/N_A counts, canary found, missed, not applicable
+   or no-isolation, evidence validation exit code, and whether gap-checked
 3. If revisions occurred, note: "Plan was revised {N} time(s). {X} criteria moved from UNMET to MET."
 4. Show the Revision History table from docs/specs/{name}/audit.md
 5. Note evidence basis distribution (should be <40% Tier C)
