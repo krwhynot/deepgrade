@@ -391,9 +391,11 @@ explicit breaking changes; they do not authorize a release.
 credits ADR context, decisions, consequences and supersession; [Conventional Commits contributors: Specification 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)
 defines commit markers used in release-note classification. Toque's layouts,
 intake schemas, and cross-document suggestions are adaptations, not prescribed
-standards. The BRD template contains a conflicting instruction to update the
-external baseline despite its explicit read-only rule; read-only consumption
-cannot be claimed as mechanically guaranteed.
+standards. Imported analysis baselines are read-only inputs everywhere: the
+BRD deep scan records what it verified in the BRD's own coverage table, never
+in the baseline file, so a later reader can tell what the external tool
+reported from what Toque checked. Read-only consumption remains a workflow
+rule, not a mechanically guaranteed one.
 
 **Implementation:** [plugins/toque/commands/quick-plan.md](plugins/toque/commands/quick-plan.md), [plugins/toque/commands/quick-audit.md](plugins/toque/commands/quick-audit.md), [plugins/toque/commands/quick-cleanup.md](plugins/toque/commands/quick-cleanup.md), [plugins/toque/skills/documentation/SKILL.md](plugins/toque/skills/documentation/SKILL.md).
 **Verification:** [tests/layer4-behavioral-smoke.sh](tests/layer4-behavioral-smoke.sh) checks structure
