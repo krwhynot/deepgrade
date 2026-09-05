@@ -49,7 +49,7 @@ this is how to read them:
 | **What** | Guided six-stage workflow | One-shot plan generation |
 | **Stages** | All 6 (Plan through Maintain) | None — a one-shot spec, outside the stage workflow |
 | **Asks questions?** | Yes, walks you through interactively | No, takes objective and generates immediately |
-| **Creates plan folder?** | Yes: `docs/plans/2026-03-07-{name}/` | No, just writes `docs/specs/{name}.md` |
+| **Creates plan folder?** | Yes: `docs/plans/2026-03-07-{name}/` | No; writes `docs/specs/{name}.md` plus its gate record in `docs/specs/{name}/` (`audit.md`, `evidence/`, `gate.json`) |
 | **Research?** | Yes, scans codebase + docs + web | No, uses existing context |
 | **Audit?** | Yes, the design gate plus human review | Yes, the same design gate with a revision loop (up to 2 iterations); no human review |
 | **Build help?** | Yes, tracks tickets and assists | No, plan is delivered |
@@ -157,5 +157,5 @@ are read and by which file.
 | Specs | `docs/specs/` |
 | ADRs | `docs/adr/` |
 | PRDs | `docs/prd/` |
-| Plan audits | `docs/audit/` |
+| Plan audits (gate record) | The plan folder's `audit.md` + `evidence/`, or `{dir}/{name}/` beside a standalone file |
 | Codebase analysis Toque reads but does not write | `docs/audit/` |

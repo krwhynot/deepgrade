@@ -5,16 +5,29 @@ allowed-tools: Read, Write, Grep, Glob, Bash, Task
 ---
 
 <plan_awareness>
-Every audit has a gate folder that receives audit.md, evidence/ and the .canary/
-scratch copy. Which folder depends on what is being audited:
+Every audit has a gate folder that receives audit.md, evidence/, gate.json and
+the .canary/ scratch copy (deleted by the gate once used). Which folder depends
+on what is being audited:
 
-If $ARGUMENTS contains --plan {name}, or the file path starts with docs/plans/,
-the gate folder is that plan's folder, docs/plans/{date}-{name}/. This is the
-plan's Stage 2 gate run again against the same document; update manifest.md
-with a link to the audit and update status.json.
+The plan's own spec.md (the path is docs/plans/{date}-{name}/spec.md, with or
+without --plan): the gate folder is that plan folder, and the auditor runs in
+Full mode. While phases.design.status is still in_progress this is the plan's
+Stage 2 gate run again and overwrites its record. Once design is complete, the
+Stage 2 record is history: write the rerun to
+docs/plans/{date}-{name}/reaudits/{date}/ (audit.md, evidence/, gate.json) and
+add a manifest.md row for it. Either way, add the audit to that status.json's
+`documents` object.
 
-Otherwise the gate folder sits beside the audited file, named after it without
-the extension: docs/specs/pricing.md is audited into docs/specs/pricing/.
+Any other file, including another file inside a plan folder: the gate folder
+sits beside the audited file, named after it without the extension
+(docs/specs/pricing.md is audited into docs/specs/pricing/; docs/adr/x.md into
+docs/adr/x/), and the auditor runs in Lite mode. With --plan {name}, also add a
+manifest.md row in that plan linking the audit; nothing is written into the
+plan's own gate record.
+
+A plan written outside the spec template can be audited, and the findings are
+the value; it cannot PASS, because the canary has nothing to attach to. The
+gate says so in its result rather than skipping the check.
 
 If the plan was pasted rather than given as a path, write it to
 docs/specs/{slug}.md first and say so; the gate needs a file to mutate and
@@ -83,8 +96,8 @@ After the gate completes, present:
 3. Findings by severity, each citing file:line evidence
 4. Top 3 gaps that must be addressed
 5. Go/No-Go recommendation
-6. The gate record: {gate_dir}/audit.md and {gate_dir}/evidence/, to be
-   committed with the audited document
+6. The gate record: {gate_dir}/audit.md, {gate_dir}/evidence/ and
+   {gate_dir}/gate.json, to be committed with the audited document
 
 If the user mentioned presenting to leadership, also highlight:
 - The 5-6 slide outline from the report

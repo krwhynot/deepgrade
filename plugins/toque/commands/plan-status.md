@@ -83,7 +83,11 @@ Show:
    only when phases.deploy.released_at exists; plan match from review.md if
    present. A Deploy stage with status `authorized` is shown as
    "Authorized by {name}, {date}; release not yet confirmed", never as
-   Complete or Released.
+   Complete or Released. A Deploy stage that is `complete` with no
+   `released_at` was recorded before release confirmation existed, when
+   completion was written at authorization: print
+   "Plan -> release: {phases.deploy.completed - phases.build.started}
+   (recorded at authorization)" rather than pending.
 6. Recommended next action with reasoning
 
 ```

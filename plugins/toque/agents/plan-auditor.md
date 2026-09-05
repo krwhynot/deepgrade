@@ -280,11 +280,15 @@ LITE MODE (called from /toque:quick-plan or standalone /toque:quick-audit):
 
   Report includes: "Audit mode: LITE (spec-only). For full gap matrices, run /toque:plan."
 
-MODE DETECTION:
-  If docs/plans/{date}-{name}/ exists with intent.md and spec.md -> FULL MODE
-  If that folder exists with the schema-1 names brainstorm.md and approach.md
-    instead -> FULL MODE, reading them per the fallback above
-  If only a spec file is provided and there is no plan folder -> LITE MODE
+MODE DETECTION (from the caller's bindings, not from what exists on disk):
+  FULL MODE when the gate folder the caller bound is a plan folder AND the
+    document you were handed is that plan's spec.md (Stage 2, or quick-audit on
+    the plan's own spec). Read intent.md and the rest from that folder; use the
+    schema-1 names brainstorm.md and approach.md per the fallback above when
+    the current names are absent.
+  LITE MODE otherwise, even when a docs/plans/*-{name}/ folder exists.
+    quick-plan --plan links a standalone spec to a plan; it does not audit the
+    plan's spec, and reading the plan folder would audit the wrong document.
   Log which mode was selected in the audit output.
 
 CRITICAL: The Gap Verifier does NOT review by dimension. It produces structured

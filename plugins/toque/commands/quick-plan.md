@@ -12,9 +12,11 @@ spec) and .canary/ (scratch, never committed).
 If $ARGUMENTS contains --plan {name}:
   1. Write spec to docs/specs/{name}.md; the gate folder is still docs/specs/{name}/
   2. If docs/plans/*-{name}/ exists: add a row for the spec and its audit.md to
-     that plan's manifest.md and note the link in status.json. Do NOT write
-     into the plan folder's own audit.md or evidence/; those belong to the
-     plan's Stage 2 run of the gate against its spec.md.
+     that plan's manifest.md and add both paths to that status.json's
+     `documents` object (the object every stage writes linked documents to).
+     Do NOT write into the plan folder's own audit.md or evidence/; those
+     belong to the plan's Stage 2 run of the gate against its spec.md, and the
+     auditor runs in Lite mode against this spec, not the plan's.
   3. If docs/plans/*-{name}/ does NOT exist: do NOT create a plan folder.
      Quick-plan is a spec generator, not a plan workflow. The spec and its gate
      folder are the only output. If the user wants a full plan folder, use
@@ -98,16 +100,9 @@ plan-scaffolder one line per unmet criterion (id, what is missing, location),
 never the rubric or the totals, and re-runs the auditor as a FRESH instance on
 the revised spec. Maximum 2 revision iterations. After 2 iterations, deliver
 the plan at its current quality with the unmet criteria named; a plan does not
-"usably pass with known gaps".
-
-Track iteration history in the plan file:
-```markdown
-## Revision History
-| Version | Verdict | Gap-Checked | Gaps Found | Action |
-|---------|-------|-------------|------------|--------|
-| v1      | NOT PASS | NO          | 7          | Revised sections 4, 5, 7 |
-| v2      | PASS     | YES         | 0          | Accepted |
-```
+"usably pass with known gaps". The block writes the revision history into
+docs/specs/{name}/audit.md after the loop; do not keep a second copy in the
+spec.
 
 ## Step 6: Present Results
 
@@ -117,10 +112,11 @@ After the loop completes:
    the kitchen), the MET/UNMET/N_A counts, canary found or missed, evidence
    validation exit code, and whether gap-checked
 3. If revisions occurred, note: "Plan was revised {N} time(s). {X} criteria moved from UNMET to MET."
-4. Show the Revision History table
+4. Show the Revision History table from docs/specs/{name}/audit.md
 5. Note evidence basis distribution (should be <40% Tier C)
-6. Point at the gate record: docs/specs/{name}/audit.md and evidence/. Commit
-   them with the spec; an audit whose evidence is not committed did not happen.
+6. Point at the gate record: docs/specs/{name}/audit.md, evidence/ and
+   gate.json. Commit them with the spec; an audit whose evidence is not
+   committed did not happen. The .canary/ scratch is already deleted.
 7. Note: "This spec passed the design gate; it has not been reviewed by a person
    and nothing here authorizes a build or a release."
 </workflow>

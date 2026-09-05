@@ -337,7 +337,7 @@ as two events: `authorized_by`/`authorized_at` leave the stage in status
 authorization still does not establish that a deployment happened; the
 separate confirmation is a human statement, not an observation of production.
 
-**Implementation:** [plugins/toque/skills/plan/stages/stage-5-deploy.md](plugins/toque/skills/plan/stages/stage-5-deploy.md) (Steps A-D). **Verification:** [tests/layer1-core.sh](tests/layer1-core.sh); structural checks do not establish agent compliance.
+**Implementation:** [plugins/toque/skills/plan/stages/stage-5-deploy.md](plugins/toque/skills/plan/stages/stage-5-deploy.md) (Steps A-E). **Verification:** [tests/layer1-core.sh](tests/layer1-core.sh); structural checks do not establish agent compliance.
 
 ### Stage 6: Maintain
 
@@ -655,8 +655,8 @@ project release controls remain separately owned.
 ### Why Plans Need Auditing Too
 
 The [plan auditor](plugins/toque/agents/plan-auditor.md) requires per-criterion verdicts, evidence, explicit
-gaps and recommendations. It is reachable from Design, quick-audit and quick-plan.
-The latter two do not invoke the whole Design-stage gate. Its evidence-first
+gaps and recommendations. It is reachable from Design, quick-audit and quick-plan;
+all three execute the same `<design_gate>` block of the Stage 2 file. Its evidence-first
 record order, hidden author context and defect-only feedback are Toque design
 choices, related to [Erik S. and Barry Zhang, Anthropic: Building effective agents](https://www.anthropic.com/engineering/building-effective-agents)' evaluator-optimizer pattern.
 
@@ -671,9 +671,10 @@ These lenses are Toque's taxonomy, not an industry standard or proof of coverage
 ### The Evidence Requirement
 
 The workflow requires evidence, then reasoning, then a MET/UNMET/N_A verdict.
-Unverified findings are separated and cannot support a verdict. Full-mode callers
-write one record per criterion beside audit.md; conversation-only callers report
-inline and do not create that evidence directory.
+Unverified findings are separated and cannot support a verdict. Every caller,
+Full or Lite, writes one record per criterion to `evidence/` beside `audit.md`
+in its gate folder; a standalone document's gate folder sits beside it. There
+is no conversation-only mode.
 
 [W3C: PROV Overview](https://www.w3.org/TR/prov-overview/) distinguishes entities, activities and responsibility in provenance.
 Toque adapts provenance ideas with repository-relative paths, exact line ranges,
@@ -988,8 +989,9 @@ decay limit or that multiple agents are necessary for every task.
 The caller assigns bounded objectives and inputs, gathers reports, then resolves
 agreements and conflicts. Plan research writes into the plan's research folder;
 Build uses temporary reports; troubleshooting records specialist findings in its
-log. Conversation-only audits need not write files. The old universal
-`docs/audit/` output claim described removed scanners.
+log. Every design-gate run, including a standalone `quick-audit`, writes
+`audit.md` and `evidence/` into its gate folder; nothing writes to
+`docs/audit/`, whose old universal-output claim described removed scanners.
 **Implementation:** [plugins/toque/skills/plan/SKILL.md](plugins/toque/skills/plan/SKILL.md) (parallel_execution_strategy). **Verification:** [tests/layer1-core.sh](tests/layer1-core.sh); structural checks do not establish agent compliance.
 
 ### Agent Deployment Across Commands

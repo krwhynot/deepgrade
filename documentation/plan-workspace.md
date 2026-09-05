@@ -94,7 +94,7 @@ At a completed stage transition, record the completion time, the next stage's st
 
 A mid-stage approval—such as Design scope lock or approval of `plan.md`—does not complete that stage. Deploy records two events: `authorized_by` and `authorized_at` when a named human authorizes the release (status `authorized`), then `released_by` and `released_at` when a human confirms it happened (status `complete`). Maintain starts at `released_at` and stays in `steady_state` without a completion timestamp.
 
-Recorded times support intent-to-spec, spec-to-plan, and plan-to-release elapsed-time reporting. Required human decisions need the actual name; a timestamp alone is not approval.
+Recorded times support intent-to-spec, spec-to-plan, plan-to-authorization, and, once `released_at` is recorded, plan-to-release elapsed-time reporting. Required human decisions need the actual name; a timestamp alone is not approval.
 
 ## Resuming
 

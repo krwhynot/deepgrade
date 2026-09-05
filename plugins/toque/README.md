@@ -144,8 +144,8 @@ pass without them.
 | Canary working copy | `docs/plans/{date}-{name}/.canary/` | No |
 | Troubleshooting logs, postmortems, knowledge base | `docs/troubleshooting/` or the plan's `troubleshooting/` | Yes |
 | Specifications and quick plans | `docs/specs/{name}.md` | Yes |
-| Gate record for a standalone spec or audited file | `docs/specs/{name}/audit.md`, `docs/specs/{name}/evidence/` | Yes |
-| Canary working copy for a standalone gate run | `docs/specs/{name}/.canary/` | No |
+| Gate record for a standalone spec or audited file | `{dir}/{name}/audit.md`, `evidence/`, `gate.json` beside the document (`docs/specs/{name}/` for a quick-plan spec) | Yes |
+| Canary working copy for a standalone gate run | `{dir}/{name}/.canary/`, deleted by the gate once used | No |
 | ADRs, BRDs, PRDs | `docs/adr/`, `docs/brd/`, `docs/prd/` | Yes |
 | Runbooks | `docs/runbooks/` or the plan folder | Yes |
 | Plan export | `{plan-name}-export.zip` at project root | No |
@@ -158,7 +158,7 @@ pass without them.
 - **5 skills** - plan and troubleshoot (each a router plus one file per stage or phase), documentation, MCP research, self-audit knowledge
 - **7 doc templates** - ADR, BRD, PRD, README, runbook, release notes, spec, each with a fill-in document skeleton
 - **3 hook handlers** - `scripts/tq-session-start.js`, `tq-subagent-stop.js`, `tq-pre-compact.js`
-- **2 design-gate tools** - `scripts/tq-canary.js` and `tq-evidence-validate.js`, invoked by Stage 2 of `/toque:plan`, not by hooks
+- **2 design-gate tools** - `scripts/tq-canary.js` and `tq-evidence-validate.js`, run by the Stage 2 `<design_gate>` block, which `/toque:plan`, `/toque:quick-plan`, and `/toque:quick-audit` all execute; never by hooks
 
 ## Version History
 

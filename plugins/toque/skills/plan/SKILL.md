@@ -185,7 +185,8 @@ This will create: docs/plans/2026-03-07-worldpay-canada/
 
 Create initial status.json (schema 2). Every stage entry records `status` and,
 when it changes, ISO `started` and `completed` timestamps. The timestamps are the
-playbook's metrics: intent-to-spec, spec-to-plan, plan-to-release elapsed.
+playbook's metrics: intent-to-spec, spec-to-plan, plan-to-authorization, and,
+once a release is confirmed, plan-to-release elapsed.
 ```json
 {
   "schema_version": 2,
@@ -285,10 +286,11 @@ after any compaction. Read only the current stage; do not read ahead.
 Paths use forward slashes on every platform. If a stage file cannot be read, stop
 and report the path; do not improvise the stage from memory.
 
-Gate bookkeeping, every time a gate is passed: set the stage's `completed`
-timestamp, set the next stage to `in_progress` with `started`, set
-`current_phase`, and record who approved (`accepted_by`, `approved_by`,
-`authorized_by`) with the date. A gate without a recorded name is not passed.
+Gate bookkeeping, every time a gate is passed (Stage 5 excepted; see the next
+paragraph): set the stage's `completed` timestamp, set the next stage to
+`in_progress` with `started`, set `current_phase`, and record who approved
+(`accepted_by`, `approved_by`, `authorized_by`) with the date. A gate without a
+recorded name is not passed.
 
 Stage 5 records two events, never one: `phases.deploy.authorized_by` and
 `authorized_at` when a named human authorizes the release (status

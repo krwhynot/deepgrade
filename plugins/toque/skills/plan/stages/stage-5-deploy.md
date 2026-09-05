@@ -13,7 +13,8 @@ Gate: Named human release authorization. The skill never runs a deploy command.
 - Step A: Diff-versus-plan check (fresh subagent)
 - Step B: review.md
 - Step C: Release authorization (hard rule)
-- Step D: Final summary
+- Step D: Authorization summary
+- Step E: Release confirmation
 
 READINESS CHECK before entering this stage:
 - Test stage complete (status.json phases.test.status = complete, test_gate has no pending manual items)
@@ -168,7 +169,9 @@ person confirming and the release time, then record:
 
 - status.json phases.deploy: released_by (name), released_at (ISO),
   status -> complete, completed -> the same ISO as released_at
-- status.json phases.maintain: status -> steady_state, started -> released_at
+- status.json phases.maintain: status -> steady_state, started -> released_at;
+  current_phase -> maintain (this is the stage transition; authorization was
+  not one)
 - review.md ## Release authorization: one line "Released by {name} on {date}"
 - manifest.md: the review.md row reads Released
 

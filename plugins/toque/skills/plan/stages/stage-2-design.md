@@ -432,10 +432,16 @@ the caller before the block runs:
 Stage 2 binds {doc} = docs/plans/{date}-{plan-name}/spec.md,
 {gate_dir} = docs/plans/{date}-{plan-name}/, and {generator} = the spec writer
 of Parts A and B. When {gate_dir} is a plan folder, the status.json and
-manifest.md updates below apply; otherwise the same facts are recorded in the
-header of {gate_dir}/audit.md, which is the gate record for a standalone
-document. {gate_dir}/.canary/ is scratch and is never committed;
-{gate_dir}/audit.md and {gate_dir}/evidence/ are committed together with {doc}.
+manifest.md updates below apply; otherwise the same facts are recorded in
+{gate_dir}/gate.json, which the caller owns (the auditor owns audit.md and
+rewrites it on every iteration). {gate_dir}/.canary/ is scratch: never
+committed, and deleted once the canary result is recorded. {gate_dir}/audit.md,
+{gate_dir}/evidence/ and, for a standalone document, {gate_dir}/gate.json are
+committed together with {doc}.
+
+The checks key on the spec template's shapes. A document written outside the
+template can be audited, and its findings are the point of auditing it, but it
+cannot PASS this gate; the canary step below says why.
 
 Run the checks below using the plan-auditor agent against {doc}.
 
@@ -560,7 +566,24 @@ removed, a dependency owner blanked, an unverified HIGH-impact assumption added,
 go/no-go criteria deleted, or a claim of coverage from a test file that does not
 exist. The class is recorded along with the single criterion it violates.
 
-The auditor then audits the MUTATED copy, knowing nothing of any of this.
+If inject exits 2 with "no canary class could be applied", the document has
+none of the five shapes a canary attaches to: a `Rollback:` line, an owned
+dependency row, an assumption-register row, a `Go/No-Go:` line, a cited test
+file. Do not invent one and do not skip the audit. Run the auditor on the
+original, record canary_found = false with reason "not-applicable", and report
+NOT PASS with the auditor's unmet list: a plan without those shapes is missing
+what the rollback, dependency-owner, assumption and coverage criteria require,
+and the unmet list names which. The gate cannot open on a document it cannot
+check the auditor against; the findings are still the audit's value.
+
+The auditor then audits the MUTATED copy, knowing nothing of any of this. Point
+it at the mutated copy as the document; it cites what it reads. Before
+validation, re-anchor every record to {doc}: set `artifact` to {doc}'s committed
+path, locate `exact_quote` in {doc} to set `line_start` and `line_end`, and
+recompute `sha256` from {doc}. A quote that cannot be found in {doc} came from
+the mutation: drop it, and re-check that criterion against the original (step 2
+below). A record that still cites {gate_dir}/.canary/ points at a file nobody
+commits and nobody can re-check.
 
 Afterwards, run the check — do not perform it by eye:
 
@@ -579,7 +602,10 @@ rule lived in the function for a release while the instruction here said to chec
 membership by hand, so nothing ever ran it.
 
   1. If the check reports a miss, the audit did not find a defect that was placed
-     there to be found. Re-run once with a different class. A second miss fails
+     there to be found. Re-run once with a different class: pass a seed as the
+     third inject argument (`inject {doc} {gate_dir}/.canary/ retry`), because
+     the default seed is derived from the file and would pick the same class
+     again. A second miss fails
      the gate as "audit untrustworthy" — and DOES NOT trigger the revision loop.
      Revising a plan against findings from an audit that could not see a planted
      defect is worse than not revising: it rewrites the spec to satisfy
@@ -590,6 +616,10 @@ membership by hand, so nothing ever ran it.
      plan has a genuine gap on the same criterion, removing "the LINT-03 finding"
      would remove the real one with it. The strip removes the artefact; the
      recheck decides the truth.
+  3. Record the result (canary_found, the class and its criterion, from
+     canary.json) in the gate record, then delete {gate_dir}/.canary/. Nothing
+     after this step reads it, and a consumer repository has nothing that keeps
+     it out of a commit.
 
 An audit reporting zero gaps on a document known to contain a defect is not a
 clean audit. It is a broken one, and nothing in its output would tell you so.
@@ -741,7 +771,14 @@ lint results, gap summary.
 When {gate_dir} is a plan folder, update manifest.md: add audit.md to the
 Artifacts table with date and gate result.
 
-EVIDENCE REINFORCEMENT (after audit, before baseline):
+EVIDENCE REINFORCEMENT (after audit, before baseline; only when a {generator}
+is bound and {doc} is not yet approved):
+
+With no generator bound, or when {doc} carries Status: Approved, the audited
+document is not edited: write the notes below under `## Evidence notes` in
+{gate_dir}/audit.md instead. An approved document changes only through a
+Change Record (Stage 3 change control), and a document someone else owns
+(quick-audit) is theirs to change.
 
 Re-read the Evidence section of {doc} (spec.md writes it in Part A) and reinforce
 it with audit findings:
@@ -778,8 +815,7 @@ with the reinforcement date.
 
 BASELINE SNAPSHOT:
 After writing the audit, capture a per-element baseline in status.json when
-{gate_dir} is a plan folder, otherwise under a `## Baseline` heading in
-{gate_dir}/audit.md:
+{gate_dir} is a plan folder, otherwise in {gate_dir}/gate.json:
 ```json
 {
   "baseline": {
@@ -809,8 +845,8 @@ Only an element that was covered/passing in the previous baseline and is now
 gap/failing counts; pre-existing gaps do not trigger it. Skipped on the first audit,
 when no baseline exists.
 
-Update the baseline (status.json, or the audit.md Baseline section) after each
-comparison (append to history array for trend tracking).
+Update the baseline (status.json, or gate.json) after each comparison (append
+to history array for trend tracking).
 
 GATE: Evaluator-Optimizer Loop.
 
@@ -856,8 +892,10 @@ failure on the eighth. Non-compensability is the thing a point total structurall
 cannot give you.
 
 IF PASS:
-  -> "Design is solid. Ready for human review."
-  -> Proceed to HUMAN REVIEW GATE below.
+  -> The gate is open for this document. Stage 2 says "Design is solid. Ready
+     for human review." and continues at its HUMAN REVIEW GATE after this block;
+     a shortcut returns to its own Present Results step, where a pass is a
+     design-gate pass and nothing more.
 
 IF NOT PASS:
   -> If CANARY_OK is false after a re-run: STOP. Do not revise. The audit could not
@@ -923,7 +961,8 @@ satisfied and evidenced, or the specific ones that are not get named. A "proceed
 with known gaps" rung was the rung most often used to proceed without reading them,
 and there is nothing here for it to mean.
 
-Track revision history in audit.md:
+After the loop ends, append the revision history to audit.md. The auditor
+rewrites audit.md on every iteration, so append only after the final one:
 ```markdown
 ## Revision History
 | Version | Unmet criteria | Gaps | Action |
@@ -933,8 +972,9 @@ Track revision history in audit.md:
 ```
 
 Record the gate result (gate_passed boolean, unmet_criteria list, gap_checked
-boolean, gap_count, canary_found): in status.json and manifest.md when {gate_dir}
-is a plan folder, otherwise in the header of {gate_dir}/audit.md.
+boolean, gap_count, canary_found, canary_class): in status.json and manifest.md
+when {gate_dir} is a plan folder, otherwise in {gate_dir}/gate.json together
+with the baseline and its history.
 </design_gate>
 
 HUMAN REVIEW GATE (conditionally waivable):
