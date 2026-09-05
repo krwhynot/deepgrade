@@ -40,6 +40,8 @@ docs/plans/YYYY-MM-DD-{plan-name}/
 
 Stage instructions call for committing the planning records, including `audit.md` and `evidence/`. Canary scratch and the export zip are excluded. These are workflow requirements, not an automatic Git enforcement hook.
 
+Two paths are immutable once written: `changes/CR-*.md` and `snapshots/**`. A mistake in one is corrected by adding a new record, never by editing the old one. Every other file is living state that changes only in the way its stage describes: accepted `intent.md` and approved `spec.md` are superseded by a Change Record plus one banner line, `plan.md` collects departures during Build, and `status.json` and `manifest.md` are bookkeeping that every stage updates. Toque's own repository refuses edits to the two immutable paths in CI; in your repository the rule is a workflow instruction unless you add the same check.
+
 Design can also create project documents outside the folder:
 
 | Document | Location |

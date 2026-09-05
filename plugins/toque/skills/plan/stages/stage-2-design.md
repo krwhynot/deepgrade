@@ -337,8 +337,9 @@ outcome change).
 On "confirm" -> record in status.json: phases.design.scope_locked = {ISO timestamp}.
 Commit spec.md at this point; Part B extends it.
 
-After scope lock, the locked sections are immutable. Changes require a Change
-Record (see Stage 3 change control), not silent edits.
+After scope lock, the locked sections are not edited in place. A change travels
+as a Change Record with a SUPERSEDED banner on the original (see Stage 3 change
+control), never as a silent edit.
 
 ---
 

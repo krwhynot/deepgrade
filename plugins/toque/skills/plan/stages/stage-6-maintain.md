@@ -14,7 +14,9 @@ as a new intent, through the same acceptance gate as the original.
 
 After release the plan folder is the record of what was intended, specified,
 planned, built, tested, and authorized. Nothing in it is rewritten after
-Stage 5; new facts go in new files.
+Stage 5; new facts go in new files. status.json and manifest.md are the
+bookkeeping exception: they keep recording release confirmation, linked
+incidents, and proposed intents.
 
 Incidents against this release are handled by `/toque:troubleshoot` with
 `--plan {plan-name}`, which writes its log under the plan's troubleshooting/

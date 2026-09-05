@@ -98,7 +98,7 @@ The prep list belongs in `spec.md`. Project instructions such as `CLAUDE.md`, wh
 
 The spec records requirements, design, standards applied, gotchas, evidence, and open questions. Deferred questions retain an owner and due date.
 
-The user confirms scope before delivery detail is added. The locked sections become immutable; subsequent changes require a Change Record. This is a **mid-stage gate**, not completion of Design.
+The user confirms scope before delivery detail is added. The locked sections are not edited in place afterwards; a change travels as a Change Record with a supersession notice on the original. This is a **mid-stage gate**, not completion of Design.
 
 ### Plan verification and delivery
 

@@ -256,9 +256,13 @@ Independent tickets may be batched after dependency analysis and confirmation.
 
 The living-plan rule requires departures in `plan.md` in the same commit as
 the code; material changes also get a Change Record. Accepted scope is preserved
-through supersession records. The broad immutability prose is not literal
-immutability of every file: the stage explicitly updates the living build plan.
-There is no shipped write-blocking hook.
+through supersession records. The immutable set is enumerated, not implied:
+`changes/CR-*.md` and `snapshots/**` are never edited once written, accepted
+documents are superseded through a Change Record and one banner line, and
+`plan.md`, `status.json` and `manifest.md` are living state that each stage
+updates in a named way. Toque's own repository refuses edits to the two
+immutable paths at the diff in CI (`.github/protected-artifacts.sh`); a consumer
+repository has no shipped write-blocking hook.
 
 Impact review examines integration edges, cross-layer effects, scale,
 transition state, test delta, string paths after moves, and backward
