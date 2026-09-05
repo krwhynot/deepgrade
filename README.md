@@ -1,164 +1,162 @@
 # Toque
 
 [![suite](https://github.com/krwhynot/toque/actions/workflows/suite.yml/badge.svg)](https://github.com/krwhynot/toque/actions/workflows/suite.yml)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![release](https://img.shields.io/github/v/tag/krwhynot/toque?label=release&color=2ECC71)](./CHANGELOG.md)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-8A63D2)](https://claude.ai)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![release](https://img.shields.io/github/v/tag/krwhynot/toque?label=release&color=2ECC71)](CHANGELOG.md)
 
-Toque takes a change from idea to release with a gate at every step. A
-six-stage planning workflow for Claude Code, built around an adversarial design
-gate that has to be passed rather than scored. Stack-agnostic. Works on any
-codebase.
+<p align="center">
+  <img src="assets/toque-tall-mascot.png" width="200" alt="Toque, a tall chef's hat with a quietly unimpressed expression formed from fabric folds.">
+</p>
 
-| Plugin | What it does | Who installs it |
-| ------ | ------------ | --------------- |
-| [`toque`](plugins/toque/) | Six-stage AI-Native SDLC planning (intent, spec, plan, test, release, maintain) with an adversarial verifier-first design gate, plan-linked troubleshooting, documentation generation | Developers living in `docs/plans/` daily |
+**Good software starts before the dinner rush.**
 
-**Upgrading from 10.x?** The codebase-audit and AI-readiness commands are no
-longer part of Toque. Nothing replaces them here. Toque still reads analysis
-files left in `docs/audit/` by whatever produced them, and works fine when there
-are none — see [Optional inputs](interop.md).
+Toque is a **Claude Code planning and delivery plugin**. It takes an idea through release preparation: clarify the request, connect the planning documents, challenge the design, build, test, and prepare the handoff. A human authorizes production. The AI never gets to approve its own release.
 
-## What It Does
+Think of an experienced head chef: helpful at every station, unimpressed by “probably fine.”
 
-Toque asks three questions about your codebase:
+## The problem: the code works. The request didn't.
 
-| Pillar | Question | Time Orientation |
-| ------ | -------- | ---------------- |
-| 1. Documentation as the Foundation | What do we have? | Past |
-| 2. Phased Delivery Over Big-Bang Releases | What shape is it in? | Present |
-| 3. Operational Readiness | Can we safely change it? | Future |
+“Add scheduled reports.”
 
-The methodology behind the plugin lives in [METHODOLOGY.md](METHODOLOGY.md).
+The agent builds a scheduler. It chooses a time zone, sends reports to everyone on the account, and retries failed sends. Nobody asked whether permissions must be checked again at delivery time.
 
-## The plan workflow
+The tests pass. The wrong people get the report.
 
-The largest feature, and the reason most people install the toolkit.
-`/toque:plan` runs six stages from idea to release. **Each stage reads the
-previous artifact and commits its own** — the chain of artifacts is the audit
-trail: who asked, what was produced, who approved.
+That is an expensive time to discover a missing question.
 
-| # | Stage | Commits | Gate |
-| - | ----- | ------- | ---- |
-| 1 | Plan | `intent.md` | A named product owner accepts |
-| 2 | Design | `spec.md`, `audit.md`, `evidence/` | Scope lock, then the design gate |
-| 3 | Build | `plan.md`, code, `impact-review.md` | `plan.md` approved *before* code |
-| 4 | Test | `test-plan.md`, results | Automated tier passes, manual tier human-confirmed |
-| 5 | Deploy | `review.md` | A named human authorizes. The agent never deploys |
-| 6 | Maintain | A new `intent.md` from incidents | None — this stage never completes |
+## What changes with Toque
 
-Four rules hold in every stage: human gates are real gates, nothing is
-implemented without an approved `plan.md`, the agent verifies its own work
-before asking for review, and **the agent never crosses the production gate**.
+Toque makes the request, design, implementation plan, and review point back to one another. These connected files form an **artifact chain**: a record of what was requested, what changed, and who approved it.
 
-Stage 2 ends in a gate that can refuse. A fresh isolated auditor reviews the
-spec; a canary plants a known defect to prove the audit actually looked, and
-every citation is re-read from disk and compared byte-for-byte.
+Before build, a separate auditor challenges the design. The **design gate can refuse it**. A convincing summary cannot cancel an unmet requirement.
 
+<p align="center">
+  <img src="assets/toque-tall-design-gate.png" width="320" alt="Toque checks two design cards: a complete card has a green check; an incomplete card has a missing requirement and a red return mark. This is not production authorization.">
+</p>
+
+Toque also checks the checker. It plants a known defect in a temporary copy of the design—a **canary**—and checks whether the auditor finds it. **Evidence validation** then checks that citations supporting passing verdicts match the files on disk.
+
+Neither check proves the design is correct. They make unsupported approval harder to hide. [The limits matter.](documentation/the-design-gate.md#what-this-does-not-prove)
+
+## Without Toque / with Toque
+
+| Without Toque | With Toque |
+| --- | --- |
+| “Add scheduled reports.” Then start coding. | Capture the problem and get a named owner to accept it. |
+| Guess the schedule, recipients, permissions, retries, and rollout. | Resolve those decisions in a spec; challenge missing or unsupported answers. |
+| “Tests passed. Ship it?” | Keep test results, review the actual diff, and ask a named human for the production decision. |
+
+For that same request, the full workflow produces:
+
+1. `intent.md` — What problem are scheduled reports solving?
+2. `spec.md` — Which schedules, recipients, permissions, and failure behavior are required?
+3. Design gate, recorded in `audit.md` and `evidence/` — Does the design survive an independent challenge and the mechanical checks?
+4. `plan.md` — How will it be built? Approve this before code changes.
+5. `impact-review.md`, `test-plan.md`, and results — What changed, and did it work?
+6. `review.md` and a human production decision — Does the actual change match the plan, and should it ship?
+
+## Six stages, one connected record
+
+The lifecycle draws on [Anthropic's AI-Native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook). Toque's [adaptation and boundaries](METHODOLOGY.md#relationship-to-the-ai-native-sdlc-playbook) explain what ships here—and what does not.
+
+| Stage | Work | Required handoff |
+| --- | --- | --- |
+| **Plan** | Capture `intent.md` and research the request. | Named product owner accepts the intent. |
+| **Design** | Write `spec.md`; record the audit and evidence. | Scope lock, automated design gate, and recorded review or eligible waiver; approved spec. |
+| **Build** | Approve `plan.md`, implement, write `impact-review.md`. | Approval before code; user confirms impact review afterward. |
+| **Test** | Write `test-plan.md` and collect results. | Automated tests pass; a human confirms manual checks. |
+| **Deploy** | Write `review.md` and prepare the release checklist. | Named human authorizes and performs the production release. |
+| **Maintain** | Link incidents and draft follow-up intent when thresholds are met. | Stays open; new work returns to Plan for acceptance. |
+
+[Walk through each stage →](documentation/the-plan-workflow.md)
+
+## Non-negotiable gates
+
+> **Chef's rule: no approved `plan.md`, no implementation.**
+
+- A failed automated design gate stays failed. There is no compensating score or “strong overall.”
+- Manual test confirmation is human work. The agent cannot mark it complete on someone's behalf.
+- The agent may prepare the release and verify completed steps. It must not deploy, publish, push release tags, merge into production, or run production migrations.
+- Production authorization belongs to a named human. A design-review waiver is not a deployment waiver.
+
+These are workflow instructions, **not a security sandbox**. Toque's three hooks provide plan context; they do not block commands. Enforce production access separately with permissions and your deployment controls.
+
+## Should you use it?
+
+Use the full workflow for changes with meaningful scope, dependencies, risk, or a handoff: a feature, migration, integration, or substantial refactor.
+
+Use a lighter command for an early draft, a document, or an existing plan review. A one-line correction may need none of this. The kitchen does not need a prep meeting to replace a napkin.
+
+Do not use Toque as a codebase scanner, a security certification, or an autonomous deployment service. The codebase-audit and AI-readiness commands were removed in 11.0.0.
+
+[Choose the right command →](documentation/when-to-use.md)
+
+## Quick start
+
+Already installed? Start in your project:
+
+```text
+/toque:plan intent scheduled-reports
 ```
-PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK
+
+Answer the intent questions. This mode stops after Plan, even after acceptance; it does not start designing or coding.
+
+When ready for the full workflow:
+
+```text
+/toque:plan scheduled-reports
+/toque:plan-status
 ```
 
-No weighted sum, no partial credit.
+For a smaller, auto-audited draft, try `/toque:quick-plan Add scheduled reports`. It is not a substitute for the full design gate or production approval.
 
-→ **[The plan workflow](documentation/the-plan-workflow.md)** — all six stages in depth
-→ **[The design gate](documentation/the-design-gate.md)** — including its known limitation
-→ **[The plan workspace](documentation/plan-workspace.md)** — the folder, resume, staleness
+[Complete your first workflow →](documentation/quickstart.md)
 
-## Install
+## Installation
 
-**Prerequisite:** Claude Code installed ([claude.ai](https://claude.ai))
+Requires Claude Code and **Node.js 18+ on PATH** for Toque's hooks and gate tools. Check Node separately, even if Claude Code already runs.
 
-**Step 1:** Open a terminal (not inside Claude Code) and add the marketplace:
+In a terminal:
 
 ```bash
 claude plugin marketplace add krwhynot/toque
-```
-
-**Step 2:** Install it:
-
-```bash
 claude plugin install toque@toque-marketplace --scope user
 ```
 
-**Step 3:** Start Claude Code in any project and verify:
+Start Claude Code in your project and run `/toque:help`. Reload or restart an already-open session.
 
-```
-/toque:help
-```
+[Scopes, updates, and upgrades →](documentation/install.md)
 
-`/toque:help` maps every command.
+## Documentation map
 
-Upgrading from a pre-10.0.0 install, or want every install path? →
-[Install](documentation/install.md)
+| Your question | Read |
+| --- | --- |
+| How do I finish my first workflow? | [Quickstart](documentation/quickstart.md) |
+| How do I install or upgrade? | [Install](documentation/install.md) |
+| Which command fits this task? | [When to use Toque](documentation/when-to-use.md) |
+| What happens at each stage? | [Plan workflow](documentation/the-plan-workflow.md) |
+| What files exist, and how do I resume? | [Plan workspace](documentation/plan-workspace.md) |
+| How does the design gate work? | [Design gate](documentation/the-design-gate.md) |
+| How do I operate every capability? | [Plugin guide](plugins/toque/GUIDE.md) |
+| Why these methods? | [Methodology](METHODOLOGY.md) — includes historical material |
+| What outside analysis can it read? | [Interop](interop.md) — optional, read-only inputs |
 
-## A Suggested Path
+## Technical and repository details
 
-1. `/toque:quick-plan` on something small, to see the shape of the output
-2. `/toque:plan` when the work is big enough to want the gate
-3. `/toque:plan-status` to pick up where you left off
+One plugin, `toque`. Six command files, five skills, two agents, seven document templates, three informational hooks, and two Node gate tools. Nine user-facing entrypoints; some are skills rather than command files.
 
-If some other tool has left a risk assessment, dependency map, feature
-inventory or integration scan in `docs/audit/`, Toque reads them, and a plan
-grounded in those beats one written from the code alone. It never requires
-them.
-
-New to it? [Quickstart](documentation/quickstart.md) walks the first plan
-end to end, and suggests two lighter commands to try first.
-
-## Documentation
-
-| Page | What's in it |
-| ---- | ------------ |
-| [Quickstart](documentation/quickstart.md) | Your first plan, end to end, with what appears on disk |
-| [Install](documentation/install.md) | Every install path, scopes, upgrading, what breaks without Node |
-| [When to use Toque](documentation/when-to-use.md) | Use / don't use per plugin — including where it is overkill |
-| [The plan workflow](documentation/the-plan-workflow.md) | All six stages in depth, approval tiers, parallelism |
-| [The plan workspace](documentation/plan-workspace.md) | Plan folder anatomy, `status.json`, resume, staleness cascade |
-| [The design gate](documentation/the-design-gate.md) | Canary, evidence validation, the pass expression, the limitation |
-
-Deeper references: [GUIDE.md](plugins/toque/GUIDE.md) ·
-[METHODOLOGY.md](METHODOLOGY.md) (the theory) ·
-[interop.md](interop.md) (optional inputs Toque reads but does not write) ·
-[CHANGELOG.md](CHANGELOG.md)
-
-## Repository Layout
-
-```
-.claude-plugin/marketplace.json   # the catalog entry and its ref+SHA pin
-plugins/toque/                    # planning core (commands, agents, skills, hooks)
-documentation/                    # task-shaped user documentation
-tests/                            # the suite (run-all.sh, seven layers)
-docs/                             # dev-time records: plans, specs, release notes
-METHODOLOGY.md                    # the methodology reference (not shipped by the plugin)
-interop.md                        # optional docs/audit/ inputs Toque reads
+```text
+.claude-plugin/marketplace.json   Catalog with a release ref and SHA pin
+plugins/toque/                   Shipped plugin
+documentation/                  User documentation
+tests/                          Eight-layer suite: bash tests/run-all.sh
+docs/                           Development plans, specs, and records
+METHODOLOGY.md                   Formal reference, not shipped in the plugin
+interop.md                      Optional external input contract
 ```
 
-Every plugin manifest carries the same version, bumped together by
-`.github/release.sh` — the catalog entry always pins one ref and one SHA.
-
-## Dependencies
-
-Toque runs its hooks and design-gate tools as Node scripts and requires
-[Node.js](https://nodejs.org/) 18 or later — the same runtime Claude Code itself
-needs, so if Claude Code runs, it does too.
-
-The always-on safety hooks that used to ship as `toque-guard` (force-push
-and DB-deploy blocking, migration protection, change/test tracking) were retired
-in 9.0.0. Claude Code's own permission rules cover the same commands with no
-runtime dependency; see [METHODOLOGY.md §6](METHODOLOGY.md#6-defense-in-depth-safety)
-for the recommended `settings.json` rules.
-
-## Version History
-
-See [CHANGELOG.md](CHANGELOG.md) for full history.
+Plans live under `docs/plans/YYYY-MM-DD-{name}/`. Optional `docs/audit/` inputs can add context; Toque neither requires nor produces those external analyses.
 
 Current: v11.0.1
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## License
-
-MIT. See [LICENSE](LICENSE).
+[Version history](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)

@@ -56,7 +56,10 @@ Spawn the plan-auditor agent with:
 ## Step 3: Present Results
 
 After the auditor completes, present:
-1. The verdict: PASS or NOT PASS, with the criteria that failed
+1. The canonical gate result: `PASS` — passed the pass, or `NOT PASS` — back to
+   the kitchen, with the criteria that failed. For each criterion, add the
+   kitchen translation after its canonical token: `MET` — passed the pass;
+   `UNMET` — back to the kitchen; `N_A` — not on this plate.
 2. Findings by severity, each citing file:line evidence
 3. Top 3 gaps that must be addressed
 4. Go/No-Go recommendation

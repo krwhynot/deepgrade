@@ -1,184 +1,146 @@
 # The plan workspace
 
-Every plan lives in one folder. This page is the reference for what is in it,
-what tracks progress, and how resuming and staleness work.
+One folder keeps the request, preparation, checks, and decisions together. The next person should not need to ask who had the ticket.
 
-Companion to [The plan workflow](./the-plan-workflow.md), which covers the six
-stages themselves.
+This page explains files and resuming. [Plan workflow](the-plan-workflow.md) explains the six stages.
 
----
+<p align="center">
+  <img src="../assets/toque-tall-mascot.png" width="120" alt="Toque, the tall chef-hat reviewer.">
+</p>
 
 ## The folder is the homebase
 
-```
+For the rationale behind the artifact chain, see the [playbook relationship](../METHODOLOGY.md#relationship-to-the-ai-native-sdlc-playbook). This page defines Toque's local file and state contracts; it does not configure synchronization with an external ticketing system.
+
+Files appear as their stages run; a new plan does not start with every artifact complete.
+
+```text
 docs/plans/YYYY-MM-DD-{plan-name}/
-  manifest.md          human-readable index linking to every related file
-  status.json          machine-readable progress, timestamps, resume state
-  intent.md            Stage 1 — problem, outcome, affected systems, constraints
-  research/            Stage 1 — the three research tracks
-    findings.md          combined summary
-    reference-data.json  structured facts
-    codebase-scan.md     track 1 output
-    best-practices.md    track 3 output
-    intake/              track 2 — cleaned source docs
-  spec.md              Stage 2 — requirements, design, evidence, verification, delivery
-  audit.md             Stage 2 gate — criterion verdicts, canary and evidence results
-  evidence/            Stage 2 gate — one record per criterion, committed with audit.md
-  .canary/             Stage 2 gate — the mutated working copy (NOT committed)
-  plan.md              Stage 3 — files that change, order, risks, proof, verification
-  changes/             Stage 3 — immutable change records, CR-001, CR-002, ...
-  impact-review.md     Stage 3 exit — cross-cutting findings, integration edges
-  test-plan.md         Stage 4 — test matrix, two-tier verification
-  review.md            Stage 5 — diff-versus-plan, findings, release checklist
-  troubleshooting/     Stage 6 — incident logs linked to this plan
+  manifest.md          Human-readable index and links
+  status.json          Machine-readable state and approvals
+  intent.md            Accepted problem, outcome, constraints
+  research/
+    findings.md        Combined research findings
+    reference-data.json
+    codebase-scan.md
+    best-practices.md
+    intake/            Cleaned source documents
+  spec.md              Requirements, design, verification, delivery
+  audit.md             Design-gate verdicts and results
+  evidence/            Per-criterion evidence records
+  .canary/             Temporary mutated spec; not committed
+  plan.md              Approved implementation steps
+  changes/             Immutable Change Records
+  impact-review.md     Effects and integration findings
+  test-plan.md         Test matrix and verification record
+  review.md            Diff review and release checklist
+  runbook.md           When the plan needs one
+  troubleshooting/     Plan-linked incidents and logs
 ```
 
-Artifacts are named the way the underlying playbook names them, so a reader can
-follow the chain from intent to release **without leaving the folder**.
+Stage instructions call for committing the planning records, including `audit.md` and `evidence/`. Canary scratch and the export zip are excluded. These are workflow requirements, not an automatic Git enforcement hook.
 
-### What is committed
-
-Everything except `.canary/` — the mutated spec copy the design gate works
-against — and the plan export zip.
-
-Two artifacts land outside the folder, in standard project locations, and are
-linked from `manifest.md`:
+Design can also create project documents outside the folder:
 
 | Document | Location |
 | --- | --- |
-| ADRs created during design | `docs/adr/ADR-{topic}.md` |
-| PRDs created during design | `docs/prd/{feature}.md` |
+| ADR | `docs/adr/ADR-{topic}.md` |
+| PRD | `docs/prd/{feature}.md` |
 
----
+Link them from `manifest.md`. Standalone documentation generation has its own [output locations](../plugins/toque/GUIDE.md#the-7-document-templates), including domain-grouped PRDs.
 
 ## manifest.md — the human index
 
-A table per category — artifacts, project documents, change records, codebase
-files — each row carrying a status and a date.
+The manifest links artifacts, project documents, Change Records, and codebase files, with status and date information.
 
-**It is updated at every stage.** When any stage creates or links a document,
-both `manifest.md` and `status.json` are updated together. A manifest that has
-drifted from the folder is a bug, not a cosmetic issue: it is what a reviewer
-reads instead of the folder.
-
----
+Update it when a stage creates or links a document, alongside `status.json`. It is navigation; it is not a second authority for machine state.
 
 ## status.json — the machine state
 
-Schema 2. The shape:
+Current plans use schema 2. The stored keys remain `current_phase` and `phases`, even though the user-facing workflow calls them stages.
+
+Illustrative state, with placeholder dates and names:
 
 ```json
 {
   "schema_version": 2,
-  "plan_name": "{name}",
-  "plan_dir": "docs/plans/{date}-{name}",
-  "created": "{ISO}",
+  "plan_name": "scheduled-reports",
+  "plan_dir": "docs/plans/YYYY-MM-DD-scheduled-reports",
+  "created": "{ISO timestamp}",
   "current_phase": "design",
   "documents": {},
   "phases": {
-    "plan":     { "status": "complete", "started": "...", "completed": "...",
-                  "accepted_by": "...", "accepted_date": "..." },
-    "design":   { "status": "in_progress", "started": "..." },
-    "build":    { "status": "not_started" },
-    "test":     { "status": "not_started" },
-    "deploy":   { "status": "not_started" },
+    "plan": {
+      "status": "complete",
+      "started": "{ISO timestamp}",
+      "completed": "{ISO timestamp}",
+      "accepted_by": "{name}",
+      "accepted_date": "{date}"
+    },
+    "design": { "status": "in_progress", "started": "{ISO timestamp}" },
+    "build": { "status": "not_started" },
+    "test": { "status": "not_started" },
+    "deploy": { "status": "not_started" },
     "maintain": { "status": "not_started" }
   }
 }
 ```
 
-### The timestamps are the metrics
+### Timestamps and gate bookkeeping
 
-Every stage records `started` and `completed` in ISO format when its status
-changes. Those pairs are what produce the numbers worth tracking:
-**intent-to-spec**, **spec-to-plan**, and **plan-to-release** elapsed time.
+At a completed stage transition, record the completion time, the next stage's start, the new `current_phase`, and the required approver and date. Update the manifest to match.
 
-`/toque:plan-status` reads them.
+A mid-stage approval—such as Design scope lock or approval of `plan.md`—does not complete that stage. Maintain stays in `steady_state` without a completion timestamp.
 
-### Gate bookkeeping
-
-Every time a gate passes, five things happen together:
-
-1. The stage's `completed` timestamp is set.
-2. The next stage goes to `in_progress` with its `started` timestamp.
-3. `current_phase` moves.
-4. The approver is recorded — `accepted_by`, `approved_by`, or `authorized_by`
-   — with a date.
-5. `manifest.md` is updated to match.
-
-> A gate without a recorded name is not passed.
-
----
+Recorded times support intent-to-spec, spec-to-plan, and plan-to-release elapsed-time reporting. Required human decisions need the actual name; a timestamp alone is not approval.
 
 ## Resuming
 
-`/toque:plan {name}` against an existing folder reads `status.json`, finds the
-current stage, checks the freshness of everything already complete, and reports
-before offering to continue:
-
+```text
+/toque:plan-status
+/toque:plan scheduled-reports
 ```
-Plan: {name}
-Current stage: {stage} ({status})
-Last updated: {date}
-Intent -> spec: {elapsed}   Spec -> plan: {pending}
 
-[artifact table from manifest.md]
-
-Continue from {stage}?
-```
+Resume reads `status.json`, checks completed work for freshness, shows the current stage and artifacts, and offers to continue.
 
 ### Recovering a broken workspace
 
-| Failure | Recovery |
+| Situation | Workflow response |
 | --- | --- |
-| `status.json` corrupted | Rebuilt from the files present in the plan folder |
-| Stage partially complete | Saved to `status.json`, resumable |
-| A plan folder already exists | Asks: resume it, or create `{name}-2`? |
-| Referenced files deleted | Findings marked STALE, re-research suggested |
-| Source folder unreadable | Doc cleanup skipped, continues with codebase and web |
-| No external search tools | Track 3 skipped, output tagged as unavailable |
-| Gate approver not named | Does not advance; asks for the name |
-
----
+| Corrupt `status.json` | Reconstruct state from existing artifacts; review the reconstruction before relying on it. |
+| Partially complete stage | Resume saved progress. |
+| Matching plan already exists | Offer resume or a new suffixed name. |
+| Referenced file deleted | Mark affected findings STALE and suggest new research. |
+| Source folder unreadable | Skip document cleanup and continue with available research. |
+| No MCP research tools | Use available web tools; mark external research unavailable if neither is available. |
+| Missing required approver | Ask for the name; do not advance. |
 
 ## Staleness
 
-Freshness is tracked by **path-scoped fingerprinting** — each stage records
-hashes of only the files it actually referenced, not a whole-repo SHA. A commit
-elsewhere in the repo does not invalidate a plan.
+Freshness uses **path-scoped fingerprints**: hashes of the files a stage actually referenced, not a whole-repository SHA. Unrelated commits do not automatically invalidate the plan.
 
-Three levels:
-
-| Level | Meaning |
+| State | Meaning |
 | --- | --- |
-| **FRESH** | Referenced files unchanged since the stage completed |
-| **WARNING** | Related files in the same directory changed — findings may be affected |
-| **STALE** | Directly referenced files changed — findings likely invalid |
+| `FRESH` | Referenced files are unchanged. |
+| `WARNING` | Related files in the same directory changed; findings may be affected. |
+| `STALE` | A directly referenced file changed; findings likely need rechecking. |
 
 ### The invalidation cascade
 
-Changing an artifact after its gate has consequences downstream:
-
-| Change | Effect |
+| Change | Consequence |
 | --- | --- |
-| `intent.md` changes after acceptance | `spec.md` becomes STALE, **and the change is a Change Record** |
-| `spec.md` changes after approval | `audit.md` and `plan.md` become STALE |
-| `plan.md` changes after approval | Recorded under "Departures from plan" in the same commit; Stage 5's diff check reads it |
-| Source docs change after research | Research drops to WARNING |
+| Accepted `intent.md` changes | `spec.md` becomes STALE; record the scope change. |
+| Approved `spec.md` changes | `audit.md` and `plan.md` become STALE. |
+| Implementation departs from approved `plan.md` | Record “Departures from plan” in the same commit; Stage 5 checks it. |
+| Source documents change after research | Research becomes WARNING. |
 
-That first row is the one to internalize. Editing an accepted intent is not a
-free correction — the workflow treats intent edits after the first spec commit
-as a measurable event, because that is where scope creep originates.
-
----
+An edit to accepted intent is not a harmless wording update once downstream work relies on it. After the first spec commit, scope changes need a Change Record.
 
 ## Migrating a pre-8.0.0 plan
 
-Plans started before 8.0.0 use schema 1, with different phase names. On resume,
-they are migrated **before anything else happens**, then written back as
-schema 2 with every other field preserved.
+On resume, a schema-1 plan is migrated to schema 2 before normal continuation.
 
-| Old phase (schema 1) | New stage (schema 2) |
+| Old phase | New stage |
 | --- | --- |
 | brainstorm, research | plan |
 | pre_plan, plan, audit | design |
@@ -186,27 +148,16 @@ schema 2 with every other field preserved.
 | test | test |
 | handoff | deploy |
 
-Status is derived in a fixed order: any old status whose text ends in `complete`
-counts as complete; every mapped phase complete makes the stage complete; any
-mapped phase complete or in progress makes the stage in progress; otherwise not
-started.
+The specified migration treats an old status ending in `complete` as complete. All mapped phases complete makes the stage complete; any mapped phase complete or in progress makes it in progress; otherwise it is not started.
 
-Two deliberate choices in that migration are worth knowing:
+The original `phases` object is preserved under `phases_schema1`, including unmapped keys. `schema1_migration` records the date and previous `current_phase`.
 
-- **Nothing is thrown away.** The entire old `phases` object is kept verbatim
-  under `phases_schema1`, including keys the table does not name, alongside a
-  `schema1_migration` block recording the date and the old `current_phase`.
-- **Old artifacts keep their old names.** Files like `brainstorm.md`,
-  `approach.md`, and `confidence.md` are read where a stage asks for `intent.md`
-  or `spec.md`, and the resume summary says so. They are not rewritten.
+Old artifact names, including `brainstorm.md`, `approach.md`, and `confidence.md`, remain intact. Resume identifies the legacy artifacts it uses instead of silently renaming them.
 
-If a later stage is complete while an earlier one is not — a plan closed by
-decision rather than by sequence — the summary says that rather than inventing
-progress.
+If later work is complete but earlier stages are not, report that history rather than inventing sequential progress.
 
----
+## After release
 
-## Related
+Released artifacts remain the record of what shipped. Maintain can add incident links, update status and recurrence bookkeeping, and draft a separate follow-up intent. It does not rewrite the released plan to pretend the new work was always included.
 
-- [The plan workflow](./the-plan-workflow.md) — the six stages in depth
-- [The design gate](./the-design-gate.md) — what `audit.md` and `evidence/` contain
+[Workflow](the-plan-workflow.md) · [Design gate](the-design-gate.md) · [Operator guide](../plugins/toque/GUIDE.md)

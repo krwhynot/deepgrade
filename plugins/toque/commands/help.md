@@ -11,6 +11,18 @@ The centrepiece is `/toque:plan` — a six-stage workflow with an adversarial
 design gate between deciding what to build and building it. Everything else
 here either feeds that workflow or is a standalone shortcut for one part of it.
 
+A toque is the chef's hat; the pass is where a plate gets its final inspection
+or gets sent back. The gate results and criterion verdicts are canonical, and
+this is how to read them:
+
+| Result | In the kitchen |
+| ------ | -------------- |
+| `PASS` | Passed the pass. |
+| `NOT PASS` | Back to the kitchen. |
+| `MET` | Passed the pass. |
+| `UNMET` | Back to the kitchen. |
+| `N_A` | Not on this plate. |
+
 ## Commands
 
 ### Planning (the six-stage workflow)
