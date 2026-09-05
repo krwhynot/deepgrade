@@ -1,9 +1,23 @@
 # Toque (planning core)
 
-Toque's planning plugin: a six-stage idea-to-release workflow on Anthropic's
-AI-Native SDLC playbook (intent.md, spec.md, plan.md, review.md) with an
+<p align="center">
+  <img src="assets/toque-tall-mascot.png" width="160" alt="Toque, the tall chef-hat reviewer.">
+</p>
+
+**Nothing leaves the pass until the chef has tasted it.** The pass is where a
+finished plate gets its final inspection — and where a bad one gets sent back.
+Toque puts that inspection between your design and your build: a fresh,
+isolated auditor re-reads every cited file and returns a machine-readable
+`MET`, `UNMET`, or `N_A` per criterion. No points. No vibes.
+
+Toque's planning plugin: a six-stage workflow adapted from
+[Anthropic's AI-Native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook)
+(intent.md, spec.md, plan.md, review.md) with an
 adversarial, verifier-first design gate, plan-linked troubleshooting, and
 documentation generation. Stack-agnostic. Works on any codebase.
+
+Toque prepares release; a named human authorizes and performs production deployment.
+See the [adaptation boundaries](https://github.com/krwhynot/toque/blob/main/METHODOLOGY.md#relationship-to-the-ai-native-sdlc-playbook): the playbook's broader automation is not all provided by this plugin.
 
 Toque reads codebase-analysis files from `docs/audit/` when a project has them
 and works without them. The full reference is [GUIDE.md](GUIDE.md).
@@ -29,7 +43,7 @@ Verify inside a Claude Code session:
 
 | Command | Description |
 | ------- | ----------- |
-| `/toque:plan` | Six-stage playbook workflow: Plan, Design, Build, Test, Deploy, Maintain. Human gate at every stage |
+| `/toque:plan` | Plan, Design, Build, Test, Deploy, Maintain. Recorded human approvals; Maintain stays open |
 | `/toque:quick-plan` | Lightweight plan for small changes |
 | `/toque:plan-status` | Check plan progress and stage status |
 | `/toque:plan-export` | Export a plan as a portable package |
@@ -53,12 +67,15 @@ Verify inside a Claude Code session:
 
 ## The Six Stages
 
+Think ticket rail, prep list, brigade, temperature probe, expeditor, and dish
+pit feedback. Each stage below names the actual artifact and approval it needs.
+
 | Stage | Commits | Gate |
 | ----- | ------- | ---- |
 | 1. Plan | `intent.md` | Intent accepted |
 | 2. Design | `spec.md`, `audit.md`, `evidence/` | Scope lock, then the design gate |
-| 3. Build | `plan.md`, code, `impact-review.md` | Codebase writes approved |
-| 4. Test | `test-plan.md`, results | Runbook reviewed by a second person |
+| 3. Build | `plan.md`, code, `impact-review.md` | `plan.md` approved before code; impact review confirmed |
+| 4. Test | `test-plan.md`, results | Automated tier passes; every manual check confirmed by a human |
 | 5. Deploy | `review.md` with a release checklist | Release authorization. The agent never crosses the production gate |
 | 6. Maintain | A new `intent.md` from incidents | Intent accepted or declined |
 
@@ -101,8 +118,9 @@ migration, and database-deploy protection.
 
 ## Dependencies
 
-**Required:** [Node.js](https://nodejs.org/) 18 or later — the same runtime Claude
-Code itself needs, so if Claude Code runs, this does too.
+**Required:** [Node.js](https://nodejs.org/) 18 or later on PATH. A native Claude
+Code installation does not establish that Node is available to Toque's scripts;
+check it separately.
 
 ```bash
 node --version   # must print v18.0.0 or higher
@@ -131,6 +149,8 @@ pass without them.
 | Plan export | `{plan-name}-export.zip` at project root | No |
 
 ## Architecture
+
+[How the pieces connect](GUIDE.md#how-the-pieces-connect) draws which entrypoints call the agents and gate tools.
 
 - **2 agents** - plan-auditor (the isolated judge) and plan-scaffolder
 - **5 skills** - plan and troubleshoot (each a router plus one file per stage or phase), documentation, MCP research, self-audit knowledge

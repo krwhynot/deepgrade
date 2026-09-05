@@ -1,448 +1,230 @@
-# The plan workflow
+# The six-stage workflow
 
-`/toque:plan` in depth — the six stages, what each one commits, and what it
-takes to get past each gate.
+Preparation has an order. You do not discover the missing ingredient after service.
 
-This is the longest page in the documentation because it is the feature with the
-most in it. If you want the short version first, read [When to use
-Toque](./when-to-use.md#toque) — it includes the cases where this
-workflow is the wrong tool.
+`/toque:plan {name}` takes a change through **Plan, Design, Build, Test, Deploy, and Maintain**. It writes connected records, asks for the required approvals, and can implement and test after approval. It prepares deployment; a human authorizes and performs production release.
 
----
+For your first run, use the [quickstart](quickstart.md). This page explains the stage contracts. [Plan workspace](plan-workspace.md) owns the file layout and resume rules.
 
-## The core idea
+This workflow adapts [Anthropic's AI-Native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook). The [methodology comparison](../METHODOLOGY.md#relationship-to-the-ai-native-sdlc-playbook) distinguishes the broader playbook from Toque's actual gates and automation.
 
-Six stages take any starting input — a vague idea, a docs folder, a ticket, an
-incident — and leave **one committed artifact behind at each stage**. The chain
-of artifacts is the audit trail: who asked, what was produced, who approved.
+<p align="center">
+  <img src="../assets/toque-tall-mascot.png" width="120" alt="Toque, the tall chef-hat reviewer.">
+</p>
 
-```
-  idea / ticket / incident
-          |
-    +-----v------+  intent.md          gate: a named product owner accepts
-    | 1 PLAN     |------------------->
-    +-----+------+
-    +-----v------+  spec.md, audit.md  gate: scope lock, then the design gate
-    | 2 DESIGN   |------------------->       (canary + evidence, PASS/NOT PASS)
-    +-----+------+
-    +-----v------+  plan.md, code      gate: plan.md approved BEFORE code,
-    | 3 BUILD    |------------------->       then impact review confirmed
-    +-----+------+
-    +-----v------+  test-plan.md       gate: Tier 1 automated pass AND
-    | 4 TEST     |------------------->       Tier 2 manual human-confirmed
-    +-----+------+
-    +-----v------+  review.md          gate: a NAMED human authorizes release
-    | 5 DEPLOY   |------------------->       (the agent never deploys)
-    +-----+------+
-    +-----v------+  new intent.md      no gate. Never completes.
-    | 6 MAINTAIN |------------------->
-    +------------+
+## Start, import, or resume
+
+```text
+/toque:plan scheduled-reports
+/toque:plan intent scheduled-reports
+/toque:plan scheduled-reports from docs/vendor-specs/
 ```
 
-Each stage **reads the previous artifact and commits its own**. The agent does
-the generating, verifying, and mechanical work. Humans keep the judgment calls.
+The normal form creates or resumes a plan. The `intent` form runs only Stage 1 and stops, even after acceptance. The `from` form supplies source documents for intake.
 
-### Four hard rules, in every stage
+An existing workspace is resumed from `status.json`, with a freshness check before continuing. `/toque:plan-status` shows progress without starting the next stage.
 
-1. Human gates are real gates. The workflow never advances past one without a
-   recorded approval.
-2. Nothing is implemented without an approved `plan.md`. When implementation
-   departs from it, `plan.md` is updated in the same commit.
-3. The agent verifies its own work before asking a human to review it.
-4. The agent never crosses the production gate. It prepares the release, then
-   stops and asks.
+## Rules across the workflow
 
-### A gate without a name is not passed
+- Approval must be explicit and recorded; the agent does not infer it from silence.
+- No implementation before approval of `plan.md`.
+- Verify work before presenting it for review. A proposed command is not a result.
+- Changes to locked scope require a Change Record.
+- The agent must not authorize or perform production deployment.
 
-Every gate records *who*. `accepted_by`, `approved_by`, `authorized_by`, each
-with a date. This is enforced, not encouraged — if the approver is not named,
-the stage does not advance.
+These are instructions to the agent. Informational hooks do not enforce a security boundary; production permissions and deployment controls remain your responsibility.
 
----
+### Approval tiers
 
-## Starting and resuming
+Read-only research and planning-document updates need no separate action approval. Codebase writes and side-effect commands—Git operations, package installs, and builds—require approval. The stage-specific test procedure below distinguishes its automated run from human confirmation. Production release is not an approval tier the agent can execute.
 
-```
-/toque:plan {name}                 start a new plan, or resume one by that name
-/toque:plan intent {name}          Stage 1 only, then stop
-/toque:plan {name} from docs/...   start from source material
-```
+### Reads, writes, and decisions
 
-**Intent-only mode** exists so a non-engineer can originate a plan without
-committing anyone to building it. It runs Stage 1, commits `intent.md`, asks for
-acceptance, and stops — even if acceptance is given in the same session. Someone
-resumes with `/toque:plan {name}` when design should begin.
+Each stage reads the previous artifact, writes its own, and stops at a decision a named human records.
 
-**Resume** reads `status.json`, finds the current stage, checks the freshness of
-every completed stage, and reports staleness before offering to continue. See
-[The plan workspace](./plan-workspace.md) for the resume and staleness rules.
+| Stage | Reads | Writes | Executable check | Human decision |
+| --- | --- | --- | --- | --- |
+| Plan | Your idea, ticket, or `from` folder; the codebase; search tools | `intent.md`, `research/findings.md`, `research/reference-data.json`, `research/intake/` | None | Named product owner sets `Status: Accepted` |
+| Design | `intent.md` (Accepted), `research/findings.md`, `research/reference-data.json` | `spec.md`, `audit.md`, `evidence/`, `.canary/` (scratch) | `tq-canary.js` and `tq-evidence-validate.js`, run by the caller | Scope lock; reviewer name or eligible solo waiver; `Status: Approved` |
+| Build | `spec.md` (Approved), `audit.md`, assumptions in `status.json` | `plan.md`, `changes/CR-{N}.md`, `impact-review.md`; code only on approval | None (the assumption gate is an instruction) | Approve `plan.md`; approve each codebase action; waive a HIGH assumption; confirm impact review |
+| Test | `spec.md` Verification plan, `plan.md` Proof and Verification, `audit.md`, `impact-review.md`, `status.json` | `test-plan.md`, `status.json` test gate | Tier 1 automated tests, run with approval | Confirm every Tier 2 manual check by name |
+| Deploy | `intent.md` Constraints, `plan.md`, `test-plan.md`, `status.json`, `git diff` | `review.md`, `plan.md` Departures from plan | Fresh subagent compares diff with plan (a report, not a check) | Named human records Authorized, Rejected, or Deferred, then performs the release |
+| Maintain | The plan folder, `troubleshooting/` logs, `docs/troubleshooting/knowledge-base.md` | `status.json` maintain metrics; a new draft `intent.md` when the trigger fires | None | Accept or reject the new intent back in Plan; never auto-accepted |
 
----
+The canary and evidence validator are the only executable checks in the workflow; every other gate is an instruction to the agent plus a recorded human decision. A recorded release authorization is the instruction to a human, not proof that a deployment happened.
 
 ## Stage 1 — Plan
 
-> **Question:** What problem are we solving, and what is true about our situation?
-> **Produces:** `intent.md`, `research/findings.md`, `research/reference-data.json`
-> **Gate:** a named product owner sets `intent.md` Status to Accepted
+**Question:** What problem are we agreeing to solve?
 
-### The intent interview
+**Produces:** `intent.md`, research findings, structured reference data, and intake material.
 
-The originator may be a non-engineer, so the interview asks **one question at a
-time, in plain language**, and accepts short answers. It deliberately does not
-ask about file paths, architecture, or technology — those belong to Stage 2.
+The ticket rail: capture the request once, in the originator's words.
 
-Six questions, each mapping to one section of `intent.md`:
+### Capture intent
 
-| Question | Section |
-| --- | --- |
-| What cannot be done today, and why does it matter? | Problem |
-| What should be true when this is done? How would you know? | Proposed outcome |
-| Who is affected, which systems does this touch, who owns the decision? | Affected users and systems |
-| What is fixed — deadline, budget, compliance, security, compatibility? | Constraints |
-| What should this explicitly NOT cover? | Out of scope |
-| What do you not know yet that would change the answer? | Open questions |
+The interview covers six subjects, one question at a time:
 
-Given source docs or an existing ticket instead, it drafts every section from
-the material first and then confirms each one with you, rather than making you
-retype what it can already read.
+1. The problem.
+2. The desired outcome.
+3. Affected people, systems, and owners.
+4. Constraints.
+5. What is out of scope.
+6. Unknowns.
 
-### Research — three parallel tracks
+When source documents are supplied, Toque extracts a draft first and asks about gaps rather than making the originator repeat everything.
 
-The three tracks are independent, so they run as **simultaneous subagents**,
-each with its own context window, each writing to the plan folder.
+### Research the request
 
-| Track | Objective | Output |
-| --- | --- | --- |
-| 1 — Codebase scan | Find all related code that already exists | `research/codebase-scan.md` |
-| 2 — Source doc cleanup | Clean and structure any provided documents | `research/intake/` |
-| 3 — Best practices | Find how others solved this | `research/best-practices.md` |
+Three tracks can run in parallel: codebase analysis, source-document cleanup, and external best practices. Research links findings to the files or sources behind them.
 
-Track 3 uses connected MCP search tools in a defined order — Ref for framework
-docs, Exa for code examples, Perplexity for targeted questions, then plain web
-search as a fallback. **With no external search tools available**, it falls back
-to codebase-only research and tags the output `[EXTERNAL RESEARCH UNAVAILABLE]`
-rather than quietly producing thinner findings.
+MCP research tools are optional. Available web tools are the fallback; if no external research is possible, output is tagged `[EXTERNAL RESEARCH UNAVAILABLE]`.
 
-Research is done when every open question is answered or explicitly deferred, at
-least one viable implementation path exists, top risks have mitigation ideas,
-and the remaining unknowns are non-blocking.
+Synthesis updates Constraints and Open questions. It does not silently rewrite the originator's Problem or Proposed outcome. Questions are answered or explicitly deferred to Design with reasons; remaining unknowns must not block a viable path.
 
-### Synthesis
+### Acceptance
 
-Research does **not** change the Problem or Proposed outcome — those belong to
-the originator. It updates exactly two sections:
-
-- **Constraints** gains anything research discovered that the originator did not
-  name, each marked `(from research)`.
-- **Open questions** has each question replaced by its answer and the finding
-  behind it, or marked `Deferred to design: {reason}`.
-
-### The gate
-
-A named person accepts, requests changes, or rejects. The originator may accept
-their own intent if they own the decision; otherwise the workflow asks who does.
-
-> An intent nobody has accepted is a draft, and Stage 2 must not start from a
-> draft — an unaccepted intent produces a spec for a problem no one agreed
-> exists.
-
----
+A named product owner accepts, requests changes, or rejects the intent. The originator may accept if they own that decision. Design cannot start from a draft: `intent.md` must reach `Status: Accepted`.
 
 ## Stage 2 — Design
 
-> **Question:** What exactly will be built, and does the spec hold up?
-> **Produces:** `spec.md`, `audit.md`, `evidence/`
-> **Gate:** scope lock, then the design gate PASS, then human review
+**Question:** What exactly must the system do, and does the design hold up?
 
-The largest stage, in three parts.
+**Produces:** `spec.md`, `audit.md`, and `evidence/`.
 
-### Part A — scope and design
+The prep list belongs in `spec.md`. Project instructions such as `CLAUDE.md`, where present, remain the house rules—not a replacement for the spec.
 
-Writes the first half of `spec.md`: Requirements (functional and
-non-functional), Design, Standards applied, Gotchas, Evidence, Open questions.
+### Define and lock scope
 
-Every open question from `intent.md` is carried forward with its current state —
-answered, or deferred with an owner and a due date. **A question with no owner
-is a gap the design gate will find.**
+The spec records requirements, design, standards applied, gotchas, evidence, and open questions. Deferred questions retain an owner and due date.
 
-### Scope lock — a mid-stage gate
+The user confirms scope before delivery detail is added. The locked sections become immutable; subsequent changes require a Change Record. This is a **mid-stage gate**, not completion of Design.
 
-Before any of the delivery detail is written, the drafted sections are presented
-for confirmation:
+### Plan verification and delivery
 
-```
-Does this scope look right? [confirm / adjust / back to research]
-```
+Choose a testing methodology per deliverable, not one method for every job:
 
-On confirm, `spec.md` is committed and **the locked sections become immutable**.
-Changes after this point require a Change Record, not a silent edit. This is the
-mechanism that makes drift visible later.
-
-### Part B — verification plan and delivery
-
-The verification plan requires picking a **testing methodology per deliverable**,
-explicitly rather than defaulting to "unit tests for everything." Eleven are on
-the menu:
-
-| Methodology | When |
+| Method | Typical fit |
 | --- | --- |
-| TDD | New feature with a clear spec, algorithms, core business logic |
-| BDD | User-facing features, cross-functional teams, ambiguous requirements |
-| Characterization / Golden Master | Refactoring legacy code, extracting from a monolith |
-| Contract testing | Microservices, API integrations, DB backward compatibility |
-| Property-based | Algorithms with infinite input space, financial calculations |
-| Snapshot / Approval | UI components, serialized output, reports, config generation |
-| Shadow / Parallel | Production migration, database cutover, replacing live systems |
-| ATDD | Sprint planning, user-story definition, migration sign-off |
-| Mutation testing | Pre-release quality gate, measuring suite effectiveness |
-| Exploratory | Complex UI, late-stage discovery, automation gaps |
-| Expand/Contract | Schema migration, renaming columns, changing data types |
+| TDD | Clear behavior, algorithms, core logic |
+| BDD | User-facing behavior and shared understanding |
+| Characterization / Golden Master | Legacy refactoring |
+| Contract testing | API and compatibility boundaries |
+| Property-based | Large input spaces and invariants |
+| Snapshot / Approval | Structured output, reports, UI |
+| Shadow / Parallel | Comparing an existing and replacement system |
+| ATDD | Acceptance examples and sign-off |
+| Mutation testing | Checking test-suite effectiveness |
+| Exploratory | Interaction risks and automation gaps |
+| Expand/Contract | Compatible schema changes |
 
-Three AI-specific rules apply here, and they are the interesting part:
+For AI-generated work, the workflow requires separate implementation and test authorship, higher testing scrutiny, and checks for AI failure modes such as tautological tests, logic drift, and happy-path-only coverage.
 
-- **Separate test authorship** — the agent that writes implementation code must
-  not write the tests for it.
-- AI-generated code receives **higher** testing scrutiny than human code.
-- Every AI-generated deliverable is checked against an AI failure-mode
-  checklist: logic drift, stale dependencies, hidden business-rule violations,
-  tautological tests, happy-path-only coverage.
+Delivery is presented as Jira-ready tickets, a leadership summary, and a working checklist. These are document views, not a claim that Toque publishes tickets to an external service. Detail scales with risk.
 
-The Delivery section is then written in **three views of the same plan** —
-Jira-ready tickets, a leadership summary with a timeline and go/no-go criteria,
-and a working checklist with verification per step. Detail scales with risk:
-HIGH-risk phases get exact files, function names, and grep patterns; LOW-risk
-phases get goals and success criteria.
+### Challenge the design
 
-### Part C — the design gate
+The separate auditor and gate tools must establish:
 
-The audit. A fresh, isolated `plan-auditor` runs against `spec.md`, and two
-tools decide whether its verdict counts:
-
-```
+```text
 PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK
 ```
 
-No weighted sum, no partial credit. This is the most opinionated mechanism in
-the toolkit and it has [its own page](./the-design-gate.md), including its known
-limitation.
+Read [Design gate](the-design-gate.md) for the checks, revision limits, and known limitations.
 
----
+After an automated pass, record human review or an eligible solo waiver. Mark `spec.md` approved and name the reviewer or waiver holder. A waiver does not turn a failed automated gate into a pass.
 
 ## Stage 3 — Build
 
-> **Question:** What exactly will change, in what order, and what else does it affect?
-> **Produces:** `plan.md`, `changes/CR-{N}.md`, `impact-review.md`, code
-> **Gate:** `plan.md` approved before any code; impact review confirmed
+**Question:** What changes, in what order, and what else does it affect?
 
-### Step 1 — the build plan
+**Produces:** `plan.md`, implementation changes, `impact-review.md`, and Change Records when needed.
 
-`plan.md` names the files that change, the order of work, risks, proof,
-verification, and what can be parallelized. **It is approved before any
-implementation begins.**
+The brigade can work in parallel only after the stations know their jobs.
 
-### Step 2 — the assumption hard gate
+### Approve the build plan first
 
-Before any build work starts, assumptions recorded in `status.json` are checked
-by impact:
+`plan.md` defines affected files, sequence, risks, supporting proof, verification steps, and parallelization. Approval precedes implementation.
 
-| Impact | Status | Result |
-| --- | --- | --- |
-| HIGH | unverified | **BLOCK.** Verify now / accept risk with a waiver / back to research |
-| HIGH | falsified | **BLOCK** and return to Stage 2 — the approach is invalid |
-| HIGH | verified or waived | Pass |
-| MEDIUM | unverified | Warn, allow |
-| LOW | unverified | Note only |
+Resolve assumptions before relying on them:
 
-A waiver is not a shrug: it requires a documented risk statement, an approver's
-name, and a contingency plan if the assumption fails.
+| Assumption state | Consequence |
+| --- | --- |
+| Verified | Record the evidence. |
+| Unverified, HIGH risk | Block or obtain the documented waiver required by the workflow. |
+| Unverified, MEDIUM risk | Warn; proceeding is allowed. |
+| Unverified, LOW risk | Informational notice. |
+| Falsified, HIGH risk | Block and return to Design; do not build on it. |
 
-> This gate is not advisory. It is a hard block.
+A HIGH-risk waiver needs a risk statement, a named approver, a contingency plan, and a `waived` status in `status.json`.
 
-### Change control
+### Implement and record departures
 
-Three situations produce an immutable Change Record in `changes/`:
+Present parallel batches for approval. Independent tickets can use separate file sets or branches. Dependent work waits. The orchestrator owns conflict resolution; parallelism is not a promise of zero overlap.
 
-- **Scope change** — offers a return to Stage 2, marks design and build stale,
-  and preserves the original `spec.md`.
-- **New blocker** — the ticket is marked BLOCKED with the reason and impact.
-- **Implementation diverges from plan** — the divergence and its rationale are
-  recorded, and `plan.md` is updated **in the same commit**. This is the living
-  document rule, and it replaces informal change notes.
+Codebase actions require approval per action, including generating scaffolding and running the proposed tests. Updating planning notes and answering questions do not require that extra approval.
 
-There is no gate on build work itself. You stay in Build until you are ready for
-the exit check.
+A scope change gets an immutable `changes/CR-{N}.md`. The Change Record carries the new content; the original receives a supersession notice rather than a silent rewrite. A scope change can mark Design and Build STALE and return the work to Design. Update the living `plan.md` in the same commit as an implementation departure so the later diff review can account for it.
 
-### Step 3 — impact review
+### Review impact
 
-The exit check, and the reason the stage does not simply end when the code
-works. Code that passes targeted tests can still break integration edges, scale
-behavior, transition-state UX, and downstream consumers. This step asks "what
-did we miss?" across seven dimensions, run as parallel subagents.
+The impact review examines seven dimensions in three groups, including cross-cutting effects and integration edges. Present `impact-review.md` and obtain user confirmation before Test.
 
-HIGH-severity findings force a choice: fix now (return to Step 2, update
-`plan.md` in the same commit, re-run the affected dimension) or accept the risk
-with a recorded reason.
-
----
+HIGH-severity findings require a choice: fix and rerun the affected review, or accept the risk with a recorded reason. New blockers mark the ticket BLOCKED and receive a Change Record.
 
 ## Stage 4 — Test
 
-> **Question:** Does it work safely?
-> **Produces:** `test-plan.md`, results
-> **Gate:** all Tier 1 automated checks pass AND all Tier 2 manual checks confirmed by a human
+**Question:** Did the implementation work, including the failure paths?
 
-`test-plan.md` gets a per-phase test matrix, edge cases, characterization
-candidates, and each criterion categorized as automated or manual.
+**Produces:** `test-plan.md` and recorded results.
 
-The methodology chosen back in Stage 2 now drives an explicit checklist. The
-database migration path is the longest — **eighteen steps** across Expand,
-Migrate, and Contract phases, covering forward and backward migrations, dual
-writes, row counts, checksums, referential integrity, shadow comparison, orphan
-references, index regressions, and query performance.
+Automated checks are the temperature probe, not a substitute for every kind of inspection.
 
-### Two-tier verification
+The test matrix has two tiers:
 
-**Tier 1 runs without you.** Critical-path tests, a clean compile, no lint
-errors in changed files, characterization baselines captured, the design gate
-recorded as PASS, and every verification command from `plan.md` producing its
-healthy output.
+- **Tier 1, automated:** all required tests pass.
+- **Tier 2, manual:** a human performs and confirms the required checks.
 
-Then it **stops** and hands you Tier 2.
+Tier 1 covers critical-path tests, a clean compile, no lint errors in changed files, required characterization baselines, the recorded design-gate pass, and healthy output from the verification commands in `plan.md`.
 
-**Tier 2 requires a human** and is never auto-checked: no open P0/P1 defects,
-rollback plan validated in staging or reviewed by ops, key user flows working in
-staging, edge cases manually verified, and the deployment runbook reviewed **by
-someone other than its author**.
+Tier 2 confirms no open P0/P1 defects, rollback validated in staging or reviewed by operations, key staging user flows, manual edge cases, and runbook review by someone other than its author. The agent must not mark these complete on the user's behalf. Nothing required may remain pending; record who confirmed and when.
 
-The gate needs all of Tier 1 passing, all of Tier 2 confirmed, and nothing left
-pending. Who confirmed and when is recorded.
-
----
+TDD is one supported method, not a mandatory description of every test stage. A failed test calls for investigation and correction—not automatic deletion of the implementation.
 
 ## Stage 5 — Deploy
 
-> **Question:** Is this the change the plan intended, and who authorizes it?
-> **Produces:** `review.md`, `plan.md ## Departures from plan`
-> **Gate:** a named human authorizes. The agent never runs a deploy command.
+**Question:** Does the actual change match the plan, and should it reach production?
 
-### Step A — diff-versus-plan
+**Produces:** `review.md` and the release checklist; a linked runbook when needed.
 
-The drift control, and the design detail worth noticing: it runs in a **fresh
-subagent, not the one that did the build**, so the comparison is not biased by
-memory of why each file changed. Its brief is explicitly *report, do not judge*.
+A fresh reviewer compares the actual diff with planned files and constraints. Unplanned departures must be acknowledged in `plan.md`. The release checklist includes numeric rollback triggers, not “roll back if things look bad.”
 
-It produces three lists — files changed but not planned, files planned but not
-changed, and matches — then checks every constraint from `intent.md` against the
-diff for auth changes, data-scope changes, and new external dependencies, citing
-`file:line` for anything that *appears* to violate one.
+The comparison lists changed-but-unplanned files, planned-but-untouched files, and matches. It cites apparent constraint violations for human judgment. Record each departure and its reason (or “unexplained”) under `Departures from plan`, in the same commit as the release candidate. An unexplained departure becomes a finding, not an invisible exception. Rollback thresholds specify both a measurement and a window.
 
-"Appears" is deliberate. The subagent supplies evidence; the human decides.
+### Production authorization
 
-A non-empty delta is **not** an automatic rejection, but it must be
-acknowledged: every unplanned and untouched file is appended to `plan.md` under
-`## Departures from plan` with a one-line reason each, or marked "unexplained" —
-and an unexplained departure becomes a finding. That append lands in the same
-commit as the release candidate.
+A named human authorizes **and performs** the release. The agent may prepare commands and verify completed steps after human confirmation.
 
-> Drift that is not written down is drift that did not get reviewed.
+The skill must not run deploy or publish commands, push release tags, merge into production, or perform production migrations, regardless of task tier.
 
-### Step B — review.md
+> **Chef's rule: preparing the release is not permission to serve it.**
 
-Evidence before opinions, in a fixed order: summary, diff-versus-plan, the
-constraint check, findings (each citing `file:line`, ordered by severity, at
-most five nits with the rest summarized as a count), and the release checklist.
-
-Rollback triggers in that checklist must be **numeric thresholds over a window**
-— an error rate, a latency figure, a failing smoke test, a data-integrity count.
-"Looks wrong" is explicitly not a trigger. Those same thresholds are what Stage 6
-later uses to classify incident severity.
-
-### Step C — authorization
-
-```
-Two questions for the reviewer:
-  1. Is this the change the plan intended?
-  2. Is the risk acceptable?
-```
-
-The hard rule: **no deploy, publish, release, tag-push, merge-to-production, or
-migration command is run by this skill, in any approval tier, even if you say
-"just do it" in passing.** A deliberate release is a human action.
-
-Once authorized, the human performs the release from the checklist. The agent
-may run the *verification* steps after the human confirms each deployment step —
-never the deployment steps themselves.
-
----
+Approval and execution belong in the record. Do not invent either to advance the stage.
 
 ## Stage 6 — Maintain
 
-> **Question:** What did production teach us?
-> **Produces:** new `intent.md` files when the trigger fires
-> **Gate:** none. This stage never completes.
+**Question:** What is production teaching us?
 
-After release the plan folder is the record. **Nothing in it is rewritten after
-Stage 5** — new facts go in new files.
+**Produces:** plan-linked incident records and, when warranted, a new draft intent.
 
-Incidents are handled by `/toque:troubleshoot --plan {name}`, which writes its
-log inside the plan's `troubleshooting/` folder. Stage 6 reads those logs; it
-does not investigate.
+The feedback loop watches what comes back from service. It does not automatically rewrite the recipe.
 
-### The trigger rule
+`/toque:troubleshoot --plan {name}` links incidents to the released work. A SEV1/SEV2 incident, a known pattern with knowledge-base recurrence count of at least three, or a recurrence/guardrail alert can trigger a new draft intent.
 
-When a logged incident is **either** SEV1/SEV2 **or** a recurrence of a known
-pattern (recurrence count of 2 or more), a new `intent.md` is drafted, pre-filled
-from the incident — root cause becomes Problem, the recommended fix becomes
-Proposed outcome, every unverified hypothesis becomes an Open question.
+That draft must return to Stage 1 for acceptance. Maintain does not silently accept it, change code, or release a fix.
 
-Then it stops. The new intent re-enters Stage 1 for a human to accept or reject.
-**It is never auto-accepted, and this stage never edits code.**
+Maintain enters `steady_state` and **never completes**. Preserve the released artifacts as the record of that delivery; status, manifest links, incident logs, and recurrence bookkeeping can continue to change.
 
-Incidents below the trigger are linked and counted only.
+## Where to go next
 
-### Steady state
-
-There is no completion timestamp. `/toque:plan-status` reports Maintain with its
-metrics — incidents linked, intents proposed, repeat incidents in the same class.
-
-> "Done" is observed, not declared.
-
----
-
-## Approval tiers
-
-Four tiers govern what happens without asking:
-
-| Tier | Examples | Approval |
-| --- | --- | --- |
-| 1 — Read-only | grep, read files, search | None |
-| 2 — Document write | anything under `docs/plans/{date}-{name}/` | None |
-| 3 — Codebase write | test files, scaffolds, generated code | **Required** |
-| 4 — Side-effect commands | git operations, package installs, builds | **Required** |
-
-Release to production is not a tier. The skill never runs it.
-
----
-
-## Where parallelism is used
-
-| Stage | Parallelized | Deliberately sequential |
-| --- | --- | --- |
-| 1 Plan | 3 research tracks | The intent interview — it is a conversation |
-| 2 Design | 5 audit specialists | Scope lock and spec authoring |
-| 3 Build | Independent tickets; 3 impact-review groups | — |
-| 4 Test | — | Tests may have execution-order dependencies |
-| 5 Deploy | Diff check in its own fresh subagent | — |
-| 6 Maintain | — | Triage is a human decision |
-
-The rule of thumb: 1–2 independent tasks run inline, 3 or more go parallel, 5 or
-more get batched into groups. Every subagent has a functional name, a defined
-scope, and a visible report — **no silent background work**.
-
----
-
-## Related
-
-- [The plan workspace](./plan-workspace.md) — the folder, `status.json`, resume, staleness
-- [The design gate](./the-design-gate.md) — Stage 2's gate in full
-- [When to use Toque](./when-to-use.md#toque) — including when not to
+[Your first workflow](quickstart.md) · [Workspace and resume](plan-workspace.md) · [Gate mechanics and limits](the-design-gate.md) · [All plugin capabilities](../plugins/toque/GUIDE.md)
