@@ -38,6 +38,25 @@ jobs:
         shell: bash
         run: bash tests/run-all.sh
 
+  # The immutability rule for snapshots/ and changes/CR-*.md lived in prose for
+  # three releases. This is the one boundary every route to the tree crosses.
+  # fetch-depth: 0 because the check diffs a range, and the push `before` SHA
+  # is not in a shallow clone; the script fails loud if either end is missing
+  # rather than narrowing the range. See .github/protected-artifacts.sh.
+  protected-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Refuse edits to immutable plan records
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: bash .github/protected-artifacts.sh ci
+
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
