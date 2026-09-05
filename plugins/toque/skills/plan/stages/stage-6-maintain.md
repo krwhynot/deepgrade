@@ -64,7 +64,7 @@ Record in status.json phases.maintain, updated on every linked incident:
 ```json
 "maintain": {
   "status": "steady_state",
-  "started": "{ISO, set when deploy completed}",
+  "started": "{ISO, = phases.deploy.released_at, set when the human confirms the release}",
   "incidents_linked": 0,
   "intents_proposed": [],
   "repeat_incidents": 0

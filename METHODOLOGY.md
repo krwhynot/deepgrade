@@ -330,9 +330,12 @@ Authorized, Rejected, or Deferred decision in `review.md`.
 The plan skill prohibits running production deployment, publishing, release,
 tag-push, merge-to-production, and migration commands. The human performs the
 release; the skill may verify confirmed steps. This is a workflow restriction,
-not an installed permission boundary. The final-summary instruction marks the
-stage complete after authorization and prints “Released”; therefore its state
-alone does not establish that release occurred.
+not an installed permission boundary. Authorization and release are recorded
+as two events: `authorized_by`/`authorized_at` leave the stage in status
+`authorized`, and only a named human's later confirmation writes
+`released_by`/`released_at` and marks the stage complete. A recorded
+authorization still does not establish that a deployment happened; the
+separate confirmation is a human statement, not an observation of production.
 
 **Implementation:** [plugins/toque/skills/plan/stages/stage-5-deploy.md](plugins/toque/skills/plan/stages/stage-5-deploy.md) (Steps A-D). **Verification:** [tests/layer1-core.sh](tests/layer1-core.sh); structural checks do not establish agent compliance.
 
@@ -344,8 +347,8 @@ pattern alert. It links lesser incidents and records counts. No continuous
 monitor, scheduler, or automatic acceptance is installed.
 
 Released content remains the delivery record while status, manifest links and
-incident bookkeeping can change. Maintain stays `steady_state` with no completion
-timestamp. [Google SRE: Postmortem Culture](https://sre.google/sre-book/postmortem-culture/) supports learning from incidents and tracked actions;
+incident bookkeeping can change. Maintain starts at the confirmed
+`released_at` and stays `steady_state` with no completion timestamp. [Google SRE: Postmortem Culture](https://sre.google/sre-book/postmortem-culture/) supports learning from incidents and tracked actions;
 Toque's trigger thresholds and intent routing are its own adaptation.
 
 **Implementation:** [plugins/toque/skills/plan/stages/stage-6-maintain.md](plugins/toque/skills/plan/stages/stage-6-maintain.md) (Trigger rule, Metrics, Steady state). **Verification:** [tests/layer1-core.sh](tests/layer1-core.sh); structural checks do not establish agent compliance.

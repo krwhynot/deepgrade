@@ -256,6 +256,11 @@ Intent -> spec: {elapsed or pending}   Spec -> plan: {elapsed or pending}
 Continue from {stage}?
 ```
 
+If phases.deploy.status is `authorized`, ask first: "Release authorized by
+{authorized_by} on {authorized_at}. Has it been released? Enter the name of the
+person confirming and the release time to record it, or continue waiting."
+Record per Stage 5 Step E; do not mark the release on the user's behalf.
+
 ## Stages 1-6: load the stage file on entry
 
 The six stages live in one file each under `${CLAUDE_SKILL_DIR}/stages/`. Skill
@@ -284,6 +289,13 @@ Gate bookkeeping, every time a gate is passed: set the stage's `completed`
 timestamp, set the next stage to `in_progress` with `started`, set
 `current_phase`, and record who approved (`accepted_by`, `approved_by`,
 `authorized_by`) with the date. A gate without a recorded name is not passed.
+
+Stage 5 records two events, never one: `phases.deploy.authorized_by` and
+`authorized_at` when a named human authorizes the release (status
+`authorized`), then `released_by` and `released_at` when a human confirms the
+release happened (status `complete`, `completed` = `released_at`,
+`phases.maintain.started` = `released_at`). Authorization is not rounded up to
+release.
 </workflow>
 
 <staleness_rules>

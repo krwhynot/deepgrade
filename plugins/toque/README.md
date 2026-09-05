@@ -76,7 +76,7 @@ pit feedback. Each stage below names the actual artifact and approval it needs.
 | 2. Design | `spec.md`, `audit.md`, `evidence/` | Scope lock, then the design gate |
 | 3. Build | `plan.md`, code, `impact-review.md` | `plan.md` approved before code; impact review confirmed |
 | 4. Test | `test-plan.md`, results | Automated tier passes; every manual check confirmed by a human |
-| 5. Deploy | `review.md` with a release checklist | Release authorization. The agent never crosses the production gate |
+| 5. Deploy | `review.md` with a release checklist | Release authorization, then a separate human confirmation that the release happened. The agent never crosses the production gate |
 | 6. Maintain | A new `intent.md` from incidents | Intent accepted or declined |
 
 ## The Design Gate

@@ -125,7 +125,7 @@ The lifecycle reference is [Anthropic's AI-Native SDLC playbook](https://claude.
 | Design | `spec.md`, `audit.md`, `evidence/` | Scope lock; automated gate; review or eligible waiver; approved spec. |
 | Build | `plan.md`, code, `impact-review.md` | Approve plan before implementation; confirm impact afterward. |
 | Test | `test-plan.md`, results | Automated pass and human-confirmed manual checks. |
-| Deploy | `review.md`, release checklist | Named human authorizes and performs production release. |
+| Deploy | `review.md`, release checklist | Named human authorizes, performs, then confirms production release; authorization and release are recorded separately. |
 | Maintain | Incident records; new draft intent when warranted | Steady state, not a completion gate. |
 
 [Stage-by-stage contracts](https://github.com/krwhynot/toque/blob/main/documentation/the-plan-workflow.md) cover assumptions, parallel work, Change Records, and incident recurrence.
