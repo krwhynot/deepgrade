@@ -946,9 +946,12 @@ The workflow requires local code evidence, one tested hypothesis at a time,
 working-versus-broken comparison, a failing test before a focused fix (subject
 to approval), and regression verification. It records timestamps, dead ends,
 evidence and missing safeguards. Optional exact-error research informs local
-investigation without replacing it. Its KB HIGH-match prompt asks whether to
-reuse a past fix before the four phases, in tension with its root-cause rule;
-correlation is not causal verification.
+investigation without replacing it. A knowledge-base match at any score is a
+lead, not a diagnosis: a HIGH match names the earlier cause as the first
+hypothesis for Phase 1, and the earlier fix is not re-applied until Phase 1
+has shown the same cause is present now. A confirmed match is logged as a
+recurrence, since it means the earlier fix was insufficient. Correlation is
+not causal verification.
 
 For SEV1/SEV2 it requests status updates (30/60-minute cadence), a blameless
 postmortem, owned action items and linked draft intent. [Google SRE: Postmortem Culture](https://sre.google/sre-book/postmortem-culture/) supplies
