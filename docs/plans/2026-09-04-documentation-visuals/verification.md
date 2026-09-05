@@ -103,4 +103,8 @@ Applied at the owner's request: V1, V1b, V2, V3a, V3b, V4, and R2. Edits touched
 - `git diff --check`: clean.
 - `bash tests/run-all.sh` (all eight layers): 118, 6, 9, 12, 74, 42, 8, and 20 assertions passed with zero failures; the plan consistency sweep passed; `ALL PASSED`.
 - In `plugins/toque/README.md`, the Node paragraph now says a native Claude Code installation does not establish Node is available (C1 closed); the Build and Test gate rows now match `stage-3-build.md:8` and `stage-4-test.md:140-144` (C2 closed); the Architecture section links to the GUIDE map.
-- The `install.md` `## Optional inputs` section was reduced to one sentence pointing at the new prerequisites table, as V1b proposed. No commit was made.
+- The `install.md` `## Optional inputs` section was reduced to one sentence pointing at the new prerequisites table, as V1b proposed.
+
+## GitHub render check (run, September 5, 2026)
+
+Commit `35d3854` on branch `docs/visuals` was pushed and the two changed pages were opened on github.com. GitHub rendered all three Mermaid blocks (two on `documentation/the-design-gate.md`, one on `plugins/toque/GUIDE.md`) inside its `viewscreen.githubusercontent.com` Mermaid frames, each fitted to the 1012px article column, with `<br/>` line breaks honoured and GitHub's own zoom and pan controls attached. Screenshots: `previews/github-v3a-canary.jpg`, `previews/github-v3b-pass.jpg`, `previews/github-v4-map.jpg`. This closes the "GitHub's live rendering" gap above for the applied diagrams; it says nothing about V5's invisible links, which remain unapplied and untested on GitHub. Dark-mode and 380px rendering on GitHub were not checked.
