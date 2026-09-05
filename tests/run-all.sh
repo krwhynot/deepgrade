@@ -87,7 +87,7 @@ if [[ -z "$RUN_LAYERS" ]]; then
     if $QUICK; then
         RUN_LAYERS="1 2 3"
     else
-        RUN_LAYERS="1 2 3 4 5 6 7"
+        RUN_LAYERS="1 2 3 4 5 6 7 8"
     fi
 fi
 
@@ -113,6 +113,7 @@ for layer in $RUN_LAYERS; do
         5) run_layer 5 "Evidence Validator" "$SCRIPT_DIR/evidence-validate-test.js" node || OVERALL_EXIT=1 ;;
         6) run_layer 6 "Canary" "$SCRIPT_DIR/canary-test.js" node || OVERALL_EXIT=1 ;;
         7) run_layer 7 "Release Preflight" "$SCRIPT_DIR/release-preflight-test.sh" || OVERALL_EXIT=1 ;;
+        8) run_layer 8 "Protected Artifacts" "$SCRIPT_DIR/protected-artifacts-test.sh" || OVERALL_EXIT=1 ;;
     esac
 done
 

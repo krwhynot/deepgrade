@@ -4,7 +4,7 @@
 
 "Tested" means both **behavior is correct** AND **the plugin is actually wired to use it**. Fixture plans alone prove detection logic works; they do not prove the techniques are integrated into the command/agent pipeline.
 
-## 7 Test Layers
+## 8 Test Layers
 
 ### Layer 1: Config/Wiring Tests
 Parse `plugin.json`, `commands/`, and `agents/` to verify:
@@ -56,6 +56,13 @@ Run `.github/release.sh check` against a scratch clone:
 - It passes on a clean released tree
 - It refuses each synthetic violation (missing breaking-change section, missing migration note, unpinned catalog)
 - Every violation is committed in the clone, so a preflight that only checked tree cleanliness cannot pass
+
+### Layer 8: Protected Artifacts
+Run `.github/protected-artifacts.sh` against a scratch clone:
+- A clean tree passes; adding a new change record passes
+- Modifying, deleting, renaming or retyping a `snapshots/` file or a `changes/CR-*.md` is refused
+- An `evidence/` edit is NOT refused — the scope boundary is asserted, not assumed
+- CI modes: a push range containing a violation fails; a zero or unresolvable before-SHA fails loud (exit 2) rather than passing vacuously; a dispatch on main checks `HEAD^..HEAD`; a pull request diffs from the merge-base so base-branch commits are not blamed on the PR
 
 ## Drift Detection
 Repo-consistency assertions run on every test pass to catch:

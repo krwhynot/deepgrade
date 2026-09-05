@@ -1,29 +1,20 @@
 # Optional inputs
 
-Toque reads a handful of files it does not write. If a codebase-analysis tool
-has left them in `docs/audit/`, the planning commands and the documentation
-templates use them to ground their output. If nothing has, everything still
-works — the files make plans better-informed, and not one of them is required.
+Toque can use analysis another tool has already prepared. Bring useful ingredients; no separate scanner is required.
 
-This file is the list, and it exists for one reason: nothing writes these paths
-in this repository, so nothing exercises them. A typo in one reads exactly like
-a repository that has never been analysed — silence either way. The sweep in
-`tests/layer1-repo.sh` holds the list and the tree to each other, so a path can
-neither drift nor appear undocumented.
+The files below add risk, dependency, integration, and feature context to planning and document generation. Toque reads them but does not write them. If they are absent, the workflows continue using available project evidence.
 
-**What it cannot do is tell you the file will ever exist.** These are inputs
-from outside, and their producers are not this repository's concern. Nothing
-here breaks if they never arrive.
+Their presence is not proof that they are current or correct. Check provenance and freshness before relying on an external finding. Toque no longer produces codebase-audit or AI-readiness reports.
+
+<p align="center">
+  <img src="assets/toque-tall-mascot.png" width="96" alt="Toque, the tall chef-hat reviewer.">
+</p>
 
 ## The list
 
-Format rules (the sweep depends on them):
+Paths are relative to the project being planned, not the installed plugin. The second column identifies readers in this repository.
 
-- One row per artifact. Column 1 is the repo-relative path Toque looks for at
-  runtime, in the project it is planning against.
-- Column 2 is every Toque file that reads it, comma-separated, repo-relative.
-- Only functional files count — `commands/`, `agents/`, `skills/`, `scripts/`.
-  README/GUIDE mentions are description, not consumption, and are not swept.
+The table format is a tested contract: one artifact per row, a bare path in column 1, and comma-separated reader paths in column 2. Only functional readers under `commands/`, `agents/`, `skills/`, and `scripts/` count. Documentation mentions are not consumers.
 
 | Artifact | Read by |
 | -------- | ------- |
@@ -39,45 +30,28 @@ Format rules (the sweep depends on them):
 
 ## Toque's own paths under docs/audit/
 
-These live in the same directory but are not inputs from anywhere — Toque either
-writes them itself or is the only thing that ever did. They are listed so the
-sweep can tell them apart from the inputs above; adding one needs an entry here,
-not a row in the table.
+Two special references share the directory but are not external analysis inputs:
 
-- `docs/audit/plan-audit.md` — written by nothing. It survives only as the
-  refusal in `quick-audit.md`, which names the path to forbid it; the auditor's
-  fallback to this path was removed, so it is nobody's input and nobody's output.
-- `docs/audit/impact-review-*.md` — a LEGACY location, read and never written.
-  Stage 3 writes `impact-review.md` into the plan folder; `troubleshoot` looks
-  there first and falls back to this glob for plans that predate that layout
-  (`skills/troubleshoot/SKILL.md:238`). Nothing in Toque has written it for
-  several releases. It stays because removing a read costs a user their history
-  and gains nothing, and it is listed here because a wildcard read that no
-  document mentions is exactly what the sweep exists to surface.
+- `docs/audit/plan-audit.md` is a forbidden fallback named by quick-audit. Nothing writes it; standalone quick audits report in the conversation.
+- `docs/audit/impact-review-*.md` is a legacy read-only location. Troubleshooting first checks the current plan's `impact-review.md`, then uses this fallback for older plans. Current Build writes into the plan folder.
 
 ## Not inputs
 
-- **Plan folders (`docs/plans/{date}-{name}/`) are Toque's own.** Written by the
-  planning commands and Toque's hooks (`tq-subagent-stop` appends
-  `subagent-log.txt` there). Nothing outside Toque reads or writes them.
-- **Session markers (`$TMPDIR/tq-*`) no longer exist.** The marker bus shipped
-  inside `toque-guard` and was retired with it in 9.0.0. Layer 1's per-plugin
-  core fails any plugin that grows a marker surface, so the bus cannot come back
-  by accident.
-- **The audit report staleness warning is gone.** Until 11.0.0 the SessionStart
-  hook stat-ed an audit report and warned when it was more than a week old. That
-  made a session message depend on another tool having run in the same
-  repository. Toque reports on its own plans.
-- **`readability-score.json` is not read.** It was the one machine-read file in
-  the old contract, and Toque was never a consumer — only a neighbour was.
+- Plan folders under `docs/plans/{date}-{name}/` are Toque's planning records, not external audit baselines. Humans and other tools can read them. The SubagentStop hook appends its log only when the plan's troubleshooting directory exists.
+- Session markers from the retired guard plugin are not part of current operation.
+- The former SessionStart audit-report staleness warning was removed in 11.0.0.
+- `readability-score.json` is not a Toque input. The Markdown readability report listed above is.
 
-## Change protocol
+Older Markdown input names in the table are still live reads. Do not discard them merely because a producer also emits JSON.
 
-Adding a read: add the path to the table with every file that reads it, in the
-same commit. Removing the last reader: delete the row. The sweep fails on either
-half done alone.
+## Keeping the contract accurate
 
-Renaming is the case with no safe protocol, because the other end of the rename
-is not here. Accept both names, ship, and drop the old one only when no
-repository still carries it — which is not observable from this side, so it is a
-judgement call rather than a check.
+These optional reads are not a bidirectional Jira, requirements-tool, or deployment integration. See the [playbook adoption boundaries](METHODOLOGY.md#relationship-to-the-ai-native-sdlc-playbook) before assuming Toque supplies an external system of record or automatic handoffs.
+
+`tests/layer1-repo.sh` checks both directions: every documented reader still names its input, and every functional `docs/audit/` reference is documented. It verifies the read contract, not whether an outside producer will create a file.
+
+When adding a read, add the artifact and every reader here in the same change. When removing the final reader, remove the row. Do not alter the table format without updating its tests.
+
+A producer lives outside this repository, so a rename needs compatibility planning. Accept old and new paths during transition rather than silently making existing analysis disappear. There is no local test that can prove every user's repository has migrated.
+
+[Choose a workflow](documentation/when-to-use.md) · [Document templates](plugins/toque/GUIDE.md#the-7-document-templates)

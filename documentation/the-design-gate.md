@@ -1,131 +1,136 @@
 # The design gate
 
-Stage 2 of `/toque:plan` ends in an audit. The design gate decides whether that
-audit is trustworthy enough to authorize Stage 3.
+A design can sound complete and still omit rollback, ownership, or proof that a dependency exists. Toque sends it to a separate reviewer before Build.
 
-It is the most opinionated mechanism in the toolkit, and the reason the planning
-plugin needs Node.
+The gate is the head chef at the pass: incomplete work goes back. It does not turn a passing design into permission to release.
 
-## The problem it solves
+<p align="center">
+  <img src="../assets/toque-tall-design-gate.png" width="280" alt="Toque reviews two design cards: a complete card gets a green check; a missing requirement gets a red return mark. Design approval is not production authorization.">
+</p>
 
-An AI audit of an AI-written spec has an obvious failure mode: the auditor says
-"looks good" and nobody can tell whether it looked. A score does not help — a
-lazy audit and a rigorous one both produce a number, and the number is the
-auditor's own claim about itself.
+The canary, evidence validator, and PASS expression are Toque's design choices, not requirements attributed to Anthropic. See the [playbook relationship](../METHODOLOGY.md#relationship-to-the-ai-native-sdlc-playbook) for that distinction.
 
-So the gate does not score. It asks two questions with checkable answers:
+## What goes in and what comes out
 
-1. **Did the auditor actually audit?** — proven by planting a defect and seeing
-   whether it is found.
-2. **Is the evidence real?** — proven by re-reading every cited file and
-   comparing bytes.
+Stage 2 of `/toque:plan` audits `spec.md` using a fresh `plan-auditor` instance. The author does not grade its own draft, and the judge is instructed not to use previous audit results.
 
-**What question 2 does not ask is whether the evidence is *relevant*.** The
-validator decides that a cited file exists, has not changed since the audit, and
-contains the quoted text at the cited lines. It cannot decide that the quoted
-text supports the criterion it is filed under — a record citing a closing brace
-passes every mechanical check there is.
+The plan folder retains `audit.md` and per-criterion JSON records in `evidence/`. Verdicts remain exactly:
 
-That limit is not a gap waiting to be closed. Relevance is a judgement about
-meaning, and text comparison does not make judgements about meaning. Three
-successive attempts to tighten this by machine each moved the bar by one
-character and left the class untouched.
-
-So read a green gate as: *the auditor was awake, and nothing it cited was
-invented or stale.* Whether the evidence actually establishes each criterion is
-the one part still on the human at the approval gate. It is a much smaller job
-than auditing from scratch — every claim comes with a file, a line and a quote
-you can check in seconds — but it is not zero, and the gate does not pretend
-otherwise.
-
-## The audit itself
-
-A fresh, isolated `plan-auditor` agent returns criterion records. Each carries a
-verdict and byte-addressed evidence — a file, a hash, a line range, and the
-quoted text.
-
-Isolation matters: the auditor does not share context with whatever wrote the
-spec, so it is not reviewing its own work.
-
-## `tq-canary.js` — checking the auditor
-
-Before the audit runs, the canary injects one known defect into a **working
-copy** of the spec. The original is never touched.
-
-There are five rotating defect classes:
-
-| Class | What it plants |
+| Verdict | Meaning |
 | --- | --- |
-| `assumption-inject` | An unstated load-bearing assumption |
-| `criteria-strip` | Removes acceptance criteria |
-| `test-claim-inject` | A claim about testing that nothing backs |
-| `rollback-strip` | Removes the rollback plan |
-| `owner-strip` | Removes an owner or accountability line |
+| `MET` | The criterion is judged satisfied; supporting evidence must survive validation. |
+| `UNMET` | The criterion is not satisfied, or its passing evidence failed validation. |
+| `N_A` | The criterion is judged not applicable. |
 
-The audit then runs against the mutated copy. If it finds the planted defect,
-the audit is trustworthy on that round.
+Kitchen wording in help or summaries is commentary, never an alternative status.
 
-- **One miss** asks for a re-run, not a failure.
-- **Two consecutive misses** are fatal. The audit is untrustworthy and does
-  **not** trigger the revision loop — because a revision loop driven by an audit
-  that cannot see defects would launder the problem into a fix list.
+## 1. Check whether the auditor notices a known defect
 
-A spec that no class can mark exits with an error rather than passing. A spec
-that cannot carry a canary is a spec whose audit cannot be checked, and the tool
-refuses to proceed unchecked instead of quietly skipping.
+The canary tool creates a modified spec in `.canary/`. It plants one applicable defect: for example, removing rollback detail or ownership. The original design is not the scratch copy.
 
-## `tq-evidence-validate.js` — checking the evidence
+The canary runs before the auditor and decides whether the audit can be trusted at all.
 
-For every criterion record, this re-reads the cited file, verifies its hash,
-slices the cited line range, and compares that slice to the quoted text
-byte-for-byte.
-
-The critical property: **it can only demote a verdict, never promote one.** A
-citation that does not match demotes the finding. A finding with clean evidence
-is left exactly where the auditor put it. The validator can make an audit
-harsher; it can never make one more favorable.
-
-## The pass expression
-
+```mermaid
+flowchart TD
+  A["tq-canary.js inject<br/>mutated copy in .canary/"]
+  A -->|"exit 2: no class applies"| A2["Gate cannot run<br/>no unchecked pass"]
+  A -->|"exit 0"| B["Fresh plan-auditor<br/>audits the mutated copy"]
+  B --> C["tq-canary.js detected<br/>UNMET ids + applicable ids"]
+  C -->|"exit 1: first miss"| D["Re-inject with<br/>a different class"]
+  D --> B
+  C -->|"exit 1: second miss"| E["STOP: audit untrustworthy<br/>no revision loop"]
+  C -->|"exit 0: found"| F["Strip the planted finding<br/>recheck that criterion<br/>against the original"]
+  F --> G["Evidence validation"]
 ```
+
+The five classes are `rollback-strip`, `owner-strip`, `assumption-inject`, `criteria-strip`, and `test-claim-inject`. If none applies, the tool exits 2 and reports the attempted classes; it does not pass an unchecked audit.
+
+The auditor is not told which defect was planted. Detection requires an `UNMET` verdict for the criterion that defect violates, checked by the `detected` subcommand against the full applicable set; an audit that returns every applicable criterion `UNMET` is reported as a miss, not a detection. A first miss earns one retry with a different class. A second miss stops the gate; it does not trigger design revisions based on an audit that failed this check.
+
+After detection, the planted finding is removed and the affected criterion is rechecked against the original spec. Canary scratch is not committed.
+
+**What this establishes:** the auditor caught that planted defect on that run. It does not establish general accuracy or resistance to a deliberately evasive judge.
+
+## 2. Check the evidence behind passing verdicts
+
+`tq-evidence-validate.js` re-reads citations supporting `MET` records. It checks:
+
+- The evidence record and verdict are valid.
+- The cited file stays inside the audited root, including after resolving symlinks.
+- Its required SHA-256 matches the file with LF-normalized line endings.
+- The cited line range exists.
+- The nonempty quote exactly matches those lines.
+
+Invalid passing evidence is demoted to `UNMET`. The validator never promotes a verdict. Existing `UNMET` and `N_A` records do not receive the same citation-validation pass.
+
+For executable criteria, a recorded command or `exit_code` is not trusted proof. The validator does not run it. It requires a surviving artifact citation and ignores the claimed exit code.
+
+The [guide lists every evidence flag](../plugins/toque/GUIDE.md#evidence-flags).
+
+## 3. Evaluate all four conditions
+
+```text
 PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK
 ```
 
-Four booleans, all required. There is no weighted sum and no partial credit —
-those are the mechanisms that let a marginal audit argue its way through.
-
-## The known limitation
-
-Stated here rather than buried, because it bounds what the gate proves:
-
-**The auditor can read the canary's defect table.** The five classes live in the
-plugin's own files, which an auditor with repository access can see.
-
-So the mechanism reliably detects a **lazy** audit — one that did not look — and
-only incidentally detects an **adversarial** one that has decided to game the
-check. Treat a passing gate as evidence of diligence, not of incorruptibility.
-
-## Failure modes
-
-| Situation | What happens |
+| Term | Required result |
 | --- | --- |
-| Node missing | Both tools fail; Stage 2 cannot pass. No degraded mode |
-| Canary missed once | Audit re-runs |
-| Canary missed twice | Fatal. Revision loop forbidden |
-| No canary class applies | Exit 2 with the list of classes tried |
-| Evidence does not match | That finding is demoted |
-| Record file unreadable, or not a record | Demoted to UNMET; the rest of the corpus is still read |
-| Everything passes | Stage 2 clears; Stage 3 needs separate human approval for codebase writes |
+| `CANARY_OK` | The planted defect was detected as required. |
+| `EVIDENCE_OK` | Evidence validation exited 0: no failing validation flags. |
+| `VERIFIED` | Every applicable criterion is `MET` or `N_A` after validation. |
+| `INFRA_OK` | `infra_gaps == 0`. |
 
-## Where the files go
+Validator exit codes feed one term of the expression; the caller evaluates the rest and decides what happens next.
 
-| Output | Location | Committed? |
-| --- | --- | --- |
-| Audit evidence | `docs/plans/{date}-{name}/evidence/` | Yes |
-| Canary working copy | `docs/plans/{date}-{name}/.canary/` | No |
+```mermaid
+flowchart TD
+  A["tq-evidence-validate.js evidence/"]
+  A -->|"exit 2: no records"| A2["Not a pass<br/>no evidence produced"]
+  A -->|"exit 1: flagged<br/>or exit 0: clean"| B["Caller evaluates PASS =<br/>CANARY_OK AND EVIDENCE_OK<br/>AND VERIFIED AND INFRA_OK"]
+  B -->|"NOT PASS"| R["Canary found, and<br/>fewer than 2 revisions?"]
+  B -->|"PASS"| C["Human review<br/>reviewer names, or<br/>eligible solo waiver"]
+  C --> D["spec.md Status: Approved<br/>Build may start"]
+  R -->|"yes"| E["Revise only the failing sections<br/>re-audit with a fresh auditor"]
+  E --> A
+  R -->|"no"| F["Stop and name each unmet id<br/>a missed canary means<br/>re-run the gate first"]
+```
 
-## Related
+Exit 2 means there was nothing to validate, the most serious result. Exit 1 means at least one record was flagged, so `EVIDENCE_OK` is false. Exit 0 means no demoting flag; an advisory about an ignored exit code can coexist with it, and so can an existing `UNMET` verdict. **Validator exit 0 alone is not a design-gate pass.**
 
-- [The plan workflow](./the-plan-workflow.md) — where Stage 2 sits
-- [When to use Toque](./when-to-use.md#the-design-gate-specifically)
-- `plugins/toque/GUIDE.md` — the full reference
+There is no weighted score, partial credit, or “good enough overall.” One unresolved required criterion keeps the gate closed.
+
+A separate holistic review looks for gaps outside the current criteria. Its unmapped findings become proposed rules in `docs/planning-techniques/lint-candidates.md`; they do not secretly add a new gating score.
+
+## If the gate refuses the design
+
+For ordinary failures, the caller sends the author the unmet criterion, defect, and location, revises only the failing sections, and launches a fresh judge that never sees the previous verdict, for at most two iterations. Remaining failures are named for manual resolution. A canary missed twice requires a new trustworthy audit, not revisions based on its findings.
+
+## Human review and the solo waiver
+
+An automated pass is followed by human review. Reviewers check the design and whether the cited evidence actually supports the verdicts.
+
+Solo mode can offer a waiver only when all three conditions hold:
+
+```text
+infra_gaps == 0
+canary_found == true
+evidence_demotions == 0
+```
+
+Team/leadership plans require review unless solo mode is explicitly selected. The waiver needs a name and reason in `status.json`, a visible note in `audit.md`, and a note in the later handoff. The spec must be marked `Status: Approved`, with the reviewer or waiver holder named in its Author line.
+
+The waiver skips a human check of meaning and relevance. It does **not** waive an automated failure, implementation-plan approval, manual testing, or production authorization.
+
+## What this does not prove
+
+> **A real citation can still be irrelevant.** A quote of a closing brace can pass byte-level checks. That does not make it evidence for a rollout strategy.
+
+The auditor can access criterion files and the canary defect table. Isolation is an instruction, not a capability boundary. The canary is a check against an inattentive audit, not a guarantee against an adversarial one.
+
+Evidence validation establishes citation integrity, not semantic truth, requirement completeness, or successful execution of tests. This release does not calibrate judge correctness against a known-good/known-bad plan set.
+
+Toque's workflow rules are also not operating-system or deployment permissions. Use separate controls for production access.
+
+The quick-plan and quick-audit entrypoints invoke review, but their commands do not explicitly orchestrate the full Stage 2 canary/evidence sequence. Use `/toque:plan` when you need this gate, not merely an audit-shaped report.
+
+[Stage workflow](the-plan-workflow.md) · [Evidence files and resume](plan-workspace.md) · [Formal methodology](../METHODOLOGY.md)

@@ -1,441 +1,312 @@
-<div align="center">
-
 # Toque Knowledge Guide v11.0.1
 
-**6 Commands** &nbsp;&bull;&nbsp; **2 Agents** &nbsp;&bull;&nbsp; **5 Skills** &nbsp;&bull;&nbsp; **7 Document Templates** &nbsp;&bull;&nbsp; **3 Plan-Context Hooks** &nbsp;&bull;&nbsp; **2 Gate Tools** &nbsp;&bull;&nbsp; **Requires Node.js 18+**
+**6 Commands** · **5 Skills** · **2 Agents** · **7 Document Templates** · **3 Plan-Context Hooks** · **2 Gate Tools** · **Requires Node.js 18+**
 
-[![Plugin](https://img.shields.io/badge/Claude_Code-Plugin-5A45FF?style=for-the-badge)](https://github.com/krwhynot/toque)
-[![Version](https://img.shields.io/badge/v11.0.1-stable-2ECC71?style=for-the-badge)](#)
-[![Stack](https://img.shields.io/badge/Stack-Agnostic-F39C12?style=for-the-badge)](#)
+The operator's reference for a busy software kitchen: choose the right job, keep the records connected, and know which decisions are yours.
 
-</div>
+New here? Start with the [README](https://github.com/krwhynot/toque/blob/main/README.md) or [first workflow](https://github.com/krwhynot/toque/blob/main/documentation/quickstart.md). This guide covers the complete plugin surface without repeating the stage manual.
 
-> A reference for the toque planning plugin: six-stage planning with a verifier-first design gate, plan-linked troubleshooting, and documentation generation.
+<p align="center">
+  <img src="assets/toque-tall-mascot.png" width="120" alt="Toque, the tall chef-hat reviewer.">
+</p>
 
-Toque's planning core walks an idea through the six stages of Anthropic's
-AI-Native SDLC playbook, Plan, Design, Build, Test, Deploy, Maintain, each
-committing one artifact the next stage reads. The Design stage ends in an
-adversarial gate: a fresh, isolated plan-auditor judges the spec against
-falsifiable criteria, its evidence is re-validated byte-for-byte by
-`scripts/tq-evidence-validate.js`, and a seeded canary defect from
-`scripts/tq-canary.js` proves the audit can actually see defects before its
-verdict counts. The gate passes on verified evidence, never on a self-assigned
-score. See [The Design Gate](#the-design-gate) below.
+## Commands at a glance
 
-Toque is the only plugin in this repository. Codebase auditing and AI-readiness
-scanning were removed in 11.0.0. Toque still reads analysis files left in
-`docs/audit/` and works without them. The methodology reference lives in the
-repository's
-[METHODOLOGY.md](https://github.com/krwhynot/toque/blob/main/METHODOLOGY.md).
+Nine user-facing entrypoints. `plan`, `troubleshoot`, and `documentation` are skills; the other six are command files.
 
-## Contents
+| Entrypoint | Job | Main result |
+| --- | --- | --- |
+| `/toque:help` | Show capabilities and usage | Conversation output |
+| `/toque:plan {name}` | Start or resume full delivery workflow | Plan workspace |
+| `/toque:quick-plan {objective}` | Draft and audit a smaller plan | `docs/specs/{name}.md` |
+| `/toque:quick-audit {path}` | Review an existing plan | Findings; `audit.md` when plan-linked |
+| `/toque:plan-status [name]` | Inspect progress | Status summary |
+| `/toque:quick-cleanup {folder} {topic}` | Extract usable source references | Plan intake files |
+| `/toque:plan-export {name}` | Package a plan for another developer | Export zip |
+| `/toque:troubleshoot {problem}` | Investigate a bug or incident | Troubleshooting record |
+| `/toque:documentation {type} {topic}` | Generate a project document | One of seven document types |
 
-- [Commands at a Glance](#commands-at-a-glance)
-- [The Six Stages](#the-six-stages)
-- [The Design Gate](#the-design-gate)
-- [The 2 Agents](#the-2-agents)
-- [The 5 Skills](#the-5-skills)
-- [The 7 Document Templates](#the-7-document-templates)
-- [The 3 Hooks](#the-3-hooks)
-- [The Scripts](#the-scripts)
-- [Where Files Land](#where-files-land)
-- [How to Install](#how-to-install)
-- [How to Update](#how-to-update)
+Square brackets indicate optional arguments; braces indicate values to supply.
 
-## Commands at a Glance
+### Plan
 
-Nine entry points. Three are skills (`plan`, `troubleshoot`, `documentation`)
-that also answer to natural-language triggers; six are command files under
-`commands/`.
-
-### `/toque:help`
-**What it does:** Shows all commands, agents, workflows, and output locations in one reference page.
-**When to use it:** First time using Toque, or when you forget a command name.
-**What it produces:** Conversation output (no files).
-**Example:**
-```
-/toque:help
+```text
+/toque:plan scheduled-reports
+/toque:plan intent scheduled-reports
+/toque:plan scheduled-reports from docs/vendor-specs/
 ```
 
----
+The `intent` form stops after Stage 1, even if the owner accepts. The normal form creates or resumes `docs/plans/YYYY-MM-DD-{name}/`. The `from` form provides source documents for intake.
 
-### ![planning](https://img.shields.io/badge/Planning-9B59B6?style=for-the-badge)
+This is not a draft-only command: after approval it can implement and test. It must not perform production release.
 
----
+### Quick plan
 
-### `/toque:plan`
-**What it does:** Walks you through the six-stage playbook: Plan (intent.md), Design (spec.md plus the design gate), Build (plan.md, code, impact review), Test, Deploy (review.md, release authorization), Maintain (incidents become new intents). `intent {name}` captures intent only and stops. Every stage ends at a human gate; nothing advances on its own.
-**When to use it:** For any significant initiative -- migrations, new features, refactoring projects. This is the full workflow.
-**What it produces:** `docs/plans/YYYY-MM-DD-{name}/` with manifest, status, intent.md, research, spec.md, audit.md, evidence, plan.md, impact-review.md, test-plan.md, review.md, and optionally runbook.md.
-**Example:**
-```
-/toque:plan worldpay-canada
-/toque:plan intent worldpay-canada
-/toque:plan pricing-engine from docs/vendor-specs/
-```
-
----
-
-### `/toque:quick-plan`
-**What it does:** One-shot plan generation from a vague objective. Analyzes the codebase and produces a phased technical plan covering the plan-auditor's eight review dimensions. It reports findings per dimension, not a total, and gates nothing.
-**When to use it:** For smaller changes where the full six-stage workflow is overkill.
-**What it produces:** `docs/specs/{plan-name}.md`
-**Example:**
-```
+```text
 /toque:quick-plan Extract pricing logic from Order.vb
 ```
 
----
+Clarifies a vague request as needed, uses the scaffolder, writes a spec, then runs an audit/revision loop with up to two revisions. Remaining findings are delivered for review.
 
-### `/toque:plan-status`
-**What it does:** Shows progress of all active plans or detailed stage-by-stage status of one plan, including staleness checks.
-**When to use it:** To check where a plan stands, or to see all plans at a glance.
-**What it produces:** Conversation output (no files).
-**Example:**
+`--plan {name}` links output to an existing plan and updates its records; it does not create a full plan workspace on its own.
+
+The command claims the same gate as Design, but does not explicitly orchestrate Stage 2's canary and evidence tools. Treat its result as an audited draft, not a full design-gate pass or authorization to build or deploy.
+
+### Quick audit
+
+```text
+/toque:quick-audit docs/specs/scheduled-reports.md
+/toque:quick-audit docs/plans/YYYY-MM-DD-scheduled-reports/spec.md --plan scheduled-reports
 ```
+
+Runs the auditor and reports criterion verdicts and findings. A named or detected plan receives `audit.md` and index/state updates. Standalone results stay in the conversation; there is no fallback report in `docs/audit/`.
+
+Quick audit does not itself explicitly run the complete Stage 2 tool sequence. A reported pass is not a substitute for that gate, human review, or production authorization.
+
+### Status
+
+```text
 /toque:plan-status
-/toque:plan-status worldpay-canada
+/toque:plan-status scheduled-reports
 ```
 
----
+Shows plans or a selected plan's progress, artifacts, and next-step context. Resume work with `/toque:plan {name}`. [State and freshness rules](https://github.com/krwhynot/toque/blob/main/documentation/plan-workspace.md) explain what the summary means.
 
-### `/toque:plan-export`
-**What it does:** Packages a plan into a self-contained zip that another developer can use with vanilla Claude Code (no plugin required). Redacts secrets, includes a bootstrapping CLAUDE.md, and adds codebase verification checks.
-**When to use it:** When handing off a plan to someone else.
-**What it produces:** `{plan-name}-export.zip` at project root.
-**Example:**
-```
-/toque:plan-export worldpay-canada
+### Source cleanup
+
+```text
+/toque:quick-cleanup docs/vendor-manuals payment-api
+/toque:quick-cleanup docs/vendor-manuals payment-api --plan payment-api
 ```
 
----
+Clarifies what the material is for, then extracts Markdown and structured references into `research/intake/`. It can create a plan homebase with `intent.md` and schema-2 state, or link to an existing plan.
 
-### `/toque:quick-audit`
-**What it does:** Audits a technical plan, spec, or proposal through the plan-auditor's eight review dimensions (problem clarity, architecture, phasing, risk, rollback, timeline, testing, team). Produces evidence-backed findings, a go/no-go recommendation, and a leadership summary. The verdict rests on the findings and their evidence; there is no score.
-**When to use it:** Before presenting a plan to stakeholders, or to stress-test any proposal outside the full workflow.
-**What it produces:** `docs/plans/{date}-{name}/audit.md` (if plan-linked) or conversation output.
-**Example:**
-```
-/toque:quick-audit docs/specs/pricing-engine-extraction.md
-```
+Cleanup is reference preparation, not an implementation plan. It may be the whole task.
 
+### Export
 
-### ![docs](https://img.shields.io/badge/Documentation_&_Troubleshooting-1ABC9C?style=for-the-badge)
-
----
-
-### `/toque:documentation`
-**What it does:** Routes to 7 document templates (ADR, BRD, PRD, README, Runbook, Release Notes, Spec). Each template carries a fill-in document skeleton, so the output has a fixed shape. If audit data exists, documents are richer and auto-linked, and a document-chain check suggests the missing neighbor (a PRD asks for its BRD, a runbook asks to be linked from review.md).
-**When to use it:** Whenever you need to create a project document. If unsure which type, just describe what you need.
-**What it produces:** Files in `docs/adr/`, `docs/brd/`, `docs/prd/`, `docs/runbooks/`, `docs/specs/`, or project root (README). A plan-linked runbook lands in the plan folder.
-**Example:**
-```
-/toque:documentation adr credential rotation
-/toque:documentation prd refund processing
-/toque:documentation runbook worldpay-canada
-/toque:documentation release-notes v2.5.0
+```text
+/toque:plan-export scheduled-reports
 ```
 
----
+Stages the plan and referenced documents, scans for secrets to redact, and creates `{plan-name}-export.zip`. The package uses `plans/{name}/`, not the source workspace's `docs/plans/` layout.
 
-### `/toque:quick-cleanup`
-**What it does:** Cleans up a folder of messy documents (PDFs, vendor manuals, meeting notes, legacy docs) into structured markdown and JSON reference files.
-**When to use it:** At the start of a plan when you have raw input material, or standalone for document organization.
-**What it produces:** `docs/plans/{date}-{name}/research/intake/` with summary, reference data, source index, and setup checklist.
-**Example:**
-```
-/toque:quick-cleanup ./vendor-docs worldpay-canada
-```
+The receiving developer unpacks it into a compatible project and uses the included `CLAUDE.md` instructions with vanilla Claude Code. Compatibility checks and redaction are review aids, not guarantees. Inspect the archive and redaction log before sharing; do not overwrite an existing recipient folder without checking it.
 
----
+### Troubleshooting
 
-### `/toque:troubleshoot`
-**What it does:** Implements a strict 4-phase debugging framework (Root Cause, Pattern Analysis, Hypothesis, Fix) with severity-driven incident triage. For SEV1/SEV2, a containment gate allows a temporary mitigation (rollback, feature flag, config revert) before investigation, then a status-update cadence keeps people outside the investigation informed. Every run writes a timestamped log and a knowledge-base entry; SEV1/SEV2 runs also write a blameless postmortem and, when plan-linked, propose a new intent that re-enters Stage 1.
-**When to use it:** When something breaks and you want a systematic approach instead of guessing, or when a production incident needs triage and containment before debugging.
-**What it produces:** `docs/troubleshooting/YYYY-MM-DD-{issue-slug}.md`, updates to `docs/troubleshooting/knowledge-base.md`, and for SEV1/SEV2 a `-postmortem.md` beside the log. Plan-linked runs write under the plan's `troubleshooting/` folder instead.
-**Example:**
-```
-/toque:troubleshoot "Payment processing returns null on Canadian cards"
-/toque:troubleshoot login timeout --plan worldpay-canada
-/toque:troubleshoot "checkout is down for all users" --severity SEV1
+```text
+/toque:troubleshoot Reports are being sent twice
+/toque:troubleshoot --plan scheduled-reports Reports are being sent twice
 ```
 
----
+The four investigation phases are Root Cause, Pattern Analysis, Hypothesis, and Fix. The workflow checks the knowledge base first and verifies the resolution before recording it. For an incident, use `--severity SEV1` or the appropriate severity. SEV1/SEV2 handling adds containment approval, status updates, and a blameless `-postmortem.md` beside the log.
 
-## The Six Stages
+Logs go into the linked plan's `troubleshooting/` directory or `docs/troubleshooting/` when standalone. Reusable findings go to `docs/troubleshooting/knowledge-base.md`. Production-impacting actions retain their approval boundary.
 
-`/toque:plan` runs Anthropic's AI-Native SDLC loop. Each stage reads the
-artifact the previous one committed and leaves one behind. The chain of
-artifacts is the audit trail.
+### Documentation
 
-| Stage | Question it answers | Reads | Commits | Human gate |
-|-------|--------------------|-------|---------|------------|
-| 1. Plan | What are we trying to change, for whom, and why? | Any input: idea, ticket, docs folder, incident | `intent.md` | Intent accepted |
-| 2. Design | What exactly will be built, and does it survive scrutiny? | `intent.md`, research | `spec.md`, `audit.md`, `evidence/` | Scope lock mid-stage, then the design gate passes |
-| 3. Build | What files change, in what order, and what did we actually do? | `spec.md` | `plan.md`, code, `impact-review.md`, change records | Codebase writes approved |
-| 4. Test | Does it do what the spec says, measured the way the spec said? | `spec.md` verification plan | `test-plan.md`, test results | Runbook reviewed by someone other than the author |
-| 5. Deploy | Is the diff what was planned, and is it safe to release? | `plan.md`, the diff | `review.md` with a release checklist | Release authorization. The agent never crosses the production gate. |
-| 6. Maintain | What did production teach us? | Troubleshoot logs, postmortems | A new `intent.md` proposed for Stage 1 | Intent accepted or declined |
-
-Spec requirements carry a priority (P0/P1/P2), trace to a line of intent.md,
-and have Given/When/Then acceptance criteria. Success metrics have a numeric
-target, a window, and a measurement method. Review.md's release checklist has
-pre-deploy, deploy, post-deploy, and rollback sections with numeric rollback
-triggers, and Stage 6 uses those thresholds to classify severity.
-
-## The Design Gate
-
-Stage 2 ends in an audit. Version 8 removed the numeric score from that audit
-because a gate that passes on a number the audited model chose for itself lets
-no reader tell a plan that earned it from one written to earn it. What replaced
-it is a set of checks a person can re-derive from the plan folder without
-re-running anything.
-
-**The auditor** is `agents/plan-auditor.md`, spawned fresh for every iteration
-with a `<forbidden_inputs>` block: it never reads a previous iteration's
-verdicts. It returns criterion records, each with a verdict (MET, UNMET, N_A)
-and the evidence it rests on: file, content hash, line range, verbatim quote.
-The rubric it applies lives in `docs/planning-techniques/lint-registry.md`,
-the single enforced source of rule text.
-
-**The canary** (`scripts/tq-canary.js`) checks the auditor rather than the
-plan. Before the auditor is spawned, one known defect is injected into a
-working copy of the spec under `.canary/`. Five classes rotate by seed:
-
-| Class | What it does | Criterion it violates |
-|-------|-------------|----------------------|
-| `rollback-strip` | Removes the rollback line from one deployment phase | LINT-03 |
-| `owner-strip` | Blanks the owner of one external dependency | LINT-04 |
-| `assumption-inject` | Adds an unverified HIGH-impact assumption | LINT-08 |
-| `criteria-strip` | Deletes the go/no-go criteria | LINT-10 |
-| `test-claim-inject` | Claims coverage from a test file that does not exist | LINT-15 |
-
-The auditor audits the mutated copy without being told. If the planted
-criterion does not come back UNMET, the audit is re-run once with a different
-class. A second miss fails the gate as "audit untrustworthy" and does not
-trigger the revision loop, because revising a plan against findings from an
-audit that could not see a planted defect rewrites the spec to satisfy
-conclusions never derived from reading it. If the canary is found, that one
-finding is stripped as a harness artifact and the same criterion is re-checked
-against the unmutated original, so a genuine gap on the same rule is not
-stripped with it.
-
-**The evidence validator** (`scripts/tq-evidence-validate.js`) treats the
-auditor's records as a proposal. It re-reads every cited artifact, confirms the
-LF-normalized hash still matches, slices the cited line range, and asserts the
-quote is byte-identical. It can only demote. A record comes back UNMET with one
-of these flags:
-
-| Flag | Meaning |
-|------|---------|
-| `EVIDENCE-INVALID` | The quote does not match the lines it cites |
-| `EVIDENCE-MISSING` | MET was claimed with no evidence at all |
-| `EVIDENCE-STALE` | The artifact changed after the record was written |
-| `EVIDENCE-UNPINNED` | The citation carries no `sha256`, so staleness cannot be detected |
-| `EVIDENCE-ARTIFACT-MISSING` | The cited file does not exist |
-| `EVIDENCE-PATH-ESCAPE` | The citation is absolute, or resolves outside the audited tree |
-| `EVIDENCE-RANGE-INVALID` | The cited line range does not exist in the file |
-| `EVIDENCE-QUOTE-EMPTY` | The quote is empty or whitespace, so it evidences nothing |
-| `EVIDENCE-UNSUPPORTED` | An executable criterion has no citation that survived re-checking |
-| `EVIDENCE-VERDICT-INVALID` | The verdict is not one of MET, UNMET, N_A. A file that parses as JSON but is not a record object — `null`, a number, a string, an array — lands here too: it has no verdict to read |
-| `EVIDENCE-UNPARSEABLE` | The record file is not valid JSON |
-
-One flag is **advisory**: it is reported and changes nothing.
-
-| Flag | Meaning |
-|------|---------|
-| `EVIDENCE-EXITCODE-IGNORED` | The record supplied an `exit_code`; it carried no weight |
-
-`exit_code` is ignored because the record's author wrote it. A number you supply
-about your own work is not evidence, and the validator will not run a
-model-authored command string to check it. An executable criterion is settled by
-a citation that survives re-checking instead.
-
-Which criteria are executable is fixed in the validator, not declared by the
-record, so the judge cannot relabel a run-it check as a read-it check and
-satisfy it with a quote.
-
-**The gate expression** is the whole verdict:
-
+```text
+/toque:documentation adr Report delivery queue
+/toque:documentation runbook Scheduled reports --plan scheduled-reports
 ```
-CANARY_OK   = the criterion the planted defect violates came back UNMET
-EVIDENCE_OK = tq-evidence-validate.js exited 0 (nothing was flagged)
-VERIFIED    = every applicable criterion is MET or N_A after validation
-INFRA_OK    = infra_gaps == 0
 
+Supported subcommands: `adr`, `brd`, `prd`, `readme`, `runbook`, `release-notes`, `spec`.
+
+Plan-linked documents use their standard project locations and are linked from the manifest. A plan-linked runbook is the exception: it belongs inside the plan folder.
+
+## The six stages
+
+The lifecycle reference is [Anthropic's AI-Native SDLC playbook](https://claude.com/blog/the-ai-native-sdlc-playbook). The [methodology comparison](https://github.com/krwhynot/toque/blob/main/METHODOLOGY.md#relationship-to-the-ai-native-sdlc-playbook) separates that wider model from Toque's shipped capabilities.
+
+| Stage | Primary artifacts | Decision |
+| --- | --- | --- |
+| Plan | `intent.md`, research | Named owner accepts. |
+| Design | `spec.md`, `audit.md`, `evidence/` | Scope lock; automated gate; review or eligible waiver; approved spec. |
+| Build | `plan.md`, code, `impact-review.md` | Approve plan before implementation; confirm impact afterward. |
+| Test | `test-plan.md`, results | Automated pass and human-confirmed manual checks. |
+| Deploy | `review.md`, release checklist | Named human authorizes and performs production release. |
+| Maintain | Incident records; new draft intent when warranted | Steady state, not a completion gate. |
+
+[Stage-by-stage contracts](https://github.com/krwhynot/toque/blob/main/documentation/the-plan-workflow.md) cover assumptions, parallel work, Change Records, and incident recurrence.
+
+> **Chef's rule:** the agent may prepare the release. A human decides whether it leaves the kitchen—and performs the release.
+
+Toque has no blocking command hooks. These workflow instructions do not replace Claude Code permission rules, CI controls, or production access restrictions.
+
+## The design gate
+
+```text
 PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK
 ```
 
-There is no weighted sum. A strong showing on seven criteria cannot offset a
-miss on the eighth.
+A fresh judge returns `MET`, `UNMET`, or `N_A` per criterion. Stage 2 checks detection of a planted defect and validates citations supporting passing verdicts. All applicable criteria must survive, with no infrastructure gaps. There is no weighted score.
 
-**The holistic judge** runs beside the rubric and never gates. Its unmapped
-findings land in `docs/planning-techniques/lint-candidates.md` as proposed
-rules. It is the only mechanism that can notice the rubric itself is
-incomplete.
+“Back to the kitchen” may explain an `UNMET` result, but it never replaces that canonical value.
 
-> [!WARNING]
-> **Known limitations, stated rather than glossed.** The auditor holds Read,
-> Grep, and Glob over the repository and can reach the criterion files and the
-> canary's defect table. Isolation is enforced by instruction, not capability.
-> The canary reliably detects a lazy audit and only incidentally an adversarial
-> one. And nothing in this release measures whether the judge is *right*, only
-> whether it is evidenced. Calibration against known-good and known-bad plans
-> is the natural successor.
+Read the [design-gate reference](https://github.com/krwhynot/toque/blob/main/documentation/the-design-gate.md) for retry rules and the conditional solo-review waiver. Keep its limits in view:
 
-## The 2 Agents
+- A canary establishes detection of one planted defect, not general judge accuracy.
+- Evidence validation checks citation integrity, not relevance or truth.
+- The judge's isolation is instructional, not an access boundary.
+- Neither an automated pass nor a review waiver authorizes production.
 
-| | Agent | What It Does | Used By |
-|:-:|-------|-------------|---------|
-| ![p](https://img.shields.io/badge/-%E2%80%8B-9B59B6) | plan-scaffolder | Creates structured technical plans from vague objectives using 3 parallel analysts | quick-plan, plan |
-| ![p](https://img.shields.io/badge/-%E2%80%8B-9B59B6) | plan-auditor | The isolated judge. Reviews a plan through 8 dimensions with parallel specialist subagents and returns criterion records with evidence, never a gating score | quick-audit, plan (design gate) |
+### Evidence flags
 
-Both agents load the `self-audit-knowledge` skill so every claim carries a
-verification tier and, where relevant, a failure-mode flag.
+This table is the flag lookup for `tq-evidence-validate.js`.
 
-## The 5 Skills
+| Flag | Meaning / next check |
+| --- | --- |
+| `EVIDENCE-INVALID` | Quote does not match the cited lines. Re-read the source. |
+| `EVIDENCE-MISSING` | A `MET` record has no evidence. Supply real citations. |
+| `EVIDENCE-STALE` | File hash changed. Recheck the claim against current content. |
+| `EVIDENCE-UNPINNED` | Required SHA-256 is missing. |
+| `EVIDENCE-ARTIFACT-MISSING` | Cited file does not exist. |
+| `EVIDENCE-PATH-ESCAPE` | Citation is absolute or escapes the audited root, including through a symlink. |
+| `EVIDENCE-RANGE-INVALID` | Cited line range is invalid or outside the file. |
+| `EVIDENCE-QUOTE-EMPTY` | Quote is empty or whitespace-only. |
+| `EVIDENCE-UNSUPPORTED` | Executable criterion has no surviving verified citation. |
+| `EVIDENCE-VERDICT-INVALID` | Verdict is not `MET`, `UNMET`, or `N_A`, including malformed record shapes. |
+| `EVIDENCE-UNPARSEABLE` | Record file is not valid JSON. |
+| `EVIDENCE-EXITCODE-IGNORED` | Advisory: the supplied exit code carries no evidentiary weight. |
 
-Skills are persistent knowledge that loads automatically when relevant — reference books the plugin carries in its back pocket.
+A failing flag can demote `MET` to `UNMET`; validation never promotes a verdict. The last flag is advisory and does not itself fail validation. The script does not execute commands in evidence records.
 
-**plan** -- The `/toque:plan` workflow itself. `SKILL.md` is a router (identity, lifecycle, workspace layout, Step 0 intent detection and schema migration) and each of the six stages lives in its own file under `stages/`, with artifact templates for intent.md, spec.md, plan.md, and review.md under `templates/`, read when the stage is entered. Split this way so the later stages survive context compaction in long planning sessions instead of being silently dropped with the rest of a 1,700-line command.
+## How the pieces connect
 
-**troubleshoot** -- The `/toque:troubleshoot` workflow: a router holding identity, timeline logging, plan detection, and Step 0 knowledge-base lookup, with the incident pre-flow (triage, containment gate, status updates), the four phases, multi-agent mode, and the knowledge-base write-back with postmortem in one file each under `phases/`, read on entry.
+Three entrypoints call the agents and gate tools; everything else you type only reads and writes files, and the hooks are called by Claude Code, not by you.
 
-**documentation** -- The dispatch hub for document generation. Contains routing logic (first word = subcommand), 7 template references each with a fill-in skeleton, smart suggestions when audit data exists, and document chain enforcement (a PRD triggers a check for a related BRD, a runbook checks it is linked from review.md). Loads when you ask for a document, or invoke `/toque:documentation` directly.
+```mermaid
+flowchart LR
+  P["/toque:plan<br/>Stage 2"]
+  QP["/toque:quick-plan"]
+  QA["/toque:quick-audit"]
+  CAN["tq-canary.js"]
+  AU["plan-auditor"]
+  EV["tq-evidence-validate.js"]
+  SC["plan-scaffolder"]
+  PLAN["docs/plans/{date}-{name}/"]
+  SPEC["docs/specs/"]
+  AUDIT["docs/audit/<br/>optional inputs"]
+  P -->|"runs"| CAN
+  P -->|"invokes"| AU
+  P -->|"runs"| EV
+  P -->|"writes"| PLAN
+  QP -->|"invokes"| SC
+  QP -->|"invokes"| AU
+  QP -->|"writes"| SPEC
+  QA -->|"invokes"| AU
+  EV -->|"validates evidence/"| PLAN
+  AU -->|"reads if present"| AUDIT
+  SC -->|"reads if present"| AUDIT
+```
 
-**self-audit-knowledge** -- Contains the LLM epistemic transparency framework: claim verification tiers (A = tool-verified, B = code-reading, C = pattern inference), evidence basis formatting, failure mode flags (`[ENUMERATION-MAY-BE-INCOMPLETE]`, `[INFERRED-FROM-NAMING]`, `[SIDE-EFFECTS-NOT-TRACED]`, `[DEAD-CODE-UNCERTAIN]`), category-based cascade risk classification (CASCADE/COVERAGE/CONTAINED), and report confidence thresholds. Loads during codebase audits, plan audits, and report generation.
+The plan skill drives the six stages and, in Stage 2, runs the canary tool, invokes the plan-auditor, and runs the evidence validator against the plan folder's `evidence/` directory. Quick-plan invokes the scaffolder then the auditor and writes a spec under `docs/specs/`; quick-audit invokes the auditor alone. Both agents may read optional analysis under `docs/audit/` and both load the `self-audit-knowledge` skill. The other entrypoints call no agent: `/toque:troubleshoot` writes logs, `/toque:documentation` writes documents and links them from a plan's manifest, and `plan-status`, `plan-export`, `quick-cleanup`, and `help` read or package files. The three hooks are listed in [The 3 hooks](#the-3-hooks): Claude Code starts them on its own events, two read the newest plan's `status.json`, and the SubagentStop handler appends a log line only when a plan's `troubleshooting/` folder already exists.
 
-**mcp-research** -- Teaches when and how to use external MCP search tools (Ref, Exa, Perplexity) for documentation lookup and research: tool selection heuristics, token budget rules, suffix-matching for server-qualified tool names, and graceful degradation when a tool is absent. Loads during plan research phases. Every template and stage works without these tools.
+## The 2 agents
 
-### The 7 Document Templates
+| Agent | Role |
+| --- | --- |
+| `plan-scaffolder` | Builds a structured technical draft using parallel analysis. |
+| `plan-auditor` | Independently challenges the draft and reports criteria, findings, and evidence. |
 
-Each template under `skills/documentation/references/` has two parts: the
-workflow (disambiguate the topic, pull audit data if present, confirm scope)
-and a fill-in document skeleton the output must follow.
+Both load `self-audit-knowledge` to distinguish verified claims, code-reading evidence, and inference.
 
-| Template | What It Produces | Location |
-|----------|-----------------|----------|
-| `adr-template.md` | Architecture Decision Record -- context, decision, two or more options assessed on a dimension table, trade-offs, consequences, action items | `docs/adr/` |
-| `brd-template.md` | Business Requirements Document -- business context, objectives, stakeholders, BR-NNN requirements mapped to PRDs, feature coverage, metrics, risks | `docs/brd/` |
-| `prd-template.md` | Product Requirements Document -- problem, goals, non-goals, user stories, P0/P1/P2 requirements with Given/When/Then acceptance criteria, leading and lagging success metrics | `docs/prd/{domain}/` |
-| `readme-template.md` | Project README -- purpose, quick start, structure, dependencies, integrations, configuration, testing, known risks, related docs | Project root |
-| `runbook-template.md` | Operational Runbook -- prerequisites, exact steps each with expected result and failure action, verification, troubleshooting table, rollback trigger and steps, escalation, run history | `docs/runbooks/` or the plan folder |
-| `release-notes-template.md` | Release Notes / Changelog -- what changed, why, and how to upgrade, from git history | `docs/` or project root |
-| `spec-template.md` | Technical Specification -- extraction, migration, feature, or infrastructure plans with phases, validation, risk, rollback, and success criteria | `docs/specs/` |
+## The 5 skills
 
-> [!IMPORTANT]
-> When an audit baseline exists in `docs/audit/`, templates pull from it automatically. A PRD pulls feature confidence scores and entry points from `feature-inventory.json`, an ADR pulls related findings from `risk-assessment.json`, a README pulls dependencies from `dependency-map.json`. Documents generated **after** an audit are richer than documents generated from scratch. Everything below 0.90 confidence is tagged `[ASSUMPTION]` rather than stated as fact.
+| Skill | Responsibility |
+| --- | --- |
+| `plan` | Routes the six-stage workflow; loads stage instructions and templates as needed. |
+| `troubleshoot` | Routes investigation, incident handling, logs, and knowledge-base updates. |
+| `documentation` | Selects document templates and maintains document-chain links. |
+| `self-audit-knowledge` | Claim verification tiers, uncertainty flags, and cascade-risk classification. |
+| `mcp-research` | Selects available external research tools and records missing research capability. |
 
----
+The first three expose the user-facing workflows above. The other two support them.
 
-## The 3 Hooks
+## The 7 document templates
 
-The plan-context hooks keep a session anchored to the active plan. They are
-declared in `hooks/hooks.json` and run as Node scripts from `scripts/`, one
-file per handler (**requires Node.js 18+**, the same runtime Claude Code
-itself needs). All three are informational: they fail open and always exit 0.
-There are no blocking hooks in any Toque plugin; force-push, migration, and
-database-deploy protection belongs in Claude Code permission rules (`deny` and
-`ask` entries in `settings.json`), which need no runtime and cannot disagree
-with a project's own choices.
+| Subcommand | Document | Standard location |
+| --- | --- | --- |
+| `adr` | Architecture Decision Record | `docs/adr/` |
+| `brd` | Business Requirements Document | `docs/brd/` |
+| `prd` | Product Requirements Document | `docs/prd/{domain}/` |
+| `readme` | Project README | Project root |
+| `runbook` | Operational runbook | `docs/runbooks/`, or `runbook.md` in a linked plan |
+| `release-notes` | Release notes / changelog | `docs/` or project root |
+| `spec` | Technical specification | `docs/specs/` |
 
-### ![info](https://img.shields.io/badge/-INFO-2ECC71) Active Plan Display (SessionStart Hook)
-**Script:** `scripts/tq-session-start.js`
-**Fires when:** A session starts, resumes, or continues after a compaction in a repo with an active plan under `docs/plans/`.
-**What it does:** Parses the newest plan's `status.json` and reports the active plan, its phase and that phase's status. The stale-audit nudge was removed in 11.0.0: it stat-ed a report this plugin does not produce, which made a session message depend on another tool having run in the same repository. It parses JSON rather than grepping it, which is what fixed two old bugs where pretty-printed files read as "phase: unknown" and a nested phase status was reported as the plan's status.
+Templates can read optional analysis under `docs/audit/`. They do not write back to those external inputs. [Interop](https://github.com/krwhynot/toque/blob/main/interop.md) is the authoritative path/consumer list.
 
-### ![info](https://img.shields.io/badge/-INFO-2ECC71) Subagent Log (SubagentStop Hook)
-**Script:** `scripts/tq-subagent-stop.js`
-**Fires when:** A subagent completes while a plan is active.
-**What it does:** Appends the completion to `troubleshooting/subagent-log.txt` in the active plan, so multi-agent work leaves a trace in the plan record. It only writes if that folder already exists; a stop hook silently creating directories in someone's repo would be a surprise.
+## The 3 hooks
 
-### ![info](https://img.shields.io/badge/-INFO-2ECC71) Plan Context (PreCompact Hook)
-**Script:** `scripts/tq-pre-compact.js`
-**Fires when:** Claude Code's context window is getting full and it needs to compress earlier messages.
-**What it does:** Emits the active plan name and current stage as JSON so Claude doesn't lose track of what you're working on. If this channel proves invisible in a given Claude Code build, the SessionStart handler's compact-resume path carries the same message, so this handler is not the only carrier.
+All three are informational Node handlers. They fail open and return exit 0 when run; they do not enforce design or deployment gates.
 
-> [!TIP]
-> `[Toque] Compacting. Active plan: worldpay-canada at phase: design. Resume with /toque:plan worldpay-canada`
+| Event | Script | Behavior |
+| --- | --- | --- |
+| SessionStart | `tq-session-start.js` | Reports the newest plan's saved phase and status, including on resume. |
+| SubagentStop | `tq-subagent-stop.js` | Appends a completion log only when the plan's troubleshooting directory already exists. |
+| PreCompact | `tq-pre-compact.js` | Emits active-plan context before compaction. |
 
-## The Scripts
+SessionStart also provides context after compact-resume. The removed audit-report staleness warning is not part of these hooks.
 
-`scripts/` holds five Node files. Three are the hook handlers above. Two are
-the design-gate tools, which are not hooks: Stage 2 of `/toque:plan` runs
-them explicitly, and you can run them by hand.
+Without Node, the handlers cannot start; fail-open handling inside a script does not fix a missing runtime.
 
-| Script | Role | Invoked by | Usage |
-|--------|------|-----------|-------|
-| `tq-session-start.js` | Hook handler | SessionStart event | automatic |
-| `tq-subagent-stop.js` | Hook handler | SubagentStop event | automatic |
-| `tq-pre-compact.js` | Hook handler | PreCompact event | automatic |
-| `tq-canary.js` | Gate tool: checks the auditor | Stage 2, before the auditor is spawned | `node tq-canary.js inject <spec-path> <out-dir> [seed]` |
-| `tq-evidence-validate.js` | Gate tool: checks the evidence | Stage 2, before any verdict is treated as MET | `node tq-evidence-validate.js <evidence-dir> [root-dir]` |
+## The scripts
 
-Both gate tools have regression suites in the monorepo's `tests/` folder
-(layers 5 and 6 of `tests/run-all.sh`).
+Five Node files live in `scripts/`: the three hook handlers and two explicit gate tools ([how they are called](#how-the-pieces-connect)).
 
-**What happens without Node.** The hooks cannot start, and Claude Code reports
-a hook error on each guarded event. That is deliberate: absent and loud beats
-present and wrong. The gate tools fail the same way, and Stage 2 cannot pass
-without them.
+From `plugins/toque/` in a development checkout:
 
-## Where Files Land
+```bash
+node scripts/tq-canary.js inject <spec-path> <out-dir> [seed]
+node scripts/tq-canary.js detected <canary.json> <unmet-csv> <applicable-csv>
+node scripts/tq-evidence-validate.js <evidence-dir> [root-dir]
+```
 
-| Output | Location | Committed? |
-|--------|----------|-----------|
-| Plan workspace | `docs/plans/{date}-{name}/` (manifest.md, status.json, intent.md, spec.md, plan.md, review.md, ...) | Yes |
-| Plan research and intake | `docs/plans/{date}-{name}/research/` | Yes |
-| Audit report | `docs/plans/{date}-{name}/audit.md` | Yes |
-| Audit evidence records | `docs/plans/{date}-{name}/evidence/` | Yes |
-| Canary working copy | `docs/plans/{date}-{name}/.canary/` | No, scratch |
-| Change records | `docs/plans/{date}-{name}/changes/` | Yes |
-| Plan-linked troubleshooting logs and postmortems | `docs/plans/{date}-{name}/troubleshooting/` | Yes |
-| Plan-linked runbook | `docs/plans/{date}-{name}/runbook.md` | Yes |
-| Standalone troubleshooting logs | `docs/troubleshooting/YYYY-MM-DD-{slug}.md` | Yes |
-| Knowledge base | `docs/troubleshooting/knowledge-base.md` | Yes |
-| Quick plans and specs | `docs/specs/` | Yes |
-| ADRs, BRDs, PRDs | `docs/adr/`, `docs/brd/`, `docs/prd/{domain}/` | Yes |
-| Standalone runbooks | `docs/runbooks/` | Yes |
-| Proposed lint rules from the holistic judge | `docs/planning-techniques/lint-candidates.md` | Yes |
-| Plan export | `{plan-name}-export.zip` at project root | No |
+Injection prepares scratch; it does not establish detection. The `detected` command checks the audit's unmet criteria against the planted defect. Supply the complete applicable-criteria list so blanket rejection can be rejected. Stage 2 owns the full sequence.
 
----
+The evidence validator exits 0 with no failing validation flags, 1 for validation failures, and 2 for missing/unusable input such as an empty evidence directory. An existing `UNMET` can coexist with exit 0: the caller must still evaluate `VERIFIED`.
 
-## How to Install
+Treat evidence records as untrusted data. The validator uses hashes, ranges, quote checks, and root containment rather than trusting claimed command outcomes.
+
+## Where files land
+
+The [workspace reference](https://github.com/krwhynot/toque/blob/main/documentation/plan-workspace.md) owns the full plan tree and schema migration.
+
+| Output outside the main artifact chain | Location |
+| --- | --- |
+| Quick plans / standalone specs | `docs/specs/` |
+| Standalone troubleshooting logs | `docs/troubleshooting/YYYY-MM-DD-{slug}.md` |
+| Shared troubleshooting knowledge base | `docs/troubleshooting/knowledge-base.md` |
+| Proposed lint rules | `docs/planning-techniques/lint-candidates.md` |
+| Export archive | `{plan-name}-export.zip` at project root |
+
+Planning records and evidence are intended for version control. Canary scratch and export archives are not.
+
+## How to install
 
 ```bash
 claude plugin marketplace add krwhynot/toque
 claude plugin install toque@toque-marketplace --scope user
 ```
 
-User scope (recommended) makes the plugin available in every project; use
-`--scope project` to limit it to one. Verify with:
+Check `node --version` separately, then start Claude Code and run `/toque:help`.
 
-```
-/toque:help
-```
+[Installation reference](https://github.com/krwhynot/toque/blob/main/documentation/install.md) covers scopes, prerequisites, rename upgrades, and troubleshooting.
 
-## How to Update
+## How to update
 
-An installed plugin lives in a **versioned cache directory**, and third-party marketplace auto-update
-is **off by default**. Pulling the repository does not update an installed copy — you must refresh the
-marketplace and update the plugin explicitly:
+Refresh the catalog in a session with `/plugin marketplace update toque-marketplace`. Update the installed copy in a terminal:
 
-```
-/plugin marketplace update toque-marketplace
-/plugin update toque
-/reload-plugins
-/plugin list
+```bash
+claude plugin update toque@toque-marketplace --scope user
 ```
 
-`/plugin list` is the verification step: confirm the version shown is the one you expect. **Without a
-version bump in `plugin.json`, nothing propagates** — the version is the cache key.
+Use your installed scope. Run `/reload-plugins` or restart, then inspect the installed version in `/plugin`. A repository pull is not an installed-plugin update.
 
-> [!IMPORTANT]
-> **Editing plugin files does not affect an installed copy.** The live-edit workflow — where changes
-> take effect on the next session with no reinstall — applies **only** when you run Claude Code with
-> `--plugin-dir`, pointing directly at your working tree:
-> ```bash
-> claude --plugin-dir /path/to/toque/plugins/toque
-> ```
-> Use this for plugin development. For an installed plugin, use the four-command sequence above.
+For development against the working tree, launch `claude --plugin-dir ./plugins/toque` from the repository root. Do not confuse that local session with a versioned marketplace install.
+
+## Further reference
+
+[Methodology](https://github.com/krwhynot/toque/blob/main/METHODOLOGY.md) explains the design rationale and retains historical material. [Interop](https://github.com/krwhynot/toque/blob/main/interop.md) lists optional read-only external inputs. [When to use Toque](https://github.com/krwhynot/toque/blob/main/documentation/when-to-use.md) helps choose a smaller workflow when the full one is unnecessary.

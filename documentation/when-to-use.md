@@ -1,63 +1,59 @@
-# When to use Toque
+# Which command fits?
 
-The honest version, including the cases where you should not.
+Use enough preparation for the risk. Not every change needs the whole brigade.
 
-Toque is deliberately heavy in places. Knowing where it is overkill is what
-makes the places it fits worth the cost.
+<p align="center">
+  <img src="../assets/toque-tall-mascot.png" width="120" alt="Toque, the tall chef-hat reviewer.">
+</p>
 
-## Toque
+## Choose by the job
 
-This is the one to be honest about, because the failure mode is enthusiasm.
+| You need to… | Start with | What to expect |
+| --- | --- | --- |
+| Deliver a feature, migration, integration, or substantial refactor | `/toque:plan {name}` | Six-stage workflow with recorded approvals |
+| Clarify an idea without starting design or build | `/toque:plan intent {name}` | Plan stage only; stops after intent work |
+| Get a smaller technical draft | `/toque:quick-plan {objective}` | Spec under `docs/specs/`, audit, up to two revisions |
+| Challenge an existing plan | `/toque:quick-audit {path}` | Criterion verdicts and findings; not production approval |
+| Find where work stopped | `/toque:plan-status` | Plan status and next-step context |
+| Turn messy source documents into usable references | `/toque:quick-cleanup {folder} {topic}` | Cleaned intake files in a plan homebase |
+| Hand a plan to another developer | `/toque:plan-export {name}` | Portable zip for a compatible codebase and vanilla Claude Code |
+| Investigate a bug or incident | `/toque:troubleshoot {problem}` | Evidence-led troubleshooting and a persistent record |
+| Write an ADR, BRD, PRD, README, runbook, release notes, or spec | `/toque:documentation {type} {topic}` | A structured document grounded in available project evidence |
+| See the complete entrypoint list | `/toque:help` | Help in the conversation |
 
-**Use it when**
+There are nine entrypoints: the intent-only form is an option of `/toque:plan`, not another command.
 
-- The change is large enough that getting the design wrong costs more than the
-  planning does.
-- More than one person has to agree on what is being built before it is built.
-- You need an auditable trail — what was intended, what was specified, what was
-  decided and why. Each stage commits an artifact the next stage reads.
-- The work is risky enough to want a rollback plan written before the change,
-  not after.
+## Use the full workflow when a wrong assumption is expensive
 
-**Do not use it when**
+Permissions, data migrations, external integrations, cross-team dependencies, rollback, or a handoff all benefit from an explicit record.
 
-- The change is small. A six-stage workflow around a one-line fix is theatre.
-  `/toque:quick-plan` exists for exactly this and is the right answer far more
-  often than the full workflow.
-- You are exploring. The gates assume you know roughly what you are building.
-  Prototyping under a design gate is friction with no payoff.
-- You are the only stakeholder and the work is reversible. Most of the value is
-  in the artifacts other people read.
-- You do not have Node 18+. Stage 2 cannot pass without the design-gate tools,
-  and there is no degraded mode.
+The full workflow supports implementation and testing after the required approvals. It prepares production deployment but leaves authorization and execution to a named human.
 
-**The learning curve is real.** Six stages, six commands, and a gate that can
-refuse your plan. Start with `/toque:quick-plan` or `/toque:quick-audit` on
-something small before you run the full workflow on something that matters.
+Start with the [quickstart](quickstart.md). Read the [workflow](the-plan-workflow.md) when you need the stage contracts.
 
-## The design gate specifically
+## Use quick commands for a bounded job
 
-The gate is the most opinionated thing in the toolkit, and it will occasionally
-refuse an audit that you believe was fine.
+A quick plan is useful for exploring an approach. A quick audit is useful when a plan already exists. Cleanup can be the entire task; creating a homebase does not mean you have agreed to build anything.
 
-That is the intent — an audit that cannot be shown to be trustworthy does not
-get to authorize the next stage. But it means Stage 2 is not a rubber stamp, and
-if you want a rubber stamp you will find it frustrating.
+Quick-plan runs an audit/revision loop. Do not confuse that with a full design-gate pass: its command does not explicitly run the complete canary/evidence orchestration used by Stage 2. Remaining findings may be delivered for you to resolve.
 
-Its known limitation is documented rather than hidden: the auditor can read the
-canary's defect table, so the mechanism reliably detects a *lazy* audit and only
-incidentally an *adversarial* one. Full detail in [The design
-gate](./the-design-gate.md).
+Export prepares a package; it does not establish that another codebase is identical or that secret redaction is infallible. Inspect the archive before sharing it.
 
-## What none of it does
+## Skip Toque when the ceremony costs more than the mistake
 
-- **It does not deploy.** The agent never crosses the production gate. Stage 5
-  produces a release checklist and stops.
-- **It does not decide.** Every stage ends at a human gate.
-- **It does not publish benchmark numbers**, because there is no eval harness
-  behind them. Claims here are about mechanism, not measured performance.
+A spelling correction or a well-understood one-line change may only need your ordinary review and tests.
 
-## Related
+Do not choose Toque if you need:
 
-- [The plan workflow](./the-plan-workflow.md)
-- [The design gate](./the-design-gate.md)
+- A codebase audit or AI-readiness scan. Those commands were removed in 11.0.0.
+- A runtime security boundary. The hooks provide context, not command blocking.
+- An agent that can authorize or execute its own production release.
+- A guarantee that a plausible, correctly cited design is actually right.
+
+The [design-gate limitations](the-design-gate.md#what-this-does-not-prove) are part of deciding whether the tool fits, not fine print.
+
+## Solo developer?
+
+You can operate the workflow alone, but the human decisions still need names and records. The separate design review has a [conditional waiver](the-design-gate.md#human-review-and-the-solo-waiver). Automated gate failures, manual test confirmation, and production authorization are not erased by working solo.
+
+[All capabilities and output paths](../plugins/toque/GUIDE.md)

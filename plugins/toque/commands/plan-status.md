@@ -76,7 +76,8 @@ Show:
 1. Stage-by-stage status with freshness indicators
 2. Any STALE or WARNING stages (check file hashes)
 3. Build progress (if in build stage): tickets done/total/blocked
-4. Design gate result (PASS / NOT PASS, unmet criteria count) if audit.md exists
+4. Design gate result (PASS / NOT PASS, kitchen translation, unmet criteria count)
+   if audit.md exists
 5. Playbook metrics from the stage timestamps: intent -> spec, spec -> plan,
    plan -> release elapsed; plan match from review.md if present
 6. Recommended next action with reasoning
@@ -85,7 +86,7 @@ Show:
 Plan: worldpay-canada
 Created: 2026-03-07
 Current Stage: 3 - Build (in_progress)
-Design gate: PASS (0 unmet criteria, canary found)
+Design gate: PASS — passed the pass (0 unmet criteria, canary found)
 Intent -> spec: 2d 4h   Spec -> plan: 1d 1h   Plan -> release: pending
 
 | # | Stage | Status | Freshness | Artifact |

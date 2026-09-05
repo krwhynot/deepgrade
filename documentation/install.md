@@ -1,98 +1,133 @@
-# Install
+# Install and upgrade Toque
 
-Every install path for Toque, what it needs, and how to tell whether it worked.
+Get the kitchen ready once. Then work from your project, not the plugin checkout.
+
+<p align="center">
+  <img src="../assets/toque-tall-mascot.png" width="120" alt="Toque, the tall chef-hat reviewer.">
+</p>
 
 ## Prerequisites
 
-| Requirement | Check |
-| --- | --- |
-| Claude Code | `claude --version` |
-| Node.js 18+ (hooks and the design-gate tools) | `node --version` |
+Only two things are required; the rest are used when a specific command needs them, and each has a stated fallback.
 
-Node is the same runtime Claude Code itself requires, so in practice if Claude
-Code runs, Toque runs. See [What happens without
-Node](#what-happens-without-node) if you are not sure.
+| Dependency | Status | Used by | If absent |
+| --- | --- | --- | --- |
+| Claude Code (`claude --version`) | Required | Everything | Nothing runs |
+| Node.js 18+ on PATH (`node --version`) | Required | The 3 hooks and the 2 design-gate tools (`tq-canary.js`, `tq-evidence-validate.js`) | Hook errors on each event; Stage 2 cannot pass. There is no fallback that turns a missing check into a pass |
+| Git | Conditional | Stage 5 diff-versus-plan; Stage 3 traceability check | Those checks cannot run |
+| `python3` or `python` | Conditional | `plan-status` overview and `troubleshoot` plan detection (JSON read, falls back to `grep`); `quick-cleanup` PDF, Word, and CSV extraction fallbacks | Status still reports via a weaker `grep` read; unreadable source files are marked for manual review |
+| `pdftotext`, `pandoc` | Conditional | `quick-cleanup` PDF and Word extraction | Python fallback, then `[MANUAL REVIEW REQUIRED]` |
+| `zip`, PowerShell `Compress-Archive`, or `tar` | Conditional | `plan-export` archive step | No archive; the staging directory is left for inspection |
+| MCP search tools (Ref, Exa, Perplexity) | Optional | Stage 1 research, `troubleshoot` external context, documentation enrichment | Built-in web tools; if none, findings are tagged `[EXTERNAL RESEARCH UNAVAILABLE]` |
+| `docs/audit/*` analysis from another tool | Optional | Auditor, scaffolder, quick-plan, templates (see [Interop](../interop.md)) | Workflows continue on project evidence |
 
-## Add the marketplace
+Check Node separately. A working native Claude Code installation does not establish that Toque's Node scripts can run. See [Claude Code setup](https://code.claude.com/docs/en/setup).
 
-Run this in a terminal, **not** inside a Claude Code session:
+## Install
+
+Run these in a terminal, not in a Claude Code conversation:
 
 ```bash
 claude plugin marketplace add krwhynot/toque
-```
-
-This registers the catalog. It installs nothing on its own.
-
-## Install the plugin
-
-```bash
 claude plugin install toque@toque-marketplace --scope user
 ```
 
-### Scope
+The first command registers the catalog. The second installs `toque` from `toque-marketplace`.
 
-`--scope user` installs for your account, so the plugin is available in every
-project you open. Drop the flag to install into the current project only, which
-is the right choice when you want the plugin pinned alongside a repo for
-everyone working in it.
+Choose the scope explicitly:
+
+| Flag | Available to |
+| --- | --- |
+| `--scope user` | You, across projects; also the CLI default |
+| `--scope project` | Collaborators through this repository's shared settings |
+| `--scope local` | You, in this repository only |
+
+These are [Claude Code installation scopes](https://code.claude.com/docs/en/discover-plugins), not different Toque editions.
 
 ## Verify
 
-Start Claude Code in any project and run:
+Start Claude Code in your project:
 
-```
+```text
 /toque:help
 ```
 
-`/toque:help` prints every command, so it doubles as a check that the plugin
-registered.
+For an existing session, run `/reload-plugins` or restart first. If reload asks for confirmation through `--force`, follow its prompt. Check `/plugin` for load errors and the installed version.
 
-## Updating
+Next: [complete your first workflow](quickstart.md).
+
+## What gets installed, and what gets written
+
+Installing adds capabilities to Claude Code; nothing is written into your project until you run a command.
+
+| Where | What appears | When |
+| --- | --- | --- |
+| Claude Code's plugin cache (versioned; not your repository) | The `toque` plugin: 6 command files, 5 skills, 2 agents, `hooks/hooks.json`, 5 Node scripts, document templates | At `claude plugin install` |
+| Your Claude Code settings for the chosen scope (`user`, `project`, or `local`) | The enabled-plugin entry that makes `/toque:*` available | At install; `--scope project` writes to the repository's shared settings |
+| Every session in a project | Three informational hooks run on SessionStart, SubagentStop, and PreCompact; they read `docs/plans/` and never create files | Automatically, after install and reload |
+| `docs/plans/YYYY-MM-DD-{name}/` in your project | The plan workspace (`intent.md`, `spec.md`, `audit.md`, `evidence/`, `plan.md`, `review.md`, …) | Only when you run `/toque:plan`, `/toque:quick-cleanup`, or a plan-linked command |
+| `docs/specs/{name}.md` | A standalone spec | Only when you run `/toque:quick-plan` |
+| `docs/troubleshooting/` | Standalone troubleshooting logs and `knowledge-base.md` | Only when you run `/toque:troubleshoot` without a plan |
+| `{plan-name}-export.zip` at the project root | A portable plan package | Only when you run `/toque:plan-export` |
+| `docs/audit/` | Nothing. Toque reads analysis another tool left there; it does not write it | Never written by Toque |
+
+The cache path and settings file names are Claude Code's, so the table names the scope rather than a path. One hook does write: the SubagentStop handler appends a line to a plan's `troubleshooting/subagent-log.txt`, and only when that directory already exists.
+
+## Update an installed copy
+
+Refresh the catalog and update the plugin in a terminal:
 
 ```bash
-claude plugin update toque@toque-marketplace
+claude plugin marketplace update toque-marketplace
+claude plugin update toque@toque-marketplace --scope user
 ```
 
-## Upgrading from a pre-10.0.0 install
+Use the scope you installed into. Then run `/reload-plugins` in an open session, or start a new one. Verify the version in `/plugin`.
 
-Version 10.0.0 renamed the project. The old plugin names are gone from the
-catalog, so an existing install does not upgrade in place — it has to be
-replaced:
+The in-session catalog refresh is `/plugin marketplace update toque-marketplace`; it is not a substitute for updating the installed plugin.
+
+Installed plugins use a versioned cache. Pulling this repository does not replace that cached copy. Third-party marketplace auto-update is off by default; see [Claude Code's update controls](https://code.claude.com/docs/en/discover-plugins#configure-auto-updates).
+
+## Develop against a checkout
+
+From the repository root:
 
 ```bash
-claude plugin uninstall <old-plugin-name>          # for each one you had
+claude --plugin-dir ./plugins/toque
+```
+
+This loads the local plugin for development. Start a new session to check edits. For published installs, use the update process above; do not edit the cache as a release workflow.
+
+## Upgrade from before 10.0.0
+
+The 10.0.0 rename changed the plugin and marketplace identities. Replace the old installation rather than expecting an in-place rename:
+
+```bash
+claude plugin uninstall <old-plugin-name>
 claude plugin marketplace remove <old-marketplace>
 claude plugin marketplace add krwhynot/toque
 claude plugin install toque@toque-marketplace --scope user
 ```
 
-Two things to check by hand:
+Identify the old entries in `/plugin` first. Removing a marketplace can remove its other installed plugins too; do not remove a shared catalog blindly.
 
-- **Environment variables.** Toque reads none. The `DG_*` and `TQ_*` settings
-  configured the blocking hooks that retired in 9.0.0, so anything left in a
-  shell profile or CI config can simply be deleted — no respelling required,
-  because nothing reads either spelling.
-- **Slash commands written into files.** Commands baked into scripts, prompts,
-  or `CLAUDE.md` files must be respelled to the `/toque:` prefix.
+Update embedded slash commands to the `/toque:` namespace. Toque no longer reads the old `DG_*` or `TQ_*` settings used by the retired blocking hooks; check for other consumers before removing settings from shared configuration.
 
-Plan folders under `docs/plans/` are untouched and need no migration.
+Installation does not rewrite plan folders. Separately, resuming a pre-8.0.0 plan performs a [schema-preserving migration](plan-workspace.md#migrating-a-pre-800-plan).
 
-## What happens without Node
+Upgrading from 10.x? Codebase-audit and AI-readiness scanning were removed in 11.0.0. There is no replacement scanner here.
 
-The `toque` plugin's three hooks cannot start, and Claude Code reports a hook
-error on each guarded event. That is deliberate — absent and loud beats present
-and wrong.
+## Troubleshooting installation
 
-The two design-gate tools fail the same way, and **Stage 2 of `/toque:plan`
-cannot pass without them**. There is no degraded mode that skips the gate.
+| Symptom | Check |
+| --- | --- |
+| `/toque:help` is missing | Correct catalog/plugin identity, installed scope, plugin enabled, session reloaded |
+| Installed behavior differs from this checkout | Version in `/plugin`; cached install versus `--plugin-dir` |
+| Node hook errors | `node --version` and the PATH visible to Claude Code |
+| Design gate tools cannot start | Restore Node 18+; do not skip the checks to obtain a pass |
 
-## Optional integrations
+The three hooks are informational and fail open when their handlers run. Without Node, the handlers cannot start. The design-gate tools also require Node: Stage 2 has no fallback that turns an unavailable check into a pass.
 
-| Integration | Enables | Without it |
-| --- | --- | --- |
-| MCP search tools (Ref, Exa, Perplexity) | Richer research during planning stages | Stages and templates all work, with less external context |
+## Optional inputs
 
-## Related
-
-- [Quickstart](./quickstart.md) — your first plan, end to end
-- [When to use Toque](./when-to-use.md) — including where it is overkill
+MCP research tools and existing [external analysis files](../interop.md) are optional; the [prerequisites table](#prerequisites) states what each adds and what happens without it. No separate scanner installation is required.

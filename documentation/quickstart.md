@@ -1,173 +1,108 @@
-# Quickstart
+# Your first workflow
 
-Your first plan, end to end, with what appears on disk at each step.
+Start with one real request: **“Add scheduled reports.”** Toque's first job is to find out what that means, not to build the scheduler.
 
-Assumes `toque` is installed — see [Install](./install.md) — and that you are in
-a Claude Code session inside a project.
+This walkthrough assumes Toque is [installed](install.md). Run slash commands inside Claude Code, in the project you intend to change. The full workflow writes planning records and, after approval, can change code and run tests. Use a branch and review the working tree first.
 
----
+<p align="center">
+  <img src="../assets/toque-tall-mascot.png" width="120" alt="Toque, the tall chef-hat reviewer.">
+</p>
 
-## Start small first
+## 1. Capture the request
 
-Before running the full six-stage workflow on something that matters, spend ten
-minutes on the lightweight commands. They share the same conventions and cost
-almost nothing:
-
-```
-/toque:quick-plan add rate limiting to the upload endpoint
+```text
+/toque:plan intent scheduled-reports
 ```
 
-Writes a single plan document to `docs/specs/` — no folder, no stages, no gates.
-This is the right answer far more often than the full workflow.
+Toque asks about the problem, desired outcome, affected people, constraints, exclusions, and unknowns. Answer in normal language. For example:
 
-```
-/toque:quick-audit docs/specs/upload-rate-limiting.md
-```
+> Account managers need a weekly summary without exporting it manually. Reports must respect access permissions at delivery time. We have not decided how recipients choose their schedule.
 
-Audits any plan or spec across eight review dimensions with evidence, and
-produces a go/no-go assessment. Point it at a document you already have — it
-does not need to be one Toque wrote.
+The Plan stage researches the codebase and available references. Expect a workspace under:
 
-When those feel familiar, the full workflow will make sense.
-
----
-
-## The full workflow
-
-### 1. Start a plan
-
-```
-/toque:plan upload-rate-limiting
+```text
+docs/plans/YYYY-MM-DD-scheduled-reports/
 ```
 
-It suggests a folder name and asks you to confirm:
+It contains `intent.md`, research, `manifest.md`, and `status.json`. A named product owner must accept the intent. Unknowns stay visible; research does not silently replace the owner's problem statement.
 
-```
-Suggested plan name: upload-rate-limiting
-This will create: docs/plans/2026-09-03-upload-rate-limiting/
-  [1] Use this name
-  [2] Enter a different name
-```
+**Intent-only mode stops here**, even after acceptance. Nothing is being cooked yet.
 
-On disk:
+## 2. Resume into Design
 
-```
-docs/plans/2026-09-03-upload-rate-limiting/
-  manifest.md      every row Pending
-  status.json      current_phase: "plan"
-  research/intake/
-  changes/
+```text
+/toque:plan scheduled-reports
 ```
 
-### 2. Answer six questions
+Toque reads the saved state and asks before continuing. It develops `spec.md`: requirements, design, constraints, verification, and delivery steps.
 
-Stage 1 interviews you **one question at a time**, in plain language. No file
-paths, no architecture — those come later.
+For scheduled reports, this is where schedule rules, recipients, permission checks, retries, and rollout decisions belong. Unresolved choices are not permission for the agent to guess.
 
-It asks what cannot be done today, what should be true when it is done, who is
-affected and who owns the decision, what is non-negotiable, what is explicitly
-out of scope, and what you do not know yet.
+After scope lock, the design goes to a separate auditor. The workflow creates `audit.md` and `evidence/`, checks a planted defect in a temporary copy, and validates citations supporting passing verdicts.
 
-Short answers are fine. Each one becomes a section of `intent.md`.
+If the gate fails, read the unmet criterion and its location. Toque can revise failing sections up to twice. A canary missed twice stops the audit instead: an unreliable check is not a useful recipe for revisions.
 
-**Starting from material you already have?** Point it at the source and it
-drafts every section first, then confirms each with you:
+An automated pass still needs recorded human review, or the narrowly eligible [design-review waiver](the-design-gate.md#human-review-and-the-solo-waiver). The spec must be marked approved before Build.
 
-```
-/toque:plan upload-rate-limiting from docs/tickets/PLAT-4471.md
-```
+## 3. Approve the implementation plan, then build
 
-### 3. Research runs in parallel
+Toque writes `plan.md` before changing implementation code. Check the affected files, sequence, assumptions, risks, verification steps, and any parallel work.
 
-Three independent subagents, each with its own context window: one scans your
-codebase for related code, one cleans any source documents you provided, one
-looks up how others solved this.
+Approve the plan only when you are ready for those changes. “Continue researching” and “implement this” are different instructions.
 
-They write into `research/`, then a synthesis pass cross-references all three
-and reports in plain language — what exists, what can be reused, what is still
-unknown, and which of your open questions got answered.
+Build also asks for approval of individual codebase actions and proposed parallel batches.
 
-### 4. Accept the intent
+During Build, departures from the approved plan must be recorded. Toque produces `impact-review.md`; review and confirm the effects before advancing.
 
-```
-intent.md is ready for acceptance. Who is the product owner accepting it?
-  [1] Enter the owner's name to accept
-  [2] Request changes
-  [3] Reject
-```
+## 4. Test what was built
 
-**A name is required.** This is the pattern at every gate — an unnamed approval
-is not an approval, and the workflow will not advance without one.
+Toque creates `test-plan.md` and collects results.
 
-> Only capturing an idea, not committing anyone to build it? Use
-> `/toque:plan intent {name}` and it stops right here.
+Automated tests must pass. A human must perform and confirm the manual checks; the agent cannot confirm them for you. For scheduled reports, a useful check might be removing a recipient's access before delivery and verifying the expected behavior from the approved spec.
 
-### 5. Design, and the scope lock
+A generated test plan is not a test result. Read the recorded outcomes, including what was not exercised.
 
-Stage 2 writes `spec.md` — requirements, design, standards, gotchas, evidence —
-then stops mid-stage and asks:
+## 5. Make the production decision
 
-```
-Does this scope look right? [confirm / adjust / back to research]
+Toque compares the actual diff with the plan and prepares `review.md`, release steps, and rollback triggers.
+
+A **named human authorizes and performs the production release**. The agent may prepare instructions and verify a step after the human confirms it was performed. It must not run production deployment, publishing, release-tag pushes, production merges, or production migrations.
+
+> **Nothing leaves the kitchen yet.** A passed design gate is not production authorization.
+
+If you are only rehearsing this workflow, stop at release preparation. Do not manufacture a deployment approval to complete the exercise.
+
+## 6. Maintain the released work
+
+Maintain stays open. Use plan-linked troubleshooting for incidents:
+
+```text
+/toque:troubleshoot --plan scheduled-reports Reports are being sent twice
 ```
 
-Confirming **locks those sections**. Changing them afterwards requires a Change
-Record rather than a silent edit, which is what makes scope drift visible later
-instead of invisible.
+Qualifying incidents or recurring patterns can produce a new draft `intent.md`. That draft returns to Plan for human acceptance; it does not authorize an automatic fix or release.
 
-Then it writes the verification plan — picking a testing methodology per
-deliverable from eleven options rather than defaulting to unit tests — and the
-delivery plan in three views: Jira-ready tickets, a leadership summary, and a
-working checklist.
+## Pause and resume
 
-### 6. The design gate
-
-The part that can tell you no.
-
-An isolated auditor reviews the spec. Before it runs, a **canary** plants one
-known defect in a throwaway copy — if the audit misses it twice, the audit is
-untrustworthy and does not get to authorize anything. Every piece of evidence
-the auditor cites is then re-read from disk and compared byte-for-byte.
-
-```
-PASS = CANARY_OK AND EVIDENCE_OK AND VERIFIED AND INFRA_OK
-```
-
-Four booleans, no partial credit. [Full detail](./the-design-gate.md).
-
-### 7. Onward
-
-Stages 3 through 6 — Build, Test, Deploy, Maintain — follow the same shape:
-read the previous artifact, commit a new one, stop at a named human gate. The
-[plan workflow page](./the-plan-workflow.md) covers each in depth.
-
-Two things worth knowing before you get there:
-
-- No code is written until `plan.md` is approved, and codebase writes always
-  ask.
-- The agent **never deploys**. Stage 5 prepares the release and stops.
-
----
-
-## Checking in later
-
-```
+```text
 /toque:plan-status
+/toque:plan scheduled-reports
 ```
 
-Every active plan, its stage, and whether anything has gone stale.
+Status shows where the work stands. Resume reads `status.json` and checks whether referenced files changed. Resolve stale dependencies before relying on old approvals.
 
+See [Plan workspace](plan-workspace.md) for file contracts and recovery.
+
+## Want a smaller first step?
+
+```text
+/toque:quick-plan Add scheduled reports
 ```
-/toque:plan upload-rate-limiting
-```
 
-Resumes exactly where you left off. It re-checks the freshness of completed
-stages first, so if the code moved under a finished stage, you hear about it
-before you continue.
+This produces `docs/specs/{name}.md`, runs an audit, and allows up to two revisions. Review any remaining findings. It does not create a full six-stage workspace. `--plan {name}` can link the draft to an existing plan; that link does not establish the full Stage 2 canary/evidence gate.
 
----
+Already have a plan? Try `/toque:quick-audit path/to/plan.md`.
 
-## Related
+Curious about the wider lifecycle? Read the [playbook background and Toque's boundaries](../METHODOLOGY.md#relationship-to-the-ai-native-sdlc-playbook). This walkthrough operates Toque; it does not set up the article's broader automation platform.
 
-- [The plan workflow](./the-plan-workflow.md) — all six stages in depth
-- [When to use Toque](./when-to-use.md) — including when not to
+[Choose a workflow](when-to-use.md) · [Stage details](the-plan-workflow.md) · [Design-gate limits](the-design-gate.md#what-this-does-not-prove)

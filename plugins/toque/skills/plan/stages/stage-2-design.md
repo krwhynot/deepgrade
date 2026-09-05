@@ -913,7 +913,8 @@ boolean, gap_count, canary_found), manifest.md.
 HUMAN REVIEW GATE (conditionally waivable):
 After the automated design gate completes, prompt for human review before Build:
 
-"Design gate complete ({N} criteria MET, {M} UNMET, canary {found/missed}).
+"Design gate {PASS/NOT PASS} — {N} MET (passed the pass); {M} UNMET (back to the
+ kitchen); {A} N_A (not on this plate); canary {found/missed}.
  Before starting Build, this spec should be reviewed by at least one person.
  [1] Enter reviewer name(s) to proceed
  [2] Waive review (solo mode) — requires documented reason, and only offered
