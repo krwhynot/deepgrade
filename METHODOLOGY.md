@@ -314,10 +314,10 @@ from Toque's instructions; broad adoption labels in the guide are not calibratio
 
 Separate AI implementation and test authorship is a Toque workflow requirement.
 It adapts independent checking; it is not a guarantee against correlated model
-errors. The guide's TDD paragraph also permits one agent to write both, conflicting
-with that requirement. The active stage and registry request separation; this
-documentation does not resolve the underlying instruction conflict by changing
-policy. [Thoughtworks: AI-aided test-first development (2023 Assess entry)](https://www.thoughtworks.com/radar/techniques/ai-aided-test-first-development) is related test-first experience, not proof that
+errors. The guide's TDD entry now follows the same rule: a separate agent or a
+human generates the test suite from the spec first, and the implementation agent
+makes it pass. The red-green ordering of TDD is kept; only the author changes.
+The stage files, the registry (LINT-18) and the guide agree. [Thoughtworks: AI-aided test-first development (2023 Assess entry)](https://www.thoughtworks.com/radar/techniques/ai-aided-test-first-development) is related test-first experience, not proof that
 Toque's separate-author or batch-first variation is superior.
 
 ### Stage 5: Deploy
