@@ -1361,6 +1361,191 @@ else
 fi
 
 # ===========================================================================
+# PH5-042: ONE design gate (the spec row "Same gate in commands/quick-audit.md
+# and commands/quick-plan.md", docs/specs/phase5-verifier-gate.md §6).
+#
+# quick-plan.md claimed "the same gate as Stage 2" for two releases while
+# spawning the auditor on its own terms, with no canary and no evidence
+# validation; quick-audit had no gate at all. A lighter copy of a gate is the
+# route around it, and the route around is the one that gets used.
+#
+# The gate is defined once, inside a delimited <design_gate> block in the
+# Stage 2 file, and the two shortcuts run that block by reference. Decidable by
+# grep: the block exists and carries the executable pieces; each shortcut
+# carries the execute-by-reference directive (checked with CR stripped and lines
+# joined, so a wrap or a Windows checkout cannot hide it); neither shortcut
+# carries a second copy of the gate expression, spawns the auditor itself, or
+# invokes the canary tool itself. A prose mention of tq-canary.js is allowed;
+# an invocation (inject/detected) is not.
+# ===========================================================================
+echo ""
+echo "--- One design gate (PH5-042) ---"
+
+DG_STAGE="plugins/toque/skills/plan/stages/stage-2-design.md"
+dg_block=$(sed -n '/^<design_gate>$/,/^<\/design_gate>$/p' "$DG_STAGE" 2>/dev/null)
+dg_bad=0
+if [ -z "$dg_block" ]; then
+  fail "PH5-042: $DG_STAGE has no delimited <design_gate> block"
+  dg_bad=1
+else
+  for piece in 'tq-canary.js" inject' 'tq-canary.js" detected' 'tq-evidence-validate.js' '<gate_expression>' '<revision_feedback>' '{gate_dir}' '{doc}' '{generator}' 'no canary class could be applied'; do
+    printf '%s\n' "$dg_block" | grep -qF -- "$piece" \
+      || { fail "PH5-042: <design_gate> block does not contain '$piece' — the shared block is missing part of the gate"; dg_bad=1; }
+  done
+  # The human review gate is Stage 2's own decision, not part of the shared gate.
+  if printf '%s\n' "$dg_block" | grep -qF '<waiver_condition>'; then
+    fail "PH5-042: <design_gate> block contains the review waiver — that belongs to Stage 2, not to every caller"
+    dg_bad=1
+  fi
+fi
+# Self-test the directive pattern on its known-positive and known-negative before trusting it.
+dg_re='stages/stage-2-design\.md` and execute +its `<design_gate>` block, verbatim'
+printf '%s\n' 'Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/stages/stage-2-design.md` and execute' 'its `<design_gate>` block, verbatim, with these bindings:' \
+  | tr '\n' ' ' | grep -qE "$dg_re" || { fail "PH5-042: directive pattern misses its known-positive — the guard would be vacuous"; dg_bad=1; }
+printf '%s\n' 'See stages/stage-2-design.md for the <design_gate> block.' | tr '\n' ' ' | grep -qE "$dg_re" \
+  && { fail "PH5-042: directive pattern matches a bare mention — it would pass a shortcut that only names the block"; dg_bad=1; }
+for cmd in plugins/toque/commands/quick-plan.md plugins/toque/commands/quick-audit.md; do
+  tr -d '\r' < "$cmd" | tr '\n' ' ' | grep -qE "$dg_re" \
+    || { fail "PH5-042: $cmd does not execute the Stage 2 <design_gate> block by reference"; dg_bad=1; }
+  if grep -qF 'PASS = CANARY_OK' "$cmd"; then
+    fail "PH5-042: $cmd carries its own copy of the gate expression — two definitions drift"
+    dg_bad=1
+  fi
+  if grep -qE 'tq-canary\.js"? +(inject|detected)' "$cmd"; then
+    fail "PH5-042: $cmd invokes the canary itself instead of running the shared block"
+    dg_bad=1
+  fi
+  if grep -qiE '^Spawn the plan-auditor' "$cmd"; then
+    fail "PH5-042: $cmd spawns the auditor on its own terms instead of running the shared block"
+    dg_bad=1
+  fi
+done
+# The auditor side of the same decision: no caller gets a mode that writes no evidence.
+grep -qF 'There is no conversation-only mode' plugins/toque/agents/plan-auditor.md \
+  || { fail "PH5-042: plan-auditor.md no longer states that there is no conversation-only mode"; dg_bad=1; }
+if grep -qF 'present in conversation (no file)' plugins/toque/agents/plan-auditor.md; then
+  fail "PH5-042: plan-auditor.md has a conversation-only mode again — a report with no evidence directory cannot be re-checked"
+  dg_bad=1
+fi
+tr -d '\r' < .gitignore | grep -qxF '**/.canary/' \
+  || { fail "PH5-042: .gitignore does not ignore .canary/ wherever a gate folder can appear"; dg_bad=1; }
+[ "$dg_bad" -eq 0 ] && pass "PH5-042: the design gate is defined once in Stage 2 and executed by reference from quick-plan and quick-audit"
+
+# ===========================================================================
+# PH5-043: the shared block answers the three questions six live runs read
+# three different ways (docs/plans/2026-09-04-methodology-conformance/stress-test.md).
+#
+# Every run of quick-plan and quick-audit in a session that could not spawn a
+# subagent landed on the no-isolation branch, which did not say whether inject
+# runs, what a fresh instance IS, or which reason wins. LINT-14 told the caller
+# to cite a baseline that a later step rewrote, so the record could not pass the
+# validator. And INFRA verification failed every honest new-work spec on the
+# test files the template tells it to name.
+#
+# Decidable by grep, on the block itself so a caller cannot satisfy it locally.
+# ===========================================================================
+echo "--- Gate answers isolation, LINT-14 ordering and planned deliverables (PH5-043) ---"
+
+dg43_bad=0
+dg43=$(sed -n '/^<design_gate>$/,/^<\/design_gate>$/p' "$DG_STAGE" 2>/dev/null)
+if [ -z "$dg43" ]; then
+  fail "PH5-043: no <design_gate> block to check"
+  dg43_bad=1
+else
+  # Isolation: what counts, both accepted routes, and the branch when neither exists.
+  for piece in 'A FRESH INSTANCE is' 'claude -p' 'canary_reason = "no-isolation"' 'canary_reason =' 'Exactly one canary_reason'; do
+    printf '%s
+' "$dg43" | grep -qF -- "$piece"       || { fail "PH5-043: <design_gate> does not carry '$piece' — the isolation branch is under-specified again"; dg43_bad=1; }
+  done
+  # The STOP rule has to name every way CANARY_OK goes false, not just a missed re-run.
+  printf '%s
+' "$dg43" | grep -qF 'CANARY_OK is false for ANY reason'     || { fail "PH5-043: the STOP rule no longer covers not-applicable and no-isolation"; dg43_bad=1; }
+  # LINT-14: the gate record is written after the pin, never cited by it.
+  printf '%s
+' "$dg43" | grep -qF 'Write the gate record (gate.json, or status.json for a plan folder) LAST'     || { fail "PH5-043: the LINT-14 caller record has no write order — its citation goes stale"; dg43_bad=1; }
+  printf '%s
+' "$dg43" | grep -qF '## Baseline comparison'     || { fail "PH5-043: the LINT-14 record has nothing citable to point at"; dg43_bad=1; }
+  # A deliverable is not a claim about today.
+  for piece in 'PLANNED —' 'CLAIMED —' 'enters no gap count'; do
+    printf '%s
+' "$dg43" | grep -qF -- "$piece"       || { fail "PH5-043: INFRASTRUCTURE VERIFICATION lost the PLANNED/CLAIMED split — a new-work spec cannot open the gate"; dg43_bad=1; }
+  done
+  # Reinforcement must not demote the citation it split.
+  printf '%s
+' "$dg43" | grep -qF 're-anchoring, not a demotion'     || { fail "PH5-043: evidence reinforcement can demote the quote its own inserted line split"; dg43_bad=1; }
+  # A vacuous rule is PASS, not N_A, or the baseline comparison invents regressions.
+  printf '%s
+' "$dg43" | grep -qF 'TRIGGERING CONDITION IS ABSENT is PASS/MET'     || { fail "PH5-043: the block no longer says a vacuous rule is PASS rather than N_A"; dg43_bad=1; }
+  # Stress run 2: the retry must exclude the class already tried, and a spawn that
+  # never returns must have a reason of its own. Both were unrepresentable before.
+  # Pin the INVOCATION, not the token. A bare grep for '--exclude' passed after the
+  # retry instruction was replaced with a reseed, because the flag still appeared
+  # elsewhere in the block (external review of this guard, September 2026). Lines are
+  # joined so the command's backslash continuation cannot hide it.
+  printf '%s
+' "$dg43" | tr -d '' | tr '
+' ' ' | grep -qE 'tq-canary\.js"? +inject[^|]{0,120}--exclude'     || { fail "PH5-043: the canary re-run command no longer passes --exclude — a reseed can repeat the missed trial"; dg43_bad=1; }
+  printf '%s
+' "$dg43" | grep -qF 'Do not re-run with a different seed'     || { fail "PH5-043: the block no longer warns against reseeding, which is the mistake that made the retry vacuous"; dg43_bad=1; }
+  for reason in 'single-trial-only' 'auditor-did-not-return'; do
+    printf '%s
+' "$dg43" | grep -qF -- "$reason"       || { fail "PH5-043: canary_reason '$reason' is gone — an outcome the runs actually hit has no way to be recorded"; dg43_bad=1; }
+  done
+  printf '%s
+' "$dg43" | grep -qF 'SPLIT by the line the canary inserted'     || { fail "PH5-043: re-anchoring can again drop a citation the canary edit split, demoting a verdict on the gate's own edit"; dg43_bad=1; }
+fi
+# quick-plan needs the same fallback: no fresh instance, no silent in-context scaffolder pass.
+tr -d '' < plugins/toque/commands/quick-plan.md | tr '
+' ' ' | grep -qF 'If no fresh instance can be spawned in this session'   || { fail "PH5-043: quick-plan.md has no fallback when the scaffolder cannot be spawned"; dg43_bad=1; }
+[ "$dg43_bad" -eq 0 ] && pass "PH5-043: the shared block defines a fresh instance, orders the LINT-14 record, and separates planned deliverables from claims"
+
+
+# ===========================================================================
+# REL-1: authorization and release are two events (decision D4).
+#
+# Stage 5 forbade running a release and then wrote deploy.status = complete and
+# printed "Released" at authorization. The record claimed something nobody had
+# observed. Decidable by grep: the stage records released_at in a separate step,
+# leaves the stage "authorized" until then, and the plan skill documents both
+# fields; the pre-D4 shape ("phases.deploy.status -> complete" in the same
+# breath as authorization) is refused.
+# ===========================================================================
+echo ""
+echo "--- Two release events (REL-1) ---"
+S5="plugins/toque/skills/plan/stages/stage-5-deploy.md"
+PSK="plugins/toque/skills/plan/SKILL.md"
+rel_bad=0
+for must in 'phases.deploy.status -> authorized' 'released_at' 'released_by' '## Step E: Release confirmation'; do
+  grep -qF -- "$must" "$S5" || { fail "REL-1: $S5 lacks '$must'"; rel_bad=1; }
+done
+for must in 'released_at' 'authorized_at'; do
+  grep -qF -- "$must" "$PSK" || { fail "REL-1: $PSK does not document '$must'"; rel_bad=1; }
+done
+if grep -qF 'After authorization is recorded, update manifest.md with final status' "$S5"; then
+  fail "REL-1: $S5 marks the release final at authorization again"
+  rel_bad=1
+fi
+[ "$rel_bad" -eq 0 ] && pass "REL-1: Stage 5 records authorization and release as two events"
+
+# ===========================================================================
+# KB-1: a knowledge-base match is a lead, not a fix (decision D6).
+#
+# Step 0.2 offered "Apply the same fix?" on a HIGH match before Phase 1,
+# against the skill's own Iron Law. Decidable by grep.
+# ===========================================================================
+echo ""
+echo "--- KB match is a lead (KB-1) ---"
+TS="plugins/toque/skills/troubleshoot/SKILL.md"
+kb_bad=0
+if grep -qF 'Apply the same fix' "$TS"; then
+  fail "KB-1: $TS offers to re-apply a knowledge-base fix before root-cause investigation"
+  kb_bad=1
+fi
+grep -qF 'first hypothesis' "$TS" || { fail "KB-1: $TS does not present a HIGH match as Phase 1's first hypothesis"; kb_bad=1; }
+grep -qF 'NO PERMANENT FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST' "$TS" || { fail "KB-1: the Iron Law is gone from $TS"; kb_bad=1; }
+[ "$kb_bad" -eq 0 ] && pass "KB-1: a knowledge-base match is a lead for Phase 1, not a fix to re-apply"
+
+# ===========================================================================
 # RESULTS (part subtotal — the dispatcher owns the anchored Results line)
 # ===========================================================================
 echo "==========================================="

@@ -48,6 +48,35 @@ console.log('\n1. Injection actually mutates');
   check('the error names the class that could not apply', /rollback-strip/.test(msg), `msg=${msg}`);
 }
 
+// A stress run found the planted assumption inside a Risk Assessment table: the
+// class anchored on the first "| 1 |" row in the document, and a risk table came
+// first. The row must land in the assumption register, or LINT-08 has nothing to
+// catch and the canary is measuring nothing.
+{
+  const risky = [
+    '# Plan', '',
+    '## Risk Assessment', '',
+    '| # | Risk | Likelihood | Impact | Mitigation |',
+    '|---|------|-----------|--------|-----------|',
+    '| 1 | Index bloat | Medium | High | Rebuild nightly |', '',
+    '## Assumptions', '',
+    '| # | Assumption | Impact If False | Status |',
+    '|---|-----------|----------------|--------|',
+    '| 1 | Indexes cover the new query | Slow reads | verified |', '',
+  ].join('\n');
+  const out = canary.inject(risky, 'assumption-inject');
+  const lines = out.text.split('\n');
+  const planted = lines.findIndex((l) => /^\| 2 \| Peak write throughput/.test(l));
+  const register = lines.findIndex((l) => /^\| 1 \| Indexes cover/.test(l));
+  check('assumption-inject lands after the assumption register row, not the risk row',
+    planted === register + 1, `planted at ${planted}, register row at ${register}`);
+
+  const noRegister = '# Plan\n\n## Risk Assessment\n\n| # | Risk |\n|---|------|\n| 1 | Index bloat |\n';
+  let threw = false;
+  try { canary.inject(noRegister, 'assumption-inject'); } catch (err) { threw = true; }
+  check('assumption-inject with numbered rows but no assumption register THROWS', threw, 'it planted into a table that is not an assumption register');
+}
+
 console.log('\n2. Every class in the bank is live');
 
 // Rotation is the only thing raising the cost of pre-empting the canary, and it is
@@ -73,6 +102,22 @@ console.log('\n2. Every class in the bank is live');
   const criteria = Object.values(seen);
   check('each class targets a distinct criterion',
     new Set(criteria).size === criteria.length, JSON.stringify(seen));
+}
+
+console.log('\n2b. The shipped spec template carries every canary shape');
+
+// A spec written from the plan skill's own template must be markable by every
+// class, or Stage 2's gate refuses its own specs with "no canary class could be
+// applied". The template is read from disk so a template edit that drops a
+// shape fails here, not in a user's plan folder.
+{
+  const tplPath = path.join(__dirname, '..', 'plugins', 'toque', 'skills', 'plan', 'templates', 'spec.md');
+  const tpl = fs.readFileSync(tplPath, 'utf8').replace(/\r\n/g, '\n');
+  for (const name of canary.CLASS_NAMES) {
+    let ok = false, msg = '';
+    try { ok = canary.inject(tpl, name).text !== tpl; } catch (err) { msg = err.message; }
+    check(`templates/spec.md carries the shape for ${name}`, ok, msg || 'mutation did not change the text');
+  }
 }
 
 console.log('\n3. Detection');
@@ -245,6 +290,99 @@ console.log('\n6. CLI contract');
   const rb = run(['inject', barren, path.join(tmp, '.canary3')]);
   check('a spec no class can mark exits 2, not 0', rb.code === 2, `code=${rb.code}`);
   check('and says so', /no canary class could be applied/.test(rb.out), rb.out);
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// The retry is the canary's only second chance, and for four releases it could
+// silently be the first chance again. stage-2-design.md said to re-run a missed
+// canary with the literal seed `retry`, "because the default seed is derived from
+// the file and would pick the same class again". pickClass hashes the SEED ALONE —
+// the document is not an input — so `retry` is a constant. Whenever a document's
+// default seed happens to hash to that same class, the "second trial" re-plants the
+// defect the auditor just missed, and two misses of one trial condemn the audit as
+// untrustworthy and forbid the revision loop. Found by live run 2, September 2026.
+console.log('\n7. The retry excludes a class; it does not reseed');
+
+{
+  const os = require('os');
+  const { spawnSync } = require('child_process');
+  const CLI = path.join(__dirname, '..', 'plugins', 'toque', 'scripts', 'tq-canary.js');
+  const run = (args) => {
+    const r = spawnSync('node', [CLI].concat(args), { encoding: 'utf8' });
+    return { code: r.status, out: String(r.stdout || '') + String(r.stderr || '') };
+  };
+
+  // 1. The property the old instruction got backwards, pinned as a fact.
+  const retryClass = canary.pickClass('retry');
+  check('pickClass takes a seed and nothing else, so one seed means one class',
+    canary.pickClass.length === 1 && canary.CLASS_NAMES.includes(retryClass),
+    `arity=${canary.pickClass.length} class=${retryClass}`);
+
+  // 2. The collision is real, not theoretical: default seeds are `basename:length`,
+  //    and some of them land exactly where the literal `retry` lands.
+  const collisions = [];
+  for (let len = 1000; len <= 40000; len += 137) {
+    if (canary.pickClass(`spec.md:${len}`) === retryClass) collisions.push(len);
+  }
+  check('some real default seeds collide with the literal retry seed',
+    collisions.length > 0,
+    `0 collisions found across 285 document lengths — the hash may have changed`);
+
+  // 3. Excluding the class already tried is what actually guarantees a new trial.
+  //    BOTH runs get the SAME explicit seed, so the exclusion is the only difference
+  //    between them. Without that, the old CLI passes this test by accident: it
+  //    parsed `--exclude` itself as the seed, which happens to hash elsewhere, and a
+  //    test that a reverted implementation still satisfies is not a test.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tq-canary-retry-'));
+  const spec = path.join(tmp, 'spec.md');
+  fs.writeFileSync(spec, SPEC);
+  const SEED = 'fixed-seed';
+  run(['inject', spec, path.join(tmp, '.c1'), SEED]);
+  const first = JSON.parse(fs.readFileSync(path.join(tmp, '.c1', 'canary.json'), 'utf8')).className;
+  const r2 = run(['inject', spec, path.join(tmp, '.c2'), SEED, '--exclude', first]);
+  const rec2 = JSON.parse(fs.readFileSync(path.join(tmp, '.c2', 'canary.json'), 'utf8'));
+  check('the same seed plus --exclude returns a DIFFERENT class', r2.code === 0 && rec2.className !== first,
+    `first=${first} second=${rec2.className} code=${r2.code} seed=${JSON.stringify(rec2.seed)}`);
+  check('the seed survives the flag, so the run is still replayable', rec2.seed === SEED,
+    `seed=${JSON.stringify(rec2.seed)}`);
+  check('the record keeps the exclusion, so the run replays from its own record',
+    rec2.excluded === first, `excluded=${rec2.excluded}`);
+
+  // 4. A document with only one usable shape has only one trial, ever. That is not
+  //    the auditor missing twice, and exit 3 exists so the caller cannot conflate them.
+  const one = path.join(tmp, 'one.md');
+  fs.writeFileSync(one, '# P\n\n## Delivery\n\n### Phase 1\n\nRollback: revert it\n');
+  const okAlone = run(['inject', one, path.join(tmp, '.c3')]);
+  check('a one-shape document injects fine on the first trial', okAlone.code === 0, okAlone.out);
+  const r3 = run(['inject', one, path.join(tmp, '.c4'), '--exclude', 'rollback-strip']);
+  check('excluding its only class exits 3, not 2 and not 0', r3.code === 3, `code=${r3.code}`);
+  check('and says a second trial was never possible', /Only one trial was ever possible/.test(r3.out), r3.out);
+
+  // 5. Exit 3 must not swallow exit 2. A document no class can mark is not a
+  //    one-trial document, and recording it as "unproven" instead of "cannot carry a
+  //    canary" hides the stronger fact. Found by an external review of this fix.
+  const barren = path.join(tmp, 'barren.md');
+  fs.writeFileSync(barren, '# P\n\nNothing here.\n');
+  const rB = run(['inject', barren, path.join(tmp, '.c6'), '--exclude', 'rollback-strip']);
+  check('a document NO class can mark still exits 2 when --exclude is passed', rB.code === 2,
+    `code=${rB.code} — exit 3 would claim one trial was possible when none was`);
+
+  const rBad = run(['inject', spec, path.join(tmp, '.c5'), '--exclude', 'no-such-class']);
+  check('an unknown --exclude class is refused, not ignored', rBad.code === 2, `code=${rBad.code}`);
+  const rDup = run(['inject', spec, path.join(tmp, '.c7'), '--exclude', 'rollback-strip', '--exclude', 'owner-strip']);
+  check('a repeated --exclude is refused, not silently half-applied', rDup.code === 2, `code=${rDup.code}`);
+  const rNoVal = run(['inject', spec, path.join(tmp, '.c8'), '--exclude']);
+  check('--exclude with no class name is refused', rNoVal.code === 2, `code=${rNoVal.code}`);
+
+  // 5. The instruction and the code must not drift apart again.
+  const stage2 = fs.readFileSync(
+    path.join(__dirname, '..', 'plugins', 'toque', 'skills', 'plan', 'stages', 'stage-2-design.md'),
+    'utf8'
+  );
+  check('the gate tells the caller to --exclude on a re-run', /--exclude/.test(stage2));
+  check('and no longer claims a different seed picks a different class',
+    !/pass a seed as the\s+third inject argument/.test(stage2.replace(/\r\n/g, '\n')));
 
   fs.rmSync(tmp, { recursive: true, force: true });
 }

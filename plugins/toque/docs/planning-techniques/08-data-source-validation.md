@@ -18,9 +18,18 @@ This is not a judgment call. It is a deterministic, automatable check: does the 
 
 ## How It Works
 
+### 0. Separate a claim about today from a deliverable
+
+The check asks whether infrastructure the plan RELIES ON exists now. A path the
+plan names as its own output — a test file a later phase creates — is PLANNED,
+not an inconsistency; the spec template asks for those names deliberately, and a
+plan that withheld them would be harder to audit, not easier. A path relied on
+by a phase that runs BEFORE the phase creating it is a claim about today, and is
+validated below. Classify every referenced path first; validate only the claims.
+
 ### 1. Validate "Tested?" Claims in the Scenario Matrix
 
-For every scenario that claims to be tested with a test reference:
+For every scenario that CLAIMS to be tested with a test reference:
 
 - Verify the test file exists at the claimed path
 - Verify the test file contains a test case matching the scenario description

@@ -1,7 +1,7 @@
 ---
 description: Export a plan as a self-contained zip package that another developer can use with vanilla Claude Code (no plugin required). Copies all referenced documents, redacts secrets, includes a CLAUDE.md that auto-bootstraps context, and verifies codebase compatibility on the receiving end. The developer unzips into their project root and Claude immediately understands the plan.
 argument-hint: "[plan-name]"
-allowed-tools: Read, Write, Grep, Glob, Bash, Task
+allowed-tools: Read, Write, Grep, Glob, Bash, Agent, Task
 disable-model-invocation: true
 ---
 
