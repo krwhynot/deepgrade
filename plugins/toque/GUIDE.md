@@ -14,17 +14,19 @@ New here? Start with the [README](https://github.com/krwhynot/toque/blob/main/RE
 
 Nine user-facing entrypoints. `plan`, `troubleshoot`, and `documentation` are skills; the other six are command files.
 
-| Entrypoint | Job | Main result |
-| --- | --- | --- |
-| `/toque:help` | Show capabilities and usage | Conversation output |
-| `/toque:plan {name}` | Start or resume full delivery workflow | Plan workspace |
-| `/toque:quick-plan {objective}` | Draft a smaller plan and run it through the design gate | `docs/specs/{name}.md` plus its gate record in `docs/specs/{name}/` |
-| `/toque:quick-audit {path}` | Run the design gate against an existing plan | Gate result; `audit.md`, `evidence/`, `gate.json` in the plan folder or a gate folder beside the file |
-| `/toque:plan-status [name]` | Inspect progress | Status summary |
-| `/toque:quick-cleanup {folder} {topic}` | Extract usable source references | Plan intake files |
-| `/toque:plan-export {name}` | Package a plan for another developer | Export zip |
-| `/toque:troubleshoot {problem}` | Investigate a bug or incident | Troubleshooting record |
-| `/toque:documentation {type} {topic}` | Generate a project document | One of seven document types |
+| Entrypoint | Handled by | Job | Main result |
+| --- | --- | --- | --- |
+| `/toque:help` | `commands/help.md` | Show capabilities and usage | Conversation output |
+| `/toque:plan {name}` | `skills/plan/SKILL.md` | Start or resume full delivery workflow | Plan workspace |
+| `/toque:quick-plan {objective}` | `commands/quick-plan.md` | Draft a smaller plan and run it through the design gate | `docs/specs/{name}.md` plus its gate record in `docs/specs/{name}/` |
+| `/toque:quick-audit {path}` | `commands/quick-audit.md` | Run the design gate against an existing plan | Gate result; `audit.md`, `evidence/`, `gate.json` in the plan folder or a gate folder beside the file |
+| `/toque:plan-status [name]` | `commands/plan-status.md` | Inspect progress | Status summary |
+| `/toque:quick-cleanup {folder} {topic}` | `commands/quick-cleanup.md` | Extract usable source references | Plan intake files |
+| `/toque:plan-export {name}` | `commands/plan-export.md` | Package a plan for another developer | Export zip |
+| `/toque:troubleshoot {problem}` | `skills/troubleshoot/SKILL.md` | Investigate a bug or incident | Troubleshooting record |
+| `/toque:documentation {type} {topic}` | `skills/documentation/SKILL.md` | Generate a project document | One of seven document types |
+
+Paths in the second column are relative to `plugins/toque/`. Claude Code resolves each entrypoint to exactly one of those files.
 
 Square brackets indicate optional arguments; braces indicate values to supply.
 
@@ -206,7 +208,7 @@ flowchart LR
   SC -->|"reads if present"| AUDIT
 ```
 
-The plan skill drives the six stages and, in Stage 2, runs the design gate: the canary tool, the plan-auditor, and the evidence validator against the plan folder's `evidence/` directory. Quick-plan invokes the scaffolder, writes a spec under `docs/specs/`, then runs that same gate against it with the gate record in `docs/specs/{name}/`; quick-audit runs the same gate against one file, into the plan folder or a gate folder beside the file. All three execute the `<design_gate>` block of the Stage 2 file. Both agents may read optional analysis under `docs/audit/` and both load the `self-audit-knowledge` skill. The other entrypoints call no agent: `/toque:troubleshoot` writes logs, `/toque:documentation` writes documents and links them from a plan's manifest, and `plan-status`, `plan-export`, `quick-cleanup`, and `help` read or package files. The three hooks are listed in [The 3 hooks](#the-3-hooks): Claude Code starts them on its own events, two read the newest plan's `status.json`, and the SubagentStop handler appends a log line only when a plan's `troubleshooting/` folder already exists.
+The plan skill drives the six stages and, in Stage 2, runs the design gate: the canary tool, the plan-auditor, and the evidence validator against the plan folder's `evidence/` directory. Quick-plan invokes the scaffolder, writes a spec under `docs/specs/`, then runs that same gate against it with the gate record in `docs/specs/{name}/`; quick-audit runs the same gate against one file, into the plan folder or a gate folder beside the file. All three execute the `<design_gate>` block of the Stage 2 file. Both agents may read optional analysis under `docs/audit/` and both load the `self-audit-knowledge` skill. No other entrypoint invokes either agent: `/toque:troubleshoot` writes logs and can spawn specialists of its own, `/toque:documentation` writes documents and links them from a plan's manifest, and `plan-status`, `plan-export`, `quick-cleanup`, and `help` read or package files. The three hooks are listed in [The 3 hooks](#the-3-hooks): Claude Code starts them on its own events, two read the newest plan's `status.json`, and the SubagentStop handler appends a log line only when a plan's `troubleshooting/` folder already exists.
 
 ## The 2 agents
 
@@ -216,6 +218,8 @@ The plan skill drives the six stages and, in Stage 2, runs the design gate: the 
 | `plan-auditor` | Independently challenges the draft and reports criteria, findings, and evidence. |
 
 Both load `self-audit-knowledge` to distinguish verified claims, code-reading evidence, and inference.
+
+These two are the only agents with a file in `agents/`, and only `/toque:plan`, `/toque:quick-plan`, and `/toque:quick-audit` invoke them. An instruction file may also define subagents inline, with no file here: Stage 1 of `/toque:plan` deploys up to three research tracks in parallel, and `/toque:troubleshoot` can escalate to as many as four specialists. Inline subagents are described where they are used, in `skills/plan/stages/stage-1-plan.md` and `skills/troubleshoot/phases/multi-agent-mode.md`.
 
 ## The 5 skills
 
