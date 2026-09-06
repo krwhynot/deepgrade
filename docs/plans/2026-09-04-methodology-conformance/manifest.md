@@ -22,6 +22,7 @@ The audit reads active instructions and scripts first, invocation and tests seco
 | [findings.md](findings.md) | Correction plan, applied changes, contradictions and owner decisions. |
 | [verification.md](verification.md) | Commands, results, links, anchors, negative controls and preservation. |
 | [decisions.md](decisions.md) | The six owner decisions (D1–D6), rationale, and where each change landed. Added 2026-09-05. |
+| [stress-test.md](stress-test.md) | Six live runs of `quick-plan` and `quick-audit` in scratch repositories: method, results, limits, and the fourteen instruction defects they found. Rig in [stress-rig/](stress-rig/). Added 2026-09-05. |
 
 ## Counts
 
