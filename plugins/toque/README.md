@@ -164,7 +164,7 @@ pass without them.
 
 See the monorepo [CHANGELOG](https://github.com/krwhynot/toque/blob/main/CHANGELOG.md).
 
-Current: v11.0.1
+Current: v11.1.0
 
 ## License
 
