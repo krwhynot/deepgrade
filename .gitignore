@@ -20,3 +20,19 @@ desktop.ini
 # A gate folder can sit in a plan folder or beside any audited document, so the
 # pattern is path-agnostic; the gate also deletes the folder once it is used.
 **/.canary/
+
+# Mascot explorations that were not chosen. The shipped art is the "tall"
+# variant — assets/TALL-PROMPTS.md and the two toque-tall-*.png files are
+# tracked and referenced by the documentation. These alternates are ~7.4 MB of
+# unreferenced PNGs kept on disk for reuse, not for distribution. Delete a line
+# here if one of them is ever adopted.
+assets/PROMPTS.md
+assets/HAT-PROMPTS.md
+assets/chef.png
+assets/toque-banner.png
+assets/toque-design-gate.png
+assets/toque-hat-banner.png
+assets/toque-hat-design-gate.png
+assets/toque-hat-mascot.png
+assets/toque-mascot.png
+assets/toque-tall-banner.png
