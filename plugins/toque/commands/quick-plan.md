@@ -1,16 +1,25 @@
 ---
 description: Create a structured technical plan from a vague objective. Analyzes the codebase, identifies risks, generates phased approach with timeline estimates, testing strategy, and rollback plan. The output is a plan built to survive the design gate. Pass an objective or requirement description.
 argument-hint: "[objective description] [--plan plan-name]"
-allowed-tools: Read, Write, Grep, Glob, Bash, Task
+allowed-tools: Read, Write, Grep, Glob, Bash, Agent, Task
 ---
 
 <plan_awareness>
-The spec is written to docs/specs/{name}.md. Its gate record lives beside it in
-the gate folder docs/specs/{name}/: audit.md, evidence/ (committed with the
-spec) and .canary/ (scratch, never committed).
+The spec is written to docs/specs/{slug}.md, where {slug} is derived from the
+OBJECTIVE in kebab-case ("nightly report delivery" -> nightly-report-delivery).
+Its gate record lives beside it in the gate folder docs/specs/{slug}/: audit.md,
+evidence/ and gate.json (committed with the spec) and .canary/ (scratch, never
+committed).
+
+If docs/specs/{slug}.md already exists, do not overwrite it. Choose a distinct
+slug, or ask the user which document they meant.
 
 If $ARGUMENTS contains --plan {name}:
-  1. Write spec to docs/specs/{name}.md; the gate folder is still docs/specs/{name}/
+  1. The spec is still docs/specs/{slug}.md and the gate folder is still
+     docs/specs/{slug}/. --plan does not rename either; it selects the plan that
+     receives the link rows and nothing more. Naming the spec after the plan
+     would make a second quick-plan against that plan silently overwrite the
+     first spec and its gate record.
   2. If docs/plans/*-{name}/ exists: add a row for the spec and its audit.md to
      that plan's manifest.md and add both paths to that status.json's
      `documents` object (the object every stage writes linked documents to).
@@ -69,6 +78,12 @@ Spawn the plan-scaffolder agent with:
 - Any audit data found in Step 2
 - Clarifications from Step 1 (if any)
 
+If no fresh instance can be spawned in this session (no Agent tool, and
+`claude -p` unavailable from Bash), perform the scaffolder's steps in this
+context, say so in the spec header, and expect the gate below to report
+canary_reason "no-isolation" and NOT PASS. Do not present that result as a
+pass.
+
 ## Step 4: Design gate (the same gate as /toque:plan Stage 2)
 
 After the scaffolder completes, run the design gate. Do NOT ask the user to run
@@ -83,8 +98,8 @@ stage file, and this command runs that definition:
 Read `${CLAUDE_PLUGIN_ROOT}/skills/plan/stages/stage-2-design.md` and execute
 its `<design_gate>` block, verbatim, with these bindings:
 
-  {doc}        docs/specs/{name}.md
-  {gate_dir}   docs/specs/{name}/
+  {doc}        docs/specs/{slug}.md
+  {gate_dir}   docs/specs/{slug}/
   {generator}  the plan-scaffolder agent
 
 The block spawns the plan-auditor on a canary-mutated working copy, checks that
@@ -101,7 +116,7 @@ never the rubric or the totals, and re-runs the auditor as a FRESH instance on
 the revised spec. Maximum 2 revision iterations. After 2 iterations, deliver
 the plan at its current quality with the unmet criteria named; a plan does not
 "usably pass with known gaps". The block writes the revision history into
-docs/specs/{name}/audit.md after the loop; do not keep a second copy in the
+docs/specs/{slug}/audit.md after the loop; do not keep a second copy in the
 spec.
 
 ## Step 6: Present Results
@@ -112,11 +127,14 @@ After the loop completes:
    the kitchen), the MET/UNMET/N_A counts, canary found, missed, not applicable
    or no-isolation, evidence validation exit code, and whether gap-checked
 3. If revisions occurred, note: "Plan was revised {N} time(s). {X} criteria moved from UNMET to MET."
-4. Show the Revision History table from docs/specs/{name}/audit.md
+4. Show the Revision History table from docs/specs/{slug}/audit.md
 5. Note evidence basis distribution (should be <40% Tier C)
-6. Point at the gate record: docs/specs/{name}/audit.md, evidence/ and
+6. Point at the gate record: docs/specs/{slug}/audit.md, evidence/ and
    gate.json. Commit them with the spec; an audit whose evidence is not
    committed did not happen. The .canary/ scratch is already deleted.
-7. Note: "This spec passed the design gate; it has not been reviewed by a person
-   and nothing here authorizes a build or a release."
+7. On PASS, note: "This spec passed the design gate; it has not been reviewed
+   by a person and nothing here authorizes a build or a release."
+   On NOT PASS, note: "This spec did not pass the design gate. The unmet
+   criteria above have to be fixed and the gate re-run." Never print the pass
+   sentence for a NOT PASS result.
 </workflow>

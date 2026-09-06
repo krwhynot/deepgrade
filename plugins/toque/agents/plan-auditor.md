@@ -243,7 +243,7 @@ registry assigns to the detected audit mode
   C. Scenario Matrix: 8 mandatory scenarios mapped to plan/test/monitoring
   D. Cross-Cutting Concern Sweep: 12 concerns checked per feature
   Plus: the plan lint rules from the registry (binary pass/fail); read
-  `docs/planning-techniques/lint-registry.md` for the set, its size, and the text
+  `${CLAUDE_PLUGIN_ROOT}/docs/planning-techniques/lint-registry.md` for the set, its size, and the text
 
 INPUT MODES (detect automatically based on available artifacts):
 
@@ -259,7 +259,7 @@ FULL MODE (called from /toque:plan or /toque:quick-audit with plan context):
   wherever the current names are absent; do not rewrite them.
   It then builds each matrix by cross-referencing all sources.
   The applicable rules are the registry's Phase 5 set for Full mode; read
-  `docs/planning-techniques/lint-registry.md` for the set, its size, and the rule text.
+  `${CLAUDE_PLUGIN_ROOT}/docs/planning-techniques/lint-registry.md` for the set, its size, and the rule text.
   LINT-14 is skipped on first audit (no baseline). LINT-11/12 run at Phase 7, not here.
 
 LITE MODE (called from /toque:quick-plan or standalone /toque:quick-audit):
@@ -555,7 +555,12 @@ paraphrase them, and do not carry a copy of the rule text in this file.
 
 | Rule | Description | Result |
 |------|-----------|--------|
-| (one row per applicable id, description copied from the registry) | | PASS/FAIL/N_A (N_A only for LINT-14 with no baseline, LINT-15/16 when the spec makes no such claim; state the reason) |
+| (one row per applicable id, description copied from the registry) | | PASS/FAIL/N_A (N_A only for LINT-14 with no baseline; state the reason) |
+
+A rule whose triggering condition is absent is PASS, not N_A — no compatibility
+claim, no external dependency, no endpoint, no "Tested"/"Monitored" claim — with
+the reason in the record. LINT-14 with no baseline is the one N_A this table
+expects.
 
 ### Gap Summary
 - Lint: X/Y passed, where Y is the size of the registry's Phase 5 set for this mode

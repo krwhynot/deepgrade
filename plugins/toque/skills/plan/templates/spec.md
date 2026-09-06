@@ -84,8 +84,9 @@ row.>
 <Testing methodology (tdd | characterization | expand_contract | contract_testing |
 shadow_parallel | property_based | bdd | snapshot_approval | mutation_testing) per
 deliverable, and how this will be tested at build time and in Stage 4. Name the
-test file for every coverage claim, e.g. tests/<name>.test.js; the design gate
-verifies the file exists.>
+test file for every coverage claim, e.g. tests/<name>.test.js. A file this plan
+delivers is recorded PLANNED by the design gate; a file the plan relies on
+before the phase that creates it must exist already.>
 
 ## Delivery
 

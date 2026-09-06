@@ -40,7 +40,7 @@ file defined 16, and `agents/plan-auditor.md` claimed 14 in one place and 15 in 
 | LINT-17 | Every deliverable in Phase 4 spec must have a testing methodology assigned | 4 (Plan) / 5 (Audit) | Full + Lite |
 | LINT-18 | AI-generated code deliverables must specify a separate test writer | 4 (Plan) / 5 (Audit) | Full + Lite |
 | LINT-19 | Confidence brief exists with no unresolved HIGH-impact markers | 5 (Audit) | Full + Lite |
-| LINT-20 | Confidence brief has all 3 sections and each entry has required fields | 5 (Audit) | Full + Lite |
+| LINT-20 | Confidence brief exists and each entry has its required fields | 5 (Audit) | Full + Lite |
 
 LINT-19 and LINT-20 were numbered 17 and 18 in `commands/plan.md` and `agents/plan-auditor.md`
 until PH5-001, colliding with the two testing-methodology rules above. Audit reports written before
@@ -70,8 +70,36 @@ records are left as they were rather than rewritten, because they record what ra
 | LINT-17 | Audit quality (Phase 5) | Fails if any deliverable has no testing methodology or uses "unit tests" without justification. |
 | LINT-18 | Audit quality (Phase 5) | Fails if AI-generated code has the same agent as both implementation author and test author. |
 | LINT-19 | Audit quality (Phase 5) | Blocks on any HIGH-impact confidence entry marked [SOURCE NEEDED], [LINK DEAD], or [UNVERIFIED]. The same markers on MEDIUM/LOW entries are warnings. |
-| LINT-20 | Audit quality (Phase 5) | Fails if spec.md has no Evidence section (the confidence brief), the brief has none of the 3 sections, or an entry is missing "What it is" / "Why it works" / "Connection to this plan". A plan started before 8.0.0 carries the brief as a separate `confidence.md`. |
+| LINT-20 | Audit quality (Phase 5) | Fails if spec.md has no Evidence section (the confidence brief), the brief has no entries, or an entry is missing "What it is" / "Why it works" / "Connection to this plan". A plan started before 8.0.0 carries the brief as a separate `confidence.md`. |
 | All others | Audit quality | Contribute to gap-checked status. Plan is gap-checked only when all applicable lint rules pass. |
+
+## Rule Scope Notes
+
+- **LINT-20 counts entries, not subsections.** It used to be stated two ways in
+  this file: "all 3 sections" in the rules table and "none of the 3 sections" in
+  Gate Behavior. Those give opposite verdicts on a brief with two subsections, and
+  two independent auditors split on exactly that document during the September 2026
+  stress test. No shipped template produces three: `skills/plan/templates/spec.md`
+  emits one subsection, `agents/plan-scaffolder.md` emits two, and no file anywhere
+  names a third. A rule the plugin's own generators cannot satisfy is a rule that
+  fails honest work, so the count is gone and the entry fields are what is checked.
+
+These say WHEN a rule applies. They do not restate what a rule checks; the table
+above is the only wording for that.
+
+- **A rule whose triggering condition is absent is PASS, not N_A.** No
+  backward-compatibility claim (LINT-06), no external dependency (LINT-04), no
+  new endpoint (LINT-05): the rule passes, with the reason in the record. N_A is
+  reserved for LINT-14 with no baseline. A vacuous rule recorded N_A on one run
+  and PASS on the next reads as a regression under LINT-14, on a document nobody
+  changed.
+- **LINT-15 and LINT-16 judge claims about infrastructure asserted to exist
+  today.** A test file or monitoring target the plan names as its own deliverable
+  of a phase that has not run is PLANNED, not a failure — the spec template asks
+  for those names on purpose, and a pre-build plan that withheld them would be
+  worse. A path relied on by a phase that runs BEFORE the phase that creates it
+  is a claim about today, and fails. See the classification step under
+  INFRASTRUCTURE VERIFICATION in `skills/plan/stages/stage-2-design.md`.
 
 ## Lint Count by Context
 

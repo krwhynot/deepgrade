@@ -247,6 +247,13 @@ function assess(rounds) {
  * Choose a class deterministically from a seed, so a run can be reproduced from its
  * record while still rotating between runs. Math.random would make a failed audit
  * impossible to replay, and replaying a failure is the first thing anyone wants.
+ *
+ * The hash depends on the SEED ALONE, not on the document. A fixed seed is therefore
+ * a fixed class: pickClass('retry') is always the same class, for every spec. That is
+ * why a re-run must EXCLUDE the class already tried (--exclude) rather than hope a
+ * different seed lands elsewhere — a one-in-CLASS_NAMES.length chance of repeating
+ * the exact trial that was just missed is not a second trial. See the retry rule in
+ * skills/plan/stages/stage-2-design.md.
  */
 function pickClass(seed) {
   const s = String(seed == null ? '' : seed);
@@ -326,11 +333,41 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  const [, specPath, outDir, seedArg] = argv;
+  // --exclude <class> is pulled out before the positional args so it can appear
+  // anywhere. A re-run passes the class the first trial used; that class is removed
+  // from the rotation entirely, which is the only way to guarantee a different trial.
+  const rest = argv.slice(1);
+  const exclusions = [];
+  // Every occurrence is pulled out, not just the first. Leaving a second one in
+  // place made it the positional seed and its VALUE the next positional, so
+  // `--exclude a --exclude b` silently selected b — the class the caller asked to
+  // exclude. A flag that quietly does the opposite of what it says is worse than
+  // one that is refused.
+  for (let i = rest.indexOf('--exclude'); i !== -1; i = rest.indexOf('--exclude')) {
+    if (i + 1 >= rest.length || String(rest[i + 1]).startsWith('--')) {
+      console.error('--exclude requires a class name');
+      console.error(`known classes: ${CLASS_NAMES.join(', ')}`);
+      process.exit(2);
+    }
+    exclusions.push(rest[i + 1]);
+    rest.splice(i, 2);
+  }
+  if (exclusions.length > 1) {
+    console.error(`--exclude may be given once; got ${exclusions.length}: ${exclusions.join(', ')}`);
+    console.error('The gate sanctions ONE re-run, so one class is ever excluded.');
+    process.exit(2);
+  }
+  const excluded = exclusions.length ? exclusions[0] : null;
+  const [specPath, outDir, seedArg] = rest;
 
   if (cmd !== 'inject' || !specPath || !outDir) {
-    console.error('usage: tq-canary.js inject <spec-path> <out-dir> [seed]');
+    console.error('usage: tq-canary.js inject <spec-path> <out-dir> [seed] [--exclude <class>]');
     console.error('       tq-canary.js detected <canary.json> <unmet-csv> [applicable-csv]');
+    process.exit(2);
+  }
+  if (excluded !== null && !CLASS_NAMES.includes(excluded)) {
+    console.error(`--exclude: unknown canary class: ${excluded}`);
+    console.error(`known classes: ${CLASS_NAMES.join(', ')}`);
     process.exit(2);
   }
   if (!fs.existsSync(specPath)) {
@@ -350,6 +387,7 @@ if (require.main === module) {
   const tried = [];
   for (let k = 0; k < CLASS_NAMES.length; k++) {
     const name = CLASS_NAMES[(start + k) % CLASS_NAMES.length];
+    if (name === excluded) continue;
     tried.push(name);
     try {
       record = inject(original, name);
@@ -360,6 +398,27 @@ if (require.main === module) {
   }
 
   if (!record) {
+    // Two different failures, two exit codes, because the caller must branch on
+    // which one it is. Exit 2: this document carries none of the five shapes, so no
+    // audit of it can ever be checked. Exit 3: the document carries one shape and it
+    // is the one already tried, so a SECOND trial is impossible — that is not the
+    // auditor missing twice, and must not be recorded as such.
+    // Exit 3 is only truthful when the EXCLUDED class would itself have applied —
+    // that is what makes this document a one-trial document. If nothing applies at
+    // all, including the excluded class, the honest answer is exit 2: this document
+    // can carry no canary and never could, which is a different verdict with a
+    // different recorded reason.
+    let excludedApplies = false;
+    if (excluded !== null) {
+      try { inject(original, excluded); excludedApplies = true; } catch (err) { /* it would not have */ }
+    }
+    if (excludedApplies) {
+      console.error(`no canary class other than ${excluded} could be applied to ${specPath}`);
+      console.error(`tried: ${tried.join(', ') || '(none)'}`);
+      console.error('Only one trial was ever possible on this document. A re-run cannot');
+      console.error('produce an independent second trial; do not record a second miss.');
+      process.exit(3);
+    }
     console.error(`no canary class could be applied to ${specPath}`);
     console.error(`tried: ${tried.join(', ')}`);
     console.error('A spec that cannot carry a canary is a spec whose audit cannot be');
@@ -377,6 +436,7 @@ if (require.main === module) {
       criterion: record.criterion,
       describe: record.describe,
       seed,
+      excluded,
       spec: specPath,
       mutated: mutatedPath,
     }, null, 2) + '\n',

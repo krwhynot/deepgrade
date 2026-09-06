@@ -761,7 +761,7 @@ These are instructed checks, not a shipped general-purpose executable plan linte
 | LINT-17 | Every deliverable in Phase 4 spec must have a testing methodology assigned | 4 / 5 |
 | LINT-18 | AI-generated code deliverables must specify a separate test writer | 4 / 5 |
 | LINT-19 | Confidence brief exists with no unresolved HIGH-impact markers | 5 |
-| LINT-20 | Confidence brief has all 3 sections and each entry has required fields | 5 |
+| LINT-20 | Confidence brief exists and each entry has its required fields | 5 |
 
 The workflow requires applicable rules and gap matrices to pass before reporting
 gap-checked. First audits skip baseline-regression comparison; Lite applicability

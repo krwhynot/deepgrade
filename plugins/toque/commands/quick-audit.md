@@ -1,7 +1,7 @@
 ---
 description: Audit any technical plan, spec, or proposal for gaps, risks, and leadership readiness. Reviews the plan across 8 dimensions (problem, architecture, phasing, risk, rollback, timeline, testing, team) and returns a per-criterion verdict (MET/UNMET/N_A) with evidence. Produces a go/no-go assessment and leadership presentation outline. Pass a file path or describe the plan.
 argument-hint: "[plan-file-path or description] [--plan plan-name]"
-allowed-tools: Read, Write, Grep, Glob, Bash, Task
+allowed-tools: Read, Write, Grep, Glob, Bash, Agent, Task
 ---
 
 <plan_awareness>
@@ -18,12 +18,21 @@ docs/plans/{date}-{name}/reaudits/{date}/ (audit.md, evidence/, gate.json) and
 add a manifest.md row for it. Either way, add the audit to that status.json's
 `documents` object.
 
+If that reaudits/{date}/ folder already exists — a second rerun on the same day
+— overwrite its audit.md, evidence/ and gate.json, append the earlier gate.json
+to its history[], and REPLACE its manifest.md row. One folder gets one row.
+
 Any other file, including another file inside a plan folder: the gate folder
 sits beside the audited file, named after it without the extension
 (docs/specs/pricing.md is audited into docs/specs/pricing/; docs/adr/x.md into
 docs/adr/x/), and the auditor runs in Lite mode. With --plan {name}, also add a
 manifest.md row in that plan linking the audit; nothing is written into the
 plan's own gate record.
+
+A rerun on a standalone document overwrites audit.md and evidence/ in place and
+appends the previous gate.json to history[]. The earlier records survive only if
+they were committed, which is why this command says to commit them. Any gate.json
+already in the gate folder, committed or not, is the baseline for LINT-14.
 
 A plan written outside the spec template can be audited, and the findings are
 the value. It can PASS only if it carries the shapes the checks key on (a
@@ -35,6 +44,9 @@ the gate says so in its result rather than skipping a check.
 If the plan was pasted rather than given as a path, write it to
 docs/specs/{slug}.md first and say so; the gate needs a file to mutate and
 evidence records need a file to cite. Do NOT create docs/audit/plan-audit.md.
+If docs/specs/{slug}.md already exists: identical content is reused and said so;
+DIFFERENT content is never overwritten — ask which the user meant before
+replacing it.
 </plan_awareness>
 
 <context>

@@ -1432,6 +1432,75 @@ tr -d '\r' < .gitignore | grep -qxF '**/.canary/' \
 [ "$dg_bad" -eq 0 ] && pass "PH5-042: the design gate is defined once in Stage 2 and executed by reference from quick-plan and quick-audit"
 
 # ===========================================================================
+# PH5-043: the shared block answers the three questions six live runs read
+# three different ways (docs/plans/2026-09-04-methodology-conformance/stress-test.md).
+#
+# Every run of quick-plan and quick-audit in a session that could not spawn a
+# subagent landed on the no-isolation branch, which did not say whether inject
+# runs, what a fresh instance IS, or which reason wins. LINT-14 told the caller
+# to cite a baseline that a later step rewrote, so the record could not pass the
+# validator. And INFRA verification failed every honest new-work spec on the
+# test files the template tells it to name.
+#
+# Decidable by grep, on the block itself so a caller cannot satisfy it locally.
+# ===========================================================================
+echo "--- Gate answers isolation, LINT-14 ordering and planned deliverables (PH5-043) ---"
+
+dg43_bad=0
+dg43=$(sed -n '/^<design_gate>$/,/^<\/design_gate>$/p' "$DG_STAGE" 2>/dev/null)
+if [ -z "$dg43" ]; then
+  fail "PH5-043: no <design_gate> block to check"
+  dg43_bad=1
+else
+  # Isolation: what counts, both accepted routes, and the branch when neither exists.
+  for piece in 'A FRESH INSTANCE is' 'claude -p' 'canary_reason = "no-isolation"' 'canary_reason =' 'Exactly one canary_reason'; do
+    printf '%s
+' "$dg43" | grep -qF -- "$piece"       || { fail "PH5-043: <design_gate> does not carry '$piece' — the isolation branch is under-specified again"; dg43_bad=1; }
+  done
+  # The STOP rule has to name every way CANARY_OK goes false, not just a missed re-run.
+  printf '%s
+' "$dg43" | grep -qF 'CANARY_OK is false for ANY reason'     || { fail "PH5-043: the STOP rule no longer covers not-applicable and no-isolation"; dg43_bad=1; }
+  # LINT-14: the gate record is written after the pin, never cited by it.
+  printf '%s
+' "$dg43" | grep -qF 'Write the gate record (gate.json, or status.json for a plan folder) LAST'     || { fail "PH5-043: the LINT-14 caller record has no write order — its citation goes stale"; dg43_bad=1; }
+  printf '%s
+' "$dg43" | grep -qF '## Baseline comparison'     || { fail "PH5-043: the LINT-14 record has nothing citable to point at"; dg43_bad=1; }
+  # A deliverable is not a claim about today.
+  for piece in 'PLANNED —' 'CLAIMED —' 'enters no gap count'; do
+    printf '%s
+' "$dg43" | grep -qF -- "$piece"       || { fail "PH5-043: INFRASTRUCTURE VERIFICATION lost the PLANNED/CLAIMED split — a new-work spec cannot open the gate"; dg43_bad=1; }
+  done
+  # Reinforcement must not demote the citation it split.
+  printf '%s
+' "$dg43" | grep -qF 're-anchoring, not a demotion'     || { fail "PH5-043: evidence reinforcement can demote the quote its own inserted line split"; dg43_bad=1; }
+  # A vacuous rule is PASS, not N_A, or the baseline comparison invents regressions.
+  printf '%s
+' "$dg43" | grep -qF 'TRIGGERING CONDITION IS ABSENT is PASS/MET'     || { fail "PH5-043: the block no longer says a vacuous rule is PASS rather than N_A"; dg43_bad=1; }
+  # Stress run 2: the retry must exclude the class already tried, and a spawn that
+  # never returns must have a reason of its own. Both were unrepresentable before.
+  # Pin the INVOCATION, not the token. A bare grep for '--exclude' passed after the
+  # retry instruction was replaced with a reseed, because the flag still appeared
+  # elsewhere in the block (external review of this guard, September 2026). Lines are
+  # joined so the command's backslash continuation cannot hide it.
+  printf '%s
+' "$dg43" | tr -d '' | tr '
+' ' ' | grep -qE 'tq-canary\.js"? +inject[^|]{0,120}--exclude'     || { fail "PH5-043: the canary re-run command no longer passes --exclude — a reseed can repeat the missed trial"; dg43_bad=1; }
+  printf '%s
+' "$dg43" | grep -qF 'Do not re-run with a different seed'     || { fail "PH5-043: the block no longer warns against reseeding, which is the mistake that made the retry vacuous"; dg43_bad=1; }
+  for reason in 'single-trial-only' 'auditor-did-not-return'; do
+    printf '%s
+' "$dg43" | grep -qF -- "$reason"       || { fail "PH5-043: canary_reason '$reason' is gone — an outcome the runs actually hit has no way to be recorded"; dg43_bad=1; }
+  done
+  printf '%s
+' "$dg43" | grep -qF 'SPLIT by the line the canary inserted'     || { fail "PH5-043: re-anchoring can again drop a citation the canary edit split, demoting a verdict on the gate's own edit"; dg43_bad=1; }
+fi
+# quick-plan needs the same fallback: no fresh instance, no silent in-context scaffolder pass.
+tr -d '' < plugins/toque/commands/quick-plan.md | tr '
+' ' ' | grep -qF 'If no fresh instance can be spawned in this session'   || { fail "PH5-043: quick-plan.md has no fallback when the scaffolder cannot be spawned"; dg43_bad=1; }
+[ "$dg43_bad" -eq 0 ] && pass "PH5-043: the shared block defines a fresh instance, orders the LINT-14 record, and separates planned deliverables from claims"
+
+
+# ===========================================================================
 # REL-1: authorization and release are two events (decision D4).
 #
 # Stage 5 forbade running a release and then wrote deploy.status = complete and
